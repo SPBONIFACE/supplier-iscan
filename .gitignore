@@ -1,0 +1,24 @@
+# Private companion repository (supplier-iscan-private) and local agent instructions
+_private/
+CLAUDE.local.md
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# JavaScript
+node_modules/
+dist/
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
