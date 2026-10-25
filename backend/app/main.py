@@ -13,8 +13,14 @@ def create_app(
     settings = settings or load_settings()
     check_database = database_check or make_database_check(settings.database_url)
 
-    # openapi.yaml is the contract: the interactive documentation pages are disabled.
-    app = FastAPI(title="Supplier iScan API", version="0.1.0", docs_url=None, redoc_url=None)
+    # openapi.yaml is the only contract: no generated /openapi.json, no documentation pages.
+    app = FastAPI(
+        title="Supplier iScan API",
+        version="0.1.0",
+        openapi_url=None,
+        docs_url=None,
+        redoc_url=None,
+    )
     # Exact origins from configuration, never a wildcard (load_settings rejects "*").
     app.add_middleware(
         CORSMiddleware,

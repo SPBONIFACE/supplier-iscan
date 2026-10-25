@@ -44,3 +44,10 @@ def test_interactive_documentation_pages_are_disabled() -> None:
 
     assert client.get("/docs").status_code == 404
     assert client.get("/redoc").status_code == 404
+
+
+def test_generated_openapi_schema_is_not_served() -> None:
+    # openapi.yaml is the only contract: FastAPI's generated schema must not be exposed.
+    client = make_client(database_check=lambda: True)
+
+    assert client.get("/openapi.json").status_code == 404
