@@ -174,7 +174,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 - **Contract first:** `openapi.yaml` is the source of truth; it changes before the code.
 - **Long-running work:** profile runs execute in a worker through a PostgreSQL job queue, never in the request path.
 - **LLM output:** structured output validated against typed schemas; no parsing of free-text LLM output.
-- **Runtime content:** the profile definition and the financial country table are data files loaded at startup, validated against schemas; example versions ship with the repository.
+- **Runtime content:** the profile definition, the financial country table and the prompts of the LLM features are data files loaded at startup, validated against published schemas; example versions ship with the repository, and an instance can supply its own through configuration. An invalid or missing file stops startup with an error naming it.
 - **Supply chain:** `pnpm` with exact pinned versions and a committed lockfile, never `npm install` or `npx`; `uv` with a committed `uv.lock`. Any pre-1.0 or little-used dependency is audited before use (install scripts, dependency count, domains contacted, `exec`/`eval`). Secrets are referenced by name only and never committed.
 - **Identifier language:** English for all identifiers (tables, columns, fields, routes, variables), whatever the UI language.
 
@@ -187,7 +187,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 | DocumentVersion | id, kind (`terms`, `data_processing`, `account_rules`, `privacy_notice`, `legal_notices`), language, version, content_hash, published_at, file (immutable) | Administrator | no |
 | Acceptance | id, organisation_id, user_id, kind (`organisation`, `account_rules`), legal_entity, authority_statement, document_version_ids, language, accepted_at | Representative / member | yes |
 | SupplierIdentity | id, organisation_id, legal_name, website, country, sector, registry ids, natural_person, confirmed_by, confirmed_at | Member (F1) | no |
-| ProfileRun | id, organisation_id, identity_id, status, stage, providers and model IDs per role, tokens, cost, started_at, finished_at | Member | no |
+| ProfileRun | id, organisation_id, identity_id, status, stage, providers and model IDs per role, profile-definition hash, prompt-set hash, tokens, cost, started_at, finished_at | Member | no |
 | Source | id, run_id, url, fetched_at, content_type, redacted_text, author, delete_after | Worker | residual only (redaction can miss a name; treated as personal data) |
 | CrawlPermission | domain, robots_result, tdm_reservation, suppression_hit, decision, checked_at | Worker | no |
 | SuppressionEntry | id, kind (`domain`, `person_name`), value, reason, requested_at | Administrator (on objection or rights request) | yes (`person_name`) |
@@ -245,6 +245,8 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 | Field extraction (F3) | field definitions, source texts | `FieldExtraction[]` {field, value, quote, source_id} or `not_found` | 100% of kept quotes found in source; ≥ 90% accuracy and ≥ 70% exhaustiveness on the reference set |
 | Assessment drafting (F8) | facts, buyer criteria | `AssessmentStatement[]` {kind, text, level?, cited_fact_ids, gap_evidence?} | 100% of statements cite valid facts or name the missing evidence; ≥ 80% judged useful by a domain reviewer |
 | Retrieval (F2) | identity record, field groups lacking evidence | list of URLs with snippets | finds sources the website crawl missed; every URL verifiable |
+
+The instructions sent to the model for each feature are **loaded at runtime from a prompt file**, not hard-coded, so that an instance can adapt them like the profile definition. Prompts carry instructions only: schema validation, the grounding check, citation checks, redaction and the excluded uses are enforced in code whatever a prompt says. Collected text, chat turns, facts and buyer criteria are inserted as delimited data, never into the instructions. Each run records the version of the prompts it used, and the evaluation reports results for a given prompt version.
 
 ## Non-functional requirements
 - **Performance:** a profile run completes in under 10 minutes; API responses outside runs under 500 ms at p95; a scale-to-zero cold start is acceptable.
