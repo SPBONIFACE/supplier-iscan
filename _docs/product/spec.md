@@ -50,7 +50,9 @@ criterion below is meant to be verifiable by looking at the running application.
 - [ ] The exchange ends only when the member explicitly confirms; the stored identity record conforms to the `IdentityRecord` schema.
 - [ ] After collection, if the confirmed company name does not appear in the collected content of its website, the profile is flagged "identity to verify".
 - [ ] If both registries are unreachable, the agent says so and offers the website fallback; no error page.
-- [ ] At the first interaction, before any input, the chat states that the member is talking to an AI assistant, in the UI language: "AI assistant: helps identify the supplier and prepare a draft assessment. Verify the selected legal entity and supporting sources."
+- [ ] At the first interaction, before any input, the chat states that the member is talking to an AI assistant, in the UI language, with exactly this text:
+  - English: "You are talking to an AI assistant. Its role: supplier research. As AI can make mistakes, please verify the legal entity of the selected supplier and the sources provided."
+  - French: "Vous échangez avec un assistant IA. Son rôle : effectuer des recherches fournisseur. L'IA pouvant faire des erreurs, veuillez vérifier l'entité légale du fournisseur sélectionné ainsi que les sources proposées."
 - [ ] When the confirmed legal form is a sole trader or another natural-person business, the identity record is flagged `natural_person` (see F8, excluded uses).
 
 ### F2: Adaptive evidence collection
