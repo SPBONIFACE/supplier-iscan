@@ -1,0 +1,9 @@
+# Only what the image needs. Secrets and local environments never enter the build context.
+.env
+.env.*
+.venv/
+tests/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

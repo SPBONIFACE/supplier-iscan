@@ -1,0 +1,52 @@
+[project]
+name = "supplier-iscan-backend"
+version = "0.1.0"
+description = "Supplier iScan API"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi==0.143.0",
+    "psycopg[binary]==3.3.6",
+    "uvicorn==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx==0.28.1",
+    "jsonschema==4.26.0",
+    "mypy==2.4.0",
+    "pytest==9.1.1",
+    "pyyaml==6.0.3",
+    "ruff==0.17.0",
+]
+
+[tool.uv]
+# The project is an application, not a library: nothing is built or published.
+package = false
+required-version = "==0.12.24"
+# Supply chain: every package in uv.lock, transitive ones included, is at least 14 days old
+# at the time of locking (25 Oct 2026). Wheels only: no source distribution is ever built.
+exclude-newer = "2026-10-11T00:00:00Z"
+no-build = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["app", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["yaml", "jsonschema", "jsonschema.*"]
+ignore_missing_imports = true
