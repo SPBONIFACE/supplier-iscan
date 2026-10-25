@@ -190,7 +190,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 | ProfileRun | id, organisation_id, identity_id, status, stage, providers and model IDs per role, profile-definition hash, prompt-set hash, tokens, cost, started_at, finished_at | Member | no |
 | Source | id, run_id, url, fetched_at, content_type, redacted_text, author, delete_after | Worker | residual only (redaction can miss a name; treated as personal data) |
 | CrawlPermission | domain, robots_result, tdm_reservation, suppression_hit, decision, checked_at | Worker | no |
-| SuppressionEntry | id, kind (`domain`, `person_name`), value, reason, requested_at | Administrator (on objection or rights request) | yes (`person_name`) |
+| SuppressionEntry | id, kind (`domain`, `person_name`), value, reason, requested_at, added_by, removed_at, removed_by, removal_reason | Administrator (on objection or rights request) | yes (`person_name`) |
 | Fact | id, run_id, section, field, value, quote, quote_redacted, source_id, source_type, status, original_value, reviewed_by, reviewed_at | Worker / member | possible (identifiable quotes are treated as personal data) |
 | AssessmentStatement | id, run_id, kind, text, level, cited_fact_ids, gap_evidence, provider, model_id, generated_at, status, reviewed_by, reviewed_at | Worker / member | no |
 | BuyerInput | id, run_id, field, text, updated_by, updated_at | Member | no |
