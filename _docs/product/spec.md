@@ -223,7 +223,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 - **Redaction before any LLM call** and storage of redacted text only (F2).
 - **Crawl permissions** checked and recorded per domain; TDM reservations and AI-crawler blocks honoured (F2).
 - **Quotes:** short, attributed, visually distinct from the app's own analysis; a rights-complaint and takedown route is published.
-- **Suppression list:** a person or domain can ask to be excluded; matching extracts are redacted in existing profiles and in future runs.
+- **Suppression list:** a person or domain can ask to be excluded; matching extracts are redacted in existing profiles and in future runs. The administrator can remove an entry (for example one added by mistake), stating a reason; each addition and removal is recorded with who and when, and a removal applies to future runs only.
 - **No cross-organisation reuse:** source text, profiles, indexes and caches containing personal data are never shared between organisations.
 - **Retention per data class,** configurable: redacted source text, profiles, accounts and usage events, security logs, telemetry. Each profile shows when its source content will be deleted.
 - **AI transparency:** AI disclosure at the first chat interaction (F1); provenance and review status on every AI statement and in the PDF (F8, F9).
