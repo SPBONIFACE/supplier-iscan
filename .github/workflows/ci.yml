@@ -1,0 +1,100 @@
+# CI: every pull request to main runs `make install`, `make lint` and `make test` in one job.
+# Lean on purpose (private repository, limited Actions minutes): one job, no matrix, caches keyed on
+# the lockfiles, older runs of the same pull request cancelled.
+# Toolchain versions come from the repository, never from this file:
+#   uv      backend/pyproject.toml  [tool.uv] required-version
+#   Python  backend/.python-version (installed by uv)
+#   Node    frontend/.node-version  (engines.node + engineStrict)
+#   pnpm    frontend/package.json   packageManager (through Corepack)
+# Actions are pinned to full commit SHAs; the comment gives the release.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: install, lint, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      # Same image and digest as docker-compose.yml. Throwaway, test-only credentials.
+      db:
+        image: postgres:16.15-trixie@sha256:9e2cf6287f25c3151f4c9421ccce2b17f3e60061c111a29165e0d2cdd9ff0a97
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci_test_only
+          POSTGRES_DB: supplier_iscan_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d supplier_iscan_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      # Corepack must never wait for a confirmation before fetching the pinned pnpm.
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv (version from backend/pyproject.toml)
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          working-directory: backend
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Set up Node (version from frontend/.node-version)
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.node-version
+          package-manager-cache: false
+
+      - name: Enable pnpm through Corepack
+        run: corepack enable pnpm
+
+      - name: Locate the pnpm store
+        id: pnpm-store
+        working-directory: frontend
+        run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+
+      - name: make install
+        run: make install
+
+      - name: Toolchain versions
+        run: |
+          (cd backend && uv --version && uv run --locked python --version)
+          (cd frontend && echo "node $(node --version)" && echo "pnpm $(pnpm --version)")
+
+      - name: make lint
+        run: make lint
+
+      - name: make test
+        env:
+          DATABASE_URL: postgresql://ci:ci_test_only@localhost:5432/supplier_iscan_test
+        run: make test
+
+      - name: Lockfiles unchanged
+        run: git diff --exit-code -- backend/uv.lock frontend/pnpm-lock.yaml
