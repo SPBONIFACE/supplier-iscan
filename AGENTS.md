@@ -28,7 +28,7 @@ Python is managed with `uv`, JavaScript with `pnpm`. Never `npm install` or `npx
 - No new dependency without asking. Pinned versions, lockfiles committed.
 - Personal data is redacted before any LLM call; LLM output is structured and schema-validated.
 - Secrets are referenced by name; never read, write or commit a `.env` file.
-- Commit only on a branch, and push or merge only when the owner says so.
+- Commit only on a branch. A task branch is pushed and its pull request opened as part of the lifecycle (`_docs/process/process.md`); any other push, and every merge, only when the owner says so.
 
 ## Documents
 

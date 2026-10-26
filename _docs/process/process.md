@@ -2,7 +2,7 @@
 
 - Tasks are GitHub issues on the `supplier-iscan` repository, one at a time.
 - Read the acceptance criteria before starting and before closing.
-- Commit regularly, on a branch per issue. Nothing is pushed or merged without the owner's go-ahead.
+- Commit regularly, on a branch per issue. Pushing a task branch and opening its pull request are part of the lifecycle (step 4); any other push, and every merge, needs the owner's go-ahead.
 
 ## Roles
 
@@ -20,13 +20,14 @@ The main session is the orchestrator. It launches the PM, the SWE and QA as suba
 
 1. Pick the next open issue from the backlog.
 2. PM grooms it until it meets the definition of ready (`_docs/team/pm.md`).
-3. SWE implements it.
-4. QA verifies it and posts a verdict:
-   - **PASS** → step 5
-   - **FAIL (defect)** → back to step 3, with the QA comment as input
+3. SWE implements it on the issue's branch and pushes the branch.
+4. The orchestrator opens the pull request (`Closes #<issue>`), so CI runs on it.
+5. QA verifies the pull request, including its CI result, and posts a verdict on the issue:
+   - **PASS** → step 6
+   - **FAIL (defect)** → back to step 3, with the QA comment as input; the pull request stays open
    - **FAIL (criteria)** → back to step 2: the PM re-grooms
-5. The owner reviews the diff; the orchestrator closes the issue.
-6. Repeat until the backlog is empty.
+6. The owner reviews the pull request; on the owner's go-ahead the orchestrator merges it, which closes the issue.
+7. Repeat until the backlog is empty.
 
 ## Orchestration level
 
@@ -44,5 +45,6 @@ QA is never dropped.
 - Do not skip step 2.
 - The SWE does not close the issue.
 - QA does not fix the code; it only posts a verdict.
-- The orchestrator closes the issue only after a PASS and the owner's review.
+- The orchestrator merges, and so closes the issue, only after a PASS and the owner's review.
+- Acceptance criteria may refer to the task's own pull request and its CI check: the pull request exists before QA.
 - Regulatory content (GDPR, AI Act, contracts) comes only from sources reviewed by the owner. Any addition is marked as such with its source; no agent rewords a reviewed regulatory statement.
