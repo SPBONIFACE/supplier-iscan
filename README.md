@@ -67,5 +67,45 @@ Spec-driven and agent-assisted:
 
 ## Running it
 
-Instructions arrive with the first code: `make run` will start the whole system, database included, and
-`make test` will run the test suites.
+### Prerequisites
+
+| Tool | Version | Pinned in |
+| :--- | :--- | :--- |
+| Docker with Compose v2 | any recent | |
+| GNU Make | any | |
+| uv | 0.12.24 | `backend/pyproject.toml` (`required-version`) |
+| Python | 3.13.16 (uv downloads it if it is missing) | `backend/.python-version` |
+| Node.js, with Corepack | 24.22.1 | `frontend/.node-version`, `frontend/.nvmrc`, `engines` in `frontend/package.json` |
+| pnpm | 11.28.5 (Corepack installs it: `corepack enable pnpm`) | `packageManager` in `frontend/package.json` |
+
+`make install` stops with an error if the uv or Node.js version differs from the pinned one.
+
+### Configuration
+
+```sh
+cp .env.example .env
+```
+
+This step is optional. `.env.example` lists the secret names (database URL, session secret, LLM provider API keys)
+with empty values. Fill in your own values in `.env`, which is never committed. Without a `.env` file and without any
+provider key, the system starts with local defaults. Those database defaults are for local use only.
+
+### Commands
+
+| Command | What it does |
+| :--- | :--- |
+| `make install` | Installs the backend and frontend dependencies from the lockfiles (`uv.lock`, `pnpm-lock.yaml`), without changing them |
+| `make lint` | Linters, format checks and type checks (Ruff and mypy; Biome and TypeScript) |
+| `make test` | Backend and frontend tests, including the API contract test against `openapi.yaml` |
+| `make run` | Starts the database, the API and the frontend with Docker Compose (`make stop` stops them) |
+
+### Local URLs
+
+| Service | URL |
+| :--- | :--- |
+| Frontend | http://localhost:5173 |
+| API | http://localhost:8000 (port 8000, fixed in `docker-compose.yml`); health check: http://localhost:8000/health |
+| Database | `127.0.0.1:5432`, reachable from this machine only |
+
+Every port is published on `127.0.0.1` only. The API accepts browser requests from the origin set in
+`CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`). The API contract is [`openapi.yaml`](openapi.yaml).

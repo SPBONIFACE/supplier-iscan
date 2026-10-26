@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info:
+  title: Supplier iScan API
+  version: 0.1.0
+  description: >-
+    API contract of Supplier iScan. This file is the source of truth: it changes before the code.
+servers:
+  - url: http://localhost:8000
+    description: Local development (Docker Compose)
+tags:
+  - name: system
+    description: Operational endpoints
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [system]
+      summary: Report whether the API and its database are available
+      description: >-
+        Always answers while the API process runs. Returns 200 when the database answers, and 503
+        when it does not. The body never contains error details.
+      responses:
+        "200":
+          description: The API and the database are available.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+              example:
+                api: available
+                database: available
+        "503":
+          description: The API is running but the database is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+              example:
+                api: available
+                database: unavailable
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      additionalProperties: false
+      required: [api, database]
+      properties:
+        api:
+          description: Status of the API process. It is always available when it answers.
+          type: string
+          const: available
+        database:
+          description: Whether the API can reach its database.
+          type: string
+          enum: [available, unavailable]

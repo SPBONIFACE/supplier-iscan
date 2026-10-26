@@ -1,0 +1,14 @@
+# pnpm settings for the frontend (a single package, not a workspace).
+
+# Supply chain: no version younger than 14 days is resolved, transitive ones included.
+minimumReleaseAge: 20160
+
+# Exact versions when a dependency is added; fail when the Node version differs from engines.node.
+saveExact: true
+engineStrict: true
+
+# No dependency may run lifecycle scripts (pnpm 11 refuses unlisted build scripts by default).
+# fsevents (optional, macOS only, via Vite) ships a prebuilt binary and a native build setup:
+# it is denied explicitly so that no rebuild can ever run.
+allowBuilds:
+  fsevents: false
