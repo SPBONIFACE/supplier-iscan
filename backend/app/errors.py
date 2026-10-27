@@ -5,10 +5,11 @@ No answer ever contains a stack trace, a connection string or a submitted value.
 """
 
 import logging
+import uuid
 from collections.abc import Sequence
 from typing import Any
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import InterfaceError, OperationalError
@@ -18,6 +19,7 @@ from app.db import DatabaseUnavailable
 logger = logging.getLogger(__name__)
 
 INVALID_REQUEST = "The request is not valid."
+NOT_FOUND = "Not found."
 SERVICE_UNAVAILABLE = "The service is temporarily unavailable. Please try again in a few minutes."
 
 _MAX_FIELD_NAME_LENGTH = 64
@@ -55,6 +57,42 @@ def validation_errors(errors: Sequence[Any]) -> list[dict[str, str]]:
     return result or [{"field": "body", "message": "The request body must be a JSON object."}]
 
 
+def not_found() -> HTTPException:
+    """The one 404 (components/responses/NotFound): the same for "absent" and "not yours"."""
+    return HTTPException(status.HTTP_404_NOT_FOUND, detail=NOT_FOUND)
+
+
+def parse_resource_id(raw: str) -> uuid.UUID:
+    """A path id; anything that is not a UUID answers 404, exactly as an unknown id."""
+    try:
+        return uuid.UUID(raw)
+    except ValueError:
+        raise not_found() from None
+
+
+class InvalidField(Exception):
+    """A check made in the endpoint (not by pydantic) failed: answered with 422 ValidationFailed.
+
+    The message must never contain the submitted value.
+    """
+
+    def __init__(self, field: str, message: str) -> None:
+        super().__init__(field)
+        self.field = field
+        self.message = message
+
+
+async def _on_invalid_field(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, InvalidField)  # noqa: S101 - registered for this type
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={
+            "detail": INVALID_REQUEST,
+            "errors": [{"field": error.field, "message": error.message}],
+        },
+    )
+
+
 async def _on_validation_error(request: Request, error: Exception) -> JSONResponse:
     assert isinstance(error, RequestValidationError)  # noqa: S101 - registered for this type
     return JSONResponse(
@@ -73,5 +111,6 @@ async def _on_database_unavailable(request: Request, error: Exception) -> JSONRe
 
 def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(RequestValidationError, _on_validation_error)
+    app.add_exception_handler(InvalidField, _on_invalid_field)
     for error_type in (DatabaseUnavailable, OperationalError, InterfaceError):
         app.add_exception_handler(error_type, _on_database_unavailable)

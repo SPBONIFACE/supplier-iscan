@@ -99,3 +99,21 @@ def test_preflight_for_login_from_other_origin_is_rejected() -> None:
 
     assert response.status_code == 400
     assert ALLOW_ORIGIN not in response.headers
+
+
+@pytest.mark.parametrize("method", ["PATCH", "DELETE"])
+def test_preflight_for_administrator_writes_is_accepted_from_the_allowed_origin(
+    method: str,
+) -> None:
+    response = make_client(database_check=lambda: True).options(
+        "/admin/organisations/some-id",
+        headers={
+            "Origin": LOCAL_ORIGIN,
+            "Access-Control-Request-Method": method,
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers[ALLOW_ORIGIN] == LOCAL_ORIGIN
+    assert method in response.headers["access-control-allow-methods"]

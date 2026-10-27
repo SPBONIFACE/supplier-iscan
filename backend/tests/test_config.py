@@ -1,8 +1,41 @@
-"""Settings added by #8: instance mode and the local administrator's credentials."""
+"""Settings added by #8 (instance mode, the local administrator's credentials) and #9 (invitation
+delay, minimum password length)."""
+
+from datetime import timedelta
 
 import pytest
 
-from app.config import ConfigurationError, load_settings
+from app.config import (
+    DEFAULT_INVITATION_VALIDITY_HOURS,
+    DEFAULT_PASSWORD_MIN_LENGTH,
+    MAX_SETTING_NUMBER,
+    ConfigurationError,
+    load_settings,
+)
+
+
+def test_invitation_delay_and_password_minimum_are_read_by_name() -> None:
+    settings = load_settings({"INVITATION_VALIDITY_HOURS": " 30 ", "PASSWORD_MIN_LENGTH": "9"})
+
+    assert settings.invitation_validity == timedelta(hours=30)
+    assert settings.password_min_length == 9
+
+
+def test_invitation_delay_and_password_minimum_have_local_defaults() -> None:
+    settings = load_settings({"INVITATION_VALIDITY_HOURS": "", "PASSWORD_MIN_LENGTH": " "})
+
+    assert settings.invitation_validity == timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
+    assert settings.password_min_length == DEFAULT_PASSWORD_MIN_LENGTH
+
+
+@pytest.mark.parametrize("name", ["INVITATION_VALIDITY_HOURS", "PASSWORD_MIN_LENGTH"])
+@pytest.mark.parametrize("value", ["0", "-4", "1.5", "ten", "²", "99999999999999999999"])
+def test_invalid_numbers_name_the_setting_not_the_value(name: str, value: str) -> None:
+    with pytest.raises(ConfigurationError) as raised:
+        load_settings({name: value})
+
+    # The name and the accepted range only, never the submitted value.
+    assert str(raised.value) == f"{name} must be a whole number between 1 and {MAX_SETTING_NUMBER}"
 
 
 def test_instance_mode_defaults_to_self_hosted() -> None:
