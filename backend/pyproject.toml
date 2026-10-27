@@ -5,6 +5,7 @@ description = "Supplier iScan API"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "fastapi==0.143.0",
+    "httpx2==2.13.1",
     "psycopg[binary]==3.3.6",
     "uvicorn==0.54.0",
 ]
@@ -24,8 +25,8 @@ dev = [
 package = false
 required-version = "==0.12.24"
 # Supply chain: every package in uv.lock, transitive ones included, is at least 14 days old
-# at the time of locking (25 Oct 2026). Wheels only: no source distribution is ever built.
-exclude-newer = "2026-10-11T00:00:00Z"
+# at the time of locking (27 Oct 2026). Wheels only: no source distribution is ever built.
+exclude-newer = "2026-10-13T00:00:00Z"
 no-build = true
 
 [tool.pytest.ini_options]
