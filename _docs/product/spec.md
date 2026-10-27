@@ -96,7 +96,7 @@ criterion below is meant to be verifiable by looking at the running application.
 
 **Acceptance criteria**
 - [ ] The card shows: a header (name, website, country, sector, last refresh), one row per field with value, status and a source chip that reveals the quote and link, and the assessment section.
-- [ ] The comparison accepts 2 or more profiles chosen from the organisation's own runs; up to 4 are shown as side-by-side columns, beyond that as a compact matrix.
+- [ ] The comparison accepts from 2 profiles up to a configured maximum, chosen from the organisation's own runs; up to 4 are shown as side-by-side columns, beyond that as a compact matrix.
 - [ ] Every compared value keeps its source chip.
 - [ ] A profile from another organisation can never be selected or opened (see *Security model*).
 
@@ -183,25 +183,32 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 ## Data model & ownership
 | Entity | Key fields | Created by | Contains personal data |
 | :--- | :--- | :--- | :--- |
-| Organisation | id, name, seat limit, profile quota, access_ends_at, created_at | Administrator | no |
+| Organisation | id, name, status (`pending_activation`, `active`, `acceptance_renewal_required`), seat limit, profile quota, access_ends_at, created_at | Administrator | no |
 | User | id, organisation_id, email, password_hash, role (`admin`, `member`), created_at, last_login_at | Administrator (invitation) / user (password) | yes |
+| Session | id, user_id, token_hash, created_at, expires_at, revoked_at | System (login) | yes (linked to a user) |
 | Invitation | id, organisation_id, token_hash, expires_at, used_at | Administrator | yes (email) |
-| DocumentVersion | id, kind (`terms`, `data_processing`, `account_rules`, `privacy_notice`, `legal_notices`), language, version, content_hash, published_at, file (immutable) | Administrator | no |
+| DocumentVersion | id, kind (`terms`, `data_processing`, `account_rules`, `privacy_notice`, `legal_notices`), language, version, material, content_hash, published_at, file (immutable) | Administrator | no |
 | Acceptance | id, organisation_id, user_id, kind (`organisation`, `account_rules`), legal_entity, authority_statement, document_version_ids, language, accepted_at | Representative / member | yes |
+| IdentitySession | id, organisation_id, created_by, transcript (chat turns), identity_id, prompt-set hash, created_at, last_message_at | Member (F1) | possible (free text typed by the member; kept for the redacted-source-text retention period) |
 | SupplierIdentity | id, organisation_id, legal_name, website, country, sector, registry ids, natural_person, confirmed_by, confirmed_at | Member (F1) | no |
 | ProfileRun | id, organisation_id, identity_id, status, stage, providers and model IDs per role, profile-definition hash, prompt-set hash, tokens, cost, started_at, finished_at | Member | no |
-| Source | id, run_id, url, fetched_at, content_type, redacted_text, author, delete_after | Worker | residual only (redaction can miss a name; treated as personal data) |
+| Source | id, run_id, url, linked_from_source_id, fetched_at, content_type, redacted_text, author, delete_after | Worker | residual only (redaction can miss a name; treated as personal data) |
 | CrawlPermission | domain, robots_result, tdm_reservation, suppression_hit, decision, checked_at | Worker | no |
 | SuppressionEntry | id, kind (`domain`, `person_name`), value, reason, requested_at, added_by, removed_at, removed_by, removal_reason | Administrator (on objection or rights request) | yes (`person_name`) |
-| Fact | id, run_id, section, field, value, quote, quote_redacted, source_id, source_type, status, original_value, reviewed_by, reviewed_at | Worker / member | possible (identifiable quotes are treated as personal data) |
-| AssessmentStatement | id, run_id, kind, text, level, cited_fact_ids, gap_evidence, provider, model_id, generated_at, status, reviewed_by, reviewed_at | Worker / member | no |
-| BuyerInput | id, run_id, field, text, updated_by, updated_at | Member | no |
+| Fact | id, run_id, section, field, value, quote, quote_redacted, source_id, source_type, status, original_value, version, reviewed_by, reviewed_at | Worker / member | possible (identifiable quotes are treated as personal data) |
+| AssessmentStatement | id, run_id, kind, text, level, cited_fact_ids, gap_evidence, provider, model_id, generated_at, status, version, reviewed_by, reviewed_at | Worker / member | no |
+| BuyerInput | id, run_id, field (a `buyer` field of the profile definition, or the reserved `fit_criteria`), text, version, updated_by, updated_at | Member | no |
+| SupplierDocument | id, run_id, type (`statutory_accounts`, `audited_statements`, `tax_schedules`, `management_accounts`), entity_scope (`supplier`, `parent`, `consolidated`), financial_year, received_on, recorded_by, recorded_at | Member | no (refused for `natural_person` identities) |
 | ProviderConfig | id, provider, api, model_id, endpoint, training_setting, retention, region, transfer_mechanism, verified_at, enabled | Administrator | no |
+| ProviderSetting | role (`retrieval`, `structuring`), provider_config_id, updated_by, updated_at | Administrator | no |
+| LlmUsage | id, organisation_id, run_id (optional), provider_config_id, provider, model_id, role, input_tokens, output_tokens, reasoning_tokens, tool_calls, attempt, outcome, cost, created_at | System | no (never the prompt or response text) |
 | UsageEvent | id, organisation_id, user_id, kind, cost, created_at | System | yes |
+| DataDeletionRequest | id, organisation_id, requested_by, status (`pending`, `completed`, `failed`), counts per data class, requested_at, completed_at | Member (F7) | yes (requester) |
+| EndOfAccessChoice | id, organisation_id, choice (`deletion`, `return`), chosen_by, language, status, archive_ready_at, receipt_confirmed_at, deleted_at, created_at | Member (F7) | yes (chooser) |
 | DemoProfile | read-only copy of selected runs, flagged `demo` | Administrator | no (names stripped) |
 
 ## Security model
-- **Authentication:** invitation link, then email and password (argon2 hash), session cookie (HttpOnly, Secure, SameSite=Lax). Self-hosted: one local administrator created on first start. Demo mode: no authentication, read-only.
+- **Authentication:** invitation link, then email and password (argon2 hash), session cookie (HttpOnly, Secure, SameSite=Lax); accepting an invitation signs the person in. Self-hosted: one local administrator created on first start from configured credentials (startup stops if they are missing; no generated password), also a member of a default organisation; self-hosted organisations skip activation. Demo mode: no authentication, read-only.
 - **Access rules:**
 
   | Entity | Read | Write |
@@ -215,6 +222,11 @@ Each country row carries a "last checked" date. Where access is paid, the app li
   | DocumentVersion | everyone (published documents) | administrator |
   | Acceptance | owning organisation; administrator | the accepting user (create only, never edited) |
   | ProviderConfig, SuppressionEntry, CrawlPermission | administrator | administrator (configs, suppression); worker (crawl permissions) |
+  | Session | the user themself (own sessions) | system (login, logout) |
+  | IdentitySession | members of the owning organisation only, **not the administrator** | members; system |
+  | LlmUsage | administrator | system |
+  | DataDeletionRequest, EndOfAccessChoice | owning organisation; administrator (status only) | members (create); system |
+  | ProviderSetting | administrator | administrator |
   | DemoProfile | everyone | administrator |
 
   A request for another organisation's resource returns 404 (no existence leak).
@@ -227,7 +239,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 - **Quotes:** short, attributed, visually distinct from the app's own analysis; a rights-complaint and takedown route is published.
 - **Suppression list:** a person or domain can ask to be excluded; matching extracts are redacted in existing profiles and in future runs. The administrator can remove an entry (for example one added by mistake), stating a reason; each addition and removal is recorded with who and when, and a removal applies to future runs only.
 - **No cross-organisation reuse:** source text, profiles, indexes and caches containing personal data are never shared between organisations.
-- **Retention per data class,** configurable: redacted source text, profiles, accounts and usage events, security logs, telemetry. Each profile shows when its source content will be deleted.
+- **Retention per data class,** configurable: redacted source text (identity-chat transcripts included), profiles, accounts and usage events, security logs, telemetry. Each profile shows when its source content will be deleted.
 - **AI transparency:** AI disclosure at the first chat interaction (F1); provenance and review status on every AI statement and in the PDF (F8, F9).
 - **Excluded uses:** no natural-person credit scoring, no employee or candidate evaluation, no automated decision about individuals.
 
@@ -246,7 +258,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 | Identity agent (F1) | name, hints, registry candidates, chat turns | `IdentityProposal` {candidate, confidence, question_to_user} → `IdentityRecord` on confirmation | right company in ≤ 3 exchanges; never discards a candidate because of a hint |
 | Field extraction (F3) | field definitions, source texts | `FieldExtraction[]` {field, value, quote, source_id} or `not_found` | 100% of kept quotes found in source; ≥ 90% accuracy and ≥ 70% exhaustiveness on the reference set |
 | Assessment drafting (F8) | facts, buyer criteria | `AssessmentStatement[]` {kind, text, level?, cited_fact_ids, gap_evidence?} | 100% of statements cite valid facts or name the missing evidence; ≥ 80% judged useful by a domain reviewer |
-| Retrieval (F2) | identity record, field groups lacking evidence | list of URLs with snippets | finds sources the website crawl missed; every URL verifiable |
+| Retrieval (F2) | identity record, field groups lacking evidence | `RetrievalResult` {urls: [{url, snippet}]}; snippets used only to rank | finds sources the website crawl missed; every URL verifiable |
 
 The instructions sent to the model for each feature are **loaded at runtime from a prompt file**, not hard-coded, so that an instance can adapt them like the profile definition. Prompts carry instructions only: schema validation, the grounding check, citation checks, redaction and the excluded uses are enforced in code whatever a prompt says. Collected text, chat turns, facts and buyer criteria are inserted as delimited data, never into the instructions. Each run records the version of the prompts it used, and the evaluation reports results for a given prompt version.
 
