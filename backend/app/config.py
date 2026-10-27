@@ -23,6 +23,9 @@ CORS_ALLOWED_ORIGINS = "CORS_ALLOWED_ORIGINS"
 INSTANCE_MODE = "INSTANCE_MODE"
 ADMIN_EMAIL = "ADMIN_EMAIL"
 ADMIN_PASSWORD = "ADMIN_PASSWORD"  # noqa: S105 - the name of the setting, not a password
+# Path of the approved provider configurations file (#11); the shipped example when unset.
+# Provider API keys are read by name in app.providers (KEY_SETTINGS), never stored in Settings.
+PROVIDER_CONFIG_FILE = "PROVIDER_CONFIG_FILE"
 
 
 class ConfigurationError(ValueError):
@@ -44,6 +47,7 @@ class Settings:
     # database has no user yet; changing them later changes nothing.
     admin_email: str | None = None
     admin_password: str | None = field(default=None, repr=False)
+    provider_config_file: str | None = None
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -78,4 +82,5 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         admin_email=env.get(ADMIN_EMAIL, "").strip() or None,
         # Not stripped: spaces are valid in a password. Empty means "not set".
         admin_password=env.get(ADMIN_PASSWORD, "") or None,
+        provider_config_file=env.get(PROVIDER_CONFIG_FILE, "").strip() or None,
     )
