@@ -223,3 +223,37 @@ def test_too_many_redirects_is_reported() -> None:
 
     assert result.failure == "too_many_redirects"
     assert result.reason == "The website redirected more than 2 times."
+
+
+@pytest.mark.parametrize(
+    "location",
+    [
+        "javascript:alert(1)",
+        "mailto:a@b.c",
+        "data:text/html,x",
+        "JAVASCRIPT:alert(1)",
+        "http://[::1",
+        "//@www.acme.example/",
+        "http://@www.acme.example/",
+    ],
+)
+def test_a_redirect_to_a_non_web_or_invalid_address_is_a_plain_failure(
+    location: str, network: NetworkSpy
+) -> None:
+    # QA FAIL on #15: "javascript:" etc. made httpx2 raise InvalidURL inside send().
+    site = MockSite({("acme.example", "/"): redirect(location)})
+
+    result = check("acme.example", site)
+
+    assert result.status == "unreachable"
+    assert result.failure == "invalid_url"
+    assert result.reason
+    assert [seen.host_header for seen in site.seen] == ["acme.example"]
+    assert network.sockets == []
+
+
+def test_an_empty_user_name_in_the_input_is_refused() -> None:
+    result = check("http://@acme.example/", MockSite())
+
+    assert result.failure == "invalid_url"
+    assert result.reason == "The web address must not contain a user name or password."

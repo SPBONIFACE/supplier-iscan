@@ -38,6 +38,8 @@ from app.http_client.url_guard import (
         ("http://user:secret@example.com/", MSG_CREDENTIALS),
         ("https://user@example.com/", MSG_CREDENTIALS),
         ("https://:secret@example.com/", MSG_CREDENTIALS),
+        ("http://@example.com/", MSG_CREDENTIALS),  # empty user name (QA minor point on #15)
+        ("https://@example.com", MSG_CREDENTIALS),
     ],
 )
 def test_invalid_input_returns_a_validation_error_with_a_clear_message(

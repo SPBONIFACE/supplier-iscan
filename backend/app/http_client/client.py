@@ -20,13 +20,22 @@ import httpx2
 
 from app.config import ConfigurationError
 from app.http_client.errors import FetchTimeoutError, InvalidUrlError, TooManyRedirectsError
-from app.http_client.transport import GuardedTransport
-from app.http_client.url_guard import Resolver, normalise_url, system_resolver, validate_url
+from app.http_client.transport import GuardedTransport, fetch_deadline
+from app.http_client.url_guard import (
+    Resolver,
+    normalise_url,
+    reject_userinfo,
+    system_resolver,
+    validate_url,
+)
 
 DEFAULT_TIMEOUT_SECONDS = 10.0
 DEFAULT_MAX_REDIRECTS = 5
 _MAX_TIMEOUT_SECONDS = 300.0
 _MAX_REDIRECTS_LIMIT = 20
+MSG_INVALID_REDIRECT = "The website redirected to an invalid address."
+
+__all__ = ["FetchSettings", "GuardedClient", "load_fetch_settings"]
 
 
 @dataclass(frozen=True)
@@ -73,6 +82,31 @@ def load_fetch_settings(environ: Mapping[str, str] | None = None) -> FetchSettin
     )
 
 
+_LOCATION = "app.http_client.redirect_location"
+
+
+def _take_redirect_location(response: httpx2.Response) -> None:
+    """Response hook: take the `Location` of a redirect away from httpx2 before it parses it.
+
+    httpx2 builds the next request of a redirect inside `send`, even without following it, and a
+    Location such as `javascript:alert(1)` or `http://[::1` makes that raise there. The guarded
+    client parses and checks every redirect target itself (`_redirect_target`).
+    """
+    if response.has_redirect_location:
+        response.extensions[_LOCATION] = response.headers["location"]
+        del response.headers["location"]
+
+
+def _redirect_target(current: httpx2.URL, location: str) -> httpx2.URL:
+    reject_userinfo(location)
+    try:
+        return validate_url(current.join(location))
+    except InvalidUrlError:
+        raise
+    except (httpx2.InvalidURL, UnicodeError, ValueError) as error:
+        raise InvalidUrlError(MSG_INVALID_REDIRECT) from error
+
+
 class GuardedClient:
     """GET requests to supplier sites, guarded and with checked redirects.
 
@@ -94,6 +128,7 @@ class GuardedClient:
             trust_env=False,
             follow_redirects=False,
             headers=dict(headers or {}),
+            event_hooks={"response": [_take_redirect_location]},
         )
 
     def __enter__(self) -> "GuardedClient":
@@ -115,34 +150,37 @@ class GuardedClient:
     ) -> Iterator[httpx2.Response]:
         """GET `url`, following checked redirects; yield the final response, body not yet read.
 
-        `response.url` is the final URL after redirects. Raises `FetchError` subclasses for the
+        `timeout` (default `FetchSettings.timeout_seconds`) is a total wall-clock limit for the
+        whole fetch, body reads inside the block included. `response.url` is the final URL after
+        redirects. Raises `FetchError` subclasses for the
         guard's own refusals and `httpx2.HTTPError` subclasses for network failures.
         """
         current = validate_url(url) if isinstance(url, httpx2.URL) else normalise_url(url)
         budget = self.settings.timeout_seconds if timeout is None else timeout
-        deadline = time.monotonic() + budget
-        for _hop in range(self.settings.max_redirects + 1):
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise FetchTimeoutError(f"The website did not respond within {budget:g} seconds.")
-            request = self._client.build_request(
-                "GET", current, headers=dict(headers or {}), timeout=remaining
-            )
-            response = self._client.send(request, stream=True)
-            if not response.is_redirect:
+        timed_out = f"The website did not respond within {budget:g} seconds."
+        # One wall-clock deadline for the whole fetch: every hop, the connection, the TLS
+        # handshake and every read of headers and body (the caller reads the body in this block).
+        with fetch_deadline(budget) as deadline:
+            for _hop in range(self.settings.max_redirects + 1):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise FetchTimeoutError(timed_out)
+                request = self._client.build_request(
+                    "GET", current, headers=dict(headers or {}), timeout=remaining
+                )
                 try:
-                    yield response
-                finally:
-                    response.close()
-                return
-            location = response.headers["location"]
-            response.close()
-            try:
-                current = validate_url(current.join(location))
-            except (httpx2.InvalidURL, UnicodeError, ValueError) as error:
-                if isinstance(error, InvalidUrlError):
-                    raise
-                raise InvalidUrlError("The website redirected to an invalid address.") from error
+                    response = self._client.send(request, stream=True)
+                except (httpx2.InvalidURL, UnicodeError) as error:  # defence in depth
+                    raise InvalidUrlError(MSG_INVALID_REDIRECT) from error
+                location = response.extensions.get(_LOCATION)
+                if location is None:
+                    try:
+                        yield response
+                    finally:
+                        response.close()
+                    return
+                response.close()
+                current = _redirect_target(current, location)
         raise TooManyRedirectsError(
             f"The website redirected more than {self.settings.max_redirects} times."
         )

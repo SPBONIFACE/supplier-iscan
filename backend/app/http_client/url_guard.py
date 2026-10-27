@@ -31,6 +31,19 @@ from app.http_client.errors import (
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "IPAddress",
+    "Resolver",
+    "has_explicit_scheme",
+    "is_public_address",
+    "normalise_url",
+    "port_of",
+    "reject_userinfo",
+    "resolve_and_vet",
+    "system_resolver",
+    "validate_url",
+]
+
 IPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 Resolver = Callable[[str, int], Sequence[IPAddress]]
 
@@ -45,6 +58,8 @@ _HAS_AUTHORITY_SCHEME = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*://")
 # "scheme:..." without "//" (javascript:, mailto:, data:), told apart from "host:port".
 _HOST_WITH_PORT = re.compile(r"^[^/?#:@]+:\d+(?:[/?#]|$)")
 _OPAQUE_SCHEME = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
+# The authority of "scheme://authority/..." or of a network-path reference "//authority/...".
+_AUTHORITY = re.compile(r"^(?:[a-zA-Z][a-zA-Z0-9+.-]*:)?//([^/?#]*)")
 
 # Well-known NAT64 prefix (RFC 6052): the last 32 bits are an IPv4 address.
 _NAT64_PREFIX = ipaddress.IPv6Network("64:ff9b::/96")
@@ -77,11 +92,22 @@ def normalise_url(raw: str, *, assume_https: bool = False) -> httpx2.URL:
         if not assume_https:
             raise InvalidUrlError(MSG_MALFORMED)
         text = "https://" + text
+    reject_userinfo(text)
     try:
         url = httpx2.URL(text)
     except (httpx2.InvalidURL, UnicodeError, ValueError) as error:
         raise InvalidUrlError(MSG_MALFORMED) from error
     return validate_url(url)
+
+
+def reject_userinfo(text: str) -> None:
+    """Refuse any user information in the authority of `text`, even an empty one (`http://@h`).
+
+    The parsed URL drops an empty user information, so this check runs on the text itself.
+    """
+    authority = _AUTHORITY.match(text.strip())
+    if authority is not None and "@" in authority.group(1):
+        raise InvalidUrlError(MSG_CREDENTIALS)
 
 
 def has_explicit_scheme(raw: str) -> bool:

@@ -6,6 +6,16 @@ Every error carries a stable `code` (for the frontend to translate) and a plain-
 
 from typing import Literal
 
+__all__ = [
+    "BlockedAddressError",
+    "DnsResolutionError",
+    "FetchError",
+    "FetchErrorCode",
+    "FetchTimeoutError",
+    "InvalidUrlError",
+    "TooManyRedirectsError",
+]
+
 FetchErrorCode = Literal[
     "invalid_url",
     "blocked_address",

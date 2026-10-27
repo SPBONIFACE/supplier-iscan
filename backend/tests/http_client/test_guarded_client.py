@@ -292,3 +292,46 @@ def test_a_request_built_outside_the_client_helpers_is_still_guarded(
             raw_client.get("http://user:pw@93.184.215.14/")
 
     assert network.sockets == []
+
+
+@pytest.mark.parametrize(
+    "location", ["javascript:alert(1)", "mailto:a@b.c", "data:text/html,x", "http://[::1"]
+)
+def test_a_redirect_that_httpx2_cannot_parse_is_an_invalid_url_error(location: str) -> None:
+    site = MockSite({("www.example.com", "/"): redirect(location)})
+
+    with (
+        make_client(StubResolver({"www.example.com": [PUBLIC_V4]}), site) as client,
+        pytest.raises(InvalidUrlError),
+    ):
+        client.get("https://www.example.com/")
+
+    assert len(site.seen) == 1
+
+
+@pytest.mark.parametrize("location", ["//@www.example.com/x", "https://@www.example.com/x"])
+def test_a_redirect_with_an_empty_user_name_is_refused(location: str) -> None:
+    site = MockSite({("www.example.com", "/"): redirect(location)})
+
+    with (
+        make_client(StubResolver({"www.example.com": [PUBLIC_V4]}), site) as client,
+        pytest.raises(InvalidUrlError, match="user name or password"),
+    ):
+        client.get("https://www.example.com/")
+
+    assert len(site.seen) == 1
+
+
+def test_an_ipv6_literal_is_bracketed_in_the_host_header() -> None:
+    site = MockSite(
+        {
+            (f"[{PUBLIC_V6}]", "/"): httpx2.Response(200),
+            (f"[{PUBLIC_V6}]:8080", "/"): httpx2.Response(200),
+        }
+    )
+
+    with make_client(StubResolver(), site) as client:
+        assert client.get(f"http://[{PUBLIC_V6}]/").status_code == 200
+        assert client.get(f"http://[{PUBLIC_V6}]:8080/").status_code == 200
+
+    assert [seen.host_header for seen in site.seen] == [f"[{PUBLIC_V6}]", f"[{PUBLIC_V6}]:8080"]

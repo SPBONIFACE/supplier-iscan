@@ -20,6 +20,8 @@ from app.http_client.url_guard import has_explicit_scheme, normalise_url
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["WebsiteCheckFailure", "WebsiteCheckResult", "check_website"]
+
 WebsiteCheckFailure = (
     FetchErrorCode
     | Literal["http_error", "connection_failed", "certificate_invalid", "invalid_response"]
@@ -85,6 +87,8 @@ def _attempt(
     except FetchError as error:
         reason = timed_out if error.code == "timeout" else error.reason
         return _unreachable(error.code, reason)
+    except (httpx2.InvalidURL, UnicodeError):
+        return _unreachable("invalid_url", "The website redirected to an invalid address.")
     except httpx2.TimeoutException:
         return _unreachable("timeout", timed_out)
     except httpx2.ConnectError as error:
