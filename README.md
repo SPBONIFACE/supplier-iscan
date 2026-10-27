@@ -86,9 +86,17 @@ Spec-driven and agent-assisted:
 cp .env.example .env
 ```
 
-This step is optional. `.env.example` lists the secret names (database URL, session secret, LLM provider API keys)
-with empty values. Fill in your own values in `.env`, which is never committed. Without a `.env` file and without any
-provider key, the system starts with local defaults. Those database defaults are for local use only.
+This step is optional. `.env.example` lists the secret names (database URL and password, the first administrator's
+credentials, LLM provider API keys) with empty values. Fill in your own values in `.env`, which is never committed.
+Without a `.env` file and without any provider key, the system starts with local defaults. Those defaults, for the
+database and for the administrator, are for local use only.
+
+On first start (empty database), the API creates the local administrator from `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+For `make run`, `docker-compose.yml` provides local-only defaults: email `admin@localhost`, password
+`local-only-admin-change-me`. To use your own, set both in `.env` or in the environment before the first start, for
+example `ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='…' make run`. They are read on first start only: changing them
+afterwards changes nothing unless you start from an empty database (`docker compose down -v` deletes the local
+data). Outside Docker Compose the application has no default and refuses to start without both.
 
 ### Commands
 
