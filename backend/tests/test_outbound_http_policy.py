@@ -121,7 +121,12 @@ HTTP_CLIENT_INTERNAL_NAMES = frozenset(
 
 # A module outside app/http_client that must open connections itself (to a host that is not a
 # supplier site) is listed here with its reason, and reviewed like any security change.
-ALLOWED_MODULES: dict[str, str] = {}
+ALLOWED_MODULES: dict[str, str] = {
+    "backend/app/registries/httpx2_fetch.py": (
+        "#14: the registries' single network module, to the fixed public hosts of Wikidata and "
+        "GLEIF only; to be switched to the guarded client in #16."
+    ),
+}
 
 
 def _public_surface() -> frozenset[str]:
