@@ -73,3 +73,29 @@ def test_wildcard_origin_is_refused(value: str) -> None:
 def test_origin_list_with_no_origin_is_refused() -> None:
     with pytest.raises(ConfigurationError):
         load_settings({"CORS_ALLOWED_ORIGINS": " , "})
+
+
+def test_preflight_for_login_allows_credentials_from_the_allowed_origin() -> None:
+    # The frontend sends the session cookie cross-origin (localhost:5173 -> localhost:8000).
+    response = make_client(database_check=lambda: True).options(
+        "/auth/login",
+        headers={
+            "Origin": LOCAL_ORIGIN,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers[ALLOW_ORIGIN] == LOCAL_ORIGIN
+    assert response.headers["access-control-allow-credentials"] == "true"
+
+
+def test_preflight_for_login_from_other_origin_is_rejected() -> None:
+    response = make_client(database_check=lambda: True).options(
+        "/auth/login",
+        headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "POST"},
+    )
+
+    assert response.status_code == 400
+    assert ALLOW_ORIGIN not in response.headers

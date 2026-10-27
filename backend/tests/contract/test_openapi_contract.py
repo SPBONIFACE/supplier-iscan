@@ -25,9 +25,16 @@ def load_contract() -> dict[str, Any]:
 
 
 def response_validator(contract: dict[str, Any], path: str, method: str, status: int) -> Any:
-    """Validator for the JSON body of one documented response, with $refs resolved."""
+    """Validator for the JSON body of one documented response, with $refs resolved.
+
+    The response may be inline or a `$ref` to components/responses.
+    """
     pointer_path = path.replace("~", "~0").replace("/", "~1")
-    pointer = f"#/paths/{pointer_path}/{method}/responses/{status}/content/application~1json/schema"
+    response_pointer = f"#/paths/{pointer_path}/{method}/responses/{status}"
+    response = contract["paths"][path][method]["responses"][str(status)]
+    if "$ref" in response:
+        response_pointer = response["$ref"]
+    pointer = f"{response_pointer}/content/application~1json/schema"
     registry: Registry[Any] = Registry().with_resource(
         CONTRACT_URI, Resource.from_contents(contract, default_specification=DRAFT202012)
     )

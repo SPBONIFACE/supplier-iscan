@@ -1,31 +1,72 @@
 """FastAPI application. The API contract is openapi.yaml at the repository root."""
 
+import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import Engine
+from sqlalchemy.exc import OperationalError
 
-from app.config import Settings, load_settings
+from app.auth.bootstrap import prepare_database
+from app.auth.routes import router as auth_router
+from app.config import ConfigurationError, Settings, load_settings
+from app.db import Database
+from app.errors import install_error_handlers
 from app.health import DatabaseCheck, HealthStatus, make_database_check
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(
-    settings: Settings | None = None, database_check: DatabaseCheck | None = None
+    settings: Settings | None = None,
+    database_check: DatabaseCheck | None = None,
+    engine: Engine | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     check_database = database_check or make_database_check(settings.database_url)
+    database = Database(settings.database_url, engine)
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
+        # Startup: migrations, then the local administrator on first start. A missing setting
+        # stops startup with a message that names it. Without DATABASE_URL the API still starts
+        # (GET /health answers 503) so that the problem is visible.
+        if settings.database_url:
+            try:
+                prepare_database(database.engine, settings)
+            except ConfigurationError as error:
+                logger.error("Startup stopped: %s", error)
+                raise
+            except OperationalError:
+                # Not the error text: it can contain the connection string.
+                logger.error("Startup stopped: the database is unreachable")
+                raise
+        else:
+            logger.warning("DATABASE_URL is not set: migrations and first-start setup skipped")
+        yield
+        database.dispose()
 
     # openapi.yaml is the only contract: no generated /openapi.json, no documentation pages.
     app = FastAPI(
         title="Supplier iScan API",
-        version="0.1.0",
+        version="0.2.0",
         openapi_url=None,
         docs_url=None,
         redoc_url=None,
+        lifespan=lifespan,
     )
+    app.state.database = database
+    install_error_handlers(app)
     # Exact origins from configuration, never a wildcard (load_settings rejects "*").
+    # Credentials are allowed so that the frontend can send the session cookie.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
-        allow_methods=["GET"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+        allow_credentials=True,
     )
 
     @app.get(
@@ -39,6 +80,7 @@ def create_app(
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return HealthStatus(api="available", database="unavailable")
 
+    app.include_router(auth_router)
     return app
 
 
