@@ -1,6 +1,6 @@
 # Local system: database, API and frontend. Started with `make run`.
 # Every value can be overridden by an environment variable (or a local .env file, which is never
-# committed). The database defaults are for local use only.
+# committed). The database and administrator defaults are for local use only.
 name: supplier-iscan
 
 services:
@@ -26,6 +26,12 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-supplier_iscan}:${POSTGRES_PASSWORD:-supplier_iscan_local}@db:5432/${POSTGRES_DB:-supplier_iscan}}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      INSTANCE_MODE: ${INSTANCE_MODE:-self_hosted}
+      # Local administrator, created on first start only (empty database). These defaults are for
+      # local use only and live only here: the application itself has none and refuses to start
+      # without both values. Override them with ADMIN_EMAIL and ADMIN_PASSWORD.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@localhost}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-local-only-admin-change-me}
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
