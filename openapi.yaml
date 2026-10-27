@@ -1,15 +1,23 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.1.0
+  version: 0.2.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
+
+
+    Authentication: `POST /auth/login` sets a session cookie (`HttpOnly`, `Secure`, `SameSite=Lax`).
+    Every operation that declares the `sessionCookie` security requirement answers 401 when the
+    cookie is missing, expired, revoked by a logout, or tampered with.
 servers:
   - url: http://localhost:8000
     description: Local development (Docker Compose)
 tags:
   - name: system
     description: Operational endpoints
+  - name: auth
+    description: Sign-in, sign-out and the current user
+# Operations are public unless they declare `security`.
 paths:
   /health:
     get:
@@ -38,7 +46,122 @@ paths:
               example:
                 api: available
                 database: unavailable
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Sign in with email and password
+      description: >-
+        On success, sets the session cookie and returns the signed-in user. A wrong password and an
+        unknown email get the same 401 answer, so the response never reveals whether an account
+        exists. Each attempt, successful or not, is recorded in the usage log.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Signed in. The session cookie is set.
+          headers:
+            Set-Cookie:
+              description: >-
+                `supplier_iscan_session=<token>; HttpOnly; Secure; SameSite=Lax; Path=/;
+                Max-Age=<seconds>`. Only a hash of the token is stored on the server.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Sign out
+      description: >-
+        Revokes the current session on the server and clears the cookie. Replaying the old cookie
+        afterwards answers 401.
+      security:
+        - sessionCookie: []
+      responses:
+        "204":
+          description: Signed out. The session cookie is cleared.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Return the signed-in user
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The user of the current session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: supplier_iscan_session
+      description: >-
+        Opaque session token set by `POST /auth/login`. Sessions are stored on the server and
+        expire; logout revokes them.
+  responses:
+    Unauthorized:
+      description: >-
+        No valid session (missing, expired, revoked or tampered cookie), or, for login, a wrong
+        email or password. The message is generic.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            session:
+              value:
+                detail: Authentication required.
+            login:
+              value:
+                detail: Incorrect email or password.
+    ValidationFailed:
+      description: >-
+        The request body is malformed or a field is missing, empty or too long. Submitted values are
+        never echoed back.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+          example:
+            detail: The request is not valid.
+            errors:
+              - field: email
+                message: Email is required.
+    ServiceUnavailable:
+      description: The database is unavailable. Plain message, no technical details.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: The service is temporarily unavailable. Please try again in a few minutes.
   schemas:
     HealthStatus:
       type: object
@@ -53,3 +176,61 @@ components:
           description: Whether the API can reach its database.
           type: string
           enum: [available, unavailable]
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          description: Compared without case and surrounding spaces.
+          type: string
+          minLength: 1
+          maxLength: 320
+        password:
+          type: string
+          minLength: 1
+          maxLength: 1024
+    CurrentUser:
+      type: object
+      additionalProperties: false
+      required: [id, email, role, organisation_id]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+        organisation_id:
+          type: string
+          format: uuid
+    Error:
+      type: object
+      additionalProperties: false
+      required: [detail]
+      properties:
+        detail:
+          description: A plain message for the user. Never a stack trace or a submitted value.
+          type: string
+    ValidationError:
+      type: object
+      additionalProperties: false
+      required: [detail, errors]
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, message]
+            properties:
+              field:
+                description: Name of the offending field, or `body` when the body itself is invalid.
+                type: string
+              message:
+                type: string
