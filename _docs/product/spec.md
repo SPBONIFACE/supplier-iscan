@@ -231,7 +231,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 
   A request for another organisation's resource returns 404 (no existence leak).
 - **Allowed origins (CORS):** local `http://localhost:5173`; deployed environments: exactly the frontend origin of each environment, set by configuration. No wildcard.
-- **Secrets:** provider API keys, database URL, session secret: a secret manager in deployed environments, CI secrets for the pipeline, a gitignored `.env` (with a committed `.env.example`) for self-hosting. Never in the repository, logs or telemetry.
+- **Secrets:** provider API keys, database URL, the first administrator's credentials: a secret manager in deployed environments, CI secrets for the pipeline, a gitignored `.env` (with a committed `.env.example`) for self-hosting. Never in the repository, logs or telemetry.
 
 ## Data protection and source safeguards
 - **Redaction before any LLM call** and storage of redacted text only (F2).
