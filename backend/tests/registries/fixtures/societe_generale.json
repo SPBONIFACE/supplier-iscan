@@ -1,0 +1,3967 @@
+{
+ "recorded_on": "2026-10-27",
+ "query": "Société Générale",
+ "exchanges": [
+  {
+   "host": "api.gleif.org",
+   "path": "/api/v1/lei-records",
+   "params": {
+    "filter[entity.names]": "Société Générale",
+    "page[size]": "10"
+   },
+   "status": 200,
+   "body": {
+    "meta": {
+     "goldenCopy": {
+      "publishDate": "2026-10-27T08:00:00Z"
+     },
+     "pagination": {
+      "currentPage": 1,
+      "perPage": 10,
+      "from": 1,
+      "to": 10,
+      "total": 191,
+      "lastPage": 20
+     }
+    },
+    "data": [
+     {
+      "type": "lei-records",
+      "id": "254900N8T2BRBQ9GMT85",
+      "attributes": {
+       "lei": "254900N8T2BRBQ9GMT85",
+       "entity": {
+        "legalName": {
+         "name": "Société Générale",
+         "language": "fr"
+        },
+        "otherNames": [],
+        "transliteratedOtherNames": [
+         {
+          "name": "Societe Generale",
+          "language": "fr",
+          "type": "PREFERRED_ASCII_TRANSLITERATED_LEGAL_NAME"
+         }
+        ],
+        "legalAddress": {
+         "language": "en",
+         "addressLines": [
+          "16, AV. DE LA COSTA",
+          "PALAIS DE LA SCALA"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "MONACO",
+         "region": "MC-MC",
+         "country": "MC",
+         "postalCode": "98000"
+        },
+        "registeredAt": {
+         "id": "RA000452",
+         "other": null
+        },
+        "registeredAs": "62S01045",
+        "jurisdiction": "FR",
+        "category": "BRANCH",
+        "legalForm": {
+         "id": "K65D",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "1962-06-28T00:00:00Z",
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "529900MQ15QY9DCJVN91",
+      "attributes": {
+       "lei": "529900MQ15QY9DCJVN91",
+       "entity": {
+        "legalName": {
+         "name": "Société Générale S.A.",
+         "language": "fr"
+        },
+        "otherNames": [
+         {
+          "name": "Société Générale Frankfurt",
+          "language": "af",
+          "type": "PREVIOUS_LEGAL_NAME"
+         }
+        ],
+        "transliteratedOtherNames": [
+         {
+          "name": "Societe Generale S.A.",
+          "language": "fr",
+          "type": "AUTO_ASCII_TRANSLITERATED_LEGAL_NAME"
+         }
+        ],
+        "legalAddress": {
+         "language": "de",
+         "addressLines": [
+          "Neue Mainzer Straße 46-50"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "Frankfurt am Main",
+         "region": "DE-HE",
+         "country": "DE",
+         "postalCode": "60311"
+        },
+        "registeredAt": {
+         "id": "RA000242",
+         "other": null
+        },
+        "registeredAs": "HRB 37465",
+        "jurisdiction": "FR",
+        "category": "BRANCH",
+        "legalForm": {
+         "id": "K65D",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "1982-06-21T22:00:00Z",
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "549300862XUZQ4XPOS53",
+      "attributes": {
+       "lei": "549300862XUZQ4XPOS53",
+       "entity": {
+        "legalName": {
+         "name": "SOCIÉTÉ GÉNÉRALE (CANADA)",
+         "language": "en"
+        },
+        "otherNames": [],
+        "transliteratedOtherNames": [
+         {
+          "name": "SOCIETE GENERALE (CANADA)",
+          "language": "en",
+          "type": "PREFERRED_ASCII_TRANSLITERATED_LEGAL_NAME"
+         }
+        ],
+        "legalAddress": {
+         "language": "en",
+         "addressLines": [
+          "1800-1501 av. McGill College"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "Montreal",
+         "region": "CA-QC",
+         "country": "CA",
+         "postalCode": "H3A3M8"
+        },
+        "registeredAt": {
+         "id": "RA000081",
+         "other": null
+        },
+        "registeredAs": "1146685459",
+        "jurisdiction": "CA-QC",
+        "category": "GENERAL",
+        "legalForm": {
+         "id": "UG3Z",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": null,
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "5493008IANOWHL0YW068",
+      "attributes": {
+       "lei": "5493008IANOWHL0YW068",
+       "entity": {
+        "legalName": {
+         "name": "Société Générale LDG",
+         "language": null
+        },
+        "otherNames": [],
+        "transliteratedOtherNames": [
+         {
+          "name": "Societe Generale LDG",
+          "language": "lb",
+          "type": "AUTO_ASCII_TRANSLITERATED_LEGAL_NAME"
+         }
+        ],
+        "legalAddress": {
+         "language": "fr-LU",
+         "addressLines": [
+          "33, Boulevard Prince Henri"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "Luxembourg",
+         "region": "LU-LU",
+         "country": "LU",
+         "postalCode": "L-1724"
+        },
+        "registeredAt": {
+         "id": "RA000432",
+         "other": null
+        },
+        "registeredAs": "B164692",
+        "jurisdiction": "LU",
+        "category": "GENERAL",
+        "legalForm": {
+         "id": "5GGB",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "INACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "2011-11-21T00:00:00Z",
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "213800O66553ESU7RD35",
+      "attributes": {
+       "lei": "213800O66553ESU7RD35",
+       "entity": {
+        "legalName": {
+         "name": "SOCIETE GENERALE",
+         "language": "en"
+        },
+        "otherNames": [],
+        "transliteratedOtherNames": [],
+        "legalAddress": {
+         "language": "en",
+         "addressLines": [
+          "ONE BANK STREET CANARY WHARF"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "LONDON",
+         "region": "GB-LND",
+         "country": "GB",
+         "postalCode": "E14 4SG"
+        },
+        "registeredAt": {
+         "id": "RA000585",
+         "other": null
+        },
+        "registeredAs": "BR000021",
+        "jurisdiction": "FR",
+        "category": "BRANCH",
+        "legalForm": {
+         "id": "K65D",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "1993-01-01T00:00:00Z",
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "O2RNE8IBXP4R0TD8PU41",
+      "attributes": {
+       "lei": "O2RNE8IBXP4R0TD8PU41",
+       "entity": {
+        "legalName": {
+         "name": "SOCIETE GENERALE",
+         "language": "fr"
+        },
+        "otherNames": [],
+        "transliteratedOtherNames": [],
+        "legalAddress": {
+         "language": "fr",
+         "addressLines": [
+          "29 BOULEVARD HAUSSMANN"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "PARIS",
+         "region": "FR-75C",
+         "country": "FR",
+         "postalCode": "75009"
+        },
+        "registeredAt": {
+         "id": "RA000189",
+         "other": null
+        },
+        "registeredAs": "552120222",
+        "jurisdiction": "FR",
+        "category": "GENERAL",
+        "legalForm": {
+         "id": "K65D",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "1899-12-31T23:00:00Z",
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "549300V62Q1L7B08KO22",
+      "attributes": {
+       "lei": "549300V62Q1L7B08KO22",
+       "entity": {
+        "legalName": {
+         "name": "SOCIETE GENERALE OFFSHORE",
+         "language": "fr"
+        },
+        "otherNames": [
+         {
+          "name": "Societe Generale Tanger Offshore",
+          "language": "fr",
+          "type": "PREVIOUS_LEGAL_NAME"
+         }
+        ],
+        "transliteratedOtherNames": [],
+        "legalAddress": {
+         "language": "fr",
+         "addressLines": [
+          "58 AVENUE MOHAMED V"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "TANGIER",
+         "region": "MA-01",
+         "country": "MA",
+         "postalCode": "90000"
+        },
+        "registeredAt": {
+         "id": "RA000457",
+         "other": null
+        },
+        "registeredAs": "001591944000055",
+        "jurisdiction": "MA",
+        "category": "GENERAL",
+        "legalForm": {
+         "id": "9999",
+         "other": "SOCIETE ANONYME"
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "2001-06-28T00:00:00Z",
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "22210041TO3I5S4NAK80",
+      "attributes": {
+       "lei": "22210041TO3I5S4NAK80",
+       "entity": {
+        "legalName": {
+         "name": "IGE SOCIÉTÉ GÉNÉRALE S.A.",
+         "language": "fr"
+        },
+        "otherNames": [],
+        "transliteratedOtherNames": [
+         {
+          "name": "IGE SOCIETE GENERALE S.A.",
+          "language": "fr",
+          "type": "PREFERRED_ASCII_TRANSLITERATED_LEGAL_NAME"
+         }
+        ],
+        "legalAddress": {
+         "language": "fr",
+         "addressLines": [
+          "4, RUE DU FORT WALLIS"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "STOLZEMBOURG",
+         "region": "LU-VD",
+         "country": "LU",
+         "postalCode": "L-2714"
+        },
+        "registeredAt": {
+         "id": "RA000432",
+         "other": null
+        },
+        "registeredAs": "B250184",
+        "jurisdiction": "LU",
+        "category": "GENERAL",
+        "legalForm": {
+         "id": "5GGB",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "INACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": null,
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "529900W18LQJJN6SJ336",
+      "attributes": {
+       "lei": "529900W18LQJJN6SJ336",
+       "entity": {
+        "legalName": {
+         "name": "Société Générale Effekten GmbH",
+         "language": "fr"
+        },
+        "otherNames": [],
+        "transliteratedOtherNames": [
+         {
+          "name": "Societe Generale Effekten GmbH",
+          "language": "fr",
+          "type": "AUTO_ASCII_TRANSLITERATED_LEGAL_NAME"
+         }
+        ],
+        "legalAddress": {
+         "language": "de",
+         "addressLines": [
+          "Neue Mainzer Straße 46-50"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "Frankfurt am Main",
+         "region": "DE-HE",
+         "country": "DE",
+         "postalCode": "60311"
+        },
+        "registeredAt": {
+         "id": "RA000242",
+         "other": null
+        },
+        "registeredAs": "HRB 32283",
+        "jurisdiction": "DE",
+        "category": "GENERAL",
+        "legalForm": {
+         "id": "2HBR",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "1977-03-02T23:00:00Z",
+        "subCategory": null
+       }
+      }
+     },
+     {
+      "type": "lei-records",
+      "id": "549300NPVBPYW8WKDV87",
+      "attributes": {
+       "lei": "549300NPVBPYW8WKDV87",
+       "entity": {
+        "legalName": {
+         "name": "SOCIETE GENERALE GHANA PLC",
+         "language": "en"
+        },
+        "otherNames": [
+         {
+          "name": "Societe Generale Ghana Limited",
+          "language": "en",
+          "type": "PREVIOUS_LEGAL_NAME"
+         }
+        ],
+        "transliteratedOtherNames": [],
+        "legalAddress": {
+         "language": "en",
+         "addressLines": [
+          "2ND CRESCENT",
+          "ROYALT CASTLE ROAD RING ROAD CENTRAL KOKOMLEMLE"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "ACCRA",
+         "region": "GH-AA",
+         "country": "GH",
+         "postalCode": "13119"
+        },
+        "registeredAt": {
+         "id": "RA000374",
+         "other": null
+        },
+        "registeredAs": "PL000722020",
+        "jurisdiction": "GH",
+        "category": "GENERAL",
+        "legalForm": {
+         "id": "VBJW",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "2013-11-19T12:00:00Z",
+        "subCategory": null
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbsearchentities",
+    "search": "Société Générale",
+    "language": "fr",
+    "uselang": "fr",
+    "type": "item",
+    "limit": "10",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "searchinfo": {
+     "search": "Société Générale"
+    },
+    "search": [
+     {
+      "id": "Q270363",
+      "display": {
+       "label": {
+        "value": "Société générale",
+        "language": "fr"
+       },
+       "description": {
+        "value": "banque française",
+        "language": "fr"
+       }
+      },
+      "label": "Société générale",
+      "description": "banque française",
+      "match": {
+       "type": "label",
+       "language": "fr",
+       "text": "Société générale"
+      }
+     },
+     {
+      "id": "Q1475312",
+      "display": {
+       "label": {
+        "value": "Vinci",
+        "language": "fr"
+       },
+       "description": {
+        "value": "groupe industriel français",
+        "language": "fr"
+       }
+      },
+      "label": "Vinci",
+      "description": "groupe industriel français",
+      "match": {
+       "type": "alias",
+       "language": "fr",
+       "text": "Société générale d'entreprise"
+      },
+      "aliases": [
+       "Société générale d'entreprise"
+      ]
+     },
+     {
+      "id": "Q2571772",
+      "display": {
+       "label": {
+        "value": "Société Générale d'Auteurs et Éditeurs",
+        "language": "fr"
+       },
+       "description": {
+        "value": "Spanish copyright collection and performing rights society",
+        "language": "en"
+       }
+      },
+      "label": "Société Générale d'Auteurs et Éditeurs",
+      "description": "Spanish copyright collection and performing rights society",
+      "match": {
+       "type": "label",
+       "language": "fr",
+       "text": "Société Générale d'Auteurs et Éditeurs"
+      }
+     },
+     {
+      "id": "Q1512800",
+      "display": {
+       "label": {
+        "value": "Société générale de Belgique",
+        "language": "fr"
+       },
+       "description": {
+        "value": "société belge",
+        "language": "fr"
+       }
+      },
+      "label": "Société générale de Belgique",
+      "description": "société belge",
+      "match": {
+       "type": "label",
+       "language": "fr",
+       "text": "Société générale de Belgique"
+      }
+     },
+     {
+      "id": "Q3123083",
+      "display": {
+       "label": {
+        "value": "Générale de banque",
+        "language": "fr"
+       },
+       "description": {
+        "value": "banque belge",
+        "language": "fr"
+       }
+      },
+      "label": "Générale de banque",
+      "description": "banque belge",
+      "match": {
+       "type": "alias",
+       "language": "fr",
+       "text": "Société générale de Banque"
+      },
+      "aliases": [
+       "Société générale de Banque"
+      ]
+     },
+     {
+      "id": "Q610141",
+      "display": {
+       "label": {
+        "value": "Société générale des chemins de fer économiques",
+        "language": "fr"
+       },
+       "description": {
+        "value": "ancienne compagnie ferroviaire française",
+        "language": "fr"
+       }
+      },
+      "label": "Société générale des chemins de fer économiques",
+      "description": "ancienne compagnie ferroviaire française",
+      "match": {
+       "type": "label",
+       "language": "fr",
+       "text": "Société générale des chemins de fer économiques"
+      }
+     },
+     {
+      "id": "Q1749469",
+      "display": {
+       "label": {
+        "value": "Société générale des transports aériens",
+        "language": "fr"
+       },
+       "description": {
+        "value": "ancienne compagnie aérienne française",
+        "language": "fr"
+       }
+      },
+      "label": "Société générale des transports aériens",
+      "description": "ancienne compagnie aérienne française",
+      "match": {
+       "type": "label",
+       "language": "fr",
+       "text": "Société générale des transports aériens"
+      }
+     },
+     {
+      "id": "Q7552914",
+      "display": {
+       "label": {
+        "value": "OTP banka Srbija",
+        "language": "fr"
+       },
+       "description": {
+        "value": "Serbian banking and financial services company",
+        "language": "en"
+       }
+      },
+      "label": "OTP banka Srbija",
+      "description": "Serbian banking and financial services company",
+      "match": {
+       "type": "alias",
+       "language": "fr",
+       "text": "Société Générale Srbija"
+      },
+      "aliases": [
+       "Société Générale Srbija"
+      ]
+     },
+     {
+      "id": "Q3488906",
+      "display": {
+       "label": {
+        "value": "Sogenal",
+        "language": "fr"
+       },
+       "description": {
+        "value": "banque",
+        "language": "fr"
+       }
+      },
+      "label": "Sogenal",
+      "description": "banque",
+      "match": {
+       "type": "alias",
+       "language": "fr",
+       "text": "Société Générale Alsacienne de Banque, Allgemeine Elsassische Bankgesellschaft"
+      },
+      "aliases": [
+       "Société Générale Alsacienne de Banque, Allgemeine Elsassische Bankgesellschaft"
+      ]
+     },
+     {
+      "id": "Q1121125",
+      "display": {
+       "label": {
+        "value": "Chemins de fer Orientaux",
+        "language": "fr"
+       },
+       "description": {
+        "value": "compagnie de chemin de fer ottomane",
+        "language": "fr"
+       }
+      },
+      "label": "Chemins de fer Orientaux",
+      "description": "compagnie de chemin de fer ottomane",
+      "match": {
+       "type": "alias",
+       "language": "fr",
+       "text": "Société Générale pour l'Exploitation des Chemins de Fer Orientaux"
+      },
+      "aliases": [
+       "Société Générale pour l'Exploitation des Chemins de Fer Orientaux"
+      ]
+     }
+    ],
+    "search-continue": 10,
+    "success": 1
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbsearchentities",
+    "search": "Société Générale",
+    "language": "en",
+    "uselang": "en",
+    "type": "item",
+    "limit": "10",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "searchinfo": {
+     "search": "Société Générale"
+    },
+    "search": [
+     {
+      "id": "Q270363",
+      "display": {
+       "label": {
+        "value": "Société Générale",
+        "language": "en"
+       },
+       "description": {
+        "value": "French multinational banking and financial services company",
+        "language": "en"
+       }
+      },
+      "label": "Société Générale",
+      "description": "French multinational banking and financial services company",
+      "match": {
+       "type": "label",
+       "language": "en",
+       "text": "Société Générale"
+      }
+     },
+     {
+      "id": "Q3488362",
+      "display": {
+       "label": {
+        "value": "Chemins de fer et transport automobile",
+        "language": "en"
+       },
+       "description": {
+        "value": "organization",
+        "language": "en"
+       }
+      },
+      "label": "Chemins de fer et transport automobile",
+      "description": "organization",
+      "match": {
+       "type": "alias",
+       "language": "en",
+       "text": "Societe generale de chemins de fer et de transports automobiles"
+      },
+      "aliases": [
+       "Societe generale de chemins de fer et de transports automobiles"
+      ]
+     },
+     {
+      "id": "Q7552914",
+      "display": {
+       "label": {
+        "value": "OTP banka Srbija",
+        "language": "en"
+       },
+       "description": {
+        "value": "Serbian banking and financial services company",
+        "language": "en"
+       }
+      },
+      "label": "OTP banka Srbija",
+      "description": "Serbian banking and financial services company",
+      "match": {
+       "type": "alias",
+       "language": "en",
+       "text": "Societe Generale Srbija"
+      },
+      "aliases": [
+       "Societe Generale Srbija"
+      ]
+     },
+     {
+      "id": "Q3488906",
+      "display": {
+       "label": {
+        "value": "Sogenal",
+        "language": "en"
+       },
+       "description": {
+        "value": "Bank",
+        "language": "en"
+       }
+      },
+      "label": "Sogenal",
+      "description": "Bank",
+      "match": {
+       "type": "alias",
+       "language": "en",
+       "text": "Société Générale Alsacienne de Banque, Allgemeine Elsassische Bankgesellschaft"
+      },
+      "aliases": [
+       "Société Générale Alsacienne de Banque, Allgemeine Elsassische Bankgesellschaft"
+      ]
+     },
+     {
+      "id": "Q1475312",
+      "display": {
+       "label": {
+        "value": "Vinci",
+        "language": "en"
+       },
+       "description": {
+        "value": "French concessions and construction company",
+        "language": "en"
+       }
+      },
+      "label": "Vinci",
+      "description": "French concessions and construction company",
+      "match": {
+       "type": "alias",
+       "language": "en",
+       "text": "Société Générale d'Enterprises"
+      },
+      "aliases": [
+       "Société Générale d'Enterprises"
+      ]
+     },
+     {
+      "id": "Q1512800",
+      "display": {
+       "label": {
+        "value": "Société Générale de Belgique",
+        "language": "en"
+       },
+       "description": {
+        "value": "former Belgian bank and holding company",
+        "language": "en"
+       }
+      },
+      "label": "Société Générale de Belgique",
+      "description": "former Belgian bank and holding company",
+      "match": {
+       "type": "label",
+       "language": "en",
+       "text": "Société Générale de Belgique"
+      }
+     },
+     {
+      "id": "Q746525",
+      "display": {
+       "label": {
+        "value": "French Industrial and Commercial Bank",
+        "language": "en"
+       },
+       "description": {
+        "value": "French financial services group",
+        "language": "en"
+       }
+      },
+      "label": "French Industrial and Commercial Bank",
+      "description": "French financial services group",
+      "match": {
+       "type": "alias",
+       "language": "en",
+       "text": "Société Générale de Crédit Industriel et Commercial"
+      },
+      "aliases": [
+       "Société Générale de Crédit Industriel et Commercial"
+      ]
+     },
+     {
+      "id": "Q3123083",
+      "display": {
+       "label": {
+        "value": "Generale Bank",
+        "language": "en"
+       },
+       "description": {
+        "value": "Bank from Belgium (1934-1999)",
+        "language": "en"
+       }
+      },
+      "label": "Generale Bank",
+      "description": "Bank from Belgium (1934-1999)",
+      "match": {
+       "type": "alias",
+       "language": "en",
+       "text": "Société générale de banque"
+      },
+      "aliases": [
+       "Société générale de banque"
+      ]
+     },
+     {
+      "id": "Q610141",
+      "display": {
+       "label": {
+        "value": "Société générale des chemins de fer économiques",
+        "language": "en"
+       },
+       "description": {
+        "value": "Defunct French transport company",
+        "language": "en"
+       }
+      },
+      "label": "Société générale des chemins de fer économiques",
+      "description": "Defunct French transport company",
+      "match": {
+       "type": "label",
+       "language": "en",
+       "text": "Société générale des chemins de fer économiques"
+      }
+     },
+     {
+      "id": "Q1749469",
+      "display": {
+       "label": {
+        "value": "Société Générale des Transports Aériens",
+        "language": "en"
+       },
+       "description": {
+        "value": "former French airline (1919–1933)",
+        "language": "en"
+       }
+      },
+      "label": "Société Générale des Transports Aériens",
+      "description": "former French airline (1919–1933)",
+      "match": {
+       "type": "label",
+       "language": "en",
+       "text": "Société Générale des Transports Aériens"
+      }
+     }
+    ],
+    "search-continue": 10,
+    "success": 1
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbsearchentities",
+    "search": "Société Générale",
+    "language": "de",
+    "uselang": "de",
+    "type": "item",
+    "limit": "10",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "searchinfo": {
+     "search": "Société Générale"
+    },
+    "search": [
+     {
+      "id": "Q270363",
+      "display": {
+       "label": {
+        "value": "Société Générale",
+        "language": "de"
+       },
+       "description": {
+        "value": "französische Geschäftsbank",
+        "language": "de"
+       }
+      },
+      "label": "Société Générale",
+      "description": "französische Geschäftsbank",
+      "match": {
+       "type": "label",
+       "language": "de",
+       "text": "Société Générale"
+      }
+     },
+     {
+      "id": "Q1475312",
+      "display": {
+       "label": {
+        "value": "Vinci",
+        "language": "de"
+       },
+       "description": {
+        "value": "französischer Baukonzern",
+        "language": "de"
+       }
+      },
+      "label": "Vinci",
+      "description": "französischer Baukonzern",
+      "match": {
+       "type": "alias",
+       "language": "de",
+       "text": "Société Générale d'Enterprises"
+      },
+      "aliases": [
+       "Société Générale d'Enterprises"
+      ]
+     },
+     {
+      "id": "Q1512800",
+      "display": {
+       "label": {
+        "value": "Société générale de Belgique",
+        "language": "de"
+       },
+       "description": {
+        "value": "historische belgische Industrie- und Kolonialgesellschaft",
+        "language": "de"
+       }
+      },
+      "label": "Société générale de Belgique",
+      "description": "historische belgische Industrie- und Kolonialgesellschaft",
+      "match": {
+       "type": "label",
+       "language": "de",
+       "text": "Société générale de Belgique"
+      }
+     },
+     {
+      "id": "Q746525",
+      "display": {
+       "label": {
+        "value": "Crédit Industriel et Commercial",
+        "language": "de"
+       },
+       "description": {
+        "value": "Unternehmen",
+        "language": "de"
+       }
+      },
+      "label": "Crédit Industriel et Commercial",
+      "description": "Unternehmen",
+      "match": {
+       "type": "alias",
+       "language": "de",
+       "text": "Société Générale de Crédit Industriel et Commercial"
+      },
+      "aliases": [
+       "Société Générale de Crédit Industriel et Commercial"
+      ]
+     },
+     {
+      "id": "Q610141",
+      "display": {
+       "label": {
+        "value": "Société générale des chemins de fer économiques",
+        "language": "de"
+       },
+       "description": {
+        "value": "Defunct French transport company",
+        "language": "en"
+       }
+      },
+      "label": "Société générale des chemins de fer économiques",
+      "description": "Defunct French transport company",
+      "match": {
+       "type": "label",
+       "language": "de",
+       "text": "Société générale des chemins de fer économiques"
+      }
+     },
+     {
+      "id": "Q1749469",
+      "display": {
+       "label": {
+        "value": "Société Générale des Transports Aériens",
+        "language": "de"
+       },
+       "description": {
+        "value": "former French airline (1919–1933)",
+        "language": "en"
+       }
+      },
+      "label": "Société Générale des Transports Aériens",
+      "description": "former French airline (1919–1933)",
+      "match": {
+       "type": "label",
+       "language": "de",
+       "text": "Société Générale des Transports Aériens"
+      }
+     },
+     {
+      "id": "Q42300600",
+      "display": {
+       "label": {
+        "value": "Société générale de presse",
+        "language": "de"
+       },
+       "description": {
+        "value": "Organisation in Frankreich",
+        "language": "de"
+       }
+      },
+      "label": "Société générale de presse",
+      "description": "Organisation in Frankreich",
+      "match": {
+       "type": "label",
+       "language": "de",
+       "text": "Société générale de presse"
+      }
+     },
+     {
+      "id": "Q7552914",
+      "display": {
+       "label": {
+        "value": "OTP banka Srbija",
+        "language": "de"
+       },
+       "description": {
+        "value": "Serbian banking and financial services company",
+        "language": "en"
+       }
+      },
+      "label": "OTP banka Srbija",
+      "description": "Serbian banking and financial services company",
+      "match": {
+       "type": "alias",
+       "language": "de",
+       "text": "Société Générale Srbija"
+      },
+      "aliases": [
+       "Société Générale Srbija"
+      ]
+     },
+     {
+      "id": "Q2297024",
+      "display": {
+       "label": {
+        "value": "Société Générale de Transport Maritimes",
+        "language": "de"
+       },
+       "description": {
+        "value": "französisches Unternehmen",
+        "language": "de"
+       }
+      },
+      "label": "Société Générale de Transport Maritimes",
+      "description": "französisches Unternehmen",
+      "match": {
+       "type": "label",
+       "language": "de",
+       "text": "Société Générale de Transport Maritimes"
+      }
+     },
+     {
+      "id": "Q3488906",
+      "display": {
+       "label": {
+        "value": "Sogenal",
+        "language": "de"
+       },
+       "description": {
+        "value": "Bank",
+        "language": "de"
+       }
+      },
+      "label": "Sogenal",
+      "description": "Bank",
+      "match": {
+       "type": "alias",
+       "language": "de",
+       "text": "Société Générale Alsacienne de Banque"
+      },
+      "aliases": [
+       "Société Générale Alsacienne de Banque"
+      ]
+     }
+    ],
+    "search-continue": 10,
+    "success": 1
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetentities",
+    "ids": "Q270363|Q3488362|Q7552914|Q3488906|Q1475312|Q1512800|Q746525|Q3123083|Q610141|Q1749469|Q2571772|Q1121125|Q42300600|Q2297024",
+    "props": "labels|descriptions|claims",
+    "languages": "en|fr|de",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "entities": {
+     "Q270363": {
+      "type": "item",
+      "id": "Q270363",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "Société générale"
+       },
+       "de": {
+        "language": "de",
+        "value": "Société Générale"
+       },
+       "en": {
+        "language": "en",
+        "value": "Société Générale"
+       }
+      },
+      "descriptions": {
+       "fr": {
+        "language": "fr",
+        "value": "banque française"
+       },
+       "en": {
+        "language": "en",
+        "value": "French multinational banking and financial services company"
+       },
+       "de": {
+        "language": "de",
+        "value": "französische Geschäftsbank"
+       }
+      },
+      "claims": {
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43229,
+            "id": "Q43229"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 141145821,
+            "id": "Q141145821"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.societegenerale.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "preferred"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://particuliers.sg.fr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.sg.fr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "deprecated"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "http://societegenerale.fr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P414": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P414",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 2385849,
+            "id": "Q2385849"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P414",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 217475,
+            "id": "Q217475"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "deprecated"
+        }
+       ],
+       "P1454": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1454",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 98897593,
+            "id": "Q98897593"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P946": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P946",
+          "datavalue": {
+           "value": "FR0000130809",
+           "type": "string"
+          },
+          "datatype": "external-id"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1128": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1128",
+          "datavalue": {
+           "value": {
+            "amount": "+145700",
+            "unit": "1"
+           },
+           "type": "quantity"
+          },
+          "datatype": "quantity"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29584334,
+            "id": "Q29584334"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 112165989,
+            "id": "Q112165989"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1278": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1278",
+          "datavalue": {
+           "value": "O2RNE8IBXP4R0TD8PU41",
+           "type": "string"
+          },
+          "datatype": "external-id"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q3488362": {
+      "type": "item",
+      "id": "Q3488362",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Chemins de fer et transport automobile"
+       },
+       "en": {
+        "language": "en",
+        "value": "Chemins de fer et transport automobile"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "organization"
+       },
+       "de": {
+        "language": "de",
+        "value": "französisches Verkehrsunternehmen (1966−2019)"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43229,
+            "id": "Q43229"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1454": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1454",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 112176862,
+            "id": "Q112176862"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 112165839,
+            "id": "Q112165839"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q7552914": {
+      "type": "item",
+      "id": "Q7552914",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "OTP banka Srbija"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "OTP banka Srbija"
+       },
+       "de": {
+        "language": "de",
+        "value": "OTP banka Srbija"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Serbian banking and financial services company"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 4830453,
+            "id": "Q4830453"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 837171,
+            "id": "Q837171"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.otpbanka.rs/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 403,
+            "id": "Q403"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q3488906": {
+      "type": "item",
+      "id": "Q3488906",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "Sogenal"
+       },
+       "en": {
+        "language": "en",
+        "value": "Sogenal"
+       },
+       "de": {
+        "language": "de",
+        "value": "Sogenal"
+       }
+      },
+      "descriptions": {
+       "fr": {
+        "language": "fr",
+        "value": "banque"
+       },
+       "de": {
+        "language": "de",
+        "value": "Bank"
+       },
+       "en": {
+        "language": "en",
+        "value": "Bank"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 4830453,
+            "id": "Q4830453"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29584334,
+            "id": "Q29584334"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q1475312": {
+      "type": "item",
+      "id": "Q1475312",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "Vinci"
+       },
+       "en": {
+        "language": "en",
+        "value": "Vinci"
+       },
+       "de": {
+        "language": "de",
+        "value": "Vinci"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "French concessions and construction company"
+       },
+       "de": {
+        "language": "de",
+        "value": "französischer Baukonzern"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "groupe industriel français"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43229,
+            "id": "Q43229"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 4830453,
+            "id": "Q4830453"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.vinci.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P946": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P946",
+          "datavalue": {
+           "value": "FR0000125486",
+           "type": "string"
+          },
+          "datatype": "external-id"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P414": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P414",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 2385849,
+            "id": "Q2385849"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1128": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1128",
+          "datavalue": {
+           "value": {
+            "amount": "+183487",
+            "unit": "1"
+           },
+           "type": "quantity"
+          },
+          "datatype": "quantity"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P2139": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P2139",
+          "datavalue": {
+           "value": {
+            "amount": "+38073000000",
+            "unit": "http://www.wikidata.org/entity/Q4916"
+           },
+           "type": "quantity"
+          },
+          "datatype": "quantity"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 13405640,
+            "id": "Q13405640"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 112166038,
+            "id": "Q112166038"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1278": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1278",
+          "datavalue": {
+           "value": "213800WFQ334R8UXUG83",
+           "type": "string"
+          },
+          "datatype": "external-id"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1454": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1454",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 98897593,
+            "id": "Q98897593"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q1512800": {
+      "type": "item",
+      "id": "Q1512800",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Société générale de Belgique"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "Société générale de Belgique"
+       },
+       "en": {
+        "language": "en",
+        "value": "Société Générale de Belgique"
+       }
+      },
+      "descriptions": {
+       "de": {
+        "language": "de",
+        "value": "historische belgische Industrie- und Kolonialgesellschaft"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "société belge"
+       },
+       "en": {
+        "language": "en",
+        "value": "former Belgian bank and holding company"
+       }
+      },
+      "claims": {
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 31,
+            "id": "Q31"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 4830453,
+            "id": "Q4830453"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43229,
+            "id": "Q43229"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 1700154,
+            "id": "Q1700154"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 219577,
+            "id": "Q219577"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 107597925,
+            "id": "Q107597925"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29584253,
+            "id": "Q29584253"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29584338,
+            "id": "Q29584338"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 44497,
+            "id": "Q44497"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 1924906,
+            "id": "Q1924906"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29584313,
+            "id": "Q29584313"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 107601662,
+            "id": "Q107601662"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 207652,
+            "id": "Q207652"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 1326885,
+            "id": "Q1326885"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29584334,
+            "id": "Q29584334"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q746525": {
+      "type": "item",
+      "id": "Q746525",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Crédit Industriel et Commercial"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "Crédit industriel et commercial"
+       },
+       "en": {
+        "language": "en",
+        "value": "French Industrial and Commercial Bank"
+       }
+      },
+      "descriptions": {
+       "fr": {
+        "language": "fr",
+        "value": "banque française"
+       },
+       "en": {
+        "language": "en",
+        "value": "French financial services group"
+       },
+       "de": {
+        "language": "de",
+        "value": "Unternehmen"
+       }
+      },
+      "claims": {
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43229,
+            "id": "Q43229"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1278": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1278",
+          "datavalue": {
+           "value": "N4JDFKKH2FTD8RKFXO39",
+           "type": "string"
+          },
+          "datatype": "external-id"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29584334,
+            "id": "Q29584334"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 112165989,
+            "id": "Q112165989"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.cic.fr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1128": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1128",
+          "datavalue": {
+           "value": {
+            "amount": "+19400",
+            "unit": "http://www.wikidata.org/entity/Q1543700"
+           },
+           "type": "quantity"
+          },
+          "datatype": "quantity"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1454": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1454",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 98897593,
+            "id": "Q98897593"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q3123083": {
+      "type": "item",
+      "id": "Q3123083",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "Générale de banque"
+       },
+       "de": {
+        "language": "de",
+        "value": "Banque de la Société Générale de Belgique"
+       },
+       "en": {
+        "language": "en",
+        "value": "Generale Bank"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Bank from Belgium (1934-1999)"
+       },
+       "de": {
+        "language": "de",
+        "value": "Belgische Bank (1934-1999)"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "banque belge"
+       }
+      },
+      "claims": {
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 31,
+            "id": "Q31"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 22687,
+            "id": "Q22687"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 152478,
+            "id": "Q152478"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "http://www.gbank.com",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29584334,
+            "id": "Q29584334"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q610141": {
+      "type": "item",
+      "id": "Q610141",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "Société générale des chemins de fer économiques"
+       },
+       "de": {
+        "language": "de",
+        "value": "Société générale des chemins de fer économiques"
+       },
+       "en": {
+        "language": "en",
+        "value": "Société générale des chemins de fer économiques"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Defunct French transport company"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "ancienne compagnie ferroviaire française"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 740752,
+            "id": "Q740752"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 3565868,
+            "id": "Q3565868"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q1749469": {
+      "type": "item",
+      "id": "Q1749469",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "Société générale des transports aériens"
+       },
+       "en": {
+        "language": "en",
+        "value": "Société Générale des Transports Aériens"
+       },
+       "de": {
+        "language": "de",
+        "value": "Société Générale des Transports Aériens"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "former French airline (1919–1933)"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "ancienne compagnie aérienne française"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 46970,
+            "id": "Q46970"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q2571772": {
+      "type": "item",
+      "id": "Q2571772",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "SGAE"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "Société Générale d'Auteurs et Éditeurs"
+       },
+       "de": {
+        "language": "de",
+        "value": "SGAE"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Spanish copyright collection and performing rights society"
+       },
+       "de": {
+        "language": "de",
+        "value": "spanische Organisation"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43229,
+            "id": "Q43229"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 178706,
+            "id": "Q178706"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 17004679,
+            "id": "Q17004679"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 1047437,
+            "id": "Q1047437"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 29,
+            "id": "Q29"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.sgae.es",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q1121125": {
+      "type": "item",
+      "id": "Q1121125",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Orientalische Eisenbahn"
+       },
+       "en": {
+        "language": "en",
+        "value": "Oriental Railway of the Ottoman Empire"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "Chemins de fer Orientaux"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Paris-based company that built and operated the railway lines in the Ottoman Empire's European territories"
+       },
+       "de": {
+        "language": "de",
+        "value": "Eisenbahnunternehmen"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "compagnie de chemin de fer ottomane"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 249556,
+            "id": "Q249556"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 4830453,
+            "id": "Q4830453"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 728937,
+            "id": "Q728937"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 3565868,
+            "id": "Q3565868"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 28513,
+            "id": "Q28513"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 12560,
+            "id": "Q12560"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43,
+            "id": "Q43"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q42300600": {
+      "type": "item",
+      "id": "Q42300600",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "Société Générale de Presse"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "Société générale de presse"
+       },
+       "de": {
+        "language": "de",
+        "value": "Société générale de presse"
+       }
+      },
+      "descriptions": {
+       "de": {
+        "language": "de",
+        "value": "Organisation in Frankreich"
+       }
+      },
+      "claims": {
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "http://www.sgpresse.fr",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43229,
+            "id": "Q43229"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q2297024": {
+      "type": "item",
+      "id": "Q2297024",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "Société générale des transports maritimes"
+       },
+       "de": {
+        "language": "de",
+        "value": "Société Générale de Transport Maritimes"
+       },
+       "en": {
+        "language": "en",
+        "value": "Société générale des transports maritimes à vapeur"
+       }
+      },
+      "descriptions": {
+       "fr": {
+        "language": "fr",
+        "value": "ancien armateur français"
+       },
+       "de": {
+        "language": "de",
+        "value": "französisches Unternehmen"
+       },
+       "en": {
+        "language": "en",
+        "value": "business"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 4830453,
+            "id": "Q4830453"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 500251,
+            "id": "Q500251"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 142,
+            "id": "Q142"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 155930,
+            "id": "Q155930"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     }
+    },
+    "success": 1
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetclaims",
+    "entity": "Q31",
+    "property": "P297",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "claims": {
+     "P297": [
+      {
+       "mainsnak": {
+        "snaktype": "value",
+        "property": "P297",
+        "datavalue": {
+         "value": "BE",
+         "type": "string"
+        },
+        "datatype": "external-id"
+       },
+       "type": "statement",
+       "rank": "normal"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetclaims",
+    "entity": "Q28513",
+    "property": "P297",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "claims": {}
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetclaims",
+    "entity": "Q29",
+    "property": "P297",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "claims": {
+     "P297": [
+      {
+       "mainsnak": {
+        "snaktype": "value",
+        "property": "P297",
+        "datavalue": {
+         "value": "ES",
+         "type": "string"
+        },
+        "datatype": "external-id"
+       },
+       "type": "statement",
+       "rank": "normal"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetclaims",
+    "entity": "Q142",
+    "property": "P297",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "claims": {
+     "P297": [
+      {
+       "mainsnak": {
+        "snaktype": "value",
+        "property": "P297",
+        "datavalue": {
+         "value": "FR",
+         "type": "string"
+        },
+        "datatype": "external-id"
+       },
+       "type": "statement",
+       "rank": "normal"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetclaims",
+    "entity": "Q403",
+    "property": "P297",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "claims": {
+     "P297": [
+      {
+       "mainsnak": {
+        "snaktype": "value",
+        "property": "P297",
+        "datavalue": {
+         "value": "RS",
+         "type": "string"
+        },
+        "datatype": "external-id"
+       },
+       "type": "statement",
+       "rank": "normal"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetentities",
+    "ids": "Q142|Q403|Q31|Q29|Q28513|Q29584334|Q112165989|Q112165839|Q837171|Q13405640|Q112166038|Q107597925|Q29584253|Q29584338|Q44497|Q1924906|Q29584313|Q107601662|Q207652|Q1326885|Q3565868|Q155930|Q98897593|Q112176862",
+    "props": "labels",
+    "languages": "en|fr|de",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "entities": {
+     "Q142": {
+      "type": "item",
+      "id": "Q142",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Frankreich"
+       },
+       "en": {
+        "language": "en",
+        "value": "France"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "France"
+       }
+      }
+     },
+     "Q403": {
+      "type": "item",
+      "id": "Q403",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Serbien"
+       },
+       "en": {
+        "language": "en",
+        "value": "Serbia"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "Serbie"
+       }
+      }
+     },
+     "Q31": {
+      "type": "item",
+      "id": "Q31",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Belgien"
+       },
+       "en": {
+        "language": "en",
+        "value": "Belgium"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "Belgique"
+       }
+      }
+     },
+     "Q29": {
+      "type": "item",
+      "id": "Q29",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Spanien"
+       },
+       "en": {
+        "language": "en",
+        "value": "Spain"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "Espagne"
+       }
+      }
+     },
+     "Q28513": {
+      "type": "item",
+      "id": "Q28513",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "Autriche-Hongrie"
+       },
+       "de": {
+        "language": "de",
+        "value": "Österreich-Ungarn"
+       },
+       "en": {
+        "language": "en",
+        "value": "Austria–Hungary"
+       }
+      }
+     },
+     "Q29584334": {
+      "type": "item",
+      "id": "Q29584334",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "activités de services financiers, à l’exception des assurances et des caisses de retraite"
+       },
+       "de": {
+        "language": "de",
+        "value": "Erbringung von Finanzdienstleistungen"
+       },
+       "en": {
+        "language": "en",
+        "value": "financial service activities, except insurance and pension funding"
+       }
+      }
+     },
+     "Q112165989": {
+      "type": "item",
+      "id": "Q112165989",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "autres intermédiations monétaires"
+       },
+       "en": {
+        "language": "en",
+        "value": "other monetary intermediations"
+       }
+      }
+     },
+     "Q112165839": {
+      "type": "item",
+      "id": "Q112165839",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "transport ferroviaire interurbain de voyageurs"
+       }
+      }
+     },
+     "Q837171": {
+      "type": "item",
+      "id": "Q837171",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "service financier"
+       },
+       "en": {
+        "language": "en",
+        "value": "financial services"
+       },
+       "de": {
+        "language": "de",
+        "value": "Finanzdienstleistung"
+       }
+      }
+     },
+     "Q13405640": {
+      "type": "item",
+      "id": "Q13405640",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Bauwirtschaft"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "industrie de la construction"
+       },
+       "en": {
+        "language": "en",
+        "value": "construction industry"
+       }
+      }
+     },
+     "Q112166038": {
+      "type": "item",
+      "id": "Q112166038",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "activités des sièges sociaux"
+       },
+       "en": {
+        "language": "en",
+        "value": "activities of head offices"
+       }
+      }
+     },
+     "Q107597925": {
+      "type": "item",
+      "id": "Q107597925",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Maschinen- und Anlagenbau"
+       },
+       "en": {
+        "language": "en",
+        "value": "machinery industry and plant construction"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "machines industrielles et construction d'usines"
+       }
+      }
+     },
+     "Q29584253": {
+      "type": "item",
+      "id": "Q29584253",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "autres industries extractives"
+       },
+       "de": {
+        "language": "de",
+        "value": "Gewinnung von Steinen und Erden, sonstiger Bergbau"
+       },
+       "en": {
+        "language": "en",
+        "value": "other mining and quarrying"
+       }
+      }
+     },
+     "Q29584338": {
+      "type": "item",
+      "id": "Q29584338",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "activités immobilières"
+       },
+       "de": {
+        "language": "de",
+        "value": "Grundstücks- und Wohnungswesen"
+       },
+       "en": {
+        "language": "en",
+        "value": "real estate activities"
+       }
+      }
+     },
+     "Q44497": {
+      "type": "item",
+      "id": "Q44497",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "exploitation minière"
+       },
+       "de": {
+        "language": "de",
+        "value": "Bergbau"
+       },
+       "en": {
+        "language": "en",
+        "value": "mining"
+       }
+      }
+     },
+     "Q1924906": {
+      "type": "item",
+      "id": "Q1924906",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Metallindustrie"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "industrie métallurgique"
+       },
+       "en": {
+        "language": "en",
+        "value": "metal industry"
+       }
+      }
+     },
+     "Q29584313": {
+      "type": "item",
+      "id": "Q29584313",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "transports par eau"
+       },
+       "de": {
+        "language": "de",
+        "value": "Schifffahrt"
+       },
+       "en": {
+        "language": "en",
+        "value": "water transport"
+       }
+      }
+     },
+     "Q107601662": {
+      "type": "item",
+      "id": "Q107601662",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Textil- und Bekleidungsindustrie"
+       },
+       "en": {
+        "language": "en",
+        "value": "textile and clothing industry"
+       }
+      }
+     },
+     "Q207652": {
+      "type": "item",
+      "id": "Q207652",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "industrie chimique"
+       },
+       "de": {
+        "language": "de",
+        "value": "Chemische Industrie"
+       },
+       "en": {
+        "language": "en",
+        "value": "chemical industry"
+       }
+      }
+     },
+     "Q1326885": {
+      "type": "item",
+      "id": "Q1326885",
+      "labels": {
+       "de": {
+        "language": "de",
+        "value": "Elektroindustrie"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "industrie électrique"
+       },
+       "en": {
+        "language": "en",
+        "value": "electrical industry"
+       }
+      }
+     },
+     "Q3565868": {
+      "type": "item",
+      "id": "Q3565868",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "rail transport"
+       },
+       "de": {
+        "language": "de",
+        "value": "Schienenverkehr"
+       },
+       "fr": {
+        "language": "fr",
+        "value": "transport ferroviaire"
+       }
+      }
+     },
+     "Q155930": {
+      "type": "item",
+      "id": "Q155930",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "transport maritime"
+       },
+       "de": {
+        "language": "de",
+        "value": "Schifffahrt"
+       },
+       "en": {
+        "language": "en",
+        "value": "water transport"
+       }
+      }
+     },
+     "Q98897593": {
+      "type": "item",
+      "id": "Q98897593",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "société anonyme à conseil d'administration (s.a.i.)"
+       },
+       "en": {
+        "language": "en",
+        "value": "public limited company with a board of directors (n.o.s.)"
+       },
+       "de": {
+        "language": "de",
+        "value": "société anonyme à conseil d'administration (s.a.i.)"
+       }
+      }
+     },
+     "Q112176862": {
+      "type": "item",
+      "id": "Q112176862",
+      "labels": {
+       "fr": {
+        "language": "fr",
+        "value": "société par actions simplifiée"
+       },
+       "en": {
+        "language": "en",
+        "value": "société par actions simplifiée"
+       },
+       "de": {
+        "language": "de",
+        "value": "vereinfachte Aktiengesellschaft"
+       }
+      }
+     }
+    },
+    "success": 1
+   }
+  }
+ ]
+}

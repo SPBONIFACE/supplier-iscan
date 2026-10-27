@@ -1,0 +1,3803 @@
+{
+ "recorded_on": "2026-10-27",
+ "query": "トヨタ自動車",
+ "exchanges": [
+  {
+   "host": "api.gleif.org",
+   "path": "/api/v1/lei-records",
+   "params": {
+    "filter[entity.names]": "トヨタ自動車",
+    "page[size]": "10"
+   },
+   "status": 200,
+   "body": {
+    "meta": {
+     "goldenCopy": {
+      "publishDate": "2026-10-27T08:00:00Z"
+     },
+     "pagination": {
+      "currentPage": 1,
+      "perPage": 10,
+      "from": 1,
+      "to": 1,
+      "total": 1,
+      "lastPage": 1
+     }
+    },
+    "data": [
+     {
+      "type": "lei-records",
+      "id": "5493006W3QUS5LMH6R84",
+      "attributes": {
+       "lei": "5493006W3QUS5LMH6R84",
+       "entity": {
+        "legalName": {
+         "name": "トヨタ自動車株式会社",
+         "language": "ja"
+        },
+        "otherNames": [
+         {
+          "name": "Toyota Motor Corporation",
+          "language": "en",
+          "type": "ALTERNATIVE_LANGUAGE_LEGAL_NAME"
+         }
+        ],
+        "transliteratedOtherNames": [],
+        "legalAddress": {
+         "language": "ja",
+         "addressLines": [
+          "トヨタ町1番地"
+         ],
+         "addressNumber": null,
+         "addressNumberWithinBuilding": null,
+         "mailRouting": null,
+         "city": "愛知県 豊田市",
+         "region": null,
+         "country": "JP",
+         "postalCode": "471-8571"
+        },
+        "registeredAt": {
+         "id": "RA000412",
+         "other": null
+        },
+        "registeredAs": "1803-01-018771",
+        "jurisdiction": "JP",
+        "category": "GENERAL",
+        "legalForm": {
+         "id": "T417",
+         "other": null
+        },
+        "associatedEntity": {
+         "lei": null,
+         "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+         "date": null,
+         "reason": null
+        },
+        "successorEntity": {
+         "lei": null,
+         "name": null
+        },
+        "creationDate": "1937-08-26T15:00:00Z",
+        "subCategory": null
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbsearchentities",
+    "search": "トヨタ自動車",
+    "language": "ja",
+    "uselang": "ja",
+    "type": "item",
+    "limit": "10",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "searchinfo": {
+     "search": "トヨタ自動車"
+    },
+    "search": [
+     {
+      "id": "Q53268",
+      "display": {
+       "label": {
+        "value": "トヨタ自動車",
+        "language": "ja"
+       },
+       "description": {
+        "value": "愛知県豊田市にある自動車メーカー",
+        "language": "ja"
+       }
+      },
+      "label": "トヨタ自動車",
+      "description": "愛知県豊田市にある自動車メーカー",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車"
+      }
+     },
+     {
+      "id": "Q6374828",
+      "display": {
+       "label": {
+        "value": "トヨタヴェルブリッツ",
+        "language": "ja"
+       },
+       "description": {
+        "value": "日本のラグビーユニオンチーム",
+        "language": "ja"
+       }
+      },
+      "label": "トヨタヴェルブリッツ",
+      "description": "日本のラグビーユニオンチーム",
+      "match": {
+       "type": "alias",
+       "language": "ja",
+       "text": "トヨタ自動車ヴェルブリッツ"
+      },
+      "aliases": [
+       "トヨタ自動車ヴェルブリッツ"
+      ]
+     },
+     {
+      "id": "Q7830743",
+      "display": {
+       "label": {
+        "value": "アルバルク東京",
+        "language": "ja"
+       },
+       "description": {
+        "value": "日本のプロバスケットボールチーム",
+        "language": "ja"
+       }
+      },
+      "label": "アルバルク東京",
+      "description": "日本のプロバスケットボールチーム",
+      "match": {
+       "type": "alias",
+       "language": "ja",
+       "text": "トヨタ自動車アルバルク"
+      },
+      "aliases": [
+       "トヨタ自動車アルバルク"
+      ]
+     },
+     {
+      "id": "Q2493909",
+      "display": {
+       "label": {
+        "value": "トヨタ自動車の車種一覧",
+        "language": "ja"
+       },
+       "description": {
+        "value": "ウィキメディアの一覧記事",
+        "language": "ja"
+       }
+      },
+      "label": "トヨタ自動車の車種一覧",
+      "description": "ウィキメディアの一覧記事",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車の車種一覧"
+      }
+     },
+     {
+      "id": "Q11321686",
+      "display": {
+       "label": {
+        "value": "トヨタ自動車硬式野球部",
+        "language": "ja"
+       },
+       "description": {
+        "value": "日本の社会人野球チーム",
+        "language": "ja"
+       }
+      },
+      "label": "トヨタ自動車硬式野球部",
+      "description": "日本の社会人野球チーム",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車硬式野球部"
+      }
+     },
+     {
+      "id": "Q2447176",
+      "display": {
+       "label": {
+        "value": "トヨタ モーター マニュファクチャリング（UK）",
+        "language": "ja"
+       },
+       "description": {
+        "value": "Toyota subsidiary in the UK",
+        "language": "en"
+       }
+      },
+      "label": "トヨタ モーター マニュファクチャリング（UK）",
+      "description": "Toyota subsidiary in the UK",
+      "match": {
+       "type": "alias",
+       "language": "ja",
+       "text": "トヨタ自動車英国工場"
+      },
+      "aliases": [
+       "トヨタ自動車英国工場"
+      ]
+     },
+     {
+      "id": "Q7830921",
+      "display": {
+       "label": {
+        "value": "トヨタ自動車のモータースポーツ",
+        "language": "ja"
+       },
+       "description": {
+        "value": "motorsport activities of Toyota in motorsport",
+        "language": "en"
+       }
+      },
+      "label": "トヨタ自動車のモータースポーツ",
+      "description": "motorsport activities of Toyota in motorsport",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車のモータースポーツ"
+      }
+     },
+     {
+      "id": "Q11321683",
+      "display": {
+       "label": {
+        "value": "トヨタ自動車東日本",
+        "language": "ja"
+       },
+       "description": {
+        "value": "日本の宮城県黒川郡大衡村にある自動車製造メーカー",
+        "language": "ja"
+       }
+      },
+      "label": "トヨタ自動車東日本",
+      "description": "日本の宮城県黒川郡大衡村にある自動車製造メーカー",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車東日本"
+      }
+     },
+     {
+      "id": "Q1464318",
+      "display": {
+       "label": {
+        "value": "トヨタ モーター マニュファクチャリング カナダ",
+        "language": "ja"
+       },
+       "description": {
+        "value": "automobile manufacturer",
+        "language": "en"
+       }
+      },
+      "label": "トヨタ モーター マニュファクチャリング カナダ",
+      "description": "automobile manufacturer",
+      "match": {
+       "type": "alias",
+       "language": "ja",
+       "text": "トヨタ自動車カナダ工場"
+      },
+      "aliases": [
+       "トヨタ自動車カナダ工場"
+      ]
+     },
+     {
+      "id": "Q28691651",
+      "display": {
+       "label": {
+        "value": "トヨタレッドテリアーズ",
+        "language": "ja"
+       },
+       "description": {
+        "value": "日本の女子ソフトボールチーム",
+        "language": "ja"
+       }
+      },
+      "label": "トヨタレッドテリアーズ",
+      "description": "日本の女子ソフトボールチーム",
+      "match": {
+       "type": "alias",
+       "language": "ja",
+       "text": "トヨタ自動車女子ソフトボール部"
+      },
+      "aliases": [
+       "トヨタ自動車女子ソフトボール部"
+      ]
+     }
+    ],
+    "search-continue": 10,
+    "success": 1
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbsearchentities",
+    "search": "トヨタ自動車",
+    "language": "en",
+    "uselang": "en",
+    "type": "item",
+    "limit": "10",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "searchinfo": {
+     "search": "トヨタ自動車"
+    },
+    "search": [
+     {
+      "id": "Q53268",
+      "display": {
+       "label": {
+        "value": "Toyota",
+        "language": "en"
+       },
+       "description": {
+        "value": "Japanese multinational automotive manufacturer",
+        "language": "en"
+       }
+      },
+      "label": "Toyota",
+      "description": "Japanese multinational automotive manufacturer",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車"
+      },
+      "aliases": [
+       "トヨタ自動車"
+      ]
+     },
+     {
+      "id": "Q6374828",
+      "display": {
+       "label": {
+        "value": "Toyota Verblitz",
+        "language": "en"
+       },
+       "description": {
+        "value": "Japanese rugby union club, owned by Toyota Motor",
+        "language": "en"
+       }
+      },
+      "label": "Toyota Verblitz",
+      "description": "Japanese rugby union club, owned by Toyota Motor",
+      "match": {
+       "type": "alias",
+       "language": "ja",
+       "text": "トヨタ自動車ヴェルブリッツ"
+      },
+      "aliases": [
+       "トヨタ自動車ヴェルブリッツ"
+      ]
+     },
+     {
+      "id": "Q7830743",
+      "display": {
+       "label": {
+        "value": "Alvark Tokyo",
+        "language": "en"
+       },
+       "description": {
+        "value": "Professional basketball team in Tokyo, Japan",
+        "language": "en"
+       }
+      },
+      "label": "Alvark Tokyo",
+      "description": "Professional basketball team in Tokyo, Japan",
+      "match": {
+       "type": "alias",
+       "language": "ja",
+       "text": "トヨタ自動車アルバルク"
+      },
+      "aliases": [
+       "トヨタ自動車アルバルク"
+      ]
+     },
+     {
+      "id": "Q40794",
+      "display": {
+       "label": {
+        "value": "Toyota Group",
+        "language": "en"
+       },
+       "description": {
+        "value": "Japanese company group",
+        "language": "en"
+       }
+      },
+      "label": "Toyota Group",
+      "description": "Japanese company group",
+      "match": {
+       "type": "alias",
+       "language": "da",
+       "text": "トヨタ自動車株式会社"
+      },
+      "aliases": [
+       "トヨタ自動車株式会社"
+      ]
+     },
+     {
+      "id": "Q11321686",
+      "display": {
+       "label": {
+        "value": "Toyota Red Cruisers",
+        "language": "en"
+       },
+       "description": {
+        "value": "Japanese amateur baseball team",
+        "language": "en"
+       }
+      },
+      "label": "Toyota Red Cruisers",
+      "description": "Japanese amateur baseball team",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車硬式野球部"
+      },
+      "aliases": [
+       "トヨタ自動車硬式野球部"
+      ]
+     },
+     {
+      "id": "Q11321683",
+      "display": {
+       "label": {
+        "value": "Toyota Motor East Japan",
+        "language": "en"
+       },
+       "description": {
+        "value": "manufacturing subsidiary of the Toyota group based in Japan",
+        "language": "en"
+       }
+      },
+      "label": "Toyota Motor East Japan",
+      "description": "manufacturing subsidiary of the Toyota group based in Japan",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車東日本"
+      },
+      "aliases": [
+       "トヨタ自動車東日本"
+      ]
+     },
+     {
+      "id": "Q2493909",
+      "display": {
+       "label": {
+        "value": "list of Toyota vehicles",
+        "language": "en"
+       },
+       "description": {
+        "value": "Wikimedia list article",
+        "language": "en"
+       }
+      },
+      "label": "list of Toyota vehicles",
+      "description": "Wikimedia list article",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車の車種一覧"
+      },
+      "aliases": [
+       "トヨタ自動車の車種一覧"
+      ]
+     },
+     {
+      "id": "Q2447176",
+      "display": {
+       "label": {
+        "value": "Toyota Motor Manufacturing UK",
+        "language": "en"
+       },
+       "description": {
+        "value": "Toyota subsidiary in the UK",
+        "language": "en"
+       }
+      },
+      "label": "Toyota Motor Manufacturing UK",
+      "description": "Toyota subsidiary in the UK",
+      "match": {
+       "type": "alias",
+       "language": "ja",
+       "text": "トヨタ自動車英国工場"
+      },
+      "aliases": [
+       "トヨタ自動車英国工場"
+      ]
+     },
+     {
+      "id": "Q7830921",
+      "display": {
+       "label": {
+        "value": "Toyota in motorsport",
+        "language": "en"
+       },
+       "description": {
+        "value": "motorsport activities of Toyota in motorsport",
+        "language": "en"
+       }
+      },
+      "label": "Toyota in motorsport",
+      "description": "motorsport activities of Toyota in motorsport",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車のモータースポーツ"
+      },
+      "aliases": [
+       "トヨタ自動車のモータースポーツ"
+      ]
+     },
+     {
+      "id": "Q11321673",
+      "display": {
+       "label": {
+        "value": "Toyota Antelopes",
+        "language": "en"
+       },
+       "description": {
+        "value": "basketball team in Nagoya, Aichi",
+        "language": "en"
+       }
+      },
+      "label": "Toyota Antelopes",
+      "description": "basketball team in Nagoya, Aichi",
+      "match": {
+       "type": "label",
+       "language": "ja",
+       "text": "トヨタ自動車アンテロープス"
+      },
+      "aliases": [
+       "トヨタ自動車アンテロープス"
+      ]
+     }
+    ],
+    "search-continue": 10,
+    "success": 1
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetentities",
+    "ids": "Q53268|Q6374828|Q7830743|Q2493909|Q11321686|Q2447176|Q7830921|Q11321683|Q1464318|Q28691651|Q40794|Q11321673",
+    "props": "labels|descriptions|claims",
+    "languages": "ja|en",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "entities": {
+     "Q53268": {
+      "type": "item",
+      "id": "Q53268",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "トヨタ自動車"
+       },
+       "en": {
+        "language": "en",
+        "value": "Toyota"
+       }
+      },
+      "descriptions": {
+       "ja": {
+        "language": "ja",
+        "value": "愛知県豊田市にある自動車メーカー"
+       },
+       "en": {
+        "language": "en",
+        "value": "Japanese multinational automotive manufacturer"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 786820,
+            "id": "Q786820"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 21980538,
+            "id": "Q21980538"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 431289,
+            "id": "Q431289"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 891723,
+            "id": "Q891723"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43229,
+            "id": "Q43229"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 10429667,
+            "id": "Q10429667"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P414": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P414",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 217475,
+            "id": "Q217475"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P414",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 171240,
+            "id": "Q171240"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P414",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 13677,
+            "id": "Q13677"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P414",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 1188840,
+            "id": "Q1188840"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 17,
+            "id": "Q17"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P946": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P946",
+          "datavalue": {
+           "value": "JP3633400001",
+           "type": "string"
+          },
+          "datatype": "external-id"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://global.toyota/en/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://global.toyota",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "preferred"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.jp/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.autohaus.toyota.de",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "deprecated"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.scion.com",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "deprecated"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.br/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.garage.toyota.ch",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "deprecated"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.tw/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "http://toyota.co.th/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "deprecated"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.de/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "http://weins-toyota-kanagawa.co.jp/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.es/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.my/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-africa.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-africa.com/lang/fr",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-europe.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotaalgerie.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.bj/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.bf/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.cg/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ci/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-rdc.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.com.eg/en",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-gabon.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.gm/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotaghana.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotakenya.ke/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.ly/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.ly/ar/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.com.eg/ar",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "http://www.toyotamalawi.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-mauritanie.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyotamauritius.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.co.ma/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.mz/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyotanigeria.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.re/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotarwanda.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.sn/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.za/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.tg/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.com.tn/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.co.tz/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.ug/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotazambia.co.zm/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.zw/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.uk/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.fr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://nl.toyota.be/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://fr.toyota.be/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.nl/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://de.toyota.ch/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://fr.toyota.ch/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://it.toyota.ch/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.vn/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.it/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "http://www.toyota.com.cn/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.md/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.at/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.az/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ba/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.bg/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.il/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.cy/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.mk/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.tr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.cz/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.dk/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ee/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.fi/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ge/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.gr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.hr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.hu/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ie/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.is/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.lt/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.lu/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.lv/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.nl/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.no/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.pl/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.pt/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ro/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.rs/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.se/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.si/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.sk/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ua/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotaalbania.al/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotacg.me/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-kosovo.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotakz.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotaperu.com.pe/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.cl/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.com.uy/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.py/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.mx/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotapr.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.ve/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.ar/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotacr.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.sv/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.gt/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.co/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.bo/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyotajamaica.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotarp.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ru/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota-mongolia.mn/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota-indus.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotabharat.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota-centralasia.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-bishkek.kg/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.kr/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.th/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.th/en/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.com.ph/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.com.bd/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.au/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.co.nz/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.sa/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotaqatar.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotayemen.com/en/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotayemen.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotaoman.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotaoman.com/ar/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.com.bh/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.com.bh/ar",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ae/en/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ae/ar/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.ae/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.jo/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota.com.jo/ar",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.iq/en",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.iq/ar",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.iq/ku",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyota.iq/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyotalebanon.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyotairan.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1454": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1454",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 1480166,
+            "id": "Q1480166"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 190117,
+            "id": "Q190117"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P2139": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P2139",
+          "datavalue": {
+           "value": {
+            "amount": "+28403118000000",
+            "unit": "http://www.wikidata.org/entity/Q8146"
+           },
+           "type": "quantity"
+          },
+          "datatype": "quantity"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1128": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1128",
+          "datavalue": {
+           "value": {
+            "amount": "+359542",
+            "unit": "1"
+           },
+           "type": "quantity"
+          },
+          "datatype": "quantity"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1278": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1278",
+          "datavalue": {
+           "value": "5493006W3QUS5LMH6R84",
+           "type": "string"
+          },
+          "datatype": "external-id"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q6374828": {
+      "type": "item",
+      "id": "Q6374828",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "トヨタヴェルブリッツ"
+       },
+       "en": {
+        "language": "en",
+        "value": "Toyota Verblitz"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Japanese rugby union club, owned by Toyota Motor"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "日本のラグビーユニオンチーム"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 43009164,
+            "id": "Q43009164"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://sports.gazoo.com/verblitz/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 17,
+            "id": "Q17"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q7830743": {
+      "type": "item",
+      "id": "Q7830743",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "Alvark Tokyo"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "アルバルク東京"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Professional basketball team in Tokyo, Japan"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "日本のプロバスケットボールチーム"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 13393265,
+            "id": "Q13393265"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.alvark-tokyo.jp/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 17,
+            "id": "Q17"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q2493909": {
+      "type": "item",
+      "id": "Q2493909",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "トヨタ自動車の車種一覧"
+       },
+       "en": {
+        "language": "en",
+        "value": "list of Toyota vehicles"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Wikimedia list article"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "ウィキメディアの一覧記事"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 13406463,
+            "id": "Q13406463"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q11321686": {
+      "type": "item",
+      "id": "Q11321686",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "トヨタ自動車硬式野球部"
+       },
+       "en": {
+        "language": "en",
+        "value": "Toyota Red Cruisers"
+       }
+      },
+      "descriptions": {
+       "ja": {
+        "language": "ja",
+        "value": "日本の社会人野球チーム"
+       },
+       "en": {
+        "language": "en",
+        "value": "Japanese amateur baseball team"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 13027888,
+            "id": "Q13027888"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 17,
+            "id": "Q17"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://toyotatimes-sports.toyota/teams/redcruisers/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q2447176": {
+      "type": "item",
+      "id": "Q2447176",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "Toyota Motor Manufacturing UK"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "トヨタ モーター マニュファクチャリング（UK）"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Toyota subsidiary in the UK"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 786820,
+            "id": "Q786820"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 21980538,
+            "id": "Q21980538"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1454": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1454",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 6832945,
+            "id": "Q6832945"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyotauk.com/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 190117,
+            "id": "Q190117"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q7830921": {
+      "type": "item",
+      "id": "Q7830921",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "Toyota in motorsport"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "トヨタ自動車のモータースポーツ"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "motorsport activities of Toyota in motorsport"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 21484471,
+            "id": "Q21484471"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q11321683": {
+      "type": "item",
+      "id": "Q11321683",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "トヨタ自動車東日本"
+       },
+       "en": {
+        "language": "en",
+        "value": "Toyota Motor East Japan"
+       }
+      },
+      "descriptions": {
+       "ja": {
+        "language": "ja",
+        "value": "日本の宮城県黒川郡大衡村にある自動車製造メーカー"
+       },
+       "en": {
+        "language": "en",
+        "value": "manufacturing subsidiary of the Toyota group based in Japan"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 4830453,
+            "id": "Q4830453"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        },
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 48748864,
+            "id": "Q48748864"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://www.toyota-ej.co.jp/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 190117,
+            "id": "Q190117"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P1454": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P1454",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 1480166,
+            "id": "Q1480166"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 17,
+            "id": "Q17"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q1464318": {
+      "type": "item",
+      "id": "Q1464318",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "Toyota Motor Manufacturing Canada"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "トヨタ モーター マニュファクチャリング カナダ"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "automobile manufacturer"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 786820,
+            "id": "Q786820"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://tmmc.ca/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 16,
+            "id": "Q16"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 190117,
+            "id": "Q190117"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q28691651": {
+      "type": "item",
+      "id": "Q28691651",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "トヨタレッドテリアーズ"
+       },
+       "en": {
+        "language": "en",
+        "value": "Toyota Red Terriers"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Japanese women's softball team"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "日本の女子ソフトボールチーム"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 82969709,
+            "id": "Q82969709"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 17,
+            "id": "Q17"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q40794": {
+      "type": "item",
+      "id": "Q40794",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "トヨタグループ"
+       },
+       "en": {
+        "language": "en",
+        "value": "Toyota Group"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "Japanese company group"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "日本の企業グループ"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 778575,
+            "id": "Q778575"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P452": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P452",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 778575,
+            "id": "Q778575"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "http://www.toyota-global.com/company/profile/toyota_group/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     },
+     "Q11321673": {
+      "type": "item",
+      "id": "Q11321673",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "トヨタ自動車アンテロープス"
+       },
+       "en": {
+        "language": "en",
+        "value": "Toyota Antelopes"
+       }
+      },
+      "descriptions": {
+       "en": {
+        "language": "en",
+        "value": "basketball team in Nagoya, Aichi"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "日本の女子バスケットボールチーム"
+       }
+      },
+      "claims": {
+       "P31": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P31",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 13393265,
+            "id": "Q13393265"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P17": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P17",
+          "datavalue": {
+           "value": {
+            "entity-type": "item",
+            "numeric-id": 17,
+            "id": "Q17"
+           },
+           "type": "wikibase-entityid"
+          },
+          "datatype": "wikibase-item"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ],
+       "P856": [
+        {
+         "mainsnak": {
+          "snaktype": "value",
+          "property": "P856",
+          "datavalue": {
+           "value": "https://sports.gazoo.com/antelopes/",
+           "type": "string"
+          },
+          "datatype": "url"
+         },
+         "type": "statement",
+         "rank": "normal"
+        }
+       ]
+      }
+     }
+    },
+    "success": 1
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetclaims",
+    "entity": "Q16",
+    "property": "P297",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "claims": {
+     "P297": [
+      {
+       "mainsnak": {
+        "snaktype": "value",
+        "property": "P297",
+        "datavalue": {
+         "value": "CA",
+         "type": "string"
+        },
+        "datatype": "external-id"
+       },
+       "type": "statement",
+       "rank": "normal"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetclaims",
+    "entity": "Q17",
+    "property": "P297",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "claims": {
+     "P297": [
+      {
+       "mainsnak": {
+        "snaktype": "value",
+        "property": "P297",
+        "datavalue": {
+         "value": "JP",
+         "type": "string"
+        },
+        "datatype": "external-id"
+       },
+       "type": "statement",
+       "rank": "normal"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "host": "www.wikidata.org",
+   "path": "/w/api.php",
+   "params": {
+    "action": "wbgetentities",
+    "ids": "Q17|Q16|Q190117|Q778575|Q1480166|Q6832945",
+    "props": "labels",
+    "languages": "ja|en",
+    "format": "json"
+   },
+   "status": 200,
+   "body": {
+    "entities": {
+     "Q17": {
+      "type": "item",
+      "id": "Q17",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "Japan"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "日本"
+       }
+      }
+     },
+     "Q16": {
+      "type": "item",
+      "id": "Q16",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "Canada"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "カナダ"
+       }
+      }
+     },
+     "Q190117": {
+      "type": "item",
+      "id": "Q190117",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "自動車産業"
+       },
+       "en": {
+        "language": "en",
+        "value": "automotive industry"
+       }
+      }
+     },
+     "Q778575": {
+      "type": "item",
+      "id": "Q778575",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "conglomerate"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "コングロマリット"
+       }
+      }
+     },
+     "Q1480166": {
+      "type": "item",
+      "id": "Q1480166",
+      "labels": {
+       "ja": {
+        "language": "ja",
+        "value": "日本の株式会社"
+       },
+       "en": {
+        "language": "en",
+        "value": "kabushiki gaisha"
+       }
+      }
+     },
+     "Q6832945": {
+      "type": "item",
+      "id": "Q6832945",
+      "labels": {
+       "en": {
+        "language": "en",
+        "value": "private company limited by shares"
+       },
+       "ja": {
+        "language": "ja",
+        "value": "株式有限責任私会社"
+       }
+      }
+     }
+    },
+    "success": 1
+   }
+  }
+ ]
+}
