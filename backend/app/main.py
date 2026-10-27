@@ -15,6 +15,7 @@ from app.config import ConfigurationError, Settings, load_settings
 from app.db import Database
 from app.errors import install_error_handlers
 from app.health import DatabaseCheck, HealthStatus, make_database_check
+from app.invitations.log_redaction import install_access_log_redaction
 from app.invitations.routes import admin_router as admin_invitations_router
 from app.invitations.routes import public_router as invitations_router
 from app.organisations.routes import router as admin_organisations_router
@@ -63,6 +64,7 @@ def create_app(
     )
     app.state.database = database
     app.state.settings = settings
+    install_access_log_redaction()
     install_error_handlers(app)
     # Exact origins from configuration, never a wildcard (load_settings rejects "*").
     # Credentials are allowed so that the frontend can send the session cookie.
