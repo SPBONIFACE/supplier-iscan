@@ -285,7 +285,8 @@ def test_a_request_built_outside_the_client_helpers_is_still_guarded(
 ) -> None:
     # The guard sits in the transport: it also covers a request sent on the underlying client.
     with make_client(StubResolver()) as client:
-        raw_client = client._client  # noqa: SLF001 - the point of the test
+        assert not hasattr(client, "_client")  # name-mangled: not reachable by accident
+        raw_client = client._GuardedClient__client  # type: ignore[attr-defined]  # noqa: SLF001
         with pytest.raises(BlockedAddressError):
             raw_client.get("http://127.0.0.1/")
         with pytest.raises(InvalidUrlError):

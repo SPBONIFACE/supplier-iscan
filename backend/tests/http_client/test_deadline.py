@@ -7,10 +7,12 @@ below lets a socket connect to 127.0.0.1 and nowhere else: no test reaches the i
 
 import ipaddress
 import socket
+import ssl
 import threading
 import time
 from collections.abc import Callable, Iterator
 
+import httpcore2
 import httpx2
 import pytest
 
@@ -190,13 +192,124 @@ def test_a_prompt_server_is_reachable_through_the_deadline_transport(
     assert response.text == "ok"
 
 
+# The rebuilt pool (QA on #15): `_DeadlineHTTPTransport` replaces the private `_pool` of
+# `httpx2.HTTPTransport`. The tests below fail loudly if an httpx2 upgrade moves or reshapes it,
+# or if the rebuilt pool drifts from the settings httpx2 itself would use.
+
+_POOL_STATE = {"_connections", "_requests", "_optional_thread_lock"}  # mutable state, not settings
+
+
+def _stock_transport() -> httpx2.HTTPTransport:
+    """The transport `_DeadlineHTTPTransport` starts from, before its pool is rebuilt."""
+    return httpx2.HTTPTransport(trust_env=False, limits=_DeadlineHTTPTransport.LIMITS)
+
+
+def test_httpx2_still_holds_its_pool_where_the_deadline_transport_replaces_it() -> None:
+    stock = _stock_transport()
+
+    pool = vars(stock).get("_pool")
+
+    assert type(pool) is httpcore2.ConnectionPool, (
+        "httpx2.HTTPTransport no longer keeps an httpcore2.ConnectionPool in `_pool`: "
+        "_DeadlineHTTPTransport must be revisited before this httpx2 version is used."
+    )
+    stock.close()
+
+
+def test_httpx2_sends_every_request_through_the_replaced_pool() -> None:
+    sent: list[httpcore2.Request] = []
+
+    class RecordingPool(httpcore2.ConnectionPool):
+        def handle_request(self, request: httpcore2.Request) -> httpcore2.Response:
+            sent.append(request)
+            return httpcore2.Response(200, content=b"ok")
+
+    transport = _DeadlineHTTPTransport()
+    transport._pool.close()  # noqa: SLF001
+    transport._pool = RecordingPool()  # noqa: SLF001
+
+    response = transport.handle_request(httpx2.Request("GET", "http://93.184.215.14/"))
+    response.read()
+
+    assert len(sent) == 1
+    assert response.content == b"ok"
+
+
 def test_the_default_inner_transport_uses_the_deadline_backend() -> None:
-    # httpx2.HTTPTransport takes no network backend; the pool is rebuilt. This fails if an
-    # upgrade of httpx2 changes how the transport holds its pool.
     transport = _DeadlineHTTPTransport()
 
+    assert type(transport._pool) is httpcore2.ConnectionPool  # noqa: SLF001
     assert isinstance(transport._pool._network_backend, _DeadlineBackend)  # noqa: SLF001
     transport.close()
+
+
+def test_the_rebuilt_pool_has_every_setting_httpx2_would_give_it() -> None:
+    stock = _stock_transport()
+    rebuilt = _DeadlineHTTPTransport()
+    stock_settings = vars(stock._pool)  # noqa: SLF001
+    rebuilt_settings = vars(rebuilt._pool)  # noqa: SLF001
+
+    assert set(rebuilt_settings) == set(stock_settings)
+    differing = {
+        name
+        for name in set(stock_settings) - _POOL_STATE
+        if rebuilt_settings[name] != stock_settings[name]
+    }
+    # Only the network backend (the deadline) and the SSL context object (built the same way,
+    # checked below) differ from what httpx2 builds.
+    assert differing <= {"_network_backend", "_ssl_context"}
+    assert rebuilt_settings["_max_keepalive_connections"] == 0
+    assert rebuilt_settings["_proxy"] is None
+    assert rebuilt_settings["_http1"] is True
+    assert rebuilt_settings["_http2"] is False
+    assert rebuilt_settings["_retries"] == 0
+    stock.close()
+    rebuilt.close()
+
+
+def test_the_rebuilt_pool_verifies_certificates_and_host_names() -> None:
+    stock = _stock_transport()
+    rebuilt = _DeadlineHTTPTransport()
+    context = rebuilt._pool._ssl_context  # noqa: SLF001
+    stock_context = stock._pool._ssl_context  # noqa: SLF001
+
+    assert isinstance(context, ssl.SSLContext)
+    assert context.verify_mode == ssl.CERT_REQUIRED
+    assert context.check_hostname is True
+    assert type(context) is type(stock_context)
+    assert context.minimum_version == stock_context.minimum_version
+    assert context.options == stock_context.options
+    stock.close()
+    rebuilt.close()
+
+
+def test_no_connection_stays_open_between_requests(
+    serve: Callable[[Handler], int], network: NetworkSpy
+) -> None:
+    closed_by_client: list[bool] = []
+
+    def keep_alive(connection: _RealSocket, _stop: threading.Event) -> None:
+        # A keep-alive response; the server then waits for the client to close the connection.
+        connection.sendall(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok")
+        closed_by_client.append(connection.recv(1) == b"")
+
+    port = serve(keep_alive)
+    transport = _DeadlineHTTPTransport()
+
+    with GuardedClient(
+        FetchSettings(timeout_seconds=BUDGET),
+        resolver=StubResolver({"slow.example": ["127.0.0.1"]}),
+        inner_transport=transport,
+    ) as client:
+        for _ in range(2):
+            assert client.get(f"http://slow.example:{port}/").text == "ok"
+            assert transport._pool.connections == []  # noqa: SLF001
+
+    assert len(network.sockets) == 2  # one new connection per request, none reused
+    deadline = time.monotonic() + 2
+    while len(closed_by_client) < 2 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert closed_by_client == [True, True]
 
 
 def test_a_nested_deadline_never_extends_the_outer_one() -> None:

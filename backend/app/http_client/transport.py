@@ -128,15 +128,19 @@ class _DeadlineHTTPTransport(httpx2.HTTPTransport):
     another host name served from the same address, with a TLS session negotiated for the first.
     """
 
+    LIMITS = httpx2.Limits(max_connections=100, max_keepalive_connections=0)
+
     def __init__(self, network_backend: httpcore2.NetworkBackend | None = None) -> None:
-        super().__init__(trust_env=False, limits=httpx2.Limits(max_keepalive_connections=0))
+        super().__init__(trust_env=False, limits=self.LIMITS)
         self._pool.close()
-        # httpx2.HTTPTransport takes no network backend: its pool is rebuilt with the same
-        # settings and the deadline backend (tests/http_client/test_deadline.py checks this).
+        # httpx2.HTTPTransport takes no network backend: its pool is rebuilt with the settings
+        # httpx2 gives it and the deadline backend (tests/http_client/test_deadline.py checks
+        # both, and that httpx2 still keeps and uses its pool in `_pool`).
         self._pool = httpcore2.ConnectionPool(
             ssl_context=httpx2.create_ssl_context(trust_env=False),
-            max_connections=100,
-            max_keepalive_connections=0,
+            max_connections=self.LIMITS.max_connections,
+            max_keepalive_connections=self.LIMITS.max_keepalive_connections,
+            keepalive_expiry=self.LIMITS.keepalive_expiry,
             network_backend=_DeadlineBackend(network_backend),
         )
 

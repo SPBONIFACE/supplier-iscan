@@ -123,7 +123,9 @@ class GuardedClient:
         headers: Mapping[str, str] | None = None,
     ) -> None:
         self.settings = settings or load_fetch_settings()
-        self._client = httpx2.Client(
+        # Name-mangled: the raw client is still guarded (its transport is `GuardedTransport`) but
+        # has no total deadline, so it is not an attribute other modules can reach by accident.
+        self.__client = httpx2.Client(
             transport=GuardedTransport(resolver=resolver, inner=inner_transport),
             trust_env=False,
             follow_redirects=False,
@@ -138,7 +140,7 @@ class GuardedClient:
         self.close()
 
     def close(self) -> None:
-        self._client.close()
+        self.__client.close()
 
     @contextmanager
     def stream(
@@ -165,11 +167,11 @@ class GuardedClient:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise FetchTimeoutError(timed_out)
-                request = self._client.build_request(
+                request = self.__client.build_request(
                     "GET", current, headers=dict(headers or {}), timeout=remaining
                 )
                 try:
-                    response = self._client.send(request, stream=True)
+                    response = self.__client.send(request, stream=True)
                 except (httpx2.InvalidURL, UnicodeError) as error:  # defence in depth
                     raise InvalidUrlError(MSG_INVALID_REDIRECT) from error
                 location = response.extensions.get(_LOCATION)
