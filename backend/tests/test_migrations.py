@@ -16,7 +16,7 @@ from app.migrate import alembic_config, upgrade_to_head
 from tests.db_support import temporary_database
 from tests.support import LOCAL_ORIGIN
 
-TABLES = {"organisations", "users", "sessions", "usage_events"}
+TABLES = {"organisations", "users", "sessions", "usage_events", "invitations"}
 
 
 @pytest.fixture
