@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.3.0
+  version: 0.4.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -9,6 +9,15 @@ info:
     Authentication: `POST /auth/login` sets a session cookie (`HttpOnly`, `Secure`, `SameSite=Lax`).
     Every operation that declares the `sessionCookie` security requirement answers 401 when the
     cookie is missing, expired, revoked by a logout, or tampered with.
+
+
+    Organisation isolation: every member operation is scoped to the organisation of the session;
+    no member operation takes an organisation id from the client. A request for a resource of
+    another organisation answers the shared `NotFound` response, identical to the answer for an id
+    that does not exist. An administrator reads the content of an organisation (supplier names,
+    fact values, quotes, corrections, criteria, notes, assessments) only as a member of that
+    organisation, like any member: the local administrator of a self-hosted instance reaches the
+    default organisation's content, and no other.
 servers:
   - url: http://localhost:8000
     description: Local development (Docker Compose)
@@ -19,6 +28,8 @@ tags:
     description: Sign-in, sign-out and the current user
   - name: users
     description: User records
+  - name: organisation
+    description: The signed-in member's own organisation
   - name: admin
     description: Administrator operations. A signed-in member gets 403 on every one of them.
   - name: invitations
@@ -145,6 +156,27 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /organisation:
+    get:
+      operationId: getOwnOrganisation
+      tags: [organisation]
+      summary: Return the signed-in member's own organisation
+      description: >-
+        The organisation of the session, never another one: there is no organisation id to pass.
+        The remaining profile quota is added in a later version.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The member's own organisation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberOrganisation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /admin/organisations:
@@ -442,7 +474,10 @@ components:
     NotFound:
       description: >-
         The resource does not exist, or the caller may not see it. Both answers are identical, so
-        that the existence of a resource is never revealed.
+        that the existence of a resource is never revealed. This is the response of every
+        operation for a resource outside the caller's organisation (another organisation's
+        resource, or, for an administrator, the content of an organisation they are not a member
+        of).
       content:
         application/json:
           schema:
@@ -626,6 +661,28 @@ components:
           minimum: 0
         created_at:
           type: string
+          format: date-time
+    MemberOrganisation:
+      description: >-
+        What a member sees of their own organisation. Nothing about any other organisation.
+      type: object
+      additionalProperties: false
+      required: [name, status, seat_limit, profile_quota, access_ends_at]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [pending_activation, active, acceptance_renewal_required]
+        seat_limit:
+          description: Maximum number of users. Null means unlimited.
+          type: [integer, "null"]
+        profile_quota:
+          description: Maximum number of profile runs. Null means unlimited.
+          type: [integer, "null"]
+        access_ends_at:
+          description: End of access. Null while not yet activated, or when the access is unlimited.
+          type: [string, "null"]
           format: date-time
     OrganisationList:
       type: object
