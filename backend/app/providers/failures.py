@@ -14,16 +14,37 @@ from pydantic import ValidationError
 from app.providers.errors import FailureKind
 
 _TIMEOUT_CLASS_NAMES = frozenset(
-    {"APITimeoutError", "TimeoutException", "ConnectTimeout", "ReadTimeout", "WriteTimeout",
-     "PoolTimeout"}
+    {
+        "APITimeoutError",
+        "TimeoutException",
+        "ConnectTimeout",
+        "ReadTimeout",
+        "WriteTimeout",
+        "PoolTimeout",
+    }
 )
 _CONNECTION_CLASS_NAMES = frozenset(
-    {"APIConnectionError", "TransportError", "NetworkError", "ConnectError", "ReadError",
-     "WriteError", "RemoteProtocolError", "ProtocolError", "NoResponseError", "ProxyError"}
+    {
+        "APIConnectionError",
+        "TransportError",
+        "NetworkError",
+        "ConnectError",
+        "ReadError",
+        "WriteError",
+        "RemoteProtocolError",
+        "ProtocolError",
+        "NoResponseError",
+        "ProxyError",
+    }
 )
 _INVALID_RESPONSE_CLASS_NAMES = frozenset(
-    {"APIResponseValidationError", "ResponseValidationError", "JSONDecodeError",
-     "DecodingError", "UnknownApiResponseError"}
+    {
+        "APIResponseValidationError",
+        "ResponseValidationError",
+        "JSONDecodeError",
+        "DecodingError",
+        "UnknownApiResponseError",
+    }
 )
 
 

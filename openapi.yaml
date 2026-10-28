@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.3.0
+  version: 0.4.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -17,6 +17,12 @@ tags:
     description: Operational endpoints
   - name: auth
     description: Sign-in, sign-out and the current user
+  - name: users
+    description: User records
+  - name: admin
+    description: Administrator operations. A signed-in member gets 403 on every one of them.
+  - name: invitations
+    description: Public invitation links (the token is the credential)
 # Operations are public unless they declare `security`.
 paths:
   /health:
@@ -120,7 +126,278 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Read a user record
+      description: >-
+        A member reads only their own record; any other id answers 404 with the same body as an
+        id that does not exist. An administrator reads any user.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /admin/organisations:
+    post:
+      operationId: createOrganisation
+      tags: [admin]
+      summary: Create an organisation with its limits
+      description: >-
+        Administrator only. The organisation starts in status `pending_activation`, or `active` on
+        a self-hosted instance (`INSTANCE_MODE=self_hosted`), where activation is skipped. A limit
+        left empty or null means unlimited. The access period starts at activation: on a
+        self-hosted instance at once, so `access_ends_at` is set on creation; otherwise it stays
+        null until the organisation is activated.
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganisationCreate"
+      responses:
+        "201":
+          description: The organisation was created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organisation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    get:
+      operationId: listOrganisations
+      tags: [admin]
+      summary: List the organisations
+      description: Administrator only. Oldest first.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: All organisations of the instance.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganisationList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /admin/organisations/{id}:
+    patch:
+      operationId: extendOrganisationAccess
+      tags: [admin]
+      summary: Extend an organisation's access
+      description: >-
+        Administrator only. Sets a later `access_ends_at`. A date that is not later than the
+        current one, or not in the future, answers 422.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganisationAccessUpdate"
+      responses:
+        "200":
+          description: The updated organisation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organisation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /admin/organisations/{id}/invitations:
+    post:
+      operationId: createInvitation
+      tags: [admin]
+      summary: Invite a person into an organisation
+      description: >-
+        Administrator only. Returns a single-use link for the administrator to send (no email is
+        sent). Only a hash of the token is stored, so the link cannot be shown again. The
+        invitation expires after the configured delay (`INVITATION_VALIDITY_HOURS`). An email that
+        already has an account answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvitationCreate"
+      responses:
+        "201":
+          description: The invitation was created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedInvitation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: An account already exists for this email.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                detail: An account already exists for this email.
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /admin/invitations/{id}:
+    delete:
+      operationId: revokeInvitation
+      tags: [admin]
+      summary: Revoke an unused invitation
+      description: >-
+        Administrator only. Accepting the invitation is refused afterwards. Revoking an invitation
+        that is already revoked changes nothing (204); one that was already used answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "204":
+          description: The invitation is revoked.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The invitation was already used.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                detail: This invitation has already been used.
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /invitations/{token}:
+    get:
+      operationId: checkInvitation
+      tags: [invitations]
+      summary: Check an invitation link
+      description: >-
+        Public: the token is the credential. A used, expired, revoked or unknown token answers the
+        same 404, which says nothing about any account.
+      parameters:
+        - $ref: "#/components/parameters/InvitationToken"
+      responses:
+        "200":
+          description: The invitation is valid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvitationCheck"
+        "404":
+          $ref: "#/components/responses/InvalidInvitation"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /invitations/{token}/accept:
+    post:
+      operationId: acceptInvitation
+      tags: [invitations]
+      summary: Accept an invitation and set a password
+      description: >-
+        Public: the token is the credential. Creates the user (role `member`) in the invitation's
+        organisation, marks the invitation used and signs the person in: the session cookie is set
+        as on `POST /auth/login`. A used, expired, revoked or unknown token answers the same 404.
+        A password shorter than the configured minimum (`PASSWORD_MIN_LENGTH`) answers 422. When
+        the organisation has as many members as its seat limit, the answer is 409.
+      parameters:
+        - $ref: "#/components/parameters/InvitationToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvitationAccept"
+      responses:
+        "200":
+          description: The account is created and the person is signed in.
+          headers:
+            Set-Cookie:
+              description: The session cookie, exactly as set by `POST /auth/login`.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+        "404":
+          $ref: "#/components/responses/InvalidInvitation"
+        "409":
+          description: The organisation has no free seat.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                detail: Seat limit reached.
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
 components:
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      description: The resource's UUID. A value that is not a UUID answers 404, as an unknown id.
+      schema:
+        type: string
+    InvitationToken:
+      name: token
+      in: path
+      required: true
+      description: The token from the invitation link.
+      schema:
+        type: string
   securitySchemes:
     sessionCookie:
       type: apiKey
@@ -158,6 +435,34 @@ components:
             errors:
               - field: email
                 message: Email is required.
+    Forbidden:
+      description: Signed in, but this operation is for administrators only.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: Administrator access required.
+    NotFound:
+      description: >-
+        The resource does not exist, or the caller may not see it. Both answers are identical, so
+        that the existence of a resource is never revealed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: Not found.
+    InvalidInvitation:
+      description: >-
+        The invitation link cannot be used: it is unknown, expired, revoked or already used. The
+        message is the same in every case.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: This invitation link is not valid. Ask your administrator for a new one.
     ServiceUnavailable:
       description: The database is unavailable. Plain message, no technical details.
       content:
@@ -248,3 +553,164 @@ components:
                 type: string
               message:
                 type: string
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, organisation_id, email, role, created_at, last_login_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organisation_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+        created_at:
+          type: string
+          format: date-time
+        last_login_at:
+          type: [string, "null"]
+          format: date-time
+    OrganisationCreate:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          description: Surrounding spaces are removed; it must not be empty.
+          type: string
+          minLength: 1
+          maxLength: 200
+        seat_limit:
+          description: Maximum number of users in the organisation. Null or absent means unlimited.
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 2147483647
+        profile_quota:
+          description: Maximum number of profiles. Null or absent means unlimited.
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 2147483647
+        access_period_days:
+          description: >-
+            Length of the access period, counted from activation. Null or absent means unlimited.
+            The maximum is a technical bound only.
+          type: [integer, "null"]
+          minimum: 1
+          maximum: 36500
+    Organisation:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - status
+        - seat_limit
+        - profile_quota
+        - access_period_days
+        - access_ends_at
+        - member_count
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        status:
+          type: string
+          enum: [pending_activation, active, acceptance_renewal_required]
+        seat_limit:
+          type: [integer, "null"]
+        profile_quota:
+          type: [integer, "null"]
+        access_period_days:
+          type: [integer, "null"]
+        access_ends_at:
+          description: End of access. Null while not yet activated, or when the access is unlimited.
+          type: [string, "null"]
+          format: date-time
+        member_count:
+          description: Number of users in the organisation (counted against the seat limit).
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+    OrganisationList:
+      type: object
+      additionalProperties: false
+      required: [organisations]
+      properties:
+        organisations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Organisation"
+    OrganisationAccessUpdate:
+      type: object
+      additionalProperties: false
+      required: [access_ends_at]
+      properties:
+        access_ends_at:
+          description: >-
+            New end of access, with a time zone. Must be in the future and later than the current
+            `access_ends_at`.
+          type: string
+          format: date-time
+    InvitationCreate:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email:
+          description: Stored trimmed and lower-cased.
+          type: string
+          minLength: 3
+          maxLength: 320
+    CreatedInvitation:
+      type: object
+      additionalProperties: false
+      required: [id, organisation_id, email, expires_at, link]
+      properties:
+        id:
+          type: string
+          format: uuid
+        organisation_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        link:
+          description: >-
+            The single-use link for the invited person: the frontend origin followed by
+            `/invitations/<token>`. It is returned once and cannot be shown again.
+          type: string
+    InvitationCheck:
+      type: object
+      additionalProperties: false
+      required: [email, organisation_name, expires_at]
+      properties:
+        email:
+          type: string
+        organisation_name:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+    InvitationAccept:
+      type: object
+      additionalProperties: false
+      required: [password]
+      properties:
+        password:
+          description: At least the configured minimum length (`PASSWORD_MIN_LENGTH`).
+          type: string
+          minLength: 1
+          maxLength: 1024

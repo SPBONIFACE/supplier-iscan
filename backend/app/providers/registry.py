@@ -22,8 +22,8 @@ from app.providers.catalogue import (
 from app.providers.errors import (
     ProviderConfigurationRefused,
     ProviderError,
-    ProvidersNotReady,
     ProviderSettingMissing,
+    ProvidersNotReady,
 )
 from app.providers.interface import (
     RetrievalAdapter,
@@ -158,4 +158,3 @@ class Providers:
         if problems:
             logger.warning("Providers not ready: %s", "; ".join(str(p) for p in problems))
             raise ProvidersNotReady(problems)
-

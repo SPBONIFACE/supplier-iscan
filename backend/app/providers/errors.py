@@ -21,7 +21,9 @@ FailureKind = Literal[
 FAILURE_REASONS: dict[FailureKind, str] = {
     "timeout": "The provider did not answer in time.",
     "connection": "The provider could not be reached.",
-    "authentication": "The provider refused the API key (missing permission, invalid or revoked key).",
+    "authentication": (
+        "The provider refused the API key (missing permission, invalid or revoked key)."
+    ),
     "rate_limited": "The provider is limiting requests for now.",
     "rejected": "The provider rejected the request.",
     "unavailable": "The provider is temporarily unavailable.",
@@ -47,7 +49,7 @@ class ProviderError(Exception):
 
 
 class ProviderCallError(ProviderError):
-    """The provider call failed: timeout, connection, HTTP 4xx/5xx, refused key. The run can retry."""
+    """The call failed: timeout, connection, HTTP 4xx/5xx, refused key. The run can retry."""
 
     retryable = True
 
@@ -113,5 +115,9 @@ class ProvidersNotReady(Exception):
     @property
     def missing_settings(self) -> list[str]:
         return sorted(
-            {problem.setting for problem in self.problems if isinstance(problem, ProviderSettingMissing)}
+            {
+                problem.setting
+                for problem in self.problems
+                if isinstance(problem, ProviderSettingMissing)
+            }
         )

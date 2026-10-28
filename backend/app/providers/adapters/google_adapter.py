@@ -77,9 +77,9 @@ class GeminiRetrieval:
         return urls
 
 
-def structuring(config: ProviderConfigSpec, api_key: str) -> GeminiStructuring:
+def build_structuring(config: ProviderConfigSpec, api_key: str) -> GeminiStructuring:
     return GeminiStructuring(config, make_client(config, api_key))
 
 
-def retrieval(config: ProviderConfigSpec, api_key: str) -> GeminiRetrieval:
+def build_retrieval(config: ProviderConfigSpec, api_key: str) -> GeminiRetrieval:
     return GeminiRetrieval(config, make_client(config, api_key))

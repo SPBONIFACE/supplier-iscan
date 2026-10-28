@@ -65,7 +65,11 @@ class ClaudeRetrieval:
             system=request.instructions,
             messages=[{"role": "user", "content": request.query}],
             tools=[
-                {"type": "web_search_20250305", "name": "web_search", "max_uses": WEB_SEARCH_MAX_USES}
+                {
+                    "type": "web_search_20250305",
+                    "name": "web_search",
+                    "max_uses": WEB_SEARCH_MAX_USES,
+                }
             ],
         )
         cited: list[RetrievedUrl] = []
@@ -83,9 +87,9 @@ class ClaudeRetrieval:
         return cited + found
 
 
-def structuring(config: ProviderConfigSpec, api_key: str) -> ClaudeStructuring:
+def build_structuring(config: ProviderConfigSpec, api_key: str) -> ClaudeStructuring:
     return ClaudeStructuring(config, make_client(config, api_key))
 
 
-def retrieval(config: ProviderConfigSpec, api_key: str) -> ClaudeRetrieval:
+def build_retrieval(config: ProviderConfigSpec, api_key: str) -> ClaudeRetrieval:
     return ClaudeRetrieval(config, make_client(config, api_key))

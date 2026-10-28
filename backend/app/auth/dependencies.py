@@ -5,6 +5,10 @@
 
 It answers 401 when the session cookie is missing, unknown (tampered), expired or revoked. Tests of
 every protected endpoint call `tests.auth_support.assert_requires_session`.
+
+Administrator-only endpoints depend on `AdministratorPrincipal` instead (or put
+`require_administrator` in the router's dependencies): 401 without a valid session, then 403 for a
+signed-in member.
 """
 
 import uuid
@@ -17,6 +21,7 @@ from app.auth.sessions import SESSION_COOKIE_NAME, find_active_session
 from app.db import DbSession, utc_now
 
 AUTHENTICATION_REQUIRED = "Authentication required."
+ADMINISTRATOR_REQUIRED = "Administrator access required."
 
 
 @dataclass(frozen=True)
@@ -58,3 +63,13 @@ def require_session(token: Annotated[str, Depends(session_token)], db: DbSession
 
 # Type of an endpoint parameter that receives the signed-in user (401 when there is none).
 CurrentPrincipal = Annotated[Principal, Depends(require_session)]
+
+
+def require_administrator(principal: CurrentPrincipal) -> Principal:
+    if principal.role != "admin":
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=ADMINISTRATOR_REQUIRED)
+    return principal
+
+
+# Type of an endpoint parameter that receives a signed-in administrator (401, then 403).
+AdministratorPrincipal = Annotated[Principal, Depends(require_administrator)]

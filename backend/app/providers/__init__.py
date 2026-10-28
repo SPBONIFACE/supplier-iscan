@@ -21,8 +21,8 @@ from app.providers.errors import (
     ProviderCallError,
     ProviderConfigurationRefused,
     ProviderError,
-    ProvidersNotReady,
     ProviderSettingMissing,
+    ProvidersNotReady,
     StructuredOutputInvalid,
 )
 from app.providers.interface import (

@@ -7,6 +7,7 @@ file is read here, and no value is ever logged or shown in an error message.
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import Literal
 
 # Local development origin of the Vite dev server (spec, Security model: Allowed origins).
@@ -26,6 +27,14 @@ ADMIN_PASSWORD = "ADMIN_PASSWORD"  # noqa: S105 - the name of the setting, not a
 # Path of the approved provider configurations file (#11); the shipped example when unset.
 # Provider API keys are read by name in app.providers (KEY_SETTINGS), never stored in Settings.
 PROVIDER_CONFIG_FILE = "PROVIDER_CONFIG_FILE"
+INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
+PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
+
+# Local defaults when the setting is empty, so that a self-hosted instance starts without them.
+# They are configuration, not product terms: every operator sets their own.
+DEFAULT_INVITATION_VALIDITY_HOURS = 72
+DEFAULT_PASSWORD_MIN_LENGTH = 12
+MAX_SETTING_NUMBER = 100_000
 
 
 class ConfigurationError(ValueError):
@@ -48,6 +57,9 @@ class Settings:
     admin_email: str | None = None
     admin_password: str | None = field(default=None, repr=False)
     provider_config_file: str | None = None
+    # How long an invitation link stays valid, and the shortest accepted password (#9).
+    invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
+    password_min_length: int = DEFAULT_PASSWORD_MIN_LENGTH
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -71,6 +83,18 @@ def _parse_instance_mode(raw: str) -> InstanceMode:
     return value
 
 
+def _parse_positive_int(env: Mapping[str, str], name: str, default: int) -> int:
+    raw = env.get(name, "").strip()
+    if not raw:
+        return default
+    # A technical bound only (it keeps date arithmetic in range), not a product term.
+    if not (raw.isascii() and raw.isdigit()) or not 1 <= int(raw) <= MAX_SETTING_NUMBER:
+        raise ConfigurationError(
+            f"{name} must be a whole number between 1 and {MAX_SETTING_NUMBER}"
+        )
+    return int(raw)
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
     raw_origins = env.get(CORS_ALLOWED_ORIGINS, "").strip() or DEFAULT_ALLOWED_ORIGINS
@@ -83,4 +107,12 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         # Not stripped: spaces are valid in a password. Empty means "not set".
         admin_password=env.get(ADMIN_PASSWORD, "") or None,
         provider_config_file=env.get(PROVIDER_CONFIG_FILE, "").strip() or None,
+        invitation_validity=timedelta(
+            hours=_parse_positive_int(
+                env, INVITATION_VALIDITY_HOURS, DEFAULT_INVITATION_VALIDITY_HOURS
+            )
+        ),
+        password_min_length=_parse_positive_int(
+            env, PASSWORD_MIN_LENGTH, DEFAULT_PASSWORD_MIN_LENGTH
+        ),
     )

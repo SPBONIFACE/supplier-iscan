@@ -79,9 +79,9 @@ class OpenAIRetrieval:
         return urls
 
 
-def structuring(config: ProviderConfigSpec, api_key: str) -> OpenAIStructuring:
+def build_structuring(config: ProviderConfigSpec, api_key: str) -> OpenAIStructuring:
     return OpenAIStructuring(config, make_client(config, api_key))
 
 
-def retrieval(config: ProviderConfigSpec, api_key: str) -> OpenAIRetrieval:
+def build_retrieval(config: ProviderConfigSpec, api_key: str) -> OpenAIRetrieval:
     return OpenAIRetrieval(config, make_client(config, api_key))

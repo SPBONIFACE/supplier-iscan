@@ -12,17 +12,20 @@ from app.providers.registry import AdapterFactories
 
 ADAPTERS: dict[tuple[ProviderName, str], AdapterFactories] = {
     ("anthropic", "messages"): AdapterFactories(
-        structuring=anthropic_adapter.structuring, retrieval=anthropic_adapter.retrieval
+        structuring=anthropic_adapter.build_structuring, retrieval=anthropic_adapter.build_retrieval
     ),
     ("google", "generate_content"): AdapterFactories(
-        structuring=google_adapter.structuring, retrieval=google_adapter.retrieval
+        structuring=google_adapter.build_structuring, retrieval=google_adapter.build_retrieval
     ),
     ("openai", "responses"): AdapterFactories(
-        structuring=openai_adapter.structuring, retrieval=openai_adapter.retrieval
+        structuring=openai_adapter.build_structuring, retrieval=openai_adapter.build_retrieval
     ),
-    ("mistral", "chat_completions"): AdapterFactories(structuring=mistral_adapter.structuring),
-    ("mistral", "conversations"): AdapterFactories(retrieval=mistral_adapter.retrieval),
+    ("mistral", "chat_completions"): AdapterFactories(
+        structuring=mistral_adapter.build_structuring
+    ),
+    ("mistral", "conversations"): AdapterFactories(retrieval=mistral_adapter.build_retrieval),
     ("perplexity", "chat_completions"): AdapterFactories(
-        structuring=perplexity_adapter.structuring, retrieval=perplexity_adapter.retrieval
+        structuring=perplexity_adapter.build_structuring,
+        retrieval=perplexity_adapter.build_retrieval,
     ),
 }

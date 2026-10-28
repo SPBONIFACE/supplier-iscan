@@ -74,31 +74,108 @@ class Case:
 
 BEARER = f"Bearer {SENTINEL_KEY}"
 STRUCTURING_CASES = [
-    Case("anthropic", "messages", anthropic_adapter.make_client, anthropic_adapter.ClaudeStructuring,
-         "httpx2", "/v1/messages", "x-api-key", SENTINEL_KEY),
-    Case("google", "generate_content", google_adapter.make_client, google_adapter.GeminiStructuring,
-         "httpx", "/v1beta/models/model-1:generateContent", "x-goog-api-key", SENTINEL_KEY),
-    Case("openai", "responses", openai_adapter.make_client, openai_adapter.OpenAIStructuring,
-         "httpx2", "/responses", "authorization", BEARER),
-    Case("mistral", "chat_completions", mistral_adapter.make_client,
-         mistral_adapter.MistralStructuring, "httpx2", "/v1/chat/completions", "authorization",
-         BEARER),
-    Case("perplexity", "chat_completions", perplexity_adapter.make_client,
-         perplexity_adapter.PerplexityStructuring, "httpx", "/chat/completions", "authorization",
-         BEARER),
+    Case(
+        "anthropic",
+        "messages",
+        anthropic_adapter.make_client,
+        anthropic_adapter.ClaudeStructuring,
+        "httpx2",
+        "/v1/messages",
+        "x-api-key",
+        SENTINEL_KEY,
+    ),
+    Case(
+        "google",
+        "generate_content",
+        google_adapter.make_client,
+        google_adapter.GeminiStructuring,
+        "httpx",
+        "/v1beta/models/model-1:generateContent",
+        "x-goog-api-key",
+        SENTINEL_KEY,
+    ),
+    Case(
+        "openai",
+        "responses",
+        openai_adapter.make_client,
+        openai_adapter.OpenAIStructuring,
+        "httpx2",
+        "/responses",
+        "authorization",
+        BEARER,
+    ),
+    Case(
+        "mistral",
+        "chat_completions",
+        mistral_adapter.make_client,
+        mistral_adapter.MistralStructuring,
+        "httpx2",
+        "/v1/chat/completions",
+        "authorization",
+        BEARER,
+    ),
+    Case(
+        "perplexity",
+        "chat_completions",
+        perplexity_adapter.make_client,
+        perplexity_adapter.PerplexityStructuring,
+        "httpx",
+        "/chat/completions",
+        "authorization",
+        BEARER,
+    ),
 ]
 RETRIEVAL_CASES = [
-    Case("anthropic", "messages", anthropic_adapter.make_client, anthropic_adapter.ClaudeRetrieval,
-         "httpx2", "/v1/messages", "x-api-key", SENTINEL_KEY),
-    Case("google", "generate_content", google_adapter.make_client, google_adapter.GeminiRetrieval,
-         "httpx", "/v1beta/models/model-1:generateContent", "x-goog-api-key", SENTINEL_KEY),
-    Case("openai", "responses", openai_adapter.make_client, openai_adapter.OpenAIRetrieval,
-         "httpx2", "/responses", "authorization", BEARER),
-    Case("mistral", "conversations", mistral_adapter.make_client, mistral_adapter.MistralRetrieval,
-         "httpx2", "/v1/conversations", "authorization", BEARER),
-    Case("perplexity", "chat_completions", perplexity_adapter.make_client,
-         perplexity_adapter.PerplexityRetrieval, "httpx", "/chat/completions", "authorization",
-         BEARER),
+    Case(
+        "anthropic",
+        "messages",
+        anthropic_adapter.make_client,
+        anthropic_adapter.ClaudeRetrieval,
+        "httpx2",
+        "/v1/messages",
+        "x-api-key",
+        SENTINEL_KEY,
+    ),
+    Case(
+        "google",
+        "generate_content",
+        google_adapter.make_client,
+        google_adapter.GeminiRetrieval,
+        "httpx",
+        "/v1beta/models/model-1:generateContent",
+        "x-goog-api-key",
+        SENTINEL_KEY,
+    ),
+    Case(
+        "openai",
+        "responses",
+        openai_adapter.make_client,
+        openai_adapter.OpenAIRetrieval,
+        "httpx2",
+        "/responses",
+        "authorization",
+        BEARER,
+    ),
+    Case(
+        "mistral",
+        "conversations",
+        mistral_adapter.make_client,
+        mistral_adapter.MistralRetrieval,
+        "httpx2",
+        "/v1/conversations",
+        "authorization",
+        BEARER,
+    ),
+    Case(
+        "perplexity",
+        "chat_completions",
+        perplexity_adapter.make_client,
+        perplexity_adapter.PerplexityRetrieval,
+        "httpx",
+        "/chat/completions",
+        "authorization",
+        BEARER,
+    ),
 ]
 ALL_CASES = [*STRUCTURING_CASES, *RETRIEVAL_CASES]
 
@@ -276,11 +353,11 @@ def test_a_new_mistral_sdk_client_does_register_the_tracing_hook() -> None:
 
 @pytest.mark.parametrize("case", ALL_CASES, ids=_id)
 def test_the_production_factory_builds_a_client_without_retries(case: Case) -> None:
-    factories = ADAPTERS[(case.provider, case.api)]
+    factories = ADAPTERS[(case.config().provider, case.api)]
     factory = factories.structuring if case in STRUCTURING_CASES else factories.retrieval
     assert factory is not None
 
-    adapter = factory(case.config(), SENTINEL_KEY)
+    adapter: Any = factory(case.config(), SENTINEL_KEY)
 
     client = adapter._client  # noqa: SLF001 - inspecting the SDK client the factory built
     if hasattr(client, "max_retries"):

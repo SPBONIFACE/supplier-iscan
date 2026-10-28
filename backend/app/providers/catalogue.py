@@ -31,7 +31,13 @@ from pydantic import (
 from app.config import ConfigurationError
 
 ProviderName = Literal["anthropic", "google", "openai", "mistral", "perplexity"]
-PROVIDER_NAMES: tuple[ProviderName, ...] = ("anthropic", "google", "openai", "mistral", "perplexity")
+PROVIDER_NAMES: tuple[ProviderName, ...] = (
+    "anthropic",
+    "google",
+    "openai",
+    "mistral",
+    "perplexity",
+)
 
 Role = Literal["retrieval", "structuring"]
 ROLES: tuple[Role, ...] = ("retrieval", "structuring")

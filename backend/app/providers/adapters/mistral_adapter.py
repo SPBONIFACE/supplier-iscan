@@ -19,6 +19,13 @@ from typing import Any
 
 from mistralai.client import Mistral
 from mistralai.client._hooks.tracing import TracingHook
+from mistralai.client.models import (
+    JSONSchema,
+    ResponseFormat,
+    SystemMessage,
+    UserMessage,
+    WebSearchTool,
+)
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from app.providers.adapters.common import TIMEOUT_SECONDS
@@ -43,7 +50,10 @@ def tracing_hooks(client: Mistral) -> list[object]:
     """The SDK tracing hooks still registered on `client` (empty after `make_client`)."""
     hooks = client.sdk_configuration.__dict__["_hooks"]
     return [
-        hook for name in _HOOK_LISTS for hook in getattr(hooks, name) if isinstance(hook, TracingHook)
+        hook
+        for name in _HOOK_LISTS
+        for hook in getattr(hooks, name)
+        if isinstance(hook, TracingHook)
     ]
 
 
@@ -66,7 +76,9 @@ def _text(content: object) -> str:
         return content
     if isinstance(content, list):
         return "".join(
-            getattr(chunk, "text", "") or "" for chunk in content if getattr(chunk, "type", "") == "text"
+            getattr(chunk, "text", "") or ""
+            for chunk in content
+            if getattr(chunk, "type", "") == "text"
         )
     return ""
 
@@ -79,17 +91,20 @@ class MistralStructuring:
     def generate_json(
         self, request: StructuringRequest, schema_name: str, json_schema: dict[str, object]
     ) -> str:
+        messages: list[SystemMessage | UserMessage] = [
+            SystemMessage(content=request.instructions),
+            UserMessage(content=request.data),
+        ]
         response = self._client.chat.complete(
             model=self._config.model_id,
-            messages=[
-                {"role": "system", "content": request.instructions},
-                {"role": "user", "content": request.data},
-            ],
+            messages=messages,
             max_tokens=request.max_output_tokens,
-            response_format={
-                "type": "json_schema",
-                "json_schema": {"name": schema_name, "schema": json_schema, "strict": False},
-            },
+            response_format=ResponseFormat(
+                type="json_schema",
+                json_schema=JSONSchema(
+                    name=schema_name, schema_definition=json_schema, strict=False
+                ),
+            ),
         )
         choices = response.choices or []
         message = choices[0].message if choices else None
@@ -106,7 +121,7 @@ class MistralRetrieval:
             model=self._config.model_id,
             instructions=request.instructions,
             inputs=request.query,
-            tools=[{"type": "web_search"}],
+            tools=[WebSearchTool()],
             store=False,
         )
         urls: list[RetrievedUrl] = []
@@ -118,13 +133,15 @@ class MistralRetrieval:
                 url = getattr(chunk, "url", None)
                 if getattr(chunk, "type", "") == "tool_reference" and isinstance(url, str) and url:
                     snippet = getattr(chunk, "description", None) or getattr(chunk, "title", "")
-                    urls.append(RetrievedUrl(url=url, snippet=snippet if isinstance(snippet, str) else ""))
+                    urls.append(
+                        RetrievedUrl(url=url, snippet=snippet if isinstance(snippet, str) else "")
+                    )
         return urls
 
 
-def structuring(config: ProviderConfigSpec, api_key: str) -> MistralStructuring:
+def build_structuring(config: ProviderConfigSpec, api_key: str) -> MistralStructuring:
     return MistralStructuring(config, make_client(config, api_key))
 
 
-def retrieval(config: ProviderConfigSpec, api_key: str) -> MistralRetrieval:
+def build_retrieval(config: ProviderConfigSpec, api_key: str) -> MistralRetrieval:
     return MistralRetrieval(config, make_client(config, api_key))

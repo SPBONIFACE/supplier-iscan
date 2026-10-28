@@ -1,7 +1,9 @@
 """``Fetch`` on the httpx2 client: the only registries module that imports a networking library.
 
-Temporary: when this branch is rebased on #15, this adapter is replaced by the application's
-guarded outbound client (``app.http_client``), and this file is deleted.
+Temporary: in #16 this adapter is replaced by the application's guarded outbound client
+(``app.http_client``), and this file is deleted. Until then it is for the registries' fixed hosts
+only: the outbound HTTP policy test (#15) fails if any module outside ``app.registries`` imports
+it or its names.
 """
 
 from collections.abc import Mapping

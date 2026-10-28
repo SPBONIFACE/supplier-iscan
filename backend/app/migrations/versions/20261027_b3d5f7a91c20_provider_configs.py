@@ -1,7 +1,7 @@
 """Approved provider configurations (#11): provider_configs.
 
 Revision ID: b3d5f7a91c20
-Revises: 7c1e2a9f4b10
+Revises: ff6bede2fa28
 Create Date: 2026-10-27 21:30:00.000000
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "b3d5f7a91c20"
-down_revision: str | None = "7c1e2a9f4b10"
+down_revision: str | None = "ff6bede2fa28"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

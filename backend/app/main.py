@@ -16,8 +16,13 @@ from app.config import ConfigurationError, Settings, load_settings
 from app.db import Database
 from app.errors import install_error_handlers
 from app.health import DatabaseCheck, HealthStatus, make_database_check
+from app.invitations.log_redaction import install_access_log_redaction
+from app.invitations.routes import admin_router as admin_invitations_router
+from app.invitations.routes import public_router as invitations_router
+from app.organisations.routes import router as admin_organisations_router
 from app.providers import Providers, load_catalogue
 from app.providers.store import sync_provider_configs
+from app.users.routes import router as users_router
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +77,7 @@ def create_app(
     # openapi.yaml is the only contract: no generated /openapi.json, no documentation pages.
     app = FastAPI(
         title="Supplier iScan API",
-        version="0.3.0",
+        version="0.4.0",
         openapi_url=None,
         docs_url=None,
         redoc_url=None,
@@ -80,13 +85,15 @@ def create_app(
     )
     app.state.database = database
     app.state.providers = providers
+    app.state.settings = settings
+    install_access_log_redaction()
     install_error_handlers(app)
     # Exact origins from configuration, never a wildcard (load_settings rejects "*").
     # Credentials are allowed so that the frontend can send the session cookie.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["Content-Type"],
         allow_credentials=True,
     )
@@ -109,6 +116,10 @@ def create_app(
         )
 
     app.include_router(auth_router)
+    app.include_router(users_router)
+    app.include_router(admin_organisations_router)
+    app.include_router(admin_invitations_router)
+    app.include_router(invitations_router)
     return app
 
 

@@ -88,9 +88,9 @@ class PerplexityRetrieval:
         return [RetrievedUrl(url=url) for url in getattr(completion, "citations", None) or []]
 
 
-def structuring(config: ProviderConfigSpec, api_key: str) -> PerplexityStructuring:
+def build_structuring(config: ProviderConfigSpec, api_key: str) -> PerplexityStructuring:
     return PerplexityStructuring(config, make_client(config, api_key))
 
 
-def retrieval(config: ProviderConfigSpec, api_key: str) -> PerplexityRetrieval:
+def build_retrieval(config: ProviderConfigSpec, api_key: str) -> PerplexityRetrieval:
     return PerplexityRetrieval(config, make_client(config, api_key))
