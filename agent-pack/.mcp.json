@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "supplier-iscan-contract": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--locked",
+        "--project",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "python",
+        "${CLAUDE_PLUGIN_ROOT}/mcp_server/server.py"
+      ]
+    }
+  }
+}

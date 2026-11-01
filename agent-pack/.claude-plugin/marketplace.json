@@ -1,0 +1,11 @@
+{
+  "name": "supplier-iscan-local",
+  "owner": { "name": "Sandra Boniface" },
+  "plugins": [
+    {
+      "name": "supplier-iscan-pack",
+      "source": "./",
+      "description": "evidence-wording skill, openapi.yaml MCP server, guard hook"
+    }
+  ]
+}

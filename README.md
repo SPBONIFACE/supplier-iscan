@@ -63,6 +63,9 @@ Spec-driven and agent-assisted:
   against the acceptance criteria and posts PASS, FAIL (defect) or FAIL (criteria).
   See [`_docs/team/`](_docs/team/) and [`_docs/process/process.md`](_docs/process/process.md).
 - **Context for agents:** [`AGENTS.md`](AGENTS.md).
+- **Agent extension pack:** [`agent-pack/`](agent-pack/README.md): an `evidence-wording` skill, a read-only MCP
+  server over `openapi.yaml`, and a hook that blocks `.env` access and `npm`/`npx` (Claude Code; the skill and the
+  server also work with other agent tools).
 - **Task tracker:** the GitHub issues of this repository.
 
 ## Running it
