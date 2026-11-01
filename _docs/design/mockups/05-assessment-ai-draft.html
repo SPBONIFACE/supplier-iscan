@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assessment · AI draft · Supplier iScan mock-up #5</title>
+<!-- Mock-ups only: IBM Plex is loaded from Google Fonts so the files open without a build step.
+     The application self-hosts its fonts from its own origin (#31); no third-party font CDN at run time. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&amp;family=IBM+Plex+Sans+JP:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Serif:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+/* Mock-up stylesheet for issue #5. Every value comes from tokens.css (var(--isc-…)); the only raw values are
+   layout keywords, the 1440px and narrow breakpoints, and the annotation markers, which are not part of the design. */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--isc-color-paper); color: var(--isc-color-ink);
+  font-family: var(--isc-font-family-sans); font-size: var(--isc-font-size-base);
+  line-height: var(--isc-font-line-height-compact); font-variant-numeric: tabular-nums; overflow-wrap: break-word;
+}
+a { color: var(--isc-color-cobalt); text-underline-offset: 2px; }
+a:hover { color: var(--isc-color-cobalt-strong); }
+:focus-visible, .is-focused { outline: var(--isc-focus-width) solid var(--isc-focus-color); outline-offset: var(--isc-focus-offset); }
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.mono { font-family: var(--isc-font-family-mono); }
+p { margin: 0; }
+h1, h2, h3, h4 { margin: 0; }
+[lang="ja"] { font-family: "IBM Plex Sans JP", var(--isc-font-family-sans); }
+
+/* ---------- Mock-up chrome and annotations (not part of the product) ---------- */
+.mock { display: flex; flex-wrap: wrap; align-items: center; gap: var(--isc-space-2) var(--isc-space-5);
+  padding: var(--isc-space-3) var(--isc-space-5); background: var(--isc-color-ink); color: var(--isc-color-paper);
+  font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm); }
+.mock a { color: var(--isc-color-paper); }
+.mock :focus-visible { outline-color: var(--isc-color-paper); }
+.mock-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: var(--isc-space-2); cursor: pointer; }
+.mock-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--isc-color-paper); }
+.fo { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 3px;
+  margin-right: var(--isc-space-2); background: var(--isc-color-ink); color: var(--isc-color-paper);
+  font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold);
+  font-style: normal; line-height: 1; vertical-align: middle; letter-spacing: 0; text-transform: none; flex: none; }
+body:has(#fo-toggle:not(:checked)) .fo { display: none; }
+.mock-divider { margin: var(--isc-space-5) 0 0; padding: var(--isc-space-3) var(--isc-space-4); border: var(--isc-border-hairline) dashed var(--isc-color-ink-tertiary);
+  font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); }
+.mock-notes { padding: var(--isc-space-6) var(--isc-space-5) var(--isc-space-8); border-top: var(--isc-border-flag-rule) solid var(--isc-color-ink);
+  background: var(--isc-color-paper-margin); font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm);
+  line-height: var(--isc-font-line-height-body); }
+.mock-notes-inner { max-width: 1100px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--isc-space-6); }
+.mock-notes h2 { font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-base); margin: 0 0 var(--isc-space-3); }
+.mock-notes ol, .mock-notes ul { margin: 0; padding-left: var(--isc-space-6); }
+.mock-notes li + li { margin-top: var(--isc-space-2); }
+.mock-notes kbd { font-family: inherit; border: var(--isc-border-hairline) solid var(--isc-color-ink-tertiary); padding: 0 var(--isc-space-2); border-radius: var(--isc-radius-control); background: var(--isc-color-field); }
+.mock-tag { font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+
+/* ---------- Layout ---------- */
+.skip { position: absolute; left: var(--isc-space-3); top: -100px; padding: var(--isc-space-3) var(--isc-space-4); background: var(--isc-color-paper); }
+.skip:focus { top: var(--isc-space-3); }
+.topbar { display: flex; align-items: center; gap: var(--isc-space-6); height: var(--isc-space-8); padding: 0 var(--isc-space-5);
+  border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.brand { font-family: var(--isc-font-family-serif); font-weight: var(--isc-font-weight-semibold); font-size: var(--isc-font-size-h3); color: var(--isc-color-ink); text-decoration: none; white-space: nowrap; }
+.nav { display: flex; gap: var(--isc-space-5); }
+.nav a { text-decoration: none; padding: var(--isc-space-3) 0; }
+.nav a[aria-current="page"] { color: var(--isc-color-ink); border-bottom: var(--isc-border-section-rule) solid var(--isc-color-cobalt); }
+.topbar-who { margin-left: auto; font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); white-space: nowrap; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) var(--isc-size-panel); align-items: stretch; }
+.workspace { min-width: 0; padding: var(--isc-space-6) var(--isc-space-5); }
+.ws-title { font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h2); font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight);
+  padding-top: var(--isc-space-3); border-top: var(--isc-border-section-rule) solid var(--isc-color-ink); }
+.ws-sub { margin-top: var(--isc-space-2); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+.list { width: 100%; border-collapse: collapse; margin-top: var(--isc-space-4); }
+.list th { text-align: left; font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary);
+  padding: var(--isc-space-2) var(--isc-space-3); border-bottom: var(--isc-border-hairline) solid var(--isc-color-ink); white-space: nowrap; }
+.list td { padding: var(--isc-space-2) var(--isc-space-3); height: var(--isc-size-row); border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.list tr.is-open td { background: var(--isc-color-cobalt-tint); }
+.list .num { text-align: right; }
+.list a { text-decoration: none; }
+.panel { min-width: 0; border-left: var(--isc-border-section-rule) solid var(--isc-color-ink); background: var(--isc-color-paper); }
+@media (min-width: 1440px) {
+  .app { grid-template-columns: minmax(0, 1fr) calc(var(--isc-size-panel) + var(--isc-size-margin-note)); }
+}
+@media (max-width: 1023px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .workspace { display: none; }
+  .panel { border-left: 0; }
+  .topbar-who { display: none; }
+}
+@media (max-width: 480px) {
+  .topbar { gap: var(--isc-space-4); padding: 0 var(--isc-space-4); }
+  .nav { gap: var(--isc-space-4); }
+}
+
+/* ---------- Card header ---------- */
+.card-head { padding: var(--isc-space-4) var(--isc-space-5) var(--isc-space-4); border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.card-bar { display: flex; justify-content: space-between; align-items: center; gap: var(--isc-space-3); margin-bottom: var(--isc-space-3); }
+.kicker, .micro { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro);
+  text-transform: uppercase; line-height: var(--isc-font-line-height-tight); color: var(--isc-color-ink-secondary); }
+.card-name { font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h1); font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight); }
+.card-legal { margin-top: var(--isc-space-1); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); }
+.card-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--isc-space-4) var(--isc-space-5); margin: var(--isc-space-4) 0 0; }
+.card-meta > div { min-width: 0; }
+.card-meta dt { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase; color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-tight); }
+.card-meta dd { margin: var(--isc-space-1) 0 0; }
+.card-meta .url { font-size: var(--isc-font-size-sm); }
+.card-meta .later { color: var(--isc-color-ink-tertiary); }
+.card-count { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--isc-space-2) var(--isc-space-4); margin-top: var(--isc-space-4); padding-top: var(--isc-space-3);
+  border-top: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.card-count strong { font-weight: var(--isc-font-weight-semibold); }
+.card-count .meta { font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+@media (max-width: 560px) { .card-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- Card body, sections ---------- */
+.card-body { padding: 0 var(--isc-space-5) var(--isc-space-7); }
+.flags { display: grid; gap: var(--isc-space-2); margin-top: var(--isc-space-4); }
+.flag { padding: var(--isc-space-3) var(--isc-space-4); background: var(--isc-status-flag-bg); color: var(--isc-status-flag-fg);
+  border-left: var(--isc-border-flag-rule) solid var(--isc-status-flag-rule); }
+.flag .micro { color: var(--isc-status-flag-fg); }
+.flag p { margin-top: var(--isc-space-1); line-height: var(--isc-font-line-height-body); max-width: var(--isc-size-measure); }
+.section { margin-top: var(--isc-space-6); }
+.section-title { display: flex; justify-content: space-between; align-items: baseline; gap: var(--isc-space-3); padding-top: var(--isc-space-3);
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink); font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h2);
+  font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight); }
+.section-title .meta { font-family: var(--isc-font-family-sans); font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-regular); color: var(--isc-color-ink-tertiary); white-space: nowrap; }
+.section-lede { margin-top: var(--isc-space-2); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-body); max-width: var(--isc-size-measure); }
+.sub-title { margin: var(--isc-space-5) 0 0; padding-bottom: var(--isc-space-2); border-bottom: var(--isc-border-hairline) solid var(--isc-color-ink);
+  font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h3); font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight);
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--isc-space-3); }
+.sub-title .meta { font-family: var(--isc-font-family-sans); font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-regular); color: var(--isc-color-ink-tertiary); }
+.not-covered { margin-top: var(--isc-space-3); color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-body); }
+.not-assessed { margin-top: var(--isc-space-3); color: var(--isc-status-not-assessed-fg); line-height: var(--isc-font-line-height-body); }
+
+/* ---------- Fact row ---------- */
+.facts { list-style: none; margin: 0; padding: 0; }
+.fact { display: grid; grid-template-columns: var(--isc-size-label-column) minmax(0, 1fr); column-gap: var(--isc-space-4);
+  padding: var(--isc-space-2) var(--isc-space-3); min-height: var(--isc-size-row); border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); align-items: start; }
+.fact:hover { background: var(--isc-color-cobalt-tint); }
+.fact:focus-visible, .fact.is-focused { outline-offset: calc(-1 * var(--isc-focus-width)); }
+.f-label { grid-column: 1; grid-row: 1 / span 2; padding-top: var(--isc-space-1); font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary); }
+.f-hint { display: block; margin-top: var(--isc-space-1); font-weight: var(--isc-font-weight-regular); color: var(--isc-color-ink-tertiary); }
+.f-main { grid-column: 2; min-width: 0; }
+.f-line { display: flex; justify-content: space-between; align-items: baseline; gap: var(--isc-space-3); }
+.f-value { min-width: 0; }
+.f-status { flex: none; display: flex; align-items: baseline; gap: var(--isc-space-2); }
+.f-src { display: flex; flex-wrap: wrap; align-items: center; gap: var(--isc-space-2) var(--isc-space-3); margin-top: var(--isc-space-2); }
+.f-review { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--isc-space-2) var(--isc-space-3); margin-top: var(--isc-space-2); }
+.f-actions { display: flex; gap: var(--isc-space-2); margin-left: auto; }
+.f-original { margin-top: var(--isc-space-2); padding-top: var(--isc-space-2); border-top: var(--isc-border-hairline) dashed var(--isc-color-rule); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+.f-original .f-src { margin-top: var(--isc-space-1); }
+.f-cert { margin-top: var(--isc-space-2); font-size: var(--isc-font-size-sm); }
+.byline { font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+.fact > .note { grid-column: 2; grid-row: 3; }
+.fact > .f-form { grid-column: 2; }
+@media (min-width: 1440px) {
+  .fact { grid-template-columns: var(--isc-size-label-column) minmax(0, 1fr) var(--isc-size-margin-note); }
+  .fact > .note { grid-column: 3; grid-row: 1 / span 3; margin: 0 calc(-1 * var(--isc-space-3)) 0 0; }
+}
+@media (max-width: 640px) {
+  .fact { grid-template-columns: minmax(0, 1fr); }
+  .f-label, .f-main, .fact > .note, .fact > .f-form { grid-column: 1; grid-row: auto; }
+  .f-label { padding-top: 0; margin-bottom: var(--isc-space-1); }
+}
+
+/* Missing evidence: brick, reserved */
+.missing { display: block; padding-left: var(--isc-space-3); border-left: var(--isc-border-quote-rule) solid var(--isc-status-missing-rule); color: var(--isc-status-missing-fg); }
+
+/* ---------- Status badge, evidence labels ---------- */
+.badge { display: inline-block; padding: var(--isc-space-1) var(--isc-space-2); border-radius: var(--isc-radius-control); font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase; line-height: var(--isc-font-line-height-tight); white-space: nowrap; }
+.badge--pending { color: var(--isc-status-pending-fg); border: var(--isc-border-hairline) var(--isc-status-pending-border-style) var(--isc-status-pending-border); }
+.badge--decided { color: var(--isc-status-decided-fg); border: var(--isc-border-hairline) var(--isc-status-decided-border-style) var(--isc-status-decided-border); }
+.badge--deleted { color: var(--isc-status-deleted-fg); border: var(--isc-border-hairline) var(--isc-status-deleted-border-style) var(--isc-status-deleted-border); }
+.ev { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase;
+  line-height: var(--isc-font-line-height-tight); color: var(--isc-status-evidence-fg); white-space: nowrap; }
+.gap-label { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase;
+  line-height: var(--isc-font-line-height-tight); color: var(--isc-status-missing-fg); }
+
+/* ---------- Source chip ---------- */
+.chip { display: inline-flex; align-items: center; gap: var(--isc-space-2); min-height: var(--isc-size-target-min); padding: var(--isc-space-1) var(--isc-space-3);
+  border: var(--isc-border-control) solid var(--isc-color-border-control); border-radius: var(--isc-radius-control); background: transparent;
+  color: var(--isc-color-cobalt); font: inherit; font-size: var(--isc-font-size-sm); text-align: left; cursor: pointer; }
+.chip:hover { color: var(--isc-color-cobalt-strong); }
+.chip[aria-expanded="true"] { background: var(--isc-color-cobalt-tint); }
+.chip-ind { font-family: var(--isc-font-family-mono); }
+
+/* ---------- Margin note and quote block ---------- */
+.note { min-width: 0; margin: var(--isc-space-2) 0 var(--isc-space-1); padding: var(--isc-space-4); background: var(--isc-color-paper-margin); }
+.note-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--isc-space-3); margin-bottom: var(--isc-space-3); }
+.note-title { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase; color: var(--isc-color-ink-secondary); }
+.quote { margin: 0; padding-left: var(--isc-space-4); border-left: var(--isc-border-quote-rule) solid var(--isc-color-ink-tertiary); max-width: var(--isc-size-measure);
+  font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-quote); line-height: var(--isc-font-line-height-body); color: var(--isc-color-ink); }
+.quote[lang="ja"] { font-family: "IBM Plex Sans JP", var(--isc-font-family-serif); }
+.redact { color: var(--isc-color-ink); white-space: nowrap; }
+.quote-src { margin-top: var(--isc-space-3); padding-left: calc(var(--isc-space-4) + var(--isc-border-quote-rule)); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); }
+.quote-src .labels { display: flex; flex-wrap: wrap; gap: var(--isc-space-2) var(--isc-space-3); margin-top: var(--isc-space-2); }
+.attr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--isc-space-1) var(--isc-space-3); margin: var(--isc-space-3) 0 0; }
+.attr dt { font-weight: var(--isc-font-weight-semibold); }
+.attr dd { margin: 0; min-width: 0; }
+.url { font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm); overflow-wrap: anywhere; }
+.btn-close-note { margin-left: auto; }
+
+/* ---------- Buttons and form fields ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--isc-size-control); padding: 0 var(--isc-space-4);
+  border-radius: var(--isc-radius-control); font: inherit; font-weight: var(--isc-font-weight-medium); cursor: pointer; white-space: nowrap; }
+.btn--primary { background: var(--isc-color-cobalt); color: var(--isc-color-on-cobalt); border: var(--isc-border-control) solid var(--isc-color-cobalt); }
+.btn--primary:hover { background: var(--isc-color-cobalt-strong); border-color: var(--isc-color-cobalt-strong); }
+.btn--secondary { background: transparent; color: var(--isc-color-ink); border: var(--isc-border-control) solid var(--isc-color-border-control); }
+.btn--text { background: transparent; color: var(--isc-color-cobalt); border: 0; padding: 0 var(--isc-space-2); }
+.btn--text:hover { color: var(--isc-color-cobalt-strong); text-decoration: underline; }
+.btn[disabled], .btn[aria-disabled="true"] { background: var(--isc-color-paper-margin); color: var(--isc-color-ink-disabled); border: var(--isc-border-control) dashed var(--isc-color-border-control); cursor: not-allowed; }
+.field { display: grid; gap: var(--isc-space-1); }
+.field label, .field .label { font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink); }
+.input, .textarea { width: 100%; min-height: var(--isc-size-control); padding: var(--isc-space-2) var(--isc-space-3); background: var(--isc-color-field);
+  border: var(--isc-border-control) solid var(--isc-color-border-control); border-radius: var(--isc-radius-control); color: var(--isc-color-ink); font: inherit; }
+.textarea { line-height: var(--isc-font-line-height-body); resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--isc-color-ink-tertiary); }
+.input.is-focused, .textarea.is-focused { outline-offset: var(--isc-focus-offset); }
+.help { font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-body); }
+.form-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--isc-space-3); margin-top: var(--isc-space-3); }
+.kbd-hint { font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+.f-form { margin: var(--isc-space-2) 0 var(--isc-space-1); padding: var(--isc-space-3) 0 var(--isc-space-1); border-top: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.message { margin: var(--isc-space-2) 0; padding: var(--isc-space-2) 0 var(--isc-space-2) var(--isc-space-4); border-left: var(--isc-border-section-rule) solid var(--isc-color-ink); line-height: var(--isc-font-line-height-body); }
+.message strong { font-weight: var(--isc-font-weight-semibold); }
+
+/* ---------- Assessment ---------- */
+.stmts { list-style: none; margin: 0; padding: 0; }
+.stmt { padding: var(--isc-space-3) 0; border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.stmt-text { line-height: var(--isc-font-line-height-body); max-width: var(--isc-size-measure); }
+.stmt-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--isc-space-2) var(--isc-space-4); margin-top: var(--isc-space-2); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); }
+.level strong { color: var(--isc-color-ink); font-weight: var(--isc-font-weight-semibold); }
+.cites { display: inline; margin: 0; padding: 0; list-style: none; }
+.cites li { display: inline; }
+.cites li + li::before { content: " · "; color: var(--isc-color-ink-tertiary); }
+.stmt-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--isc-space-2) var(--isc-space-3); margin-top: var(--isc-space-3); }
+.stmt-actions { display: flex; flex-wrap: wrap; gap: var(--isc-space-2); margin-left: auto; }
+.disclosure { background: none; border: 0; padding: 0 var(--isc-space-1); min-height: var(--isc-size-target-min); color: var(--isc-color-cobalt); font: inherit; font-size: var(--isc-font-size-sm); cursor: pointer; }
+.disclosure:hover { color: var(--isc-color-cobalt-strong); text-decoration: underline; }
+.prov { margin-top: var(--isc-space-3); padding: var(--isc-space-3) var(--isc-space-4); background: var(--isc-color-paper-margin); font-size: var(--isc-font-size-sm); }
+.prov dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--isc-space-1) var(--isc-space-4); margin: 0; }
+.prov dt { color: var(--isc-color-ink-secondary); font-weight: var(--isc-font-weight-semibold); }
+.prov dd { margin: 0; min-width: 0; }
+.prov .hist { margin-top: var(--isc-space-3); padding-top: var(--isc-space-3); border-top: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.struck { text-decoration: line-through; color: var(--isc-status-deleted-fg); }
+.gap { padding-left: var(--isc-space-4); border-left: var(--isc-border-quote-rule) solid var(--isc-status-missing-rule); }
+.gap .stmt-text { margin-top: var(--isc-space-1); }
+.docs { width: 100%; border-collapse: collapse; margin-top: var(--isc-space-3); font-size: var(--isc-font-size-sm); }
+.docs caption { text-align: left; font-weight: var(--isc-font-weight-semibold); padding-bottom: var(--isc-space-2); }
+.docs th { text-align: left; font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary); padding: var(--isc-space-2) var(--isc-space-3) var(--isc-space-2) 0; border-bottom: var(--isc-border-hairline) solid var(--isc-color-ink); }
+.docs td { padding: var(--isc-space-2) var(--isc-space-3) var(--isc-space-2) 0; border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); vertical-align: baseline; }
+.docs .access { font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink); }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--isc-space-2) var(--isc-space-4); margin: var(--isc-space-3) 0 0; font-size: var(--isc-font-size-sm); line-height: var(--isc-font-line-height-body); }
+.kv dt { font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary); }
+.kv dd { margin: 0; min-width: 0; }
+@media (max-width: 560px) {
+  .docs thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .docs tr { display: block; padding: var(--isc-space-2) 0; border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+  .docs td { display: block; padding: var(--isc-space-1) 0; border: 0; }
+  .docs td::before { content: attr(data-label) ": "; font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary); }
+  .kv { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .kv dd { margin-bottom: var(--isc-space-2); }
+}
+.buyer { margin-top: var(--isc-space-4); display: grid; gap: var(--isc-space-5); }
+.buyer-field .byline { margin-top: var(--isc-space-1); }
+.criteria-saved { margin-top: var(--isc-space-3); padding: var(--isc-space-3) var(--isc-space-4); background: var(--isc-color-field); border: var(--isc-border-control) solid var(--isc-color-border-control); border-radius: var(--isc-radius-control); line-height: var(--isc-font-line-height-body); }
+.criteria-saved ul { margin: 0; padding-left: var(--isc-space-5); }
+.empty-fit { margin-top: var(--isc-space-3); color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-body); }
+</style>
+</head>
+<body>
+<div class="mock" role="note" aria-label="Mock-up information, not part of the product">
+  <span><strong>Supplier iScan · mock-up #5</strong> · Assessment · AI draft · English</span>
+  <a href="05-index.html">All screens and states</a>
+  <label class="mock-toggle"><input type="checkbox" id="fo-toggle" checked> Show focus order</label>
+</div>
+<a class="skip" href="#panel">Skip to content</a>
+<header class="topbar">
+  <a class="brand" href="#">Supplier iScan</a>
+  <nav class="nav" aria-label="Main"><a href="#" aria-current="page">Workspace</a><a href="#">New profile</a></nav>
+  <span class="topbar-who">member.a@brenmoor.example · Brenmoor Industries</span>
+</header>
+<div class="app">
+<section class="workspace" aria-label="Workspace">
+  <h1 class="ws-title">Workspace</h1>
+  <p class="ws-sub">5 profiles · Brenmoor Industries</p>
+  <table class="list"><thead><tr><th scope=col>Supplier</th><th scope=col>Country</th><th scope=col>Last refresh</th><th scope=col class=num>Facts proposed</th><th scope=col>Flags</th></tr></thead><tbody>
+  <tr class="is-open"><td><a href="#" aria-current="true">Corvane Précision SAS</a></td><td>France</td><td>Oct 26, 2026</td><td class="num">8</td><td></td></tr><tr><td><a href="#">Quillon Fastening Ltd</a></td><td>United Kingdom</td><td>Jul 14, 2026</td><td class="num">5</td><td><span class="badge badge--decided" style="border-style:none;padding-left:0">partial</span></td></tr><tr><td><a href="#">Merivane Gießerei GmbH</a></td><td>Germany</td><td>Oct 19, 2026</td><td class="num">0</td><td></td></tr><tr><td><a href="#">Atelier du Rivet EI</a></td><td>France</td><td>Oct 22, 2026</td><td class="num">3</td><td></td></tr><tr><td><a href="#">Saltaire-Kovač d.o.o.</a></td><td>Croatia</td><td>Sep 30, 2026</td><td class="num">11</td><td><span class="badge badge--decided" style="border-style:none;padding-left:0">identity to verify</span></td></tr>
+  </tbody></table>
+</section>
+<aside class="panel" id="panel" role="dialog" aria-modal="false" aria-labelledby="card-name">
+<div class="card-head">
+  <div class="card-bar"><span class="kicker">Supplier card</span><button type="button" class="btn btn--text">Close<span class="vh"> (Esc)</span></button></div>
+  <h1 class="card-name" id="card-name" tabindex="-1">Corvane Précision SAS</h1>
+  <p class="card-legal">Société par actions simplifiée (French simplified joint-stock company)</p>
+  <dl class="card-meta">
+    <div><dt>Website</dt><dd><a class="url" href="https://corvane-precision.example/" target="_blank" rel="noopener noreferrer">corvane-precision.example<span class="vh"> (opens in a new tab)</span></a></dd></div>
+    <div><dt>Country</dt><dd>France</dd></div>
+    <div><dt>Sector</dt><dd>Precision machining for aerospace</dd></div>
+    <div><dt>Last refresh</dt><dd>Oct 26, 2026</dd></div>
+    <div><dt>Source content deletion</dt><dd>Scheduled for Jan 26, 2027</dd></div>
+  </dl>
+  <div class="card-count" aria-live="polite"><strong>8 facts still proposed</strong>
+    <a href="#fact-founded">Go to the next proposed fact</a></div>
+</div><div class="card-body"><p class="mock-divider" role="note">[mock-up] Panel scrolled down to the Assessment section; the fact sections above are as in 05-supplier-card-default.html. The header stays at the top of the panel.</p><section class="section" id="sec-assessment" aria-labelledby="sec-assessment-h">
+  <h2 class="section-title" id="sec-assessment-h">Assessment<span class="meta">9 statements pending</span></h2>
+  <p class="section-lede">Drafted from the facts of this profile. Each statement cites the facts it relies on or names the evidence that is missing. There is no overall score.</p>
+<h3 class="sub-title">Strengths</h3><ul class="stmts"><li class="stmt" id="stmt-s1">
+  <p class="stmt-text">The supplier claims aerospace quality-management certification (EN 9100:2018) for its Vénissieux site, valid until March 2028.</p>
+  <div class="stmt-meta"><span>Cites: <ul class="cites"><li><span class="fo" aria-hidden="true" title="Focus stop 1">1</span><a href="#fact-quality-cert">Quality management certification</a></li></ul></span></div>
+  <div class="stmt-foot"><span class="badge badge--pending">AI draft, pending your validation</span><span class="fo" aria-hidden="true" title="Focus stop 2">2</span><button type="button" class="disclosure" aria-expanded="true" aria-controls="prov-s1">Provenance</button><div class="stmt-actions"><span class="fo" aria-hidden="true" title="Focus stop 3">3</span><button type="button" class="btn btn--secondary">Approve</button><span class="fo" aria-hidden="true" title="Focus stop 4">4</span><button type="button" class="btn btn--text">Correct</button><span class="fo" aria-hidden="true" title="Focus stop 5">5</span><button type="button" class="btn btn--text">Delete</button></div></div>
+  <div class="prov" id="prov-s1">
+  <dl>
+    <dt>Provider</dt><dd>Google (Gemini API)</dd>
+    <dt>Model ID and version</dt><dd class="mono">gemini-flash-sample · 2026-09</dd>
+    <dt>Generation time</dt><dd>Oct 26, 2026, 16:04 UTC</dd>
+    <dt>Review status</dt><dd>AI draft (not reviewed yet)</dd>
+  </dl>
+</div>
+</li><li class="stmt" id="stmt-s2">
+  <p class="stmt-text">A named aerospace customer reports more than 42,000 parts delivered from Vénissieux in 2025, with a strong on-time record.</p>
+  <div class="stmt-meta"><span>Cites: <ul class="cites"><li><a href="#fact-customers">Customers and markets</a></li></ul></span></div>
+  <div class="stmt-foot"><span class="badge badge--decided">Approved</span><span class="byline">Reviewed by member.b@brenmoor.example on Oct 27, 2026</span><button type="button" class="disclosure" aria-expanded="false" aria-controls="prov-s2">Provenance</button><div class="stmt-actions"><button type="button" class="btn btn--text">Correct</button><button type="button" class="btn btn--text">Delete</button></div></div>
+  
+</li></ul><h3 class="sub-title">Weaknesses</h3><ul class="stmts"><li class="stmt" id="stmt-w1">
+  <p class="stmt-text">Production depends on two sites, one of them a joint venture that started series production in 2026.</p>
+  <div class="stmt-meta"><span>Cites: <ul class="cites"><li><a href="#fact-sites">Production sites</a></li><li><a href="#fact-capacity">Machining capacity</a></li></ul></span></div>
+  <div class="stmt-foot"><span class="badge badge--pending">AI draft, pending your validation</span><button type="button" class="disclosure" aria-expanded="false" aria-controls="prov-w1">Provenance</button><div class="stmt-actions"><button type="button" class="btn btn--secondary">Approve</button><button type="button" class="btn btn--text">Correct</button><button type="button" class="btn btn--text">Delete</button></div></div>
+  
+</li></ul><h3 class="sub-title">Opportunities</h3><ul class="stmts"><li class="stmt" id="stmt-o1">
+  <p class="stmt-text">The Toyohashi plant adds titanium machining capacity close to Asian airframe programmes.</p>
+  <div class="stmt-meta"><span>Cites: <ul class="cites"><li><a href="#fact-capacity">Machining capacity</a></li></ul></span></div>
+  <div class="stmt-foot"><span class="badge badge--decided">Corrected</span><span class="byline">Reviewed by member.a@brenmoor.example on Oct 27, 2026</span><button type="button" class="disclosure" aria-expanded="false" aria-controls="prov-o1">Provenance</button><div class="stmt-actions"><button type="button" class="btn btn--text">Correct</button><button type="button" class="btn btn--text">Delete</button></div></div>
+  
+</li></ul><h3 class="sub-title">Threats</h3><ul class="stmts"><li class="stmt" id="stmt-t1">
+  <p class="stmt-text">A change of majority shareholder in 2021 means group-level decisions may shape the Vénissieux site's priorities.</p>
+  <div class="stmt-meta"><span>Cites: <ul class="cites"><li><a href="#fact-ownership">Ownership</a></li></ul></span></div>
+  <div class="stmt-foot"><span class="badge badge--pending">AI draft, pending your validation</span><button type="button" class="disclosure" aria-expanded="false" aria-controls="prov-t1">Provenance</button><div class="stmt-actions"><button type="button" class="btn btn--secondary">Approve</button><button type="button" class="btn btn--text">Correct</button><button type="button" class="btn btn--text">Delete</button></div></div>
+  
+</li></ul>
+<h3 class="sub-title">Risk indicators</h3><ul class="stmts"><li class="stmt" id="stmt-r1">
+  <p class="stmt-text">Revenue concentration on aerospace structures, with one named customer.</p>
+  <div class="stmt-meta"><span class="level">Level: <strong>medium</strong></span><span>Cites: <ul class="cites"><li><span class="fo" aria-hidden="true" title="Focus stop 8">8</span><a href="#fact-products">Products and services</a></li><li><span class="fo" aria-hidden="true" title="Focus stop 9">9</span><a href="#fact-customers">Customers and markets</a></li></ul></span></div>
+  <div class="stmt-foot"><span class="badge badge--pending">AI draft, pending your validation</span><span class="fo" aria-hidden="true" title="Focus stop 10">10</span><button type="button" class="disclosure" aria-expanded="false" aria-controls="prov-r1">Provenance</button><div class="stmt-actions"><span class="fo" aria-hidden="true" title="Focus stop 11">11</span><button type="button" class="btn btn--secondary">Approve</button><span class="fo" aria-hidden="true" title="Focus stop 12">12</span><button type="button" class="btn btn--text">Correct</button><span class="fo" aria-hidden="true" title="Focus stop 13">13</span><button type="button" class="btn btn--text">Delete</button></div></div>
+  
+</li><li class="stmt" id="stmt-r2">
+  <p class="stmt-text">Supply continuity: two production sites in two countries.</p>
+  <div class="stmt-meta"><span class="level">Level: <strong>low</strong></span><span>Cites: <ul class="cites"><li><a href="#fact-sites">Production sites</a></li></ul></span></div>
+  <div class="stmt-foot"><span class="badge badge--pending">AI draft, pending your validation</span><button type="button" class="disclosure" aria-expanded="false" aria-controls="prov-r2">Provenance</button><div class="stmt-actions"><button type="button" class="btn btn--secondary">Approve</button><button type="button" class="btn btn--text">Correct</button><button type="button" class="btn btn--text">Delete</button></div></div>
+  
+</li></ul><h3 class="sub-title">Evidence gaps</h3><ul class="stmts"><li class="stmt" id="stmt-g1">
+  <div class="gap"><span class="gap-label">Evidence gap</span><p class="stmt-text">No public evidence found of an environmental management certification. Would close it: a current ISO 14001 certificate, checked on IAF CertSearch.</p></div>
+  
+  <div class="stmt-foot"><span class="badge badge--pending">AI draft, pending your validation</span><button type="button" class="disclosure" aria-expanded="false" aria-controls="prov-g1">Provenance</button><div class="stmt-actions"><button type="button" class="btn btn--secondary">Approve</button><button type="button" class="btn btn--text">Correct</button><button type="button" class="btn btn--text">Delete</button></div></div>
+  
+</li><li class="stmt" id="stmt-g2">
+  <div class="gap"><span class="gap-label">Evidence gap</span><p class="stmt-text">No public evidence found of which special processes (for example surface treatment) are subcontracted. Would close it: the supplier's list of approved special-process subcontractors.</p></div>
+  
+  <div class="stmt-foot"><span class="badge badge--pending">AI draft, pending your validation</span><button type="button" class="disclosure" aria-expanded="false" aria-controls="prov-g2">Provenance</button><div class="stmt-actions"><button type="button" class="btn btn--secondary">Approve</button><button type="button" class="btn btn--text">Correct</button><button type="button" class="btn btn--text">Delete</button></div></div>
+  
+</li></ul>
+<h3 class="sub-title">Financial evidence<span class=meta>from rules, not AI</span></h3><ul class="stmts"><li class="stmt" id="stmt-fin">
+  <div class="gap"><span class="gap-label">Evidence gap</span>
+    <p class="stmt-text">Financial statements for Corvane Précision SAS (supplier entity), financial year 2025: the income statement and the audit report are not publicly accessible. The balance sheet is filed.</p></div>
+  <table class="docs">
+    <caption>Documents for financial year 2025</caption>
+    <thead><tr><th scope="col">Document</th><th scope="col">Entity</th><th scope="col">Access status</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Document">Balance sheet</td><td data-label="Entity">Supplier</td><td data-label="Access status"><span class="access">Free with registration</span></td></tr>
+      <tr><td data-label="Document">Income statement</td><td data-label="Entity">Supplier</td><td data-label="Access status"><span class="access">Confidentiality declared</span></td></tr>
+      <tr><td data-label="Document">Audit report</td><td data-label="Entity">Supplier</td><td data-label="Access status"><span class="access">No filing identified</span></td></tr>
+      <tr><td data-label="Document">Consolidated accounts</td><td data-label="Entity">Parent: Groupe Ardane</td><td data-label="Access status"><span class="access">Paid access</span></td></tr>
+    </tbody>
+  </table>
+  <dl class="kv">
+    <dt>Missing evidence</dt><dd>Income statement and full notes for 2025; audit report; supplier-entity rather than group accounts.</dd>
+    <dt>Documents to request</dt><dd>Statutory accounts and audited statements for 2025, from the supplier.</dd>
+    <dt>Registry</dt><dd><span class="fo" aria-hidden="true" title="Focus stop 14">14</span><a href="https://registry.example/fr" target="_blank" rel="noopener noreferrer">National companies registry (example)<span class="vh"> (opens in a new tab)</span></a> · paid documents are linked, never bought</dd>
+    <dt>Last checked</dt><dd>Oct 1, 2026</dd>
+  </dl>
+  <div class="stmt-foot"><span class="badge badge--pending">Pending your validation</span><span class="fo" aria-hidden="true" title="Focus stop 15">15</span><button type="button" class="disclosure" aria-expanded="true">Provenance</button>
+    <div class="stmt-actions"><span class="fo" aria-hidden="true" title="Focus stop 16">16</span><button type="button" class="btn btn--secondary">Approve</button><span class="fo" aria-hidden="true" title="Focus stop 17">17</span><button type="button" class="btn btn--text">Correct</button><span class="fo" aria-hidden="true" title="Focus stop 18">18</span><button type="button" class="btn btn--text">Delete</button></div></div>
+  <div class="prov"><dl>
+    <dt>Generated by</dt><dd>Rules (financial evidence guidance), not a model</dd>
+    <dt>Country table</dt><dd>France row, last checked Oct 1, 2026</dd>
+    <dt>Generation time</dt><dd>Oct 26, 2026, 16:05 UTC</dd>
+    <dt>Review status</dt><dd>Pending your validation (not reviewed yet)</dd></dl></div>
+</li></ul>
+</section></div>
+</aside>
+</div>
+<section class="mock-notes" lang="en" aria-label="Mock-up annotations">
+<div class="mock-notes-inner">
+<div><h2>Keyboard: focus order</h2><ol><li>Inside the assessment, Tab follows reading order: per statement, cited-fact links, Provenance, then Approve, Correct, Delete.</li><li><b>1</b> Strength 1: cited fact link (jumps to its row on the card). <b>2</b> Provenance (open). <b>3</b> Approve. <b>4</b> Correct. <b>5</b> Delete.</li><li>Approved Strength 2: cited fact, Provenance, Correct, Delete.</li><li><b>8</b> Risk indicator 1: <b>8</b>–<b>9</b> cited facts, <b>10</b> Provenance, <b>11</b>–<b>13</b> actions.</li><li><b>14</b> Financial evidence: registry link (new tab). <b>15</b> Provenance (open). <b>16</b>–<b>18</b> actions.</li></ol></div>
+<div><h2>Keyboard: keys</h2><ul><li><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> through statements in reading order.</li><li>Provenance: <kbd>Enter</kbd> or <kbd>Space</kbd> toggles it; focus stays on the control.</li><li>Cited-fact link: <kbd>Enter</kbd> moves focus to that fact row on the card; the browser's Back returns.</li><li>Approve: the label becomes APPROVED with "Reviewed by …"; the change and the new pending count are announced; focus stays on the statement.</li><li>Correct and Delete: see 05-assessment-review.html.</li></ul><h2 style="margin-top:var(--isc-space-5)">States and criteria shown</h2><ul><li>SWOT points (Strengths, Weaknesses, Opportunities, Threats) and Risk indicators; each Assessment statement shows its cited facts as links.</li><li>Level as a word ("Level: medium") only next to cited facts. No aggregate score, no traffic light, no percentage anywhere.</li><li>Every unreviewed statement: dashed "AI draft, pending your validation" label, then Approve / Correct / Delete.</li><li>Approved statement (Strength 2) and corrected statement (Opportunity 1): solid label, "Reviewed by &lt;member&gt; on &lt;date&gt;".</li><li>Provenance on demand (Strength 1, open): provider, model ID and version, generation time, review status. Values are samples.</li><li>Evidence gaps: brick micro-label and rule; text in ink names the missing evidence and what would close it.</li><li>Financial evidence (rules, not AI): access status per document, missing evidence, documents to request, registry link, last-checked date; provenance reads "Rules".</li></ul></div><div><h2>For the owner</h2><ul><li><b>Decision needed.</b> The financial guidance is a statement built by rules, not by the LLM, so the label "AI draft, pending your validation" would be untrue. The mock-up shows the pending (dashed) label "Pending your validation" with provenance "Rules, not a model". Spec F8 says every statement carries the AI-draft label: confirm the exception or the wording.</li><li>Access-status wording (all seven, proposed; the brief's vocabulary does not list them yet): Public download / Téléchargement public; Free with registration / Gratuit sur inscription; Paid access / Accès payant; Reduced disclosure / Publication allégée; Confidentiality declared / Confidentialité déclarée; No filing identified / Aucun dépôt identifié; Registry not reachable / Registre injoignable. None of them says "unavailable".</li><li>Control name: #37 says "Provenance"; the brief § 7.6 says "Details". The mock-up uses "Provenance".</li><li>Section lede sentence and the "n statements pending" count are proposals.</li><li>Registry and model ID are fictional samples.</li></ul></div>
+</div>
+</section>
+</body>
+</html>
