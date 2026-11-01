@@ -14,6 +14,7 @@ from sqlalchemy import select
 
 from app import queue
 from app.config import Settings
+from app.crawl.store import excluded_sources
 from app.db import DbSession, utc_now
 from app.errors import not_found
 from app.models import ProfileRun, SupplierIdentity, UsageEvent
@@ -56,6 +57,13 @@ class RunUsageOut(BaseModel):
     roles: list[RunRoleModelOut]
 
 
+class ExcludedSourceOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    domain: str
+    message: str
+
+
 class RunOut(BaseModel):
     """Mirrors components/schemas/Run."""
 
@@ -74,6 +82,7 @@ class RunOut(BaseModel):
     profile_definition_hash: str | None
     prompt_set_hash: str | None
     usage: RunUsageOut
+    excluded_sources: list[ExcludedSourceOut]
     created_at: datetime
     started_at: datetime | None
     finished_at: datetime | None
@@ -101,6 +110,7 @@ def _run_out(
     run: ProfileRun,
     supplier_name: str | None,
     hide_names: bool,
+    excluded: list[dict[str, str]],
 ) -> RunOut:
     totals = run_usage_totals(db, scope.organisation_id, run.id)
     roles = [
@@ -132,6 +142,7 @@ def _run_out(
                 "cost": format(totals.cost, "f"),
                 "roles": roles,
             },
+            "excluded_sources": excluded,
             "created_at": run.created_at,
             "started_at": run.started_at,
             "finished_at": run.finished_at,
@@ -141,7 +152,8 @@ def _run_out(
 
 def _one(db: DbSession, scope: OrganisationScope, run: ProfileRun, hide: bool) -> RunOut:
     name = db.scalar(scope.select(SupplierIdentity).where(SupplierIdentity.id == run.identity_id))
-    return _run_out(db, scope, run, name.legal_name if name else None, hide)
+    excluded = excluded_sources(db, scope.organisation_id, [run.id]).get(run.id, [])
+    return _run_out(db, scope, run, name.legal_name if name else None, hide, excluded)
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
@@ -161,7 +173,7 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request:
     )
     db.commit()
     db.refresh(run)
-    return _run_out(db, scope, run, identity.legal_name, hide_names(request, scope))
+    return _run_out(db, scope, run, identity.legal_name, hide_names(request, scope), [])
 
 
 @router.get("", response_model=RunListOut)
@@ -177,8 +189,12 @@ def list_runs(scope: OrganisationScoped, db: DbSession, request: Request) -> Run
         )
     )
     names = {identity_id: name for identity_id, name in rows}
+    excluded = excluded_sources(db, scope.organisation_id, [run.id for run in runs])
     return RunListOut(
-        items=[_run_out(db, scope, run, names.get(run.identity_id), hidden) for run in runs]
+        items=[
+            _run_out(db, scope, run, names.get(run.identity_id), hidden, excluded.get(run.id, []))
+            for run in runs
+        ]
     )
 
 

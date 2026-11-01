@@ -692,6 +692,17 @@ components:
           type: string
         model_id:
           type: string
+    ExcludedSource:
+      description: A source the crawler did not use, at the site owner's request.
+      type: object
+      additionalProperties: false
+      required: [domain, message]
+      properties:
+        domain:
+          type: string
+        message:
+          description: Always "Source excluded at the site owner's request."
+          type: string
     RunUsage:
       description: Totals of every provider call attempt of the run (failed and retried included).
       type: object
@@ -734,6 +745,7 @@ components:
         - profile_definition_hash
         - prompt_set_hash
         - usage
+        - excluded_sources
         - created_at
         - started_at
         - finished_at
@@ -774,6 +786,14 @@ components:
           type: [string, "null"]
         usage:
           $ref: "#/components/schemas/RunUsage"
+        excluded_sources:
+          description: >-
+            Domains the crawler did not use because the site owner reserved text and data mining,
+            blocked AI crawlers, or asked for suppression. Only the domain and the message are
+            shown; the crawl-permission record itself is readable by the administrator only.
+          type: array
+          items:
+            $ref: "#/components/schemas/ExcludedSource"
         created_at:
           type: string
           format: date-time

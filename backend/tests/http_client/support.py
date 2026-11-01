@@ -57,6 +57,7 @@ class SeenRequest:
     connect_host: str
     host_header: str
     sni_hostname: str | None
+    user_agent: str = ""
 
 
 class MockSite:
@@ -76,6 +77,7 @@ class MockSite:
                 connect_host=request.url.host,
                 host_header=host_header,
                 sni_hostname=request.extensions.get("sni_hostname"),
+                user_agent=request.headers.get("user-agent", ""),
             )
         )
         if self.error is not None:

@@ -13,6 +13,7 @@ dependencies = [
     "mistralai==3.2.0",
     "openai==3.29.0",
     "perplexityai==0.43.8",
+    "protego==0.7.0",
     "psycopg[binary]==3.3.6",
     "sqlalchemy==2.0.54",
     "uvicorn==0.54.0",

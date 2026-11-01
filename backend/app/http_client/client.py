@@ -35,7 +35,11 @@ _MAX_TIMEOUT_SECONDS = 300.0
 _MAX_REDIRECTS_LIMIT = 20
 MSG_INVALID_REDIRECT = "The website redirected to an invalid address."
 
-__all__ = ["FetchSettings", "GuardedClient", "load_fetch_settings"]
+__all__ = ["NETWORK_ERRORS", "FetchSettings", "GuardedClient", "load_fetch_settings"]
+
+# What a fetch raises when the network fails (connection, TLS, read, timeout): for callers that
+# treat it as "the site did not answer" without importing the HTTP library (#17).
+NETWORK_ERRORS: tuple[type[Exception], ...] = (httpx2.HTTPError,)
 
 
 @dataclass(frozen=True)
