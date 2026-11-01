@@ -1,0 +1,96 @@
+{
+  "app": {
+    "name": "Supplier iScan",
+    "skipToContent": "Aller au contenu"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "errorPrefix": "Erreur :",
+    "retry": "Réessayer",
+    "or": "ou"
+  },
+  "nav": {
+    "main": "Principale",
+    "profiles": "Profils",
+    "admin": "Administration",
+    "language": "Langue",
+    "switchTo": "Passer la langue en {{language}}",
+    "signOut": "Se déconnecter",
+    "signingOut": "Déconnexion…",
+    "signedInAs": "Connecté en tant que {{email}}"
+  },
+  "login": {
+    "title": "Connexion",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "submit": "Se connecter",
+    "submitting": "Connexion…",
+    "invitationOnly": "Les comptes sont créés sur invitation. Pas de compte ? Demandez à l'administrateur de votre organisation.",
+    "emailRequired": "Erreur : saisissez votre e-mail.",
+    "passwordRequired": "Erreur : saisissez votre mot de passe.",
+    "invalid": "Erreur : l'e-mail ou le mot de passe est incorrect.",
+    "unavailable": "Erreur : le service n'est pas disponible pour le moment. Réessayez dans quelques minutes."
+  },
+  "invitation": {
+    "eyebrow": "Invitation",
+    "eyebrowOrganisation": "Invitation · {{organisation}}",
+    "joinTitle": "Rejoindre {{organisation}} sur Supplier iScan",
+    "intro": "Vous avez été invité comme membre. Choisissez un mot de passe pour ouvrir l'espace de travail de votre organisation.",
+    "invitedEmail": "E-mail invité",
+    "organisation": "Organisation",
+    "validUntil": "Lien valable jusqu'au",
+    "singleUse": "usage unique",
+    "start": "Choisir votre mot de passe",
+    "notYou": "Ce n'est pas vous ? Ignorez cette invitation ; elle expire d'elle-même.",
+    "formTitle": "Choisissez votre mot de passe",
+    "emailHelp": "Issu de votre invitation ; non modifiable ici.",
+    "password": "Mot de passe",
+    "passwordHelp": "Utilisez un mot de passe long que vous n'utilisez pas ailleurs.",
+    "confirm": "Confirmer le mot de passe",
+    "submit": "Définir le mot de passe et se connecter",
+    "submitting": "Connexion…",
+    "summary_one": "Erreur : {{count}} champ demande votre attention.",
+    "summary_other": "Erreur : {{count}} champs demandent votre attention.",
+    "passwordRequired": "Erreur : saisissez un mot de passe.",
+    "passwordRejected": "Erreur : le mot de passe est trop court. Utilisez un mot de passe plus long.",
+    "confirmRequired": "Erreur : confirmez votre mot de passe.",
+    "mismatch": "Erreur : les deux mots de passe ne correspondent pas.",
+    "invalidTitle": "Ce lien d'invitation ne peut pas être utilisé",
+    "invalidBody": "Le lien n'est pas valide : il a peut-être expiré, déjà été utilisé ou été retiré.",
+    "askAdmin": "Demandez une nouvelle invitation à l'administrateur de votre organisation.",
+    "signInIfAccount": "Connectez-vous si vous avez déjà un compte.",
+    "seatTitle": "Aucune place disponible",
+    "seatBody": "Votre organisation a atteint sa limite de places : le compte ne peut pas être créé. Votre invitation reste valable jusqu'à son expiration.",
+    "seatAskAdmin": "Demandez à votre administrateur de libérer une place, puis rouvrez ce lien.",
+    "signedInTitle": "Vous êtes déjà connecté",
+    "signedInBody": "Déconnectez-vous avant d'ouvrir un lien d'invitation.",
+    "unavailable": "Erreur : le service n'est pas disponible pour le moment. Réessayez dans quelques minutes."
+  },
+  "workspace": {
+    "title": "Profils"
+  },
+  "placeholder": {
+    "workspace": "La liste des profils et le quota restant apparaîtront ici.",
+    "newProfile": "L'écran de nouveau profil et le dialogue d'identification apparaîtront ici.",
+    "run": "La progression de la collecte apparaîtra ici.",
+    "card": "La fiche fournisseur, la revue des faits et l'évaluation apparaîtront ici.",
+    "compare": "La comparaison côte à côte apparaîtra ici.",
+    "admin": "L'espace administrateur apparaîtra ici."
+  },
+  "titles": {
+    "newProfile": "Nouveau profil",
+    "run": "Progression de la collecte",
+    "card": "Fiche fournisseur",
+    "compare": "Comparaison",
+    "admin": "Administration"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "body": "Cette page n'existe pas, ou l'élément demandé n'est pas disponible.",
+    "home": "Retour à l'accueil"
+  },
+  "failure": {
+    "title": "Une erreur s'est produite",
+    "body": "La page n'a pas pu s'afficher. Rechargez-la ; si le problème persiste, prévenez votre administrateur."
+  }
+}
