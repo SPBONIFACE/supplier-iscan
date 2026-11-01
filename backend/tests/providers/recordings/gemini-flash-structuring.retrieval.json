@@ -1,0 +1,59 @@
+{
+  "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
+  "recorded_at": null,
+  "origin": "hand-written in the provider's documented response shape (not yet recorded from the live API)",
+  "config_id": "gemini-flash-structuring",
+  "role": "retrieval",
+  "status": 200,
+  "body": {
+    "candidates": [
+      {
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Acme SA publishes an annual report."
+            }
+          ]
+        },
+        "finishReason": "STOP",
+        "groundingMetadata": {
+          "webSearchQueries": [
+            "Acme SA"
+          ],
+          "groundingChunks": [
+            {
+              "web": {
+                "uri": "https://acme.example/about",
+                "title": "acme.example"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://acme.example/report",
+                "title": "acme.example"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 30,
+      "candidatesTokenCount": 20,
+      "toolUsePromptTokenCount": 500,
+      "totalTokenCount": 550
+    },
+    "modelVersion": "gemini-2.5-flash"
+  },
+  "expected_usage": {
+    "input_tokens": 530,
+    "output_tokens": 20,
+    "reasoning_tokens": 0,
+    "tool_calls": 1
+  },
+  "expected_urls": [
+    "https://acme.example/about",
+    "https://acme.example/report"
+  ]
+}

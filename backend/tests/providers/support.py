@@ -5,9 +5,11 @@ recorded exchange is a request check and a fixed JSON answer.
 """
 
 import json
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +17,9 @@ import httpx
 import httpx2
 from pydantic import BaseModel, ConfigDict
 
-from app.providers.catalogue import ProviderCatalogue, ProviderConfigSpec
+from app.providers.catalogue import PROVIDER_NAMES, ProviderCatalogue, ProviderConfigSpec
+from app.providers.metering import CallContext, ListSink, UsageMeter
+from app.providers.pricing import PriceTable
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -118,3 +122,29 @@ def httpx2_client(recorder: Recorder) -> httpx2.Client:
 
 
 ClientFactory = Callable[[Recorder], Any]
+
+
+# Test prices: every provider has "model-1" and "model-2" (USD, 1 USD = 0.9 EUR).
+EUR_PER_USD = Decimal("0.9")
+PRICES = PriceTable.model_validate(
+    {
+        "prices": [
+            {
+                "provider": provider,
+                "model_id": model,
+                "currency": "USD",
+                "as_of": "2026-10-27",
+                "input_per_million": "1.00",
+                "output_per_million": "4.00",
+                "tool_call": "0.01",
+            }
+            for provider in PROVIDER_NAMES
+            for model in ("model-1", "model-2")
+        ]
+    }
+)
+CONTEXT = CallContext(organisation_id=uuid.UUID(int=1))
+
+
+def make_meter(sink: ListSink | None = None) -> UsageMeter:
+    return UsageMeter(PRICES, EUR_PER_USD, sink if sink is not None else ListSink())

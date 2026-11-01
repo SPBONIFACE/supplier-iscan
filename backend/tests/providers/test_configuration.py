@@ -22,7 +22,14 @@ from app.providers.fake import FakeStructuringAdapter, fake_adapters
 from app.providers.interface import StructuringRequest
 from app.providers.store import sync_provider_configs
 from tests.contract.test_openapi_contract import load_contract, response_validator
-from tests.providers.support import SENTINEL_KEY, Company, catalogue, config
+from tests.providers.support import (
+    CONTEXT,
+    SENTINEL_KEY,
+    Company,
+    catalogue,
+    config,
+    make_meter,
+)
 from tests.support import BASE_URL, LOCAL_ORIGIN, make_client
 
 
@@ -117,9 +124,9 @@ def test_health_names_the_missing_key_settings_and_matches_the_contract() -> Non
         structuring="structurer",
     )
     environ = {"PERPLEXITY_API_KEY": SENTINEL_KEY}
-    response = make_client(database_check=lambda: True, providers=Providers(cat, environ)).get(
-        "/health"
-    )
+    response = make_client(
+        database_check=lambda: True, providers=Providers(cat, environ, meter=make_meter())
+    ).get("/health")
 
     assert response.status_code == 200
     assert response.json()["missing_settings"] == ["GEMINI_API_KEY"]
@@ -127,9 +134,9 @@ def test_health_names_the_missing_key_settings_and_matches_the_contract() -> Non
     response_validator(load_contract(), "/health", "get", 200).validate(response.json())
 
     environ["GEMINI_API_KEY"] = SENTINEL_KEY
-    response = make_client(database_check=lambda: True, providers=Providers(cat, environ)).get(
-        "/health"
-    )
+    response = make_client(
+        database_check=lambda: True, providers=Providers(cat, environ, meter=make_meter())
+    ).get("/health")
     assert response.json()["missing_settings"] == []
     assert SENTINEL_KEY not in response.text
 
@@ -155,7 +162,7 @@ def test_the_sentinel_key_never_appears_in_rows_logs_errors_or_responses(
     cat = catalogue(config("primary"))
     environ = {"GEMINI_API_KEY": SENTINEL_KEY, "PERPLEXITY_API_KEY": SENTINEL_KEY}
     fake = FakeStructuringAdapter([RuntimeError(f"401 for key {SENTINEL_KEY}")])
-    providers = Providers(cat, environ, fake_adapters(cat, fake))
+    providers = Providers(cat, environ, fake_adapters(cat, fake), meter=make_meter())
     settings = Settings(
         database_url=database_url,
         allowed_origins=(LOCAL_ORIGIN,),
@@ -168,7 +175,7 @@ def test_the_sentinel_key_never_appears_in_rows_logs_errors_or_responses(
     ) as client:
         health = client.get("/health")
     with pytest.raises(ProviderCallError) as raised:
-        providers.structuring().structure(StructuringRequest("i", "d"), Company)
+        providers.structuring().structure(StructuringRequest("i", "d"), Company, CONTEXT)
 
     with engine.connect() as connection:
         assert connection.execute(text("SELECT id FROM provider_configs")).scalars().all() == [

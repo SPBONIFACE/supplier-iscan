@@ -13,7 +13,14 @@ import openai
 
 from app.providers.adapters.common import TIMEOUT_SECONDS
 from app.providers.catalogue import ProviderConfigSpec
-from app.providers.interface import RetrievalRequest, RetrievedUrl, StructuringRequest
+from app.providers.interface import (
+    RetrievalOutput,
+    RetrievalRequest,
+    RetrievedUrl,
+    StructuringOutput,
+    StructuringRequest,
+)
+from app.providers.metering import NO_USAGE, CallUsage
 
 
 def make_client(config: ProviderConfigSpec, api_key: str, http_client: Any = None) -> openai.OpenAI:
@@ -27,6 +34,22 @@ def make_client(config: ProviderConfigSpec, api_key: str, http_client: Any = Non
     )
 
 
+def _usage(response: Any) -> CallUsage:
+    """Reasoning tokens are part of `output_tokens` in the API: split them out, count them once."""
+    usage = response.usage
+    if usage is None:
+        return NO_USAGE
+    details = getattr(usage, "output_tokens_details", None)
+    reasoning = (getattr(details, "reasoning_tokens", 0) if details else 0) or 0
+    searches = sum(1 for item in response.output if item.type == "web_search_call")
+    return CallUsage(
+        input_tokens=usage.input_tokens or 0,
+        output_tokens=max((usage.output_tokens or 0) - reasoning, 0),
+        reasoning_tokens=reasoning,
+        tool_calls=searches,
+    )
+
+
 class OpenAIStructuring:
     def __init__(self, config: ProviderConfigSpec, client: openai.OpenAI) -> None:
         self._config = config
@@ -34,7 +57,7 @@ class OpenAIStructuring:
 
     def generate_json(
         self, request: StructuringRequest, schema_name: str, json_schema: dict[str, object]
-    ) -> str:
+    ) -> StructuringOutput:
         response = self._client.responses.create(
             model=self._config.model_id,
             instructions=request.instructions,
@@ -50,7 +73,7 @@ class OpenAIStructuring:
                 }
             },
         )
-        return response.output_text
+        return StructuringOutput(response.output_text, _usage(response))
 
 
 class OpenAIRetrieval:
@@ -58,7 +81,7 @@ class OpenAIRetrieval:
         self._config = config
         self._client = client
 
-    def search(self, request: RetrievalRequest) -> list[RetrievedUrl]:
+    def search(self, request: RetrievalRequest) -> RetrievalOutput:
         response = self._client.responses.create(
             model=self._config.model_id,
             instructions=request.instructions,
@@ -76,7 +99,7 @@ class OpenAIRetrieval:
                 for annotation in content.annotations:
                     if annotation.type == "url_citation":
                         urls.append(RetrievedUrl(url=annotation.url, snippet=annotation.title))
-        return urls
+        return RetrievalOutput(urls, _usage(response))
 
 
 def build_structuring(config: ProviderConfigSpec, api_key: str) -> OpenAIStructuring:

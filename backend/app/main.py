@@ -23,17 +23,28 @@ from app.invitations.routes import public_router as invitations_router
 from app.organisations.member_routes import router as organisation_router
 from app.organisations.routes import router as admin_organisations_router
 from app.providers import Providers, load_catalogue
+from app.providers.metering import UsageMeter
+from app.providers.pricing import check_prices, load_price_table
 from app.providers.store import sync_provider_configs
+from app.providers.usage import DbUsageSink
 from app.users.routes import router as users_router
 
 logger = logging.getLogger(__name__)
 
 
-def load_providers(settings: Settings) -> Providers:
-    """The approved provider configurations. An invalid file stops startup, naming the file."""
+def load_providers(settings: Settings, database: Database) -> Providers:
+    """The approved provider configurations and their price table.
+
+    An invalid file, or an approved configuration whose model has no price, stops startup.
+    """
     path = Path(settings.provider_config_file) if settings.provider_config_file else None
+    price_path = Path(settings.price_table_file) if settings.price_table_file else None
     try:
-        return Providers(load_catalogue(path))
+        catalogue = load_catalogue(path)
+        prices = load_price_table(price_path)
+        check_prices(catalogue, prices, settings.eur_per_usd)
+        meter = UsageMeter(prices, settings.eur_per_usd, DbUsageSink(database))
+        return Providers(catalogue, meter=meter)
     except ConfigurationError as error:
         logger.error("Startup stopped: %s", error)
         raise
@@ -48,7 +59,7 @@ def create_app(
     settings = settings or load_settings()
     check_database = database_check or make_database_check(settings.database_url)
     database = Database(settings.database_url, engine)
-    providers = providers or load_providers(settings)
+    providers = providers or load_providers(settings, database)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:

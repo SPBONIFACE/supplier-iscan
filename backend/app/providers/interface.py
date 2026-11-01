@@ -19,9 +19,10 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from app.providers.catalogue import ProviderConfigSpec
+from app.providers.catalogue import ProviderConfigSpec, Role
 from app.providers.errors import ProviderCallError, ProviderError, StructuredOutputInvalid
 from app.providers.failures import classify_failure
+from app.providers.metering import NO_USAGE, CallContext, CallUsage, Outcome, UsageMeter
 
 logger = logging.getLogger(__name__)
 
@@ -63,18 +64,32 @@ class RetrievalResult(BaseModel):
     urls: list[RetrievedUrl]
 
 
+@dataclass(frozen=True)
+class StructuringOutput:
+    """The JSON text of the structured output, and what the call consumed (#12)."""
+
+    text: str
+    usage: CallUsage = NO_USAGE
+
+
+@dataclass(frozen=True)
+class RetrievalOutput:
+    urls: list[RetrievedUrl]
+    usage: CallUsage = NO_USAGE
+
+
 class StructuringAdapter(Protocol):
-    """One provider's structured-output call. Returns the JSON text of the structured output."""
+    """One provider's structured-output call."""
 
     def generate_json(
         self, request: StructuringRequest, schema_name: str, json_schema: dict[str, object]
-    ) -> str: ...
+    ) -> StructuringOutput: ...
 
 
 class RetrievalAdapter(Protocol):
-    """One provider's search call. Returns the cited URLs from the provider's typed fields."""
+    """One provider's search call. The URLs come from the provider's typed fields."""
 
-    def search(self, request: RetrievalRequest) -> list[RetrievedUrl]: ...
+    def search(self, request: RetrievalRequest) -> RetrievalOutput: ...
 
 
 def _call_failure(config: ProviderConfigSpec, error: Exception) -> ProviderError:
@@ -96,8 +111,13 @@ def _call_failure(config: ProviderConfigSpec, error: Exception) -> ProviderError
 
 
 class _BoundClient:
-    def __init__(self, config: ProviderConfigSpec) -> None:
+    role: Role
+
+    def __init__(self, config: ProviderConfigSpec, meter: UsageMeter) -> None:
         self.config = config
+        self._meter = meter
+        # Refused before any call when the model has no price: it is never metered as free.
+        meter.require_price(config)
 
     @property
     def config_id(self) -> str:
@@ -111,28 +131,46 @@ class _BoundClient:
     def model_id(self) -> str:
         return self.config.model_id
 
+    def _record(
+        self, context: CallContext, attempt: int, outcome: Outcome, usage: CallUsage
+    ) -> None:
+        self._meter.record(self.config, self.role, context, attempt, outcome, usage)
+
 
 class StructuringClient(_BoundClient):
-    def __init__(self, config: ProviderConfigSpec, adapter: StructuringAdapter) -> None:
-        super().__init__(config)
+    role: Role = "structuring"
+
+    def __init__(
+        self, config: ProviderConfigSpec, adapter: StructuringAdapter, meter: UsageMeter
+    ) -> None:
+        super().__init__(config, meter)
         self._adapter = adapter
 
-    def structure[T: BaseModel](self, request: StructuringRequest, output_type: type[T]) -> T:
+    def structure[T: BaseModel](
+        self, request: StructuringRequest, output_type: type[T], context: CallContext
+    ) -> T:
         schema_name = output_type.__name__
         json_schema = output_type.model_json_schema()
         for attempt in range(1, STRUCTURING_ATTEMPTS + 1):
             failure: ProviderError | None = None
+            output: StructuringOutput | None = None
             try:
-                text = self._adapter.generate_json(request, schema_name, json_schema)
+                output = self._adapter.generate_json(request, schema_name, json_schema)
             except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
                 failure = _call_failure(self.config, error)
             if failure is not None:
+                # Every attempt is metered, a failed one too.
+                self._record(context, attempt, "failed", NO_USAGE)
                 # Raised outside the `except` block, so the SDK exception (which holds the
                 # request, headers included) is not chained to it.
                 raise failure
+            if output is None:
+                raise AssertionError("unreachable: no output and no failure")
             try:
-                return output_type.model_validate_json(text)
+                result = output_type.model_validate_json(output.text)
             except ValidationError as error:
+                # The call succeeded and consumed tokens: metered although its output is dropped.
+                self._record(context, attempt, "invalid_output", output.usage)
                 # Counts only: the output itself is never logged.
                 logger.warning(
                     "Structured output rejected: provider=%s configuration=%s schema=%s "
@@ -143,6 +181,9 @@ class StructuringClient(_BoundClient):
                     attempt,
                     error.error_count(),
                 )
+                continue
+            self._record(context, attempt, "success", output.usage)
+            return result
         raise StructuredOutputInvalid(
             provider=self.config.provider,
             config_id=self.config.id,
@@ -152,19 +193,28 @@ class StructuringClient(_BoundClient):
 
 
 class RetrievalClient(_BoundClient):
-    def __init__(self, config: ProviderConfigSpec, adapter: RetrievalAdapter) -> None:
-        super().__init__(config)
+    role: Role = "retrieval"
+
+    def __init__(
+        self, config: ProviderConfigSpec, adapter: RetrievalAdapter, meter: UsageMeter
+    ) -> None:
+        super().__init__(config, meter)
         self._adapter = adapter
 
-    def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
+    def retrieve(self, request: RetrievalRequest, context: CallContext) -> RetrievalResult:
         failure: ProviderError | None = None
+        output: RetrievalOutput | None = None
         try:
-            urls = self._adapter.search(request)
+            output = self._adapter.search(request)
         except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
             failure = _call_failure(self.config, error)
         if failure is not None:
+            self._record(context, 1, "failed", NO_USAGE)
             raise failure
+        if output is None:
+            raise AssertionError("unreachable: no output and no failure")
+        self._record(context, 1, "success", output.usage)
         unique: dict[str, RetrievedUrl] = {}
-        for item in urls:
+        for item in output.urls:
             unique.setdefault(item.url, item)
         return RetrievalResult(urls=list(unique.values())[: request.max_results])
