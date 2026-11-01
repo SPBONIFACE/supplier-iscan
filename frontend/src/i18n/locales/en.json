@@ -1,0 +1,96 @@
+{
+  "app": {
+    "name": "Supplier iScan",
+    "skipToContent": "Skip to content"
+  },
+  "common": {
+    "loading": "Loading…",
+    "errorPrefix": "Error:",
+    "retry": "Try again",
+    "or": "or"
+  },
+  "nav": {
+    "main": "Main",
+    "profiles": "Profiles",
+    "admin": "Administration",
+    "language": "Language",
+    "switchTo": "Switch language to {{language}}",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "signedInAs": "Signed in as {{email}}"
+  },
+  "login": {
+    "title": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "invitationOnly": "Accounts are by invitation only. No account? Ask your organisation's administrator.",
+    "emailRequired": "Error: enter your email.",
+    "passwordRequired": "Error: enter your password.",
+    "invalid": "Error: the email or the password is incorrect.",
+    "unavailable": "Error: the service is not available right now. Try again in a few minutes."
+  },
+  "invitation": {
+    "eyebrow": "Invitation",
+    "eyebrowOrganisation": "Invitation · {{organisation}}",
+    "joinTitle": "Join {{organisation}} on Supplier iScan",
+    "intro": "You have been invited as a member. Set a password to open your organisation's workspace.",
+    "invitedEmail": "Invited email",
+    "organisation": "Organisation",
+    "validUntil": "Link valid until",
+    "singleUse": "single use",
+    "start": "Set your password",
+    "notYou": "Not you? Ignore this invitation; it expires on its own.",
+    "formTitle": "Set your password",
+    "emailHelp": "From your invitation; cannot be changed here.",
+    "password": "Password",
+    "passwordHelp": "Use a long password that you do not use elsewhere.",
+    "confirm": "Confirm password",
+    "submit": "Set password and sign in",
+    "submitting": "Signing in…",
+    "summary_one": "Error: {{count}} field needs your attention.",
+    "summary_other": "Error: {{count}} fields need your attention.",
+    "passwordRequired": "Error: enter a password.",
+    "passwordRejected": "Error: the password is too short. Use a longer password.",
+    "confirmRequired": "Error: confirm your password.",
+    "mismatch": "Error: the two passwords do not match.",
+    "invalidTitle": "This invitation link cannot be used",
+    "invalidBody": "The link is not valid: it may have expired, been used already or been withdrawn.",
+    "askAdmin": "Ask your organisation's administrator for a new invitation.",
+    "signInIfAccount": "Sign in if you already have an account.",
+    "seatTitle": "No seat available",
+    "seatBody": "Your organisation has reached its seat limit, so the account cannot be created. Your invitation stays valid until it expires.",
+    "seatAskAdmin": "Ask your administrator to free a seat, then open this link again.",
+    "signedInTitle": "You are already signed in",
+    "signedInBody": "Sign out before you open an invitation link.",
+    "unavailable": "Error: the service is not available right now. Try again in a few minutes."
+  },
+  "workspace": {
+    "title": "Profiles"
+  },
+  "placeholder": {
+    "workspace": "The profile list and the remaining quota will appear here.",
+    "newProfile": "The new-profile screen and the identity chat will appear here.",
+    "run": "The progress of the collection will appear here.",
+    "card": "The supplier card, the review of the facts and the assessment will appear here.",
+    "compare": "The side-by-side comparison will appear here.",
+    "admin": "The administrator area will appear here."
+  },
+  "titles": {
+    "newProfile": "New profile",
+    "run": "Run progress",
+    "card": "Supplier card",
+    "compare": "Comparison",
+    "admin": "Administration"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "This page does not exist, or the item you asked for is not available.",
+    "home": "Back to the start"
+  },
+  "failure": {
+    "title": "Something went wrong",
+    "body": "The page could not be displayed. Reload it; if the problem continues, tell your administrator."
+  }
+}
