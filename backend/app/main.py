@@ -27,6 +27,7 @@ from app.providers.metering import UsageMeter
 from app.providers.pricing import check_prices, load_price_table
 from app.providers.store import sync_provider_configs
 from app.providers.usage import DbUsageSink
+from app.runs.routes import router as runs_router
 from app.users.routes import router as users_router
 
 logger = logging.getLogger(__name__)
@@ -90,7 +91,7 @@ def create_app(
     # openapi.yaml is the only contract: no generated /openapi.json, no documentation pages.
     app = FastAPI(
         title="Supplier iScan API",
-        version="0.5.0",
+        version="0.6.0",
         openapi_url=None,
         docs_url=None,
         redoc_url=None,
@@ -132,6 +133,7 @@ def create_app(
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(organisation_router)
+    app.include_router(runs_router)
     app.include_router(admin_organisations_router)
     app.include_router(admin_invitations_router)
     app.include_router(invitations_router)

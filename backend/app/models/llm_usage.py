@@ -2,8 +2,8 @@
 
 One row per provider call attempt, written by `app.providers.metering`. Run totals, the monthly
 spend (#29) and the run budget (#30) are computed from these rows. A row never holds the prompt or
-the response text. `output_tokens` excludes `reasoning_tokens`. `run_id` has no foreign key yet:
-the run table arrives with #13, which adds it.
+the response text. `output_tokens` excludes `reasoning_tokens`. `run_id` references the run (#13);
+deleting a run keeps its usage rows, which stay in the monthly spend.
 """
 
 import uuid
@@ -41,7 +41,9 @@ class LlmUsage(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     organisation_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organisations.id"))
-    run_id: Mapped[uuid.UUID | None] = mapped_column()
+    run_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("profile_runs.id", ondelete="SET NULL")
+    )
     provider_config_id: Mapped[str] = mapped_column(ForeignKey("provider_configs.id"))
     provider: Mapped[str] = mapped_column(String(40))
     model_id: Mapped[str] = mapped_column(String(200))

@@ -38,6 +38,22 @@ services:
       db:
         condition: service_healthy
 
+  # The worker runs the profile runs from the PostgreSQL job queue (never in the request path).
+  # Same image as the API; the API applies the migrations at start, the worker waits for them.
+  worker:
+    build: ./backend
+    command: ["/opt/venv/bin/python", "-m", "app.worker"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-supplier_iscan}:${POSTGRES_PASSWORD:-supplier_iscan_local}@db:5432/${POSTGRES_DB:-supplier_iscan}}
+      RUN_LEASE_SECONDS: ${RUN_LEASE_SECONDS:-300}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+    restart: unless-stopped
+
   frontend:
     build: ./frontend
     ports:

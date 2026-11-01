@@ -83,3 +83,13 @@ def test_settings_repr_hides_secrets() -> None:
 
     assert "db-secret" not in repr(settings)
     assert "admin-secret" not in repr(settings)
+
+
+def test_worker_settings_have_defaults_and_are_validated() -> None:
+    default = load_settings({})
+    custom = load_settings({"RUN_LEASE_SECONDS": "45", "WORKER_POLL_SECONDS": "1"})
+
+    assert (default.run_lease.total_seconds(), default.worker_poll_seconds) == (300, 2)
+    assert (custom.run_lease.total_seconds(), custom.worker_poll_seconds) == (45, 1)
+    with pytest.raises(ConfigurationError, match="RUN_LEASE_SECONDS"):
+        load_settings({"RUN_LEASE_SECONDS": "0"})

@@ -7,14 +7,18 @@ from app.models.invitations import Invitation
 from app.models.llm_usage import LlmUsage
 from app.models.ownership import OrganisationOwned
 from app.models.providers import ProviderConfig
+from app.models.runs import Job, ProfileRun, SupplierIdentity
 from app.models.usage import UsageEvent
 
 __all__ = [
     "Invitation",
+    "Job",
     "LlmUsage",
     "Organisation",
     "OrganisationOwned",
+    "ProfileRun",
     "ProviderConfig",
+    "SupplierIdentity",
     "UsageEvent",
     "User",
     "UserSession",

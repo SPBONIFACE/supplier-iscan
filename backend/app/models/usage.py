@@ -9,8 +9,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
 
-# Later issues add their kinds (runs, ...) with a migration that widens the constraint.
-USAGE_EVENT_KINDS = ("login", "login_failed")
+# Later issues add their kinds with a migration that widens the constraint.
+USAGE_EVENT_KINDS = ("login", "login_failed", "run")
 
 
 class UsageEvent(Base):

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.5.0
+  version: 0.6.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -30,6 +30,8 @@ tags:
     description: User records
   - name: organisation
     description: The signed-in member's own organisation
+  - name: runs
+    description: Profile runs. They execute in a worker; no request waits for a stage.
   - name: admin
     description: Administrator operations. A signed-in member gets 403 on every one of them.
   - name: invitations
@@ -181,6 +183,148 @@ paths:
                 $ref: "#/components/schemas/MemberOrganisation"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs:
+    post:
+      operationId: startRun
+      tags: [runs]
+      summary: Start a profile run for a confirmed supplier identity
+      description: >-
+        Queues the run and answers 202 at once; no stage executes in the request. The identity
+        must be confirmed and belong to the member's organisation; an identity that is
+        unconfirmed, unknown or another organisation's answers 404. Each start is recorded in the
+        usage log (kind `run`).
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunStart"
+      responses:
+        "202":
+          description: The run is queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    get:
+      operationId: listRuns
+      tags: [runs]
+      summary: List the organisation's runs, newest first
+      description: >-
+        At most the 100 most recent runs of the member's organisation. An administrator gets run
+        metadata only (status, stage, cost, errors): `supplier_name` is null for them.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The runs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}:
+    get:
+      operationId: getRun
+      tags: [runs]
+      summary: Read a run
+      description: >-
+        Status, stage, provider and model ID per role, tokens and cost (totals of every attempt,
+        failed and retried ones included). An administrator gets run metadata only:
+        `supplier_name` is null for them.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/stop:
+    post:
+      operationId: stopRun
+      tags: [runs]
+      summary: Stop a run
+      description: >-
+        Any member of the organisation may stop a run. A queued or paused run becomes `stopped`
+        at once. A running run is flagged (`stop_requested`) and ends `stopped` at the next stage
+        boundary or before its next provider call. A finished run answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The run, stopped or flagged to stop.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The run has already finished.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/resume:
+    post:
+      operationId: resumeRun
+      tags: [runs]
+      summary: Resume a paused run
+      description: >-
+        Continues a `paused` run from the stage where it paused, without repeating stored
+        results. The run is queued again (202). A run that is not paused answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "202":
+          description: The run is queued again.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The run is not paused.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /admin/organisations:
@@ -507,6 +651,145 @@ components:
           example:
             detail: The service is temporarily unavailable. Please try again in a few minutes.
   schemas:
+    RunStatus:
+      type: string
+      enum: [queued, running, paused, stopped, failed, insufficient_sources, partial, completed]
+    RunStage:
+      type: string
+      enum: [identity, collection, extraction, assessment]
+    RunDependency:
+      description: The dependency that made a run pause.
+      type: string
+      enum:
+        - structuring_provider
+        - retrieval_provider
+        - llm_provider
+        - registry
+        - website
+        - database
+        - network
+    RunStart:
+      type: object
+      additionalProperties: false
+      required: [identity_id]
+      properties:
+        identity_id:
+          type: string
+          format: uuid
+    RunRoleModel:
+      type: object
+      additionalProperties: false
+      required: [role, config_id, provider, model_id]
+      properties:
+        role:
+          type: string
+          enum: [retrieval, structuring]
+        config_id:
+          type: string
+        provider:
+          type: string
+        model_id:
+          type: string
+    RunUsage:
+      description: Totals of every provider call attempt of the run (failed and retried included).
+      type: object
+      additionalProperties: false
+      required: [calls, input_tokens, output_tokens, reasoning_tokens, tool_calls, cost, roles]
+      properties:
+        calls:
+          type: integer
+        input_tokens:
+          type: integer
+        output_tokens:
+          description: Without reasoning tokens.
+          type: integer
+        reasoning_tokens:
+          type: integer
+        tool_calls:
+          type: integer
+        cost:
+          description: Cost in EUR, as a decimal string.
+          type: string
+        roles:
+          description: Provider and model ID used per role, first used first.
+          type: array
+          items:
+            $ref: "#/components/schemas/RunRoleModel"
+    Run:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - identity_id
+        - supplier_name
+        - status
+        - stage
+        - stop_requested
+        - counts_against_quota
+        - pause_dependency
+        - pause_reason
+        - error
+        - profile_definition_hash
+        - prompt_set_hash
+        - usage
+        - created_at
+        - started_at
+        - finished_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        identity_id:
+          type: string
+          format: uuid
+        supplier_name:
+          description: The confirmed legal name. Null for an administrator.
+          type: [string, "null"]
+        status:
+          $ref: "#/components/schemas/RunStatus"
+        stage:
+          $ref: "#/components/schemas/RunStage"
+        stop_requested:
+          type: boolean
+        counts_against_quota:
+          description: >-
+            Whether the run counts against the organisation's profile quota. Paused runs, runs
+            that failed on a dependency and runs that end `insufficient_sources` do not count.
+          type: boolean
+        pause_dependency:
+          oneOf:
+            - $ref: "#/components/schemas/RunDependency"
+            - type: "null"
+        pause_reason:
+          description: Plain-language reason, naming the dependency. Null unless paused.
+          type: [string, "null"]
+        error:
+          description: Plain-language reason of a failed run. Null otherwise.
+          type: [string, "null"]
+        profile_definition_hash:
+          type: [string, "null"]
+        prompt_set_hash:
+          type: [string, "null"]
+        usage:
+          $ref: "#/components/schemas/RunUsage"
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: [string, "null"]
+          format: date-time
+        finished_at:
+          type: [string, "null"]
+          format: date-time
+    RunList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Run"
     HealthStatus:
       type: object
       additionalProperties: false
