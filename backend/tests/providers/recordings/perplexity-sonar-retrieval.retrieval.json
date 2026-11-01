@@ -1,0 +1,69 @@
+{
+  "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
+  "recorded_at": null,
+  "origin": "hand-written in the provider's documented response shape (not yet recorded from the live API)",
+  "config_id": "perplexity-sonar-retrieval",
+  "role": "retrieval",
+  "status": 200,
+  "body": {
+    "id": "pplx_2",
+    "model": "sonar",
+    "created": 1,
+    "object": "chat.completion",
+    "choices": [
+      {
+        "index": 0,
+        "finish_reason": "stop",
+        "message": {
+          "role": "assistant",
+          "content": "Acme SA publishes an annual report."
+        },
+        "delta": {
+          "role": "assistant",
+          "content": ""
+        }
+      }
+    ],
+    "citations": [
+      "https://acme.example/about",
+      "https://acme.example/report"
+    ],
+    "search_results": [
+      {
+        "title": "About Acme",
+        "url": "https://acme.example/about",
+        "snippet": "Acme SA, a French company"
+      },
+      {
+        "title": "Annual report",
+        "url": "https://acme.example/report",
+        "snippet": "Acme SA annual report 2025"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 20,
+      "completion_tokens": 150,
+      "total_tokens": 170,
+      "num_search_queries": 1,
+      "cost": {
+        "input_tokens_cost": 2e-05,
+        "output_tokens_cost": 0.00015,
+        "request_cost": 0.005,
+        "search_queries_cost": 0.005,
+        "total_cost": 0.01017
+      }
+    }
+  },
+  "expected_usage": {
+    "input_tokens": 20,
+    "output_tokens": 150,
+    "reasoning_tokens": 0,
+    "tool_calls": 1,
+    "billed_amount": "0.01017",
+    "billed_currency": "USD"
+  },
+  "expected_urls": [
+    "https://acme.example/about",
+    "https://acme.example/report"
+  ]
+}

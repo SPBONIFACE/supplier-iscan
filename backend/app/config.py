@@ -8,6 +8,7 @@ import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import timedelta
+from decimal import Decimal, InvalidOperation
 from typing import Literal
 
 # Local development origin of the Vite dev server (spec, Security model: Allowed origins).
@@ -27,6 +28,11 @@ ADMIN_PASSWORD = "ADMIN_PASSWORD"  # noqa: S105 - the name of the setting, not a
 # Path of the approved provider configurations file (#11); the shipped example when unset.
 # Provider API keys are read by name in app.providers (KEY_SETTINGS), never stored in Settings.
 PROVIDER_CONFIG_FILE = "PROVIDER_CONFIG_FILE"
+# Price table (#12): prices per model with an "as of" date; the shipped example when unset.
+# Providers bill in USD and costs are shown in EUR, so the conversion rate is a setting
+# (EUR for 1 USD).
+PRICE_TABLE_FILE = "PRICE_TABLE_FILE"
+EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
 
@@ -57,6 +63,8 @@ class Settings:
     admin_email: str | None = None
     admin_password: str | None = field(default=None, repr=False)
     provider_config_file: str | None = None
+    price_table_file: str | None = None
+    eur_per_usd: Decimal | None = None
     # How long an invitation link stays valid, and the shortest accepted password (#9).
     invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
     password_min_length: int = DEFAULT_PASSWORD_MIN_LENGTH
@@ -95,6 +103,19 @@ def _parse_positive_int(env: Mapping[str, str], name: str, default: int) -> int:
     return int(raw)
 
 
+def _parse_rate(raw: str) -> Decimal | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        rate = Decimal(value)
+    except InvalidOperation:
+        rate = Decimal(0)
+    if not rate.is_finite() or not Decimal("0.01") <= rate <= Decimal(100):
+        raise ConfigurationError(f"{EUR_PER_USD} must be a number between 0.01 and 100")
+    return rate
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
     raw_origins = env.get(CORS_ALLOWED_ORIGINS, "").strip() or DEFAULT_ALLOWED_ORIGINS
@@ -107,6 +128,8 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         # Not stripped: spaces are valid in a password. Empty means "not set".
         admin_password=env.get(ADMIN_PASSWORD, "") or None,
         provider_config_file=env.get(PROVIDER_CONFIG_FILE, "").strip() or None,
+        price_table_file=env.get(PRICE_TABLE_FILE, "").strip() or None,
+        eur_per_usd=_parse_rate(env.get(EUR_PER_USD, "")),
         invitation_validity=timedelta(
             hours=_parse_positive_int(
                 env, INVITATION_VALIDITY_HOURS, DEFAULT_INVITATION_VALIDITY_HOURS

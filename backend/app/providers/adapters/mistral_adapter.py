@@ -30,7 +30,14 @@ from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from app.providers.adapters.common import TIMEOUT_SECONDS
 from app.providers.catalogue import ProviderConfigSpec
-from app.providers.interface import RetrievalRequest, RetrievedUrl, StructuringRequest
+from app.providers.interface import (
+    RetrievalOutput,
+    RetrievalRequest,
+    RetrievedUrl,
+    StructuringOutput,
+    StructuringRequest,
+)
+from app.providers.metering import NO_USAGE, CallUsage
 
 _HOOK_LISTS = ("before_request_hooks", "after_success_hooks", "after_error_hooks")
 _NO_RETRY = RetryConfig("none", BackoffStrategy(0, 0, 1.0, 0), retry_connection_errors=False)
@@ -83,6 +90,19 @@ def _text(content: object) -> str:
     return ""
 
 
+def _usage(response: Any) -> CallUsage:
+    """Conversations report connector (web search) tokens, billed as input, and calls per tool."""
+    usage = getattr(response, "usage", None)
+    if usage is None:
+        return NO_USAGE
+    connectors = getattr(usage, "connectors", None) or {}
+    return CallUsage(
+        input_tokens=(usage.prompt_tokens or 0) + (getattr(usage, "connector_tokens", 0) or 0),
+        output_tokens=usage.completion_tokens or 0,
+        tool_calls=sum(connectors.values()),
+    )
+
+
 class MistralStructuring:
     def __init__(self, config: ProviderConfigSpec, client: Mistral) -> None:
         self._config = config
@@ -90,7 +110,7 @@ class MistralStructuring:
 
     def generate_json(
         self, request: StructuringRequest, schema_name: str, json_schema: dict[str, object]
-    ) -> str:
+    ) -> StructuringOutput:
         messages: list[SystemMessage | UserMessage] = [
             SystemMessage(content=request.instructions),
             UserMessage(content=request.data),
@@ -108,7 +128,8 @@ class MistralStructuring:
         )
         choices = response.choices or []
         message = choices[0].message if choices else None
-        return _text(message.content) if message is not None else ""
+        text = _text(message.content) if message is not None else ""
+        return StructuringOutput(text, _usage(response))
 
 
 class MistralRetrieval:
@@ -116,7 +137,7 @@ class MistralRetrieval:
         self._config = config
         self._client = client
 
-    def search(self, request: RetrievalRequest) -> list[RetrievedUrl]:
+    def search(self, request: RetrievalRequest) -> RetrievalOutput:
         response = self._client.beta.conversations.start(
             model=self._config.model_id,
             instructions=request.instructions,
@@ -136,7 +157,7 @@ class MistralRetrieval:
                     urls.append(
                         RetrievedUrl(url=url, snippet=snippet if isinstance(snippet, str) else "")
                     )
-        return urls
+        return RetrievalOutput(urls, _usage(response))
 
 
 def build_structuring(config: ProviderConfigSpec, api_key: str) -> MistralStructuring:

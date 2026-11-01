@@ -31,6 +31,7 @@ from app.providers.interface import (
     StructuringAdapter,
     StructuringClient,
 )
+from app.providers.metering import UsageMeter
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,11 @@ class Providers:
         catalogue: ProviderCatalogue,
         environ: Mapping[str, str] | None = None,
         adapters: AdapterTable | None = None,
+        *,
+        meter: UsageMeter,
     ) -> None:
         self.catalogue = catalogue
+        self._meter = meter
         self._environ = os.environ if environ is None else environ
         self._adapters = adapters
 
@@ -122,14 +126,14 @@ class Providers:
         factory = self._factories(config).structuring
         if factory is None:
             raise self._refused(config, "structuring")
-        return StructuringClient(config, factory(config, self._key(config)))
+        return StructuringClient(config, factory(config, self._key(config)), self._meter)
 
     def retrieval(self, config_id: str | None = None) -> RetrievalClient:
         config = self.resolve("retrieval", config_id)
         factory = self._factories(config).retrieval
         if factory is None:
             raise self._refused(config, "retrieval")
-        return RetrievalClient(config, factory(config, self._key(config)))
+        return RetrievalClient(config, factory(config, self._key(config)), self._meter)
 
     def missing_settings(self) -> list[str]:
         """Names (never values) of the key settings the selected configurations need and lack."""

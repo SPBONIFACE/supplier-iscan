@@ -20,7 +20,14 @@ from app.providers.fake import (
 )
 from app.providers.interface import RetrievalRequest, RetrievedUrl, StructuringRequest
 from app.providers.registry import Providers
-from tests.providers.support import SENTINEL_KEY, Company, catalogue, config
+from tests.providers.support import (
+    CONTEXT,
+    SENTINEL_KEY,
+    Company,
+    catalogue,
+    config,
+    make_meter,
+)
 
 GOOD = '{"legal_name": "Acme SA", "country": "FR"}'
 REQUEST = StructuringRequest(instructions="Extract.", data="<data>Acme SA</data>")
@@ -39,14 +46,18 @@ def make(
     cat = catalogue(*configs)
     if roles:
         cat = cat.model_copy(update={"roles": cat.roles.model_copy(update=roles)})
-    return Providers(cat, environ, fake_adapters(cat, structuring, retrieval, log))
+    return Providers(
+        cat, environ, fake_adapters(cat, structuring, retrieval, log), meter=make_meter()
+    )
 
 
 def test_an_approved_configuration_is_used() -> None:
     fake = FakeStructuringAdapter([GOOD])
     client = make(config("primary"), structuring=fake).structuring()
 
-    assert client.structure(REQUEST, Company) == Company(legal_name="Acme SA", country="FR")
+    assert client.structure(REQUEST, Company, CONTEXT) == Company(
+        legal_name="Acme SA", country="FR"
+    )
     assert (client.config_id, client.provider, client.model_id) == ("primary", "google", "model-1")
     assert fake.calls == [REQUEST] and fake.schemas == ["Company"]
 
@@ -103,7 +114,7 @@ def test_when_the_primary_fails_no_other_adapter_is_called() -> None:
     )
 
     with pytest.raises(ProviderCallError) as raised:
-        providers.structuring().structure(REQUEST, Company)
+        providers.structuring().structure(REQUEST, Company, CONTEXT)
 
     assert raised.value.kind == "timeout" and raised.value.retryable
     assert log.built == ["primary"]
@@ -114,7 +125,7 @@ def test_a_schema_failure_is_retried_once_then_raised_as_a_typed_error() -> None
     fake = FakeStructuringAdapter(['{"legal_name": "Acme SA"}', "not json at all"])
 
     with pytest.raises(StructuredOutputInvalid) as raised:
-        make(config("primary"), structuring=fake).structuring().structure(REQUEST, Company)
+        make(config("primary"), structuring=fake).structuring().structure(REQUEST, Company, CONTEXT)
 
     assert len(fake.calls) == 2
     assert (raised.value.schema_name, raised.value.attempts) == ("Company", 2)
@@ -125,7 +136,7 @@ def test_free_text_around_json_is_not_parsed() -> None:
     fake = FakeStructuringAdapter([f"Here you go: {GOOD}", f"```json\n{GOOD}\n```"])
 
     with pytest.raises(StructuredOutputInvalid):
-        make(config("primary"), structuring=fake).structuring().structure(REQUEST, Company)
+        make(config("primary"), structuring=fake).structuring().structure(REQUEST, Company, CONTEXT)
 
 
 def test_retrieval_uses_the_configured_retrieval_configuration() -> None:
@@ -139,7 +150,7 @@ def test_retrieval_uses_the_configured_retrieval_configuration() -> None:
         roles={"retrieval": "searcher"},
     )
 
-    result = providers.retrieval().retrieve(RetrievalRequest(instructions="i", query="q"))
+    result = providers.retrieval().retrieve(RetrievalRequest(instructions="i", query="q"), CONTEXT)
 
     assert [item.url for item in result.urls] == ["https://a.example/1"]
     assert providers.selected("retrieval") == "searcher"
@@ -184,7 +195,7 @@ def test_run_start_reports_an_unapproved_selected_configuration() -> None:
 def test_errors_never_contain_the_key() -> None:
     fake = FakeStructuringAdapter([RuntimeError(f"bad key {SENTINEL_KEY}")])
     with pytest.raises(ProviderCallError) as raised:
-        make(config("primary"), structuring=fake).structuring().structure(REQUEST, Company)
+        make(config("primary"), structuring=fake).structuring().structure(REQUEST, Company, CONTEXT)
     errors = [
         raised.value,
         ProviderCallError(provider="google", config_id="c", kind="authentication", status_code=401),

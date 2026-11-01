@@ -7,6 +7,7 @@ from app.config import Settings
 from app.health import DatabaseCheck
 from app.main import create_app
 from app.providers import Providers, load_catalogue
+from tests.providers.support import make_meter
 
 LOCAL_ORIGIN = "http://localhost:5173"
 
@@ -34,7 +35,7 @@ def make_client(
     """
     settings = settings or Settings(database_url=database_url, allowed_origins=allowed_origins)
     # No provider key, whatever the developer's environment holds: the tests never see real keys.
-    providers = providers or Providers(load_catalogue(), environ={})
+    providers = providers or Providers(load_catalogue(), environ={}, meter=make_meter())
     # raise_server_exceptions=False: an unhandled error shows up as a 500, as in production.
     return TestClient(
         create_app(settings, database_check=database_check, engine=engine, providers=providers),
