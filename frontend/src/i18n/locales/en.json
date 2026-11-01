@@ -67,10 +67,58 @@
     "unavailable": "Error: the service is not available right now. Try again in a few minutes."
   },
   "workspace": {
-    "title": "Profiles"
+    "title": "Profiles",
+    "loadError": "Error: the profiles could not be loaded. Try again; if the problem continues, tell your administrator.",
+    "newProfile": "New profile",
+    "quotaUnlimited": "Profiles remaining: unlimited",
+    "quotaRemaining": "Profiles remaining: {{remaining}}",
+    "quotaRemainingOf": "Profiles remaining: {{remaining}} of {{quota}}",
+    "accessUntil": "Access until {{date}}",
+    "notePrefix": "Note:",
+    "refusalShort": {
+      "quota_reached": "New runs are refused: your organisation has used its profile quota.",
+      "access_ended": "New runs are refused: your organisation's access has ended.",
+      "not_activated": "New runs are refused: your organisation is not activated yet.",
+      "spend_cap_reached": "New runs are refused: this instance has reached its monthly limit."
+    },
+    "refusalLong": {
+      "quota_reached": "New profile runs are refused because your organisation has used its profile quota. Your existing profiles remain readable, and you can still compare them and download them as PDF. Your administrator can tell you how to continue.",
+      "access_ended": "New profile runs are refused because your organisation's access ended on {{date}}. Your existing profiles remain readable, and you can still compare them and download them as PDF.",
+      "not_activated": "New profile runs are refused because your organisation has not been activated yet. Your existing profiles remain readable. Your administrator can tell you how to continue.",
+      "spend_cap_reached": "New profile runs are refused because this instance has reached its configured monthly limit for AI usage. Your existing profiles remain readable, and you can still compare them and download them as PDF. New runs are possible again next month, or earlier if the administrator raises the limit."
+    },
+    "emptyTitle": "No profile yet",
+    "emptyIntro": "Your organisation has no supplier profile yet. A profile is built in three steps:",
+    "emptyStep1": "You name the supplier; the assistant proposes the most likely company and you confirm its identity.",
+    "emptyStep2": "The profile run collects public evidence in the background and fills the profile; every fact carries its quote, source and date.",
+    "emptyStep3": "You review each fact and each assessment statement: the AI proposes, you decide.",
+    "startFirst": "Start your first profile",
+    "listHeading": "Profile list",
+    "caption": "Your organisation's supplier profiles, newest first",
+    "selectColumn": "Select for comparison",
+    "compareColumn": "Compare",
+    "supplier": "Supplier",
+    "status": "Status",
+    "updated": "Last updated",
+    "selected_one": "{{count}} profile selected",
+    "selected_other": "{{count}} profiles selected",
+    "compare": "Compare selected",
+    "compareWhy": "Tick two or more profiles to compare them side by side.",
+    "selectFor": "Select {{name}} for comparison",
+    "noProfileYet": "No profile to compare yet",
+    "nameHidden": "(name not shown)",
+    "statuses": {
+      "queued": "Queued",
+      "running": "Running",
+      "paused": "Paused",
+      "stopped": "Stopped",
+      "failed": "Failed",
+      "insufficient_sources": "Insufficient sources",
+      "partial": "Partial",
+      "completed": "Complete"
+    }
   },
   "placeholder": {
-    "workspace": "The profile list and the remaining quota will appear here.",
     "newProfile": "The new-profile screen and the identity chat will appear here.",
     "run": "The progress of the collection will appear here.",
     "card": "The supplier card, the review of the facts and the assessment will appear here.",

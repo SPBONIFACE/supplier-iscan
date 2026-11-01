@@ -6,6 +6,10 @@ import type { components, paths } from "./api-schema";
 
 export type CurrentUser = components["schemas"]["CurrentUser"];
 export type InvitationCheck = components["schemas"]["InvitationCheck"];
+export type MemberOrganisation = components["schemas"]["MemberOrganisation"];
+export type Run = components["schemas"]["Run"];
+export type RunStatus = components["schemas"]["RunStatus"];
+export type RunRefusalReason = NonNullable<MemberOrganisation["run_refusal_reason"]>;
 export type FieldError = components["schemas"]["ValidationError"]["errors"][number];
 
 /** Why a call failed, in terms the screens act on. */
@@ -91,6 +95,10 @@ export const api = {
   },
 
   getCurrentUser: () => call(() => client.GET("/auth/me")),
+
+  getOrganisation: () => call(() => client.GET("/organisation")),
+
+  listRuns: () => call(() => client.GET("/runs")),
 
   checkInvitation: (token: string) =>
     call(() => client.GET("/invitations/{token}", { params: { path: { token } } })),

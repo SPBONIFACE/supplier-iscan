@@ -110,7 +110,7 @@ export interface paths {
         };
         /**
          * Return the signed-in member's own organisation
-         * @description The organisation of the session, never another one: there is no organisation id to pass. The remaining profile quota is added in a later version.
+         * @description The organisation of the session, never another one: there is no organisation id to pass. Also says how many profiles may still be started and whether a new run would be refused right now, and why, so that the workspace can show it before the member starts. No spend amount is exposed.
          */
         get: operations["getOwnOrganisation"];
         put?: never;
@@ -487,6 +487,13 @@ export interface components {
             seat_limit: number | null;
             /** @description Maximum number of profile runs. Null means unlimited. */
             profile_quota: number | null;
+            /** @description Profile runs that may still start: the quota minus the runs that count against it, never below 0. Null when the quota is unlimited. */
+            profiles_remaining: number | null;
+            /**
+             * @description Why a new run would be refused now, or null when it would be accepted. Checked in this order: not activated, access ended, quota used, instance monthly spend cap reached.
+             * @enum {string|null}
+             */
+            run_refusal_reason: "not_activated" | "access_ended" | "quota_reached" | "spend_cap_reached" | null;
             /**
              * Format: date-time
              * @description End of access. Null while not yet activated, or when the access is unlimited.

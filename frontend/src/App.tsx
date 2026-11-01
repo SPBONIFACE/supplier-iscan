@@ -7,6 +7,7 @@ import { LoadingIndicator } from "./components/ui";
 import { InvitationPage } from "./pages/InvitationPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage, Placeholder } from "./pages/Simple";
+import { WorkspacePage } from "./pages/WorkspacePage";
 
 /** Protected routes: nothing is rendered for a signed-out user, who is sent to login and back. */
 function RequireAuth() {
@@ -42,11 +43,8 @@ export function App() {
         <Route path="/invitations/:token" element={<InvitationPage />} />
         <Route element={<RequireAuth />}>
           <Route path="/" element={<Home />} />
-          {/* Placeholders: #32 list, #33 new profile, #34 run, #35 to #37 card, #38 comparison, #48 admin. */}
-          <Route
-            path="/workspace"
-            element={<Placeholder titleKey="workspace.title" bodyKey="placeholder.workspace" />}
-          />
+          {/* Placeholders: #33 new profile, #34 run, #35 to #37 card, #38 comparison, #48 admin. */}
+          <Route path="/workspace" element={<WorkspacePage />} />
           <Route
             path="/profiles/new"
             element={<Placeholder titleKey="titles.newProfile" bodyKey="placeholder.newProfile" />}
