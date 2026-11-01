@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine
 from sqlalchemy.exc import OperationalError
 
+from app.auth.access import PUBLIC
 from app.auth.bootstrap import prepare_database
 from app.auth.routes import router as auth_router
 from app.config import ConfigurationError, Settings, load_settings
@@ -19,6 +20,7 @@ from app.health import DatabaseCheck, HealthStatus, make_database_check
 from app.invitations.log_redaction import install_access_log_redaction
 from app.invitations.routes import admin_router as admin_invitations_router
 from app.invitations.routes import public_router as invitations_router
+from app.organisations.member_routes import router as organisation_router
 from app.organisations.routes import router as admin_organisations_router
 from app.providers import Providers, load_catalogue
 from app.providers.store import sync_provider_configs
@@ -77,7 +79,7 @@ def create_app(
     # openapi.yaml is the only contract: no generated /openapi.json, no documentation pages.
     app = FastAPI(
         title="Supplier iScan API",
-        version="0.4.0",
+        version="0.5.0",
         openapi_url=None,
         docs_url=None,
         redoc_url=None,
@@ -100,6 +102,7 @@ def create_app(
 
     @app.get(
         "/health",
+        dependencies=[PUBLIC],
         response_model=HealthStatus,
         responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HealthStatus}},
     )
@@ -117,6 +120,7 @@ def create_app(
 
     app.include_router(auth_router)
     app.include_router(users_router)
+    app.include_router(organisation_router)
     app.include_router(admin_organisations_router)
     app.include_router(admin_invitations_router)
     app.include_router(invitations_router)
