@@ -52,7 +52,7 @@ criterion below is meant to be verifiable by looking at the running application.
 - [ ] If both registries are unreachable, the agent says so and offers the website fallback; no error page.
 - [ ] At the first interaction, before any input, the chat states that the member is talking to an AI assistant, in the UI language, with exactly this text:
   - English: "You are talking to an AI assistant. Its role: supplier research. As AI can make mistakes, please verify the legal entity of the selected supplier and the sources provided."
-  - French: "Vous échangez avec un assistant IA. Son rôle : effectuer des recherches fournisseur. L'IA pouvant faire des erreurs, veuillez vérifier l'entité légale du fournisseur sélectionné ainsi que les sources proposées."
+  - French: "Vous échangez avec un assistant IA. Son rôle : effectuer des recherches fournisseur. L’IA pouvant faire des erreurs, veuillez vérifier l’entité légale du fournisseur sélectionné ainsi que les sources proposées."
 - [ ] When the confirmed legal form is a sole trader or another natural-person business, the identity record is flagged `natural_person` (see F8, excluded uses).
 
 ### F2: Adaptive evidence collection
@@ -95,7 +95,7 @@ criterion below is meant to be verifiable by looking at the running application.
 **Description:** the supplier card opens in a side panel. The member ticks profiles from their organisation's previous runs and compares them field by field.
 
 **Acceptance criteria**
-- [ ] The card shows: a header (name, website, country, sector, last refresh), one row per field with value, status and a source chip that reveals the quote and link, and the assessment section with its procurement recommendations.
+- [ ] The card shows: a header (name, website, country, sector, last refresh) with a band of key figures repeating selected facts, each with its source chip, one row per field with value, status and a source chip that reveals the quote and link, and the assessment section with its procurement recommendations.
 - [ ] The comparison accepts from 2 profiles up to a configured maximum, chosen from the organisation's own runs; up to 4 are shown as side-by-side columns, beyond that as a compact matrix.
 - [ ] Every compared value keeps its source chip.
 - [ ] A profile from another organisation can never be selected or opened (see *Security model*).
