@@ -4,6 +4,7 @@ which Alembic compares against the migrations. A new model module is imported he
 
 from app.models.accounts import Organisation, User, UserSession
 from app.models.invitations import Invitation
+from app.models.providers import ProviderConfig
 from app.models.usage import UsageEvent
 
-__all__ = ["Invitation", "Organisation", "UsageEvent", "User", "UserSession"]
+__all__ = ["Invitation", "Organisation", "ProviderConfig", "UsageEvent", "User", "UserSession"]

@@ -1,0 +1,83 @@
+{
+  "$comment": "Answers in the shape of the anthropic API, for the adapter tests. Synthetic company; no key, no personal data.",
+  "structuring": {
+    "id": "msg_1",
+    "type": "message",
+    "role": "assistant",
+    "model": "model-1",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"legal_name\": \"Acme SA\", \"country\": \"FR\"}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 5
+    }
+  },
+  "retrieval": {
+    "id": "msg_2",
+    "type": "message",
+    "role": "assistant",
+    "model": "model-1",
+    "content": [
+      {
+        "type": "server_tool_use",
+        "id": "srvtoolu_1",
+        "name": "web_search",
+        "input": {
+          "query": "Acme SA"
+        }
+      },
+      {
+        "type": "web_search_tool_result",
+        "tool_use_id": "srvtoolu_1",
+        "content": [
+          {
+            "type": "web_search_result",
+            "url": "https://acme.example/about",
+            "title": "About Acme",
+            "encrypted_content": "opaque",
+            "page_age": null
+          },
+          {
+            "type": "web_search_result",
+            "url": "https://acme.example/report",
+            "title": "Annual report",
+            "encrypted_content": "opaque",
+            "page_age": null
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": "Acme SA publishes an annual report.",
+        "citations": [
+          {
+            "type": "web_search_result_location",
+            "url": "https://acme.example/report",
+            "title": "Annual report",
+            "encrypted_index": "opaque",
+            "cited_text": "Acme SA annual report 2025"
+          }
+        ]
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 5
+    }
+  },
+  "error": {
+    "type": "error",
+    "error": {
+      "type": "authentication_error",
+      "message": "invalid x-api-key"
+    }
+  }
+}

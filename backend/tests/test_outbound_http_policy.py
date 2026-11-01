@@ -20,8 +20,12 @@ Outside `app/http_client/`, the test fails on:
 Fetches to supplier sites go through `app.http_client.GuardedClient` and `check_website`. A static
 scan cannot see code built at run time (`exec`, computed module names); review catches those.
 
-Database drivers and the official LLM SDKs (which contact only their configured provider) are not
-networking libraries in this sense and are not listed.
+Database drivers are not networking libraries in this sense and are not listed. The official LLM
+SDKs (`anthropic`, `openai`, `google.genai`, `mistralai`, `perplexity`) are listed (#11): they
+open connections, to the fixed endpoint of an approved provider configuration and never to a user
+URL, and are imported only by the provider adapters of `app/providers/adapters/`, which are in
+`ALLOWED_MODULES` and usable only inside their package (the registry reaches them through
+`app.providers.adapters.ADAPTERS`, after the approved-configuration checks).
 """
 
 import ast
@@ -35,6 +39,7 @@ REPOSITORY = BACKEND.parent
 SCANNED_ROOTS = [BACKEND / "app", BACKEND / "worker", REPOSITORY / "worker"]
 HTTP_CLIENT_MODULE = BACKEND / "app" / "http_client"
 HTTP_CLIENT_PACKAGE = "app.http_client"
+PROVIDER_ADAPTERS = BACKEND / "app" / "providers" / "adapters"
 
 # Modules that open sockets or network connections.
 NETWORK_MODULES = frozenset(
@@ -64,6 +69,12 @@ NETWORK_MODULES = frozenset(
         "websocket",
         "websockets",
         "xmlrpc.client",
+        # Official LLM SDKs (#11): only in the provider adapters (ALLOWED_MODULES).
+        "anthropic",
+        "google.genai",
+        "mistralai",
+        "openai",
+        "perplexity",
     }
 )
 # Names bound to a networking library: refused as an imported name or as an attribute, whatever
@@ -134,6 +145,31 @@ ALLOWED_MODULES: dict[str, str] = {
     "backend/app/registries/httpx2_fetch.py": (
         "#14: the registries' single network module, to the fixed public hosts of Wikidata and "
         "GLEIF only; to be switched to the guarded client in #16."
+    ),
+    "backend/app/providers/adapters/anthropic_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
+    ),
+    "backend/app/providers/adapters/google_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
+    ),
+    "backend/app/providers/adapters/mistral_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
+    ),
+    "backend/app/providers/adapters/openai_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
+    ),
+    "backend/app/providers/adapters/perplexity_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
     ),
 }
 
@@ -513,6 +549,20 @@ def test_every_http_client_module_declares_its_public_names() -> None:
         "import xmlrpc\nxmlrpc.client.ServerProxy('http://example.com')",
         "import ssl\nssl.get_server_certificate(('example.com', 443))",
         "import smtplib",
+        # #11: the LLM SDKs are networking libraries outside the provider adapters.
+        "import anthropic",
+        "import openai",
+        "from openai import OpenAI",
+        "from google import genai",
+        "import google.genai",
+        "from mistralai.client import Mistral",
+        "import perplexity",
+        "__import__('anthropic')",
+        # ... and the adapters cannot be used outside their package.
+        "from app.providers.adapters.google_adapter import make_client",
+        "from app.providers.adapters import google_adapter",
+        "import app.providers.adapters.openai_adapter",
+        "from app.providers.adapters.mistral_adapter import *",
     ],
 )
 def test_the_scan_detects_each_way_of_opening_a_connection(source: str) -> None:
@@ -553,8 +603,10 @@ async def fetch_supplier_page(url): return (await Httpx2Fetch(10.0)(url, {}, {})
 
 
 def test_the_allowed_module_and_its_names_are_known_to_the_scan() -> None:
-    (fetcher,) = ALLOWED
+    fetcher, *adapters = ALLOWED
 
+    assert {adapter.package for adapter in adapters} == {"app.providers.adapters"}
+    assert {"make_client", "build_structuring"} <= adapters[0].names
     assert fetcher.name == "app.registries.httpx2_fetch"
     assert fetcher.package == "app.registries"
     assert {"httpx2_fetch", "Httpx2Fetch"} <= fetcher.names
@@ -632,3 +684,15 @@ def test_the_guarded_clients_raw_client_is_an_internal_name() -> None:
         "from app.http_client import GuardedClient\nGuardedClient()._GuardedClient__client.get(u)",
         "app.services.sample",
     )
+
+
+def test_only_the_registry_reaches_the_provider_adapters() -> None:
+    # #11: the adapter package is entered only through the registry, which checks the
+    # configuration (approved, key set) before building an adapter.
+    importers = sorted(
+        str(path.relative_to(REPOSITORY))
+        for path, source in _application_sources().items()
+        if PROVIDER_ADAPTERS not in path.parents and "app.providers.adapters" in source
+    )
+
+    assert importers == ["backend/app/providers/registry.py"]

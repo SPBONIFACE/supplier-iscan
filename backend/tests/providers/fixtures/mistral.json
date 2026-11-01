@@ -1,0 +1,63 @@
+{
+  "$comment": "Answers in the shape of the mistral API, for the adapter tests. Synthetic company; no key, no personal data.",
+  "structuring": {
+    "id": "cmpl_1",
+    "object": "chat.completion",
+    "model": "model-1",
+    "created": 1,
+    "usage": {
+      "prompt_tokens": 10,
+      "completion_tokens": 5,
+      "total_tokens": 15
+    },
+    "choices": [
+      {
+        "index": 0,
+        "finish_reason": "stop",
+        "message": {
+          "role": "assistant",
+          "content": "{\"legal_name\": \"Acme SA\", \"country\": \"FR\"}"
+        }
+      }
+    ]
+  },
+  "retrieval": {
+    "object": "conversation.response",
+    "conversation_id": "conv_1",
+    "usage": {
+      "prompt_tokens": 10,
+      "completion_tokens": 5,
+      "total_tokens": 15
+    },
+    "outputs": [
+      {
+        "object": "entry",
+        "type": "message.output",
+        "role": "assistant",
+        "id": "msg_1",
+        "content": [
+          {
+            "type": "text",
+            "text": "Acme SA publishes an annual report."
+          },
+          {
+            "type": "tool_reference",
+            "tool": "web_search",
+            "title": "About Acme",
+            "url": "https://acme.example/about",
+            "description": "Acme SA, a French company"
+          },
+          {
+            "type": "tool_reference",
+            "tool": "web_search",
+            "title": "Annual report",
+            "url": "https://acme.example/report"
+          }
+        ]
+      }
+    ]
+  },
+  "error": {
+    "detail": "Unauthorized"
+  }
+}

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.3.0
+  version: 0.4.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -32,7 +32,9 @@ paths:
       summary: Report whether the API and its database are available
       description: >-
         Always answers while the API process runs. Returns 200 when the database answers, and 503
-        when it does not. The body never contains error details.
+        when it does not. The body never contains error details. `missing_settings` names the API
+        key settings that the provider configurations selected for retrieval and structuring need
+        and that are not set; it gives names only, never a value, and does not change the status.
       responses:
         "200":
           description: The API and the database are available.
@@ -43,6 +45,7 @@ paths:
               example:
                 api: available
                 database: available
+                missing_settings: []
         "503":
           description: The API is running but the database is unavailable.
           content:
@@ -52,6 +55,7 @@ paths:
               example:
                 api: available
                 database: unavailable
+                missing_settings: [GEMINI_API_KEY]
   /auth/login:
     post:
       operationId: login
@@ -471,7 +475,7 @@ components:
     HealthStatus:
       type: object
       additionalProperties: false
-      required: [api, database]
+      required: [api, database, missing_settings]
       properties:
         api:
           description: Status of the API process. It is always available when it answers.
@@ -481,6 +485,16 @@ components:
           description: Whether the API can reach its database.
           type: string
           enum: [available, unavailable]
+        missing_settings:
+          description: >-
+            Names of the API key settings required by the selected provider configurations that
+            are not set (for example `GEMINI_API_KEY`), sorted. Empty when every key is set. A
+            profile run cannot start while a name is listed. Never contains a value.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[A-Z][A-Z0-9_]*$"
     LoginRequest:
       type: object
       additionalProperties: false

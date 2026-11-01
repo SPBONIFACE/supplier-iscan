@@ -1,0 +1,76 @@
+{
+  "$comment": "Answers in the shape of the perplexity API, for the adapter tests. Synthetic company; no key, no personal data.",
+  "structuring": {
+    "id": "pplx_1",
+    "model": "model-1",
+    "created": 1,
+    "object": "chat.completion",
+    "choices": [
+      {
+        "index": 0,
+        "finish_reason": "stop",
+        "message": {
+          "role": "assistant",
+          "content": "{\"legal_name\": \"Acme SA\", \"country\": \"FR\"}"
+        },
+        "delta": {
+          "role": "assistant",
+          "content": ""
+        }
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 10,
+      "completion_tokens": 5,
+      "total_tokens": 15
+    }
+  },
+  "retrieval": {
+    "id": "pplx_2",
+    "model": "model-1",
+    "created": 1,
+    "object": "chat.completion",
+    "choices": [
+      {
+        "index": 0,
+        "finish_reason": "stop",
+        "message": {
+          "role": "assistant",
+          "content": "Acme SA publishes an annual report."
+        },
+        "delta": {
+          "role": "assistant",
+          "content": ""
+        }
+      }
+    ],
+    "citations": [
+      "https://acme.example/about",
+      "https://acme.example/report"
+    ],
+    "search_results": [
+      {
+        "title": "About Acme",
+        "url": "https://acme.example/about",
+        "snippet": "Acme SA, a French company"
+      },
+      {
+        "title": "Annual report",
+        "url": "https://acme.example/report",
+        "snippet": "Acme SA annual report 2025"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 10,
+      "completion_tokens": 5,
+      "total_tokens": 15
+    }
+  },
+  "error": {
+    "error": {
+      "message": "Invalid API key",
+      "type": "invalid_api_key",
+      "code": 401
+    }
+  }
+}
