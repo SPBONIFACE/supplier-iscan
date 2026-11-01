@@ -156,6 +156,7 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request:
         created_by=scope.principal.user_id,
         # The definition this run uses, so that its facts stay interpretable after a change.
         profile_definition_hash=request.app.state.profile_definition.content_hash,
+        prompt_set_hash=request.app.state.prompt_set.content_hash,
     )
     db.add(run)
     db.flush()
