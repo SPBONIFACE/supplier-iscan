@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, ConfigDict, StringConstraints
 from sqlalchemy import select
 
+from app.auth.access import PUBLIC
 from app.auth.dependencies import require_administrator
 from app.auth.passwords import normalise_email
 from app.auth.routes import CurrentUser
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 admin_router = APIRouter(
     prefix="/admin", tags=["admin"], dependencies=[Depends(require_administrator)]
 )
-public_router = APIRouter(prefix="/invitations", tags=["invitations"])
+public_router = APIRouter(prefix="/invitations", tags=["invitations"], dependencies=[PUBLIC])
 
 
 class InvitationCreate(BaseModel):

@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Response, status
 from pydantic import BaseModel, ConfigDict, StringConstraints
 from sqlalchemy import select, update
 
+from app.auth.access import OWN_ACCOUNT, PUBLIC
 from app.auth.dependencies import CurrentPrincipal
 from app.auth.passwords import (
     hash_password,
@@ -56,7 +57,7 @@ def _current_user(
     )
 
 
-@router.post("/login", response_model=CurrentUser)
+@router.post("/login", response_model=CurrentUser, dependencies=[PUBLIC])
 def login(body: LoginRequest, response: Response, db: DbSession) -> CurrentUser:
     now = utc_now()
     user = db.scalar(select(User).where(User.email == normalise_email(body.email)))
@@ -92,7 +93,12 @@ def login(body: LoginRequest, response: Response, db: DbSession) -> CurrentUser:
     return _current_user(user.id, user.email, user.role, user.organisation_id)
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    dependencies=[OWN_ACCOUNT],
+)
 def logout(principal: CurrentPrincipal, db: DbSession) -> Response:
     db.execute(
         update(UserSession)
@@ -105,7 +111,7 @@ def logout(principal: CurrentPrincipal, db: DbSession) -> Response:
     return response
 
 
-@router.get("/me", response_model=CurrentUser)
+@router.get("/me", response_model=CurrentUser, dependencies=[OWN_ACCOUNT])
 def get_current_user(principal: CurrentPrincipal) -> CurrentUser:
     return _current_user(
         principal.user_id, principal.email, principal.role, principal.organisation_id
