@@ -26,6 +26,22 @@ NPM_RULE = (
 PARSE_RULE = "Blocked: the hook input could not be parsed, so it cannot be checked."
 
 ENV_NAME = re.compile(r"^\.env([.*?\[].*)?$")
+ENV_EXAMPLE = re.compile(r"\.env\.example(?![a-z0-9_])")
+ENV_LITERAL = re.compile(r"(?<![a-z0-9])\.env(?![a-z0-9_])")
+NPM_VALUE_FLAGS = {  # options of npm that take a value in the next word
+    "--prefix",
+    "-c",
+    "--workspace",
+    "-w",
+    "--registry",
+    "--userconfig",
+    "--globalconfig",
+    "--cache",
+    "--loglevel",
+    "--otp",
+    "--tag",
+    "--scope",
+}
 ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 OPERATORS = re.compile(r"^[();<>|&]+$")
 NPM_BLOCKED = {"install", "i", "in", "ins", "inst", "add", "ci", "clean-install", "it", "cit"}
@@ -40,8 +56,14 @@ class Block(Exception):
 
 def is_env_name(value: str) -> bool:
     """True for .env, .env.local, backend/.env, .env* ...; False for .env.example."""
-    base = value.strip().rstrip("/").rsplit("/", 1)[-1]
+    base = value.strip().rstrip("/").rsplit("/", 1)[-1].lower()
     return base != ".env.example" and ENV_NAME.match(base) is not None
+
+
+def mentions_env_file(command: str) -> bool:
+    """A literal .env file name anywhere in the string, interpreter strings included."""
+    text = ENV_EXAMPLE.sub("", command.lower())
+    return ENV_LITERAL.search(text) is not None
 
 
 def check_paths(tool_input: dict[str, Any]) -> None:
@@ -74,6 +96,8 @@ def check_command(command: str, depth: int = 0) -> None:
     except ValueError as exc:
         raise Block(PARSE_RULE) from exc
 
+    if mentions_env_file(command):
+        raise Block(ENV_RULE)
     for tok in tokens:
         if OPERATORS.match(tok):
             continue
@@ -87,19 +111,40 @@ def check_command(command: str, depth: int = 0) -> None:
             args.pop(0)
         if not args:
             continue
-        cmd = args[0].rsplit("/", 1)[-1]
-        rest = args[1:]
-        if cmd == "npx":
-            raise Block(NPM_RULE)
-        if cmd == "npm":
-            sub = next((a for a in rest if not a.startswith("-")), None)
-            if sub in NPM_BLOCKED:
-                raise Block(NPM_RULE)
-        if cmd in SHELLS or cmd == "eval":
-            if cmd == "eval":
-                check_command(" ".join(rest), depth + 1)
-            elif "-c" in rest and rest.index("-c") + 1 < len(rest):
-                check_command(rest[rest.index("-c") + 1], depth + 1)
+        check_argv(args, depth)
+
+
+def npm_subcommand(rest: list[str]) -> str | None:
+    """First non-option word, skipping the values of options such as --prefix x or -C x."""
+    it = iter(rest)
+    for arg in it:
+        if arg.startswith("-"):
+            if arg.lower() in NPM_VALUE_FLAGS:
+                next(it, None)
+            continue
+        return arg
+    return None
+
+
+def check_argv(args: list[str], depth: int) -> None:
+    if depth > 3 or not args:
+        return
+    cmd = args[0].rsplit("/", 1)[-1]
+    rest = args[1:]
+    if cmd == "npx":
+        raise Block(NPM_RULE)
+    if cmd == "npm" and npm_subcommand(rest) in NPM_BLOCKED:
+        raise Block(NPM_RULE)
+    if cmd == "corepack":
+        check_argv(rest, depth + 1)
+    if cmd == "pnpm":
+        words = [a for a in rest if not a.startswith("-")]
+        if words[:1] in (["exec"], ["dlx"]):
+            check_argv(rest[rest.index(words[0]) + 1 :], depth + 1)
+    if cmd == "eval":
+        check_command(" ".join(rest), depth + 1)
+    elif cmd in SHELLS and "-c" in rest and rest.index("-c") + 1 < len(rest):
+        check_command(rest[rest.index("-c") + 1], depth + 1)
 
 
 def check(payload: object) -> None:

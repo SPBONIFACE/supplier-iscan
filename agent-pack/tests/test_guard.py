@@ -45,6 +45,11 @@ BLOCKED_ENV = [
     bash("ls && cat .env"),
     bash("bash -c 'cat .env'"),
     bash("cp .env /tmp/x"),
+    bash("python3 -c \"open('.env')\""),
+    bash("node -e \"require('fs').readFileSync('backend/.env')\""),
+    bash("cat .ENV"),
+    bash("cat Backend/.Env.Local"),
+    tool("Read", file_path="/repo/.ENV"),
     bash("docker run --env-file=.env x"),
 ]
 BLOCKED_NPM = [
@@ -62,6 +67,14 @@ BLOCKED_NPM = [
     bash("cd a\nnpm install"),
     bash("(npm i)"),
     bash("/usr/bin/npx foo"),
+    bash("npm --prefix x i"),
+    bash("npm -C x ci"),
+    bash("npm --prefix=x install"),
+    bash("corepack npm install"),
+    bash("pnpm exec npm install"),
+    bash("pnpm dlx npm i"),
+    bash("pnpm exec npx foo"),
+    bash("NPM_CONFIG_X=1 npm --silent -w a install"),
 ]
 UNPARSEABLE = [
     "",
@@ -95,6 +108,9 @@ ALLOWED = [
     bash("echo npm install"),
     bash("pnpm dlx x"),
     bash("npm --version"),
+    bash("npm --prefix x run build"),
+    bash("python3 -c \"print('.env.example')\""),
+    bash("cat docs/.environment.md prod.env.md"),
     tool("WebFetch", url="https://example.org"),
 ]
 
