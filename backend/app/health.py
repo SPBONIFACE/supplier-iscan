@@ -1,4 +1,4 @@
-"""Health check: is the API up, and can it reach its database?"""
+"""Health check: is the API up, can it reach its database, and which provider keys are missing?"""
 
 import logging
 from collections.abc import Callable
@@ -22,6 +22,8 @@ class HealthStatus(BaseModel):
 
     api: Literal["available"]
     database: Literal["available", "unavailable"]
+    # Names of the provider key settings the selected configurations need and lack (#11).
+    missing_settings: list[str]
 
 
 def make_database_check(database_url: str | None) -> DatabaseCheck:

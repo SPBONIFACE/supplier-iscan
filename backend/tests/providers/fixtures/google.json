@@ -1,0 +1,63 @@
+{
+  "$comment": "Answers in the shape of the google API, for the adapter tests. Synthetic company; no key, no personal data.",
+  "structuring": {
+    "candidates": [
+      {
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "{\"legal_name\": \"Acme SA\", \"country\": \"FR\"}"
+            }
+          ]
+        },
+        "finishReason": "STOP"
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 10,
+      "candidatesTokenCount": 5
+    }
+  },
+  "retrieval": {
+    "candidates": [
+      {
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Acme SA publishes an annual report."
+            }
+          ]
+        },
+        "finishReason": "STOP",
+        "groundingMetadata": {
+          "webSearchQueries": [
+            "Acme SA"
+          ],
+          "groundingChunks": [
+            {
+              "web": {
+                "uri": "https://acme.example/about",
+                "title": "acme.example"
+              }
+            },
+            {
+              "web": {
+                "uri": "https://acme.example/report",
+                "title": "acme.example"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "error": {
+    "error": {
+      "code": 401,
+      "message": "API key not valid.",
+      "status": "UNAUTHENTICATED"
+    }
+  }
+}

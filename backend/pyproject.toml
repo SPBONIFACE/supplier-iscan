@@ -5,9 +5,14 @@ description = "Supplier iScan API"
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "alembic==1.20.0",
+    "anthropic==1.13.0",
     "argon2-cffi==25.1.0",
     "fastapi==0.143.0",
+    "google-genai==2.30.1",
     "httpx2==2.13.1",
+    "mistralai==3.2.0",
+    "openai==3.29.0",
+    "perplexityai==0.43.8",
     "psycopg[binary]==3.3.6",
     "sqlalchemy==2.0.54",
     "uvicorn==0.54.0",
@@ -27,9 +32,9 @@ dev = [
 package = false
 required-version = "==0.12.24"
 # Supply chain: every package in uv.lock, transitive ones included, is at least 14 days old
-# at the time of locking (last moved 27 Oct 2026, _docs/process/approved-dependencies.md).
+# at the time of locking (last moved 27 Oct 2026 for #11, _docs/process/approved-dependencies.md).
 # Wheels only: no source distribution is ever built.
-exclude-newer = "2026-10-13T00:00:00Z"
+exclude-newer = "2026-10-13T20:00:00Z"
 no-build = true
 
 [tool.pytest.ini_options]
