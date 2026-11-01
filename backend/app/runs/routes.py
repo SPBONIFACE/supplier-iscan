@@ -8,11 +8,12 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
 from app import queue
+from app.config import Settings
 from app.db import DbSession, utc_now
 from app.errors import not_found
 from app.models import ProfileRun, SupplierIdentity, UsageEvent
@@ -84,8 +85,22 @@ class RunListOut(BaseModel):
     items: list[RunOut]
 
 
+def hide_names(request: Request, scope: OrganisationScope) -> bool:
+    """Supplier names are content of the organisation: only its members read them. On a hosted
+    instance the administrator gets run metadata only. On a self-hosted instance the local
+    administrator is a member of the default organisation and reads its content (owner decision,
+    like `OrganisationScoped`).
+    """
+    settings: Settings = request.app.state.settings
+    return scope.principal.role == "admin" and not settings.organisations_skip_activation
+
+
 def _run_out(
-    db: DbSession, scope: OrganisationScope, run: ProfileRun, supplier_name: str | None
+    db: DbSession,
+    scope: OrganisationScope,
+    run: ProfileRun,
+    supplier_name: str | None,
+    hide_names: bool,
 ) -> RunOut:
     totals = run_usage_totals(db, scope.organisation_id, run.id)
     roles = [
@@ -98,7 +113,7 @@ def _run_out(
             "id": run.id,
             "identity_id": run.identity_id,
             # Run metadata only for an administrator, never the supplier name.
-            "supplier_name": None if scope.principal.role == "admin" else supplier_name,
+            "supplier_name": None if hide_names else supplier_name,
             "status": run.status,
             "stage": run.stage,
             "stop_requested": run.stop_requested,
@@ -124,13 +139,13 @@ def _run_out(
     )
 
 
-def _one(db: DbSession, scope: OrganisationScope, run: ProfileRun) -> RunOut:
+def _one(db: DbSession, scope: OrganisationScope, run: ProfileRun, hide: bool) -> RunOut:
     name = db.scalar(scope.select(SupplierIdentity).where(SupplierIdentity.id == run.identity_id))
-    return _run_out(db, scope, run, name.legal_name if name else None)
+    return _run_out(db, scope, run, name.legal_name if name else None, hide)
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
-def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession) -> RunOut:
+def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request: Request) -> RunOut:
     identity = scope.get(db, SupplierIdentity, body.identity_id)
     if identity.confirmed_at is None:
         # Same answer as an unknown identity: only a confirmed identity starts a run.
@@ -146,14 +161,15 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession) -> RunOu
     )
     db.commit()
     db.refresh(run)
-    return _run_out(db, scope, run, identity.legal_name)
+    return _run_out(db, scope, run, identity.legal_name, hide_names(request, scope))
 
 
 @router.get("", response_model=RunListOut)
-def list_runs(scope: OrganisationScoped, db: DbSession) -> RunListOut:
+def list_runs(scope: OrganisationScoped, db: DbSession, request: Request) -> RunListOut:
     runs = db.scalars(
         scope.select(ProfileRun).order_by(ProfileRun.created_at.desc()).limit(LIST_LIMIT)
     ).all()
+    hidden = hide_names(request, scope)
     rows = db.execute(
         select(SupplierIdentity.id, SupplierIdentity.legal_name).where(
             SupplierIdentity.organisation_id == scope.organisation_id,
@@ -161,16 +177,18 @@ def list_runs(scope: OrganisationScoped, db: DbSession) -> RunListOut:
         )
     )
     names = {identity_id: name for identity_id, name in rows}
-    return RunListOut(items=[_run_out(db, scope, run, names.get(run.identity_id)) for run in runs])
+    return RunListOut(
+        items=[_run_out(db, scope, run, names.get(run.identity_id), hidden) for run in runs]
+    )
 
 
 @router.get("/{id}", response_model=RunOut)
-def get_run(id: str, scope: OrganisationScoped, db: DbSession) -> RunOut:
-    return _one(db, scope, scope.get(db, ProfileRun, id))
+def get_run(id: str, scope: OrganisationScoped, db: DbSession, request: Request) -> RunOut:
+    return _one(db, scope, scope.get(db, ProfileRun, id), hide_names(request, scope))
 
 
 @router.post("/{id}/stop", response_model=RunOut)
-def stop_run(id: str, scope: OrganisationScoped, db: DbSession) -> RunOut:
+def stop_run(id: str, scope: OrganisationScoped, db: DbSession, request: Request) -> RunOut:
     run = scope.get(db, ProfileRun, id, for_update=True)
     if run.status in FINISHED_STATUSES:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=ALREADY_FINISHED)
@@ -180,11 +198,11 @@ def stop_run(id: str, scope: OrganisationScoped, db: DbSession) -> RunOut:
         run.status = "stopped"
         run.finished_at = utc_now()
     db.commit()
-    return _one(db, scope, run)
+    return _one(db, scope, run, hide_names(request, scope))
 
 
 @router.post("/{id}/resume", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
-def resume_run(id: str, scope: OrganisationScoped, db: DbSession) -> RunOut:
+def resume_run(id: str, scope: OrganisationScoped, db: DbSession, request: Request) -> RunOut:
     run = scope.get(db, ProfileRun, id, for_update=True)
     if run.status != "paused":
         raise HTTPException(status.HTTP_409_CONFLICT, detail=NOT_PAUSED)
@@ -194,4 +212,4 @@ def resume_run(id: str, scope: OrganisationScoped, db: DbSession) -> RunOut:
     run.counts_against_quota = True
     queue.enqueue(db, RUN_JOB, {"run_id": str(run.id)})
     db.commit()
-    return _one(db, scope, run)
+    return _one(db, scope, run, hide_names(request, scope))

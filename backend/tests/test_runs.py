@@ -2,6 +2,7 @@
 
 import threading
 import uuid
+from dataclasses import replace
 from datetime import timedelta
 from typing import Any
 
@@ -31,6 +32,7 @@ from tests.runs_support import (
     jobs_of,
     work,
 )
+from tests.support import make_client
 
 STAGES = ("identity", "collection", "extraction", "assessment")
 
@@ -153,19 +155,33 @@ def test_list_is_newest_first_and_scoped(client: TestClient, engine: Engine) -> 
     assert ids == [str(second), str(first)]
 
 
-def test_the_administrator_gets_run_metadata_without_the_supplier_name(
-    client: TestClient, engine: Engine
-) -> None:
+def admin_sees(engine: Engine, settings: Settings, mode: str) -> str:
     organisation_id = create_organisation(engine)
-    admin = create_user(engine, role="admin", organisation_id=organisation_id)
-    token = create_session(engine, admin.id)
+    token = create_session(
+        engine, create_user(engine, role="admin", organisation_id=organisation_id).id
+    )
     run_id = create_run(engine, organisation_id, legal_name="Secret Supplier SA")
+    hosted = make_client(
+        settings=replace(settings, instance_mode=mode),  # type: ignore[arg-type]
+        engine=engine,
+    )
+    one = call(hosted, "GET", f"/runs/{run_id}", token)
+    many = call(hosted, "GET", "/runs", token)
+    assert (one.status_code, many.status_code) == (200, 200)
+    assert one.json()["status"] == "queued"
+    return str(one.text + many.text)
 
-    for path in (f"/runs/{run_id}", "/runs"):
-        response = call(client, "GET", path, token)
-        assert response.status_code == 200
-        assert "Secret Supplier" not in response.text
-    assert call(client, "GET", f"/runs/{run_id}", token).json()["status"] == "queued"
+
+def test_a_hosted_administrator_gets_run_metadata_without_the_supplier_name(
+    engine: Engine, settings: Settings
+) -> None:
+    assert "Secret Supplier" not in admin_sees(engine, settings, "hosted")
+
+
+def test_the_self_hosted_local_administrator_reads_names_in_their_organisation(
+    engine: Engine, settings: Settings
+) -> None:
+    assert "Secret Supplier" in admin_sees(engine, settings, "self_hosted")
 
 
 def make_run_resource(engine: Engine, owner: OwnerOrganisation) -> OwnedResource:

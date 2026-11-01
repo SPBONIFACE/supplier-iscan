@@ -130,7 +130,7 @@ export interface paths {
         };
         /**
          * List the organisation's runs, newest first
-         * @description At most the 100 most recent runs of the member's organisation. An administrator gets run metadata only (status, stage, cost, errors): `supplier_name` is null for them.
+         * @description At most the 100 most recent runs of the member's organisation. On a hosted instance an administrator gets run metadata only (status, stage, cost, errors): `supplier_name` is null for them. The local administrator of a self-hosted instance is a member of the default organisation and reads its names.
          */
         get: operations["listRuns"];
         put?: never;
@@ -154,7 +154,7 @@ export interface paths {
         };
         /**
          * Read a run
-         * @description Status, stage, provider and model ID per role, tokens and cost (totals of every attempt, failed and retried ones included). An administrator gets run metadata only: `supplier_name` is null for them.
+         * @description Status, stage, provider and model ID per role, tokens and cost (totals of every attempt, failed and retried ones included). On a hosted instance an administrator gets run metadata only: `supplier_name` is null for them.
          */
         get: operations["getRun"];
         put?: never;
@@ -371,7 +371,7 @@ export interface components {
             id: string;
             /** Format: uuid */
             identity_id: string;
-            /** @description The confirmed legal name. Null for an administrator. */
+            /** @description The confirmed legal name. Null for an administrator of a hosted instance. */
             supplier_name: string | null;
             status: components["schemas"]["RunStatus"];
             stage: components["schemas"]["RunStage"];

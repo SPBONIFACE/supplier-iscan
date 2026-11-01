@@ -223,8 +223,10 @@ paths:
       tags: [runs]
       summary: List the organisation's runs, newest first
       description: >-
-        At most the 100 most recent runs of the member's organisation. An administrator gets run
-        metadata only (status, stage, cost, errors): `supplier_name` is null for them.
+        At most the 100 most recent runs of the member's organisation. On a hosted instance an
+        administrator gets run metadata only (status, stage, cost, errors): `supplier_name` is
+        null for them. The local administrator of a self-hosted instance is a member of the
+        default organisation and reads its names.
       security:
         - sessionCookie: []
       responses:
@@ -245,8 +247,8 @@ paths:
       summary: Read a run
       description: >-
         Status, stage, provider and model ID per role, tokens and cost (totals of every attempt,
-        failed and retried ones included). An administrator gets run metadata only:
-        `supplier_name` is null for them.
+        failed and retried ones included). On a hosted instance an administrator gets
+        run metadata only: `supplier_name` is null for them.
       security:
         - sessionCookie: []
       parameters:
@@ -743,7 +745,7 @@ components:
           type: string
           format: uuid
         supplier_name:
-          description: The confirmed legal name. Null for an administrator.
+          description: The confirmed legal name. Null for an administrator of a hosted instance.
           type: [string, "null"]
         status:
           $ref: "#/components/schemas/RunStatus"
