@@ -24,6 +24,7 @@ from app.organisations.member_routes import router as organisation_router
 from app.organisations.routes import router as admin_organisations_router
 from app.profile_definition import ProfileDefinition, load_profile_definition
 from app.profile_routes import router as profile_router
+from app.prompts import PromptSet, load_prompt_set
 from app.providers import Providers, load_catalogue
 from app.providers.metering import UsageMeter
 from app.providers.pricing import check_prices, load_price_table
@@ -63,18 +64,30 @@ def load_definition(settings: Settings) -> ProfileDefinition:
         raise
 
 
+def load_prompts(settings: Settings) -> PromptSet:
+    """The prompt set. An invalid or missing file stops startup, naming it."""
+    path = Path(settings.prompt_set_file) if settings.prompt_set_file else None
+    try:
+        return load_prompt_set(path)
+    except ConfigurationError as error:
+        logger.error("Startup stopped: %s", error)
+        raise
+
+
 def create_app(
     settings: Settings | None = None,
     database_check: DatabaseCheck | None = None,
     engine: Engine | None = None,
     providers: Providers | None = None,
     profile_definition: ProfileDefinition | None = None,
+    prompt_set: PromptSet | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     check_database = database_check or make_database_check(settings.database_url)
     database = Database(settings.database_url, engine)
     providers = providers or load_providers(settings, database)
     profile_definition = profile_definition or load_definition(settings)
+    prompt_set = prompt_set or load_prompts(settings)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
@@ -114,6 +127,7 @@ def create_app(
     app.state.database = database
     app.state.providers = providers
     app.state.profile_definition = profile_definition
+    app.state.prompt_set = prompt_set
     app.state.settings = settings
     install_access_log_redaction()
     install_error_handlers(app)
