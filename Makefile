@@ -8,15 +8,18 @@ help: ## List the commands
 
 install: ## Install backend and frontend dependencies from the lockfiles
 	cd backend && uv sync --locked
+	cd agent-pack && uv sync --locked
 	cd frontend && pnpm install --frozen-lockfile
 
 test: ## Run the backend and frontend tests
 	cd backend && uv run --locked pytest
 	cd frontend && pnpm test
+	cd agent-pack && uv run --locked pytest
 
 lint: ## Run linters, format checks and type checks
 	cd backend && uv run --locked ruff check . && uv run --locked ruff format --check . && uv run --locked mypy
 	cd frontend && pnpm lint && pnpm typecheck
+	cd agent-pack && uv run --locked ruff check . && uv run --locked ruff format --check . && uv run --locked mypy
 
 run: ## Start the database, the API and the frontend with Docker Compose
 	docker compose up --build

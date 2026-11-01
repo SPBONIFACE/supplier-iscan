@@ -37,5 +37,6 @@ Python is managed with `uv`, JavaScript with `pnpm`. Never `npm install` or `npx
 - `_docs/process/process.md`: how work flows (PM → SWE → QA, verdicts, orchestration level)
 - `_docs/process/task-template.md`: the four-section issue template
 - `_docs/team/{pm,swe,qa}.md`: role contracts; wrappers in `.claude/agents/`
+- `agent-pack/README.md`: the extension pack for the coding agents (skill, MCP server, hook); `agent-pack/PERMISSIONS.md`: what agents may and must not do
 
 Local working documents of the owner, if present, are described in `CLAUDE.local.md` (not part of this repository).
