@@ -121,6 +121,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the organisation's runs, newest first
+         * @description At most the 100 most recent runs of the member's organisation. On a hosted instance an administrator gets run metadata only (status, stage, cost, errors): `supplier_name` is null for them. The local administrator of a self-hosted instance is a member of the default organisation and reads its names.
+         */
+        get: operations["listRuns"];
+        put?: never;
+        /**
+         * Start a profile run for a confirmed supplier identity
+         * @description Queues the run and answers 202 at once; no stage executes in the request. The identity must be confirmed and belong to the member's organisation; an identity that is unconfirmed, unknown or another organisation's answers 404. Each start is recorded in the usage log (kind `run`).
+         */
+        post: operations["startRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read a run
+         * @description Status, stage, provider and model ID per role, tokens and cost (totals of every attempt, failed and retried ones included). On a hosted instance an administrator gets run metadata only: `supplier_name` is null for them.
+         */
+        get: operations["getRun"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop a run
+         * @description Any member of the organisation may stop a run. A queued or paused run becomes `stopped` at once. A running run is flagged (`stop_requested`) and ends `stopped` at the next stage boundary or before its next provider call. A finished run answers 409.
+         */
+        post: operations["stopRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume a paused run
+         * @description Continues a `paused` run from the stage where it paused, without repeating stored results. The run is queued again (202). A run that is not paused answers 409.
+         */
+        post: operations["resumeRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/organisations": {
         parameters: {
             query?: never;
@@ -249,6 +333,69 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        RunStatus: "queued" | "running" | "paused" | "stopped" | "failed" | "insufficient_sources" | "partial" | "completed";
+        /** @enum {string} */
+        RunStage: "identity" | "collection" | "extraction" | "assessment";
+        /**
+         * @description The dependency that made a run pause.
+         * @enum {string}
+         */
+        RunDependency: "structuring_provider" | "retrieval_provider" | "llm_provider" | "registry" | "website" | "database" | "network";
+        RunStart: {
+            /** Format: uuid */
+            identity_id: string;
+        };
+        RunRoleModel: {
+            /** @enum {string} */
+            role: "retrieval" | "structuring";
+            config_id: string;
+            provider: string;
+            model_id: string;
+        };
+        /** @description Totals of every provider call attempt of the run (failed and retried included). */
+        RunUsage: {
+            calls: number;
+            input_tokens: number;
+            /** @description Without reasoning tokens. */
+            output_tokens: number;
+            reasoning_tokens: number;
+            tool_calls: number;
+            /** @description Cost in EUR, as a decimal string. */
+            cost: string;
+            /** @description Provider and model ID used per role, first used first. */
+            roles: components["schemas"]["RunRoleModel"][];
+        };
+        Run: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            identity_id: string;
+            /** @description The confirmed legal name. Null for an administrator of a hosted instance. */
+            supplier_name: string | null;
+            status: components["schemas"]["RunStatus"];
+            stage: components["schemas"]["RunStage"];
+            stop_requested: boolean;
+            /** @description Whether the run counts against the organisation's profile quota. Paused runs, runs that failed on a dependency and runs that end `insufficient_sources` do not count. */
+            counts_against_quota: boolean;
+            pause_dependency: components["schemas"]["RunDependency"] | null;
+            /** @description Plain-language reason, naming the dependency. Null unless paused. */
+            pause_reason: string | null;
+            /** @description Plain-language reason of a failed run. Null otherwise. */
+            error: string | null;
+            profile_definition_hash: string | null;
+            prompt_set_hash: string | null;
+            usage: components["schemas"]["RunUsage"];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+        };
+        RunList: {
+            items: components["schemas"]["Run"][];
+        };
         HealthStatus: {
             /**
              * @description Status of the API process. It is always available when it answers.
@@ -642,6 +789,152 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The runs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    startRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunStart"];
+            };
+        };
+        responses: {
+            /** @description The run is queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    stopRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run, stopped or flagged to stop. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            /** @description The run has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    resumeRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run is queued again. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            /** @description The run is not paused. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             503: components["responses"]["ServiceUnavailable"];
         };
     };

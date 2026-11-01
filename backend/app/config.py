@@ -35,11 +35,17 @@ PRICE_TABLE_FILE = "PRICE_TABLE_FILE"
 EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
+# Job queue (#13): how long a worker holds a job before another may reclaim it, and how often an
+# idle worker looks for work.
+RUN_LEASE_SECONDS = "RUN_LEASE_SECONDS"
+WORKER_POLL_SECONDS = "WORKER_POLL_SECONDS"
 
 # Local defaults when the setting is empty, so that a self-hosted instance starts without them.
 # They are configuration, not product terms: every operator sets their own.
 DEFAULT_INVITATION_VALIDITY_HOURS = 72
 DEFAULT_PASSWORD_MIN_LENGTH = 12
+DEFAULT_RUN_LEASE_SECONDS = 300
+DEFAULT_WORKER_POLL_SECONDS = 2
 MAX_SETTING_NUMBER = 100_000
 
 
@@ -68,6 +74,8 @@ class Settings:
     # How long an invitation link stays valid, and the shortest accepted password (#9).
     invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
     password_min_length: int = DEFAULT_PASSWORD_MIN_LENGTH
+    run_lease: timedelta = timedelta(seconds=DEFAULT_RUN_LEASE_SECONDS)
+    worker_poll_seconds: int = DEFAULT_WORKER_POLL_SECONDS
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -137,5 +145,11 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         ),
         password_min_length=_parse_positive_int(
             env, PASSWORD_MIN_LENGTH, DEFAULT_PASSWORD_MIN_LENGTH
+        ),
+        run_lease=timedelta(
+            seconds=_parse_positive_int(env, RUN_LEASE_SECONDS, DEFAULT_RUN_LEASE_SECONDS)
+        ),
+        worker_poll_seconds=_parse_positive_int(
+            env, WORKER_POLL_SECONDS, DEFAULT_WORKER_POLL_SECONDS
         ),
     )

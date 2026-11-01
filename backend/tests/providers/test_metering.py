@@ -40,6 +40,7 @@ from tests.providers.support import (
     config,
     make_meter,
 )
+from tests.runs_support import create_run
 from tests.support import LOCAL_ORIGIN
 
 GOOD = '{"legal_name": "Acme SA", "country": "FR"}'
@@ -274,7 +275,8 @@ def test_run_totals_add_up_every_attempt_and_name_the_models_per_role(engine: En
         fake_adapters(cat, structuring, retrieval),
         meter=UsageMeter(PRICES, EUR_PER_USD, sink),
     )
-    run, other_run = uuid.uuid4(), uuid.uuid4()
+    run = create_run(engine, organisation_id, enqueue=False)
+    other_run = create_run(engine, other_organisation, enqueue=False)
 
     providers.structuring("primary").structure(REQUEST, Company, CallContext(organisation_id, run))
     providers.retrieval("searcher").retrieve(
