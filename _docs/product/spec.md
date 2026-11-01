@@ -18,7 +18,7 @@ criterion below is meant to be verifiable by looking at the running application.
 3. The identity agent searches public registries and presents the most likely company. The member confirms it, or corrects it in chat ("no, the French subsidiary"; "their site is …"). After confirmation, a structured identity record is stored (F1).
 4. A profile run starts in the background. The screen shows progress by stage (identity → collection → extraction → assessment) and the organisation's remaining quota.
 5. The worker collects evidence (F2), extracts the profile fields with verified quotes (F3), and drafts the assessment (F8).
-6. The member reviews the supplier card in a side panel: approves or corrects each fact (F4) and each assessment statement (F8).
+6. The member reviews the supplier card in a side panel: approves or corrects each fact (F4) and each assessment statement, recommendations included (F8). They may enter buyer context to have the recommendations redrafted for their own situation.
 7. The member ticks two or more profiles from their organisation's previous runs and opens the side-by-side comparison (F5).
 8. The member downloads the card or the comparison as PDF (F9).
 
@@ -52,7 +52,7 @@ criterion below is meant to be verifiable by looking at the running application.
 - [ ] If both registries are unreachable, the agent says so and offers the website fallback; no error page.
 - [ ] At the first interaction, before any input, the chat states that the member is talking to an AI assistant, in the UI language, with exactly this text:
   - English: "You are talking to an AI assistant. Its role: supplier research. As AI can make mistakes, please verify the legal entity of the selected supplier and the sources provided."
-  - French: "Vous échangez avec un assistant IA. Son rôle : effectuer des recherches fournisseur. L'IA pouvant faire des erreurs, veuillez vérifier l'entité légale du fournisseur sélectionné ainsi que les sources proposées."
+  - French: "Vous échangez avec un assistant IA. Son rôle : effectuer des recherches fournisseur. L’IA pouvant faire des erreurs, veuillez vérifier l’entité légale du fournisseur sélectionné ainsi que les sources proposées."
 - [ ] When the confirmed legal form is a sole trader or another natural-person business, the identity record is flagged `natural_person` (see F8, excluded uses).
 
 ### F2: Adaptive evidence collection
@@ -95,7 +95,7 @@ criterion below is meant to be verifiable by looking at the running application.
 **Description:** the supplier card opens in a side panel. The member ticks profiles from their organisation's previous runs and compares them field by field.
 
 **Acceptance criteria**
-- [ ] The card shows: a header (name, website, country, sector, last refresh), one row per field with value, status and a source chip that reveals the quote and link, and the assessment section.
+- [ ] The card shows: a header (name, website, country, sector, last refresh) with a band of key figures repeating selected facts, each with its source chip, one row per field with value, status and a source chip that reveals the quote and link, and the assessment section with its procurement recommendations.
 - [ ] The comparison accepts from 2 profiles up to a configured maximum, chosen from the organisation's own runs; up to 4 are shown as side-by-side columns, beyond that as a compact matrix.
 - [ ] Every compared value keeps its source chip.
 - [ ] A profile from another organisation can never be selected or opened (see *Security model*).
@@ -124,23 +124,23 @@ criterion below is meant to be verifiable by looking at the running application.
 - [ ] Demo mode needs no account, shows only the pre-built demo profiles, and cannot start an LLM call.
 
 ### F8: Evidence-backed assessment draft
-**Description:** the structuring provider drafts SWOT points, risk indicators and fit statements. Every statement cites at least one fact of the profile, or is an explicit evidence gap stating what evidence would close it.
+**Description:** the structuring provider drafts SWOT points, risk indicators, fit statements and procurement recommendations. Recommendations are: an overall procurement implication, a proposed relationship level (strategic / preferred / transactional), a suggested contract approach (duration, pricing mechanism), a suggested volume share (as a share of category spend), next actions with their timing, and a procurement priority (low / medium / high). Every statement cites at least one fact of the profile, or is an explicit evidence gap stating what evidence would close it. Recommendations also take into account the buyer context the member entered for the profile; the AI never asserts the buyer's own situation.
 
 **Acceptance criteria**
-- [ ] Every statement conforms to the `AssessmentStatement` schema; statements citing no existing fact are rejected automatically.
-- [ ] A statement may carry a level (low / medium / high) only together with its cited facts; there is no aggregate numerical score.
+- [ ] Every statement conforms to the `AssessmentStatement` schema; statements citing no existing fact are rejected automatically. A statement may carry a level (low / medium / high) only together with its cited facts; the relationship level is a label among strategic, preferred and transactional; there is no aggregate numerical score.
 - [ ] An evidence gap names the missing evidence. For financial stability, the message comes from the financial guidance (see *Financial evidence guidance*), never from the LLM.
-- [ ] Every statement is labelled "AI draft, pending your validation" until a member approves, corrects or deletes it.
-- [ ] Fit statements are drafted only against criteria the member entered for this profile; with none entered, the fit section reads "Enter your criteria to assess fit".
-- [ ] Fields of kind `buyer` are never drafted by the AI; they are free-text fields for the member.
-- [ ] Every statement stores its provenance: provider, model ID and version, generation time, and review status (`ai_draft`, `approved`, `corrected`, `deleted`, with reviewer and time), shown on demand.
-- [ ] **Excluded uses:** no assessment of natural persons. No statement evaluates an individual employee or manager; no credit, financial-stability or risk statement is drafted for an identity flagged `natural_person`, whose section reads "Not assessed: natural-person business".
+- [ ] Every statement, recommendations included, is labelled "AI draft, pending your validation" until a member approves, corrects or deletes it, and stores its provenance: provider, model ID and version, generation time, and review status (`ai_draft`, `approved`, `corrected`, `deleted`, with reviewer and time), shown on demand.
+- [ ] Fit statements are drafted only against criteria the member entered for this profile; with none entered, the fit section reads "Enter your criteria to assess fit". Fields of kind `buyer` are never drafted by the AI; they are free-text fields for the member.
+- [ ] Each recommendation kind (procurement implication, relationship level, contract approach, volume share, next actions with timing, procurement priority) is drafted at most once per draft and cites the facts it rests on.
+- [ ] The member may enter buyer context for the profile: incumbent or new supplier, current share of category spend, contract end date, strategic intent (e.g. dual sourcing, cost reduction, capacity security, risk reduction) and free-text notes; all optional. A recommendation drafted with buyer context records the context version it used and shows it among its citations; redrafting replaces earlier `ai_draft` recommendations, never reviewed ones.
+- [ ] Without buyer context, recommendations are drafted for a first evaluation of the supplier, and each says so explicitly ("Assuming a first evaluation of this supplier: …"). No statement asserts a fact about the buyer's situation that the buyer did not enter.
+- [ ] **Excluded uses:** no assessment of natural persons. No statement, recommendations included, evaluates an individual employee or manager; no credit, financial-stability or risk statement, and no recommendation, is drafted for an identity flagged `natural_person`, whose section reads "Not assessed: natural-person business".
 
 ### F9: PDF download
 **Description:** server-side PDF of a supplier card and of a comparison, in the UI language, using the design system.
 
 **Acceptance criteria**
-- [ ] The PDF contains every fact with its status, quote excerpt, source URL and date, and the assessment with its labels.
+- [ ] The PDF contains every fact with its status, quote excerpt, source URL and date, and the assessment, recommendations and buyer context with their labels.
 - [ ] The PDF shows the disclaimer, the generation date and the source-content deletion date.
 - [ ] AI-generated sections are visibly labelled ("AI draft" or "reviewed by …") with their provenance (model, version, generation time, review status), and the file carries this provenance in its metadata.
 - [ ] PDF generation for a 4-profile comparison completes in under 15 seconds.
@@ -153,6 +153,8 @@ Each field declares its kind:
 - **`fact`:** extracted with a verified quote (F3)
 - **`assessment`:** drafted from cited facts (F8)
 - **`buyer`:** entered by the member only, never generated
+
+Procurement recommendations (F8) and the buyer context are not declared in the profile definition: they are part of every profile's assessment, whatever the definition.
 
 The repository ships an **example definition** with four sections (company overview, production footprint,
 certifications, SWOT). An instance can supply its own definition through configuration; the application validates it
@@ -196,8 +198,8 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 | CrawlPermission | domain, robots_result, tdm_reservation, suppression_hit, decision, checked_at | Worker | no |
 | SuppressionEntry | id, kind (`domain`, `person_name`), value, reason, requested_at, added_by, removed_at, removed_by, removal_reason | Administrator (on objection or rights request) | yes (`person_name`) |
 | Fact | id, run_id, section, field, value, quote, quote_redacted, source_id, source_type, status, original_value, version, reviewed_by, reviewed_at | Worker / member | possible (identifiable quotes are treated as personal data) |
-| AssessmentStatement | id, run_id, kind, text, level, cited_fact_ids, gap_evidence, provider, model_id, generated_at, status, version, reviewed_by, reviewed_at | Worker / member | no |
-| BuyerInput | id, run_id, field (a `buyer` field of the profile definition, or the reserved `fit_criteria`), text, version, updated_by, updated_at | Member | no |
+| AssessmentStatement | id, run_id, kind (`strength`, `weakness`, `opportunity`, `threat`, `risk_indicator`, `evidence_gap`, `fit`, `procurement_implication`, `relationship_level`, `contract_approach`, `volume_share`, `next_action`, `procurement_priority`), text, level, label (`relationship_level` only: `strategic`, `preferred`, `transactional`), timing (`next_action` only), cited_fact_ids, buyer_context_version (null when drafted on the first-evaluation assumption), gap_evidence, provider, model_id, generated_at, status, version, reviewed_by, reviewed_at | Worker / member | no |
+| BuyerInput | id, run_id, field (a `buyer` field of the profile definition, or the reserved `fit_criteria` or `buyer_context`), text (for `buyer_context`: a structured value {relationship: `incumbent` \| `new`, current_share_pct?, contract_end_date?, strategic_intent[]?, notes?}), version, updated_by, updated_at | Member | no |
 | SupplierDocument | id, run_id, type (`statutory_accounts`, `audited_statements`, `tax_schedules`, `management_accounts`), entity_scope (`supplier`, `parent`, `consolidated`), financial_year, received_on, recorded_by, recorded_at | Member | no (refused for `natural_person` identities) |
 | ProviderConfig | id, provider, api, model_id, endpoint, training_setting, retention, region, transfer_mechanism, verified_at, enabled | Administrator | no |
 | ProviderSetting | role (`retrieval`, `structuring`), provider_config_id, updated_by, updated_at | Administrator | no |
@@ -217,7 +219,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
   | User, Invitation | the user themself; administrator | administrator (create, revoke); user (own password) |
   | SupplierIdentity, ProfileRun, Fact, AssessmentStatement, Source, BuyerInput | members of the owning organisation only | members (review, buyer inputs); worker (create facts and statements) |
   | Run metadata (status, cost, errors) | owning organisation; administrator | system |
-  | Supplier names, fact values, quotes, corrections, criteria, notes, assessments | owning organisation only, **not the administrator** | owning organisation; worker |
+  | Supplier names, fact values, quotes, corrections, criteria, buyer context, notes, assessments and recommendations | owning organisation only, **not the administrator** | owning organisation; worker |
   | UsageEvent | administrator | system |
   | DocumentVersion | everyone (published documents) | administrator |
   | Acceptance | owning organisation; administrator | the accepting user (create only, never edited) |
@@ -257,10 +259,10 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 | :--- | :--- | :--- | :--- |
 | Identity agent (F1) | name, hints, registry candidates, chat turns | `IdentityProposal` {candidate, confidence, question_to_user} → `IdentityRecord` on confirmation | right company in ≤ 3 exchanges; never discards a candidate because of a hint |
 | Field extraction (F3) | field definitions, source texts | `FieldExtraction[]` {field, value, quote, source_id} or `not_found` | 100% of kept quotes found in source; ≥ 90% accuracy and ≥ 70% exhaustiveness on the reference set |
-| Assessment drafting (F8) | facts, buyer criteria | `AssessmentStatement[]` {kind, text, level?, cited_fact_ids, gap_evidence?} | 100% of statements cite valid facts or name the missing evidence; ≥ 80% judged useful by a domain reviewer |
+| Assessment drafting and recommendations (F8) | facts, buyer criteria, buyer context when entered (redacted like any other input) | `AssessmentStatement[]` {kind, text, level?, label?, timing?, cited_fact_ids, cites_buyer_context, gap_evidence?} | 100% of statements cite valid facts or name the missing evidence; 100% of recommendations drafted without buyer context state the first-evaluation assumption, and none asserts a buyer situation that was not entered; ≥ 80% judged useful by a domain reviewer |
 | Retrieval (F2) | identity record, field groups lacking evidence | `RetrievalResult` {urls: [{url, snippet}]}; snippets used only to rank | finds sources the website crawl missed; every URL verifiable |
 
-The instructions sent to the model for each feature are **loaded at runtime from a prompt file**, not hard-coded, so that an instance can adapt them like the profile definition. Prompts carry instructions only: schema validation, the grounding check, citation checks, redaction and the excluded uses are enforced in code whatever a prompt says. Collected text, chat turns, facts and buyer criteria are inserted as delimited data, never into the instructions. Each run records the version of the prompts it used, and the evaluation reports results for a given prompt version.
+The instructions sent to the model for each feature are **loaded at runtime from a prompt file**, not hard-coded, so that an instance can adapt them like the profile definition. Prompts carry instructions only: schema validation, the grounding check, citation checks, redaction and the excluded uses are enforced in code whatever a prompt says. Collected text, chat turns, facts, buyer criteria and buyer context are inserted as delimited data, never into the instructions. Each run records the version of the prompts it used, and the evaluation reports results for a given prompt version.
 
 ## Non-functional requirements
 - **Performance:** a profile run completes in under 10 minutes; API responses outside runs under 500 ms at p95; a scale-to-zero cold start is acceptable.
