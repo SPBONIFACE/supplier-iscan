@@ -32,6 +32,8 @@ PROVIDER_CONFIG_FILE = "PROVIDER_CONFIG_FILE"
 # Providers bill in USD and costs are shown in EUR, so the conversion rate is a setting
 # (EUR for 1 USD).
 PRICE_TABLE_FILE = "PRICE_TABLE_FILE"
+# Profile definition (#21): sections and fields of a profile; the shipped example when unset.
+PROFILE_DEFINITION_FILE = "PROFILE_DEFINITION_FILE"
 EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
@@ -70,6 +72,7 @@ class Settings:
     admin_password: str | None = field(default=None, repr=False)
     provider_config_file: str | None = None
     price_table_file: str | None = None
+    profile_definition_file: str | None = None
     eur_per_usd: Decimal | None = None
     # How long an invitation link stays valid, and the shortest accepted password (#9).
     invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
@@ -137,6 +140,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         admin_password=env.get(ADMIN_PASSWORD, "") or None,
         provider_config_file=env.get(PROVIDER_CONFIG_FILE, "").strip() or None,
         price_table_file=env.get(PRICE_TABLE_FILE, "").strip() or None,
+        profile_definition_file=env.get(PROFILE_DEFINITION_FILE, "").strip() or None,
         eur_per_usd=_parse_rate(env.get(EUR_PER_USD, "")),
         invitation_validity=timedelta(
             hours=_parse_positive_int(
