@@ -1,0 +1,49 @@
+[project]
+name = "supplier-iscan-agent-pack"
+version = "0.1.0"
+description = "Extension pack for the coding agents that build Supplier iScan (not part of the product)"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "mcp==2.3.0",
+    "pyyaml==6.0.3",
+]
+
+[dependency-groups]
+dev = [
+    "mypy==2.4.0",
+    "pytest==9.1.1",
+    "ruff==0.17.0",
+]
+
+[tool.uv]
+# Own project, own lockfile; never in an image (_docs/process/approved-dependencies.md).
+package = false
+required-version = "==0.12.24"
+# Supply chain: every package in uv.lock is at least 14 days old at the time of locking (1 Nov 2026).
+# Wheels only: no source distribution is ever built.
+exclude-newer = "2026-10-18T00:00:00Z"
+no-build = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S603"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["hooks", "mcp_server", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["yaml"]
+ignore_missing_imports = true
