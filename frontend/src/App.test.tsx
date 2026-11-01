@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   checkInvitation: vi.fn(),
   acceptInvitation: vi.fn(),
+  listRuns: vi.fn(),
+  getOrganisation: vi.fn(),
   setUnauthorizedHandler: vi.fn(),
 }));
 
@@ -20,6 +22,8 @@ vi.mock("./lib/api", () => ({
     getCurrentUser: mocks.getCurrentUser,
     checkInvitation: mocks.checkInvitation,
     acceptInvitation: mocks.acceptInvitation,
+    listRuns: mocks.listRuns,
+    getOrganisation: mocks.getOrganisation,
   },
   setUnauthorizedHandler: mocks.setUnauthorizedHandler,
 }));
@@ -35,6 +39,8 @@ const invitation = {
 
 beforeEach(() => {
   for (const mock of Object.values(mocks)) mock.mockReset();
+  mocks.listRuns.mockResolvedValue(ok({ items: [] }));
+  mocks.getOrganisation.mockResolvedValue(fail("unavailable", 503));
 });
 
 describe("login", () => {

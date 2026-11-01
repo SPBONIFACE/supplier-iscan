@@ -41,6 +41,8 @@ PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the sett
 # idle worker looks for work.
 RUN_LEASE_SECONDS = "RUN_LEASE_SECONDS"
 WORKER_POLL_SECONDS = "WORKER_POLL_SECONDS"
+# Monthly LLM spend cap of the instance, in EUR (spec F7). Unset: no cap.
+MONTHLY_SPEND_CAP_EUR = "MONTHLY_SPEND_CAP_EUR"
 
 # Local defaults when the setting is empty, so that a self-hosted instance starts without them.
 # They are configuration, not product terms: every operator sets their own.
@@ -79,6 +81,7 @@ class Settings:
     password_min_length: int = DEFAULT_PASSWORD_MIN_LENGTH
     run_lease: timedelta = timedelta(seconds=DEFAULT_RUN_LEASE_SECONDS)
     worker_poll_seconds: int = DEFAULT_WORKER_POLL_SECONDS
+    monthly_spend_cap_eur: Decimal | None = None
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -127,6 +130,19 @@ def _parse_rate(raw: str) -> Decimal | None:
     return rate
 
 
+def _parse_spend_cap(raw: str) -> Decimal | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        cap = Decimal(value)
+    except InvalidOperation:
+        cap = Decimal(0)
+    if not cap.is_finite() or cap <= 0:
+        raise ConfigurationError(f"{MONTHLY_SPEND_CAP_EUR} must be a number above 0")
+    return cap
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
     raw_origins = env.get(CORS_ALLOWED_ORIGINS, "").strip() or DEFAULT_ALLOWED_ORIGINS
@@ -156,4 +172,5 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         worker_poll_seconds=_parse_positive_int(
             env, WORKER_POLL_SECONDS, DEFAULT_WORKER_POLL_SECONDS
         ),
+        monthly_spend_cap_eur=_parse_spend_cap(env.get(MONTHLY_SPEND_CAP_EUR, "")),
     )
