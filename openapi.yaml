@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.6.0
+  version: 0.7.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -30,6 +30,8 @@ tags:
     description: User records
   - name: organisation
     description: The signed-in member's own organisation
+  - name: profile
+    description: The profile definition loaded at startup
   - name: runs
     description: Profile runs. They execute in a worker; no request waits for a stage.
   - name: admin
@@ -183,6 +185,39 @@ paths:
                 $ref: "#/components/schemas/MemberOrganisation"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /profile-definition:
+    get:
+      operationId: getProfileDefinition
+      tags: [profile]
+      summary: Return the active profile definition
+      description: >-
+        The sections and fields of a profile, loaded at startup from the instance's profile
+        definition file (the shipped example when none is configured), with labels in the requested
+        language and the content hash that each run records. Any signed-in member may read it.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: language
+          in: query
+          required: false
+          description: Language of the labels. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The active definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileDefinition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /runs:
@@ -653,6 +688,50 @@ components:
           example:
             detail: The service is temporarily unavailable. Please try again in a few minutes.
   schemas:
+    ProfileField:
+      type: object
+      additionalProperties: false
+      required: [id, label, kind, certification, concerns_people]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        kind:
+          type: string
+          enum: [fact, assessment, buyer]
+        certification:
+          type: boolean
+        concerns_people:
+          type: boolean
+    ProfileSection:
+      type: object
+      additionalProperties: false
+      required: [id, label, fields]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileField"
+    ProfileDefinition:
+      type: object
+      additionalProperties: false
+      required: [hash, language, sections]
+      properties:
+        hash:
+          description: Content hash (`sha256:` and 64 hex digits) of the definition; each run records it.
+          type: string
+        language:
+          type: string
+          enum: [en, fr]
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileSection"
     RunStatus:
       type: string
       enum: [queued, running, paused, stopped, failed, insufficient_sources, partial, completed]
@@ -769,6 +848,7 @@ components:
           description: Plain-language reason of a failed run. Null otherwise.
           type: [string, "null"]
         profile_definition_hash:
+          description: Hash of the profile definition the run uses (ProfileDefinition.hash), set when the run starts.
           type: [string, "null"]
         prompt_set_hash:
           type: [string, "null"]

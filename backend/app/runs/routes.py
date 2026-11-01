@@ -150,7 +150,13 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request:
     if identity.confirmed_at is None:
         # Same answer as an unknown identity: only a confirmed identity starts a run.
         raise not_found()
-    run = scope.new(ProfileRun, identity_id=identity.id, created_by=scope.principal.user_id)
+    run = scope.new(
+        ProfileRun,
+        identity_id=identity.id,
+        created_by=scope.principal.user_id,
+        # The definition this run uses, so that its facts stay interpretable after a change.
+        profile_definition_hash=request.app.state.profile_definition.content_hash,
+    )
     db.add(run)
     db.flush()
     queue.enqueue(db, RUN_JOB, {"run_id": str(run.id)})

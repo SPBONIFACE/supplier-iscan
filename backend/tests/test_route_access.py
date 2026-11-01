@@ -105,6 +105,7 @@ def test_member_api_routes_use_the_organisation_scope() -> None:
     assert access["/auth/login"] == "public"
     assert access["/auth/me"] == "own account"
     assert access["/users/{id}"] == "own account"
+    assert access["/profile-definition"] == "own account"
     assert access["/admin/organisations"] == "administrator"
 
 
