@@ -12,12 +12,13 @@ from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
+from app.auth.access import OWN_ACCOUNT
 from app.auth.dependencies import CurrentPrincipal
 from app.db import DbSession
 from app.errors import not_found, parse_resource_id
 from app.models import User
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=["users"], dependencies=[OWN_ACCOUNT])
 
 
 class UserOut(BaseModel):
