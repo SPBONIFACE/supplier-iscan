@@ -1,0 +1,78 @@
+{
+  "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
+  "recorded_at": null,
+  "origin": "hand-written in the provider's documented response shape (not yet recorded from the live API)",
+  "config_id": "openai-gpt-responses",
+  "role": "retrieval",
+  "status": 200,
+  "body": {
+    "id": "resp_2",
+    "object": "response",
+    "created_at": 1,
+    "model": "gpt-5-mini",
+    "status": "completed",
+    "output": [
+      {
+        "type": "web_search_call",
+        "id": "ws_1",
+        "status": "completed",
+        "action": {
+          "type": "search",
+          "query": "Acme SA"
+        }
+      },
+      {
+        "type": "message",
+        "id": "msg_2",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Acme SA publishes an annual report.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://acme.example/about",
+                "title": "About Acme",
+                "start_index": 0,
+                "end_index": 7
+              },
+              {
+                "type": "url_citation",
+                "url": "https://acme.example/report",
+                "title": "Annual report",
+                "start_index": 8,
+                "end_index": 20
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parallel_tool_calls": true,
+    "tool_choice": "auto",
+    "tools": [],
+    "usage": {
+      "input_tokens": 35,
+      "output_tokens": 25,
+      "total_tokens": 60,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      }
+    }
+  },
+  "expected_usage": {
+    "input_tokens": 35,
+    "output_tokens": 25,
+    "reasoning_tokens": 0,
+    "tool_calls": 1
+  },
+  "expected_urls": [
+    "https://acme.example/about",
+    "https://acme.example/report"
+  ]
+}

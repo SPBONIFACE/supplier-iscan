@@ -32,6 +32,7 @@ from app.providers.interface import (
     StructuringRequest,
 )
 from tests.providers.support import (
+    CONTEXT,
     SENTINEL_KEY,
     Company,
     Recorder,
@@ -39,6 +40,7 @@ from tests.providers.support import (
     fixture,
     httpx2_client,
     httpx_client,
+    make_meter,
 )
 
 ENDPOINT = "https://provider.example.test"
@@ -186,21 +188,23 @@ def _id(case: Case) -> str:
 
 def structuring_client(case: Case, recorder: Recorder) -> StructuringClient:
     cfg, client = case.build(recorder)
-    return StructuringClient(cfg, case.adapter(cfg, client))
+    return StructuringClient(cfg, case.adapter(cfg, client), make_meter())
 
 
 def retrieval_client(case: Case, recorder: Recorder) -> RetrievalClient:
     cfg, client = case.build(recorder)
-    return RetrievalClient(cfg, case.adapter(cfg, client))
+    return RetrievalClient(cfg, case.adapter(cfg, client), make_meter())
 
 
 def call(case: Case, recorder: Recorder) -> Any:
     if case in STRUCTURING_CASES:
         return structuring_client(case, recorder).structure(
-            StructuringRequest(instructions="Extract.", data="<data>Acme SA</data>"), Company
+            StructuringRequest(instructions="Extract.", data="<data>Acme SA</data>"),
+            Company,
+            CONTEXT,
         )
     return retrieval_client(case, recorder).retrieve(
-        RetrievalRequest(instructions="Find sources.", query="Acme SA annual report")
+        RetrievalRequest(instructions="Find sources.", query="Acme SA annual report"), CONTEXT
     )
 
 
@@ -338,8 +342,8 @@ def test_the_mistral_client_has_no_sdk_tracing_hook(monkeypatch: pytest.MonkeyPa
     cfg, client = case.build(recorder)
 
     assert mistral_adapter.tracing_hooks(client) == []
-    StructuringClient(cfg, case.adapter(cfg, client)).structure(
-        StructuringRequest(instructions="Extract.", data="Acme SA"), Company
+    StructuringClient(cfg, case.adapter(cfg, client), make_meter()).structure(
+        StructuringRequest(instructions="Extract.", data="Acme SA"), Company, CONTEXT
     )
     assert [request.url.path for request in recorder.requests] == ["/v1/chat/completions"]
 

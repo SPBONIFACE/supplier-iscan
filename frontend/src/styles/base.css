@@ -1,0 +1,334 @@
+/* Base styles of the shell. Colours, fonts, spacing and borders are tokens from tokens.css (generated from _docs/design/tokens.json);
+   only a few layout widths are written here. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--isc-color-paper);
+  color: var(--isc-color-ink);
+  font-family: var(--isc-font-family-sans);
+  font-size: var(--isc-font-size-base);
+  line-height: var(--isc-font-line-height-compact);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: break-word;
+}
+a {
+  color: var(--isc-color-cobalt);
+  text-underline-offset: var(--isc-space-1);
+}
+a:hover {
+  color: var(--isc-color-cobalt-strong);
+}
+:focus-visible {
+  outline: var(--isc-focus-width) solid var(--isc-focus-color);
+  outline-offset: var(--isc-focus-offset);
+}
+main:focus {
+  outline: none;
+}
+h1,
+h2,
+h3 {
+  font-family: var(--isc-font-family-serif);
+  font-weight: var(--isc-font-weight-semibold);
+  line-height: var(--isc-font-line-height-tight);
+  margin: 0;
+}
+h1 {
+  font-size: var(--isc-font-size-h1);
+}
+h2 {
+  font-size: var(--isc-font-size-h2);
+}
+p {
+  margin: 0;
+}
+:lang(ja) {
+  font-family: "IBM Plex Sans JP", var(--isc-font-family-sans);
+}
+.prose {
+  line-height: var(--isc-font-line-height-body);
+  max-width: var(--isc-size-measure);
+  margin-top: var(--isc-space-4);
+}
+.micro {
+  font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold);
+  letter-spacing: var(--isc-font-letter-spacing-micro);
+  text-transform: uppercase;
+  line-height: var(--isc-font-line-height-tight);
+}
+.eyebrow {
+  display: block;
+  color: var(--isc-color-ink-secondary);
+  margin-bottom: var(--isc-space-3);
+}
+.meta {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-tertiary);
+  margin-top: var(--isc-space-5);
+}
+.actions {
+  margin-top: var(--isc-space-4);
+}
+
+/* Skip link and layout */
+.skip {
+  position: absolute;
+  left: var(--isc-space-3);
+  top: calc(-1 * var(--isc-size-control) - var(--isc-space-8));
+  background: var(--isc-color-paper);
+  padding: var(--isc-space-2) var(--isc-space-3);
+  z-index: 10;
+}
+.skip:focus {
+  top: var(--isc-space-3);
+}
+.topbar {
+  border-bottom: var(--isc-border-hairline) solid var(--isc-color-ink);
+  background: var(--isc-color-paper);
+}
+.topbar .in {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--isc-space-6);
+  min-height: var(--isc-space-8);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--isc-space-2) var(--isc-space-6);
+}
+.brand {
+  font-family: var(--isc-font-family-serif);
+  font-weight: var(--isc-font-weight-semibold);
+  font-size: var(--isc-font-size-h3);
+  color: var(--isc-color-ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand:hover {
+  color: var(--isc-color-ink);
+}
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--isc-space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--isc-space-8);
+  text-decoration: none;
+  border-bottom: var(--isc-border-section-rule) solid transparent;
+}
+.nav a[aria-current="page"] {
+  color: var(--isc-color-ink);
+  border-bottom-color: var(--isc-color-cobalt);
+}
+.tb-right {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--isc-space-2) var(--isc-space-5);
+  font-size: var(--isc-font-size-sm);
+}
+.who {
+  color: var(--isc-color-ink-secondary);
+}
+.lang {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.lang button.link {
+  background: none;
+  border: 0;
+  padding: 0 var(--isc-space-2);
+  min-height: var(--isc-size-target-min);
+  font: inherit;
+  color: var(--isc-color-cobalt);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: var(--isc-space-1);
+}
+.lang button.link[aria-current="true"] {
+  color: var(--isc-color-ink);
+  font-weight: var(--isc-font-weight-semibold);
+  text-decoration: none;
+  cursor: default;
+}
+.wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--isc-space-6);
+}
+.center {
+  max-width: 520px;
+  margin: 0 auto;
+  padding-top: var(--isc-space-7);
+}
+.center h1 {
+  margin-bottom: var(--isc-space-3);
+}
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--isc-space-2) var(--isc-space-5);
+  margin: var(--isc-space-5) 0 0;
+}
+.kv dt {
+  color: var(--isc-color-ink-secondary);
+}
+.kv dd {
+  margin: 0;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--isc-space-2);
+  min-height: var(--isc-size-control);
+  padding: 0 var(--isc-space-4);
+  font: var(--isc-font-weight-medium) var(--isc-font-size-base) / 1 var(--isc-font-family-sans);
+  border-radius: var(--isc-radius-control);
+  border: var(--isc-border-control) solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--isc-color-cobalt);
+  border-color: var(--isc-color-cobalt);
+  color: var(--isc-color-on-cobalt);
+}
+.btn-primary:hover {
+  background: var(--isc-color-cobalt-strong);
+  border-color: var(--isc-color-cobalt-strong);
+}
+.btn-secondary {
+  background: transparent;
+  border-color: var(--isc-color-border-control);
+  color: var(--isc-color-ink);
+}
+.btn-secondary:hover {
+  color: var(--isc-color-cobalt-strong);
+  border-color: var(--isc-color-cobalt-strong);
+}
+.btn-text {
+  background: none;
+  border: 0;
+  padding: 0 var(--isc-space-1);
+  min-height: var(--isc-size-target-min);
+  color: var(--isc-color-cobalt);
+  font-weight: var(--isc-font-weight-regular);
+  font-size: inherit;
+}
+.btn-text:hover {
+  text-decoration: underline;
+  color: var(--isc-color-cobalt-strong);
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  background: var(--isc-color-paper-margin);
+  border: var(--isc-border-control) dashed var(--isc-color-border-control);
+  color: var(--isc-color-ink-disabled);
+  cursor: not-allowed;
+}
+.btn-text:disabled,
+.btn-text[aria-disabled="true"] {
+  background: none;
+  border: 0;
+}
+
+/* Form field */
+.form {
+  display: grid;
+  gap: var(--isc-space-5);
+  margin-top: var(--isc-space-5);
+}
+.fld {
+  display: grid;
+  gap: var(--isc-space-2);
+}
+.fld > label {
+  font-size: var(--isc-font-size-sm);
+  font-weight: var(--isc-font-weight-semibold);
+}
+.fld input {
+  width: 100%;
+  min-height: var(--isc-size-control);
+  padding: var(--isc-space-2) var(--isc-space-3);
+  font: var(--isc-font-size-base) / var(--isc-font-line-height-compact) var(--isc-font-family-sans);
+  color: var(--isc-color-ink);
+  background: var(--isc-color-field);
+  border: var(--isc-border-control) solid var(--isc-color-border-control);
+  border-radius: var(--isc-radius-control);
+}
+.fld input[readonly] {
+  background: var(--isc-color-paper-margin);
+}
+.fld input::placeholder {
+  color: var(--isc-color-ink-tertiary);
+}
+.fld input:disabled {
+  background: var(--isc-color-paper-margin);
+  border-style: dashed;
+  color: var(--isc-color-ink-disabled);
+}
+.fld.err input {
+  border: var(--isc-border-error) solid var(--isc-status-error-border);
+}
+.help {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-secondary);
+}
+.errmsg {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-status-error-fg);
+  font-weight: var(--isc-font-weight-semibold);
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--isc-space-3);
+  margin-top: var(--isc-space-2);
+}
+
+/* Message banner and loading indicator */
+.msg {
+  border-left: var(--isc-border-error) solid var(--isc-status-error-border);
+  padding: var(--isc-space-3) var(--isc-space-4);
+  margin-bottom: var(--isc-space-4);
+  display: grid;
+  gap: var(--isc-space-2);
+}
+.center .msg {
+  margin-top: var(--isc-space-4);
+}
+.loading {
+  max-width: 520px;
+  margin: var(--isc-space-7) auto 0;
+  display: grid;
+  gap: var(--isc-space-3);
+}
+.skeleton {
+  height: var(--isc-space-4);
+  background: var(--isc-color-skeleton);
+}
+.skeleton.short {
+  width: 60%;
+}

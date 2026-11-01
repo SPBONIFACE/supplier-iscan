@@ -1,0 +1,50 @@
+{
+  "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
+  "recorded_at": null,
+  "origin": "hand-written in the provider's documented response shape (not yet recorded from the live API)",
+  "config_id": "openai-gpt-responses",
+  "role": "structuring",
+  "status": 200,
+  "body": {
+    "id": "resp_1",
+    "object": "response",
+    "created_at": 1,
+    "model": "gpt-5-mini",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "id": "msg_1",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"extractions\": [{\"field\": \"legal_name\", \"status\": \"found\", \"value\": \"Acme SA\", \"quote\": \"Acme SA is a French limited company\", \"source_id\": \"S1\"}, {\"field\": \"headcount\", \"status\": \"found\", \"value\": \"340\", \"quote\": \"Acme SA employed 340 people at 31 December 2025\", \"source_id\": \"S2\"}, {\"field\": \"revenue\", \"status\": \"found\", \"value\": \"EUR 48.2 million\", \"quote\": \"Revenue for 2025 was EUR 48.2 million\", \"source_id\": \"S2\"}, {\"field\": \"iso_14001\", \"status\": \"not_found\", \"value\": null, \"quote\": null, \"source_id\": null}]}",
+            "annotations": []
+          }
+        ]
+      }
+    ],
+    "parallel_tool_calls": true,
+    "tool_choice": "auto",
+    "tools": [],
+    "usage": {
+      "input_tokens": 225,
+      "output_tokens": 130,
+      "total_tokens": 355,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens_details": {
+        "reasoning_tokens": 40
+      }
+    }
+  },
+  "expected_usage": {
+    "input_tokens": 225,
+    "output_tokens": 90,
+    "reasoning_tokens": 40,
+    "tool_calls": 0
+  }
+}

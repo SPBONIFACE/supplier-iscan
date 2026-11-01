@@ -16,7 +16,14 @@ from google.genai import types
 
 from app.providers.adapters.common import TIMEOUT_SECONDS
 from app.providers.catalogue import ProviderConfigSpec
-from app.providers.interface import RetrievalRequest, RetrievedUrl, StructuringRequest
+from app.providers.interface import (
+    RetrievalOutput,
+    RetrievalRequest,
+    RetrievedUrl,
+    StructuringOutput,
+    StructuringRequest,
+)
+from app.providers.metering import NO_USAGE, CallUsage
 
 
 def make_client(config: ProviderConfigSpec, api_key: str, http_client: Any = None) -> genai.Client:
@@ -33,6 +40,28 @@ def make_client(config: ProviderConfigSpec, api_key: str, http_client: Any = Non
     )
 
 
+def _usage(response: Any) -> CallUsage:
+    """`thoughts` (reasoning) tokens are billed as output but are not in the candidates count.
+
+    Tokens read from search results (`tool_use_prompt`) are input. Each grounding search query
+    is one billed tool call.
+    """
+    usage = response.usage_metadata
+    if usage is None:
+        return NO_USAGE
+    queries = sum(
+        len(candidate.grounding_metadata.web_search_queries or [])
+        for candidate in response.candidates or []
+        if candidate.grounding_metadata
+    )
+    return CallUsage(
+        input_tokens=(usage.prompt_token_count or 0) + (usage.tool_use_prompt_token_count or 0),
+        output_tokens=usage.candidates_token_count or 0,
+        reasoning_tokens=usage.thoughts_token_count or 0,
+        tool_calls=queries,
+    )
+
+
 class GeminiStructuring:
     def __init__(self, config: ProviderConfigSpec, client: genai.Client) -> None:
         self._config = config
@@ -40,7 +69,7 @@ class GeminiStructuring:
 
     def generate_json(
         self, request: StructuringRequest, schema_name: str, json_schema: dict[str, object]
-    ) -> str:
+    ) -> StructuringOutput:
         response = self._client.models.generate_content(
             model=self._config.model_id,
             contents=request.data,
@@ -51,7 +80,7 @@ class GeminiStructuring:
                 max_output_tokens=request.max_output_tokens,
             ),
         )
-        return response.text or ""
+        return StructuringOutput(response.text or "", _usage(response))
 
 
 class GeminiRetrieval:
@@ -59,7 +88,7 @@ class GeminiRetrieval:
         self._config = config
         self._client = client
 
-    def search(self, request: RetrievalRequest) -> list[RetrievedUrl]:
+    def search(self, request: RetrievalRequest) -> RetrievalOutput:
         response = self._client.models.generate_content(
             model=self._config.model_id,
             contents=request.query,
@@ -74,7 +103,7 @@ class GeminiRetrieval:
             for chunk in (metadata.grounding_chunks if metadata else None) or []:
                 if chunk.web and chunk.web.uri:
                     urls.append(RetrievedUrl(url=chunk.web.uri, snippet=chunk.web.title or ""))
-        return urls
+        return RetrievalOutput(urls, _usage(response))
 
 
 def build_structuring(config: ProviderConfigSpec, api_key: str) -> GeminiStructuring:

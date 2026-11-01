@@ -1,0 +1,76 @@
+{
+  "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
+  "recorded_at": null,
+  "origin": "hand-written in the provider's documented response shape (not yet recorded from the live API)",
+  "config_id": "claude-sonnet",
+  "role": "retrieval",
+  "status": 200,
+  "body": {
+    "id": "msg_2",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-sonnet-4-5",
+    "content": [
+      {
+        "type": "server_tool_use",
+        "id": "srvtoolu_1",
+        "name": "web_search",
+        "input": {
+          "query": "Acme SA"
+        }
+      },
+      {
+        "type": "web_search_tool_result",
+        "tool_use_id": "srvtoolu_1",
+        "content": [
+          {
+            "type": "web_search_result",
+            "url": "https://acme.example/about",
+            "title": "About Acme",
+            "encrypted_content": "opaque",
+            "page_age": null
+          },
+          {
+            "type": "web_search_result",
+            "url": "https://acme.example/report",
+            "title": "Annual report",
+            "encrypted_content": "opaque",
+            "page_age": null
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "text": "Acme SA publishes an annual report.",
+        "citations": [
+          {
+            "type": "web_search_result_location",
+            "url": "https://acme.example/report",
+            "title": "Annual report",
+            "encrypted_index": "opaque",
+            "cited_text": "Acme SA annual report 2025"
+          }
+        ]
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 40,
+      "output_tokens": 60,
+      "server_tool_use": {
+        "web_search_requests": 1
+      }
+    }
+  },
+  "expected_usage": {
+    "input_tokens": 40,
+    "output_tokens": 60,
+    "reasoning_tokens": 0,
+    "tool_calls": 1
+  },
+  "expected_urls": [
+    "https://acme.example/report",
+    "https://acme.example/about"
+  ]
+}

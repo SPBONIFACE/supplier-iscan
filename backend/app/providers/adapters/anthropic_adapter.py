@@ -16,7 +16,14 @@ import anthropic
 
 from app.providers.adapters.common import TIMEOUT_SECONDS
 from app.providers.catalogue import ProviderConfigSpec
-from app.providers.interface import RetrievalRequest, RetrievedUrl, StructuringRequest
+from app.providers.interface import (
+    RetrievalOutput,
+    RetrievalRequest,
+    RetrievedUrl,
+    StructuringOutput,
+    StructuringRequest,
+)
+from app.providers.metering import NO_USAGE, CallUsage
 
 RETRIEVAL_MAX_TOKENS = 2048
 WEB_SEARCH_MAX_USES = 5
@@ -35,6 +42,21 @@ def make_client(
     )
 
 
+def _usage(message: Any) -> CallUsage:
+    """Input includes cache reads and writes; web searches are the billed tool calls."""
+    usage = message.usage
+    if usage is None:
+        return NO_USAGE
+    server_tools = getattr(usage, "server_tool_use", None)
+    return CallUsage(
+        input_tokens=(usage.input_tokens or 0)
+        + (getattr(usage, "cache_creation_input_tokens", 0) or 0)
+        + (getattr(usage, "cache_read_input_tokens", 0) or 0),
+        output_tokens=usage.output_tokens or 0,
+        tool_calls=(server_tools.web_search_requests if server_tools else 0) or 0,
+    )
+
+
 class ClaudeStructuring:
     def __init__(self, config: ProviderConfigSpec, client: anthropic.Anthropic) -> None:
         self._config = config
@@ -42,7 +64,7 @@ class ClaudeStructuring:
 
     def generate_json(
         self, request: StructuringRequest, schema_name: str, json_schema: dict[str, object]
-    ) -> str:
+    ) -> StructuringOutput:
         message = self._client.messages.create(
             model=self._config.model_id,
             max_tokens=request.max_output_tokens,
@@ -50,7 +72,8 @@ class ClaudeStructuring:
             messages=[{"role": "user", "content": request.data}],
             output_config={"format": {"type": "json_schema", "schema": json_schema}},
         )
-        return "".join(block.text for block in message.content if block.type == "text")
+        text = "".join(block.text for block in message.content if block.type == "text")
+        return StructuringOutput(text, _usage(message))
 
 
 class ClaudeRetrieval:
@@ -58,7 +81,7 @@ class ClaudeRetrieval:
         self._config = config
         self._client = client
 
-    def search(self, request: RetrievalRequest) -> list[RetrievedUrl]:
+    def search(self, request: RetrievalRequest) -> RetrievalOutput:
         message = self._client.messages.create(
             model=self._config.model_id,
             max_tokens=RETRIEVAL_MAX_TOKENS,
@@ -84,7 +107,7 @@ class ClaudeRetrieval:
                     RetrievedUrl(url=result.url, snippet=result.title) for result in block.content
                 )
         # Cited URLs first: their snippet is the source's own text.
-        return cited + found
+        return RetrievalOutput(cited + found, _usage(message))
 
 
 def build_structuring(config: ProviderConfigSpec, api_key: str) -> ClaudeStructuring:

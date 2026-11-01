@@ -1,0 +1,58 @@
+{
+  "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
+  "recorded_at": null,
+  "origin": "hand-written in the provider's documented response shape (not yet recorded from the live API)",
+  "config_id": "mistral-medium-retrieval",
+  "role": "retrieval",
+  "status": 200,
+  "body": {
+    "object": "conversation.response",
+    "conversation_id": "conv_1",
+    "usage": {
+      "prompt_tokens": 30,
+      "completion_tokens": 40,
+      "total_tokens": 470,
+      "connector_tokens": 400,
+      "connectors": {
+        "web_search": 1
+      }
+    },
+    "outputs": [
+      {
+        "object": "entry",
+        "type": "message.output",
+        "role": "assistant",
+        "id": "msg_1",
+        "content": [
+          {
+            "type": "text",
+            "text": "Acme SA publishes an annual report."
+          },
+          {
+            "type": "tool_reference",
+            "tool": "web_search",
+            "title": "About Acme",
+            "url": "https://acme.example/about",
+            "description": "Acme SA, a French company"
+          },
+          {
+            "type": "tool_reference",
+            "tool": "web_search",
+            "title": "Annual report",
+            "url": "https://acme.example/report"
+          }
+        ]
+      }
+    ]
+  },
+  "expected_usage": {
+    "input_tokens": 430,
+    "output_tokens": 40,
+    "reasoning_tokens": 0,
+    "tool_calls": 1
+  },
+  "expected_urls": [
+    "https://acme.example/about",
+    "https://acme.example/report"
+  ]
+}
