@@ -4,6 +4,7 @@ import threading
 import uuid
 from dataclasses import replace
 from datetime import timedelta
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -588,3 +589,84 @@ def test_insufficient_sources_does_not_count_against_the_quota(
         "collection",
         False,
     )
+
+
+def _organisation_with(engine: Engine, **fields: Any) -> tuple[Any, str]:
+    from app.models import Organisation
+
+    user = create_user(engine, organisation_id=create_organisation(engine))
+    with Session(engine) as db:
+        organisation = db.get(Organisation, user.organisation_id)
+        assert organisation is not None
+        for name, value in fields.items():
+            setattr(organisation, name, value)
+        db.commit()
+    return user, create_session(engine, user.id)
+
+
+def _own_organisation(client: TestClient, token: str) -> dict[str, Any]:
+    response = send_with_session(client, "GET", "/organisation", token)
+    assert response.status_code == 200
+    body: dict[str, Any] = response.json()
+    return body
+
+
+def test_organisation_says_no_refusal_and_unlimited_when_nothing_limits(
+    client: TestClient, engine: Engine
+) -> None:
+    _, token = _organisation_with(engine)
+    body = _own_organisation(client, token)
+    assert (body["profiles_remaining"], body["run_refusal_reason"]) == (None, None)
+
+
+def test_organisation_counts_the_remaining_quota_and_refuses_when_used(
+    client: TestClient, engine: Engine
+) -> None:
+    user, token = _organisation_with(engine, profile_quota=2)
+    create_run(engine, user.organisation_id, enqueue=False)
+    body = _own_organisation(client, token)
+    assert (body["profiles_remaining"], body["run_refusal_reason"]) == (1, None)
+    create_run(engine, user.organisation_id, enqueue=False)
+    body = _own_organisation(client, token)
+    assert (body["profiles_remaining"], body["run_refusal_reason"]) == (0, "quota_reached")
+
+
+def test_a_run_that_does_not_count_leaves_the_quota_free(
+    client: TestClient, engine: Engine
+) -> None:
+    user, token = _organisation_with(engine, profile_quota=1)
+    run_id = create_run(engine, user.organisation_id, status="insufficient_sources", enqueue=False)
+    with Session(engine) as db:
+        run = db.get(ProfileRun, run_id)
+        assert run is not None
+        run.counts_against_quota = False
+        db.commit()
+    body = _own_organisation(client, token)
+    assert (body["profiles_remaining"], body["run_refusal_reason"]) == (1, None)
+
+
+def test_organisation_refuses_when_not_activated_or_access_ended(
+    client: TestClient, engine: Engine
+) -> None:
+    _, pending = _organisation_with(engine, status="pending_activation")
+    assert _own_organisation(client, pending)["run_refusal_reason"] == "not_activated"
+    _, ended = _organisation_with(engine, access_ends_at=utc_now() - timedelta(days=1))
+    assert _own_organisation(client, ended)["run_refusal_reason"] == "access_ended"
+
+
+def test_organisation_refuses_when_the_monthly_spend_cap_is_reached(
+    engine: Engine, settings: Settings
+) -> None:
+    user, token = _organisation_with(engine)
+    run_id = create_run(engine, user.organisation_id, enqueue=False)
+    add_usage(engine, user.organisation_id, run_id, cost="0.5")  # two rows: 1.0 in total
+    below = make_client(
+        settings=replace(settings, monthly_spend_cap_eur=Decimal("1.5")), engine=engine
+    )
+    assert _own_organisation(below, token)["run_refusal_reason"] is None
+    reached = make_client(
+        settings=replace(settings, monthly_spend_cap_eur=Decimal("1")), engine=engine
+    )
+    body = _own_organisation(reached, token)
+    assert body["run_refusal_reason"] == "spend_cap_reached"
+    assert "spend" not in " ".join(body).replace("run_refusal_reason", "")
