@@ -18,6 +18,7 @@ from app.crawl import (
     crawler_user_agent,
 )
 from app.crawl.permissions import DomainPermission
+from app.http_client import TooManyRedirectsError
 from tests.http_client.support import PUBLIC_V4, MockSite, StubResolver
 
 CONTACT = "https://iscan.example/contact"
@@ -257,19 +258,6 @@ def test_a_page_carrying_a_tdm_reservation_header_excludes_the_domain() -> None:
     assert "/b" not in paths(site) and recorded[-1].decision == "excluded"
 
 
-def test_a_redirect_to_another_domain_is_vetted_before_the_page_is_kept() -> None:
-    _, fetcher, recorded = setup(
-        {
-            (HOST, "/a"): httpx2.Response(302, headers={"Location": "https://other.example/x"}),
-            ("other.example", "/robots.txt"): text("User-agent: CCBot\nDisallow: /\n"),
-            ("other.example", "/x"): text("X"),
-        }
-    )
-
-    assert fetcher.fetch(f"https://{HOST}/a").status == "excluded"
-    assert {p.domain for p in recorded} == {HOST, "other.example"}
-
-
 def test_protego_reads_longest_match() -> None:
     robots = Protego.parse("User-agent: *\nDisallow: /a\nAllow: /a/b\n")
     assert robots.can_fetch("https://x/a/b", "SupplierIScan")
@@ -285,3 +273,89 @@ def test_check_domain_returns_the_permission_without_a_fetcher() -> None:
     client = build_client(CONTACT, resolver=RESOLVER, inner_transport=site.transport)
     permission = check_domain(client, f"https://{HOST}/", EmptySuppressionList())
     assert permission.decision == "allowed"
+
+
+def test_a_bom_before_robots_txt_does_not_hide_the_first_group() -> None:
+    bom = "﻿"
+    site, fetcher, recorded = setup(
+        {ROBOTS: text(f"{bom}  \nUser-agent: GPTBot\nDisallow: /\n"), (HOST, "/a"): text("A")}
+    )
+    assert fetcher.fetch(f"https://{HOST}/a").status == "excluded"
+    assert recorded[0].robots_result == "ai_blocked" and "/a" not in paths(site)
+
+    site, fetcher, _ = setup(
+        {ROBOTS: text(f"{bom}User-agent: SupplierIScan\nDisallow: /\n"), (HOST, "/a"): text("A")}
+    )
+    assert fetcher.fetch(f"https://{HOST}/a").status == "disallowed"
+    assert "/a" not in paths(site)
+
+
+def test_a_bom_before_tdmrep_json_still_reads_the_reservation() -> None:
+    body = b'\xef\xbb\xbf[{"location": "/", "tdm-reservation": 1}]'
+    site, fetcher, recorded = setup(
+        {TDMREP: httpx2.Response(200, content=body), (HOST, "/a"): text("A")}
+    )
+    assert fetcher.fetch(f"https://{HOST}/a").status == "excluded"
+    assert recorded[0].tdm_reservation and "/a" not in paths(site)
+
+
+def hosts_and_paths(site: MockSite) -> list[tuple[str, str]]:
+    return [(r.host_header, r.url.split(PUBLIC_V4)[1]) for r in site.seen]
+
+
+def test_a_redirect_target_is_never_requested_before_its_domain_is_checked() -> None:
+    site, fetcher, recorded = setup(
+        {
+            (HOST, "/a"): httpx2.Response(302, headers={"Location": "https://other.example/x"}),
+            ("other.example", "/robots.txt"): tdm(),
+            ("other.example", "/x"): text("X"),
+        }
+    )
+
+    result = fetcher.fetch(f"https://{HOST}/a")
+
+    assert result.status == "excluded" and result.response is None
+    seen = hosts_and_paths(site)
+    assert ("other.example", "/x") not in seen
+    assert ("other.example", "/robots.txt") in seen
+    assert {p.domain for p in recorded} == {HOST, "other.example"}
+
+
+def test_a_redirect_to_a_suppressed_domain_contacts_it_not_at_all() -> None:
+    site, fetcher, _ = setup(
+        {(HOST, "/a"): httpx2.Response(302, headers={"Location": "https://other.example/x"})},
+        Suppressed("other.example"),
+    )
+    assert fetcher.fetch(f"https://{HOST}/a").status == "excluded"
+    assert all(host != "other.example" for host, _ in hosts_and_paths(site))
+
+
+def test_a_redirect_to_a_disallowed_path_is_not_requested() -> None:
+    site, fetcher, _ = setup(
+        {
+            ROBOTS: text("User-agent: *\nDisallow: /private\n"),
+            (HOST, "/a"): httpx2.Response(302, headers={"Location": "/private/x"}),
+            (HOST, "/private/x"): text("P"),
+        }
+    )
+    assert fetcher.fetch(f"https://{HOST}/a").status == "disallowed"
+    assert "/private/x" not in paths(site)
+
+
+def test_allowed_redirects_are_followed_with_the_user_agent_and_the_cap_applies() -> None:
+    site, fetcher, _ = setup(
+        {
+            (HOST, "/a"): httpx2.Response(302, headers={"Location": "https://other.example/x"}),
+            ("other.example", "/x"): text("X"),
+        }
+    )
+    result = fetcher.fetch(f"https://{HOST}/a")
+    assert result.status == "fetched" and result.response.text == "X"
+    assert all(r.user_agent.startswith("SupplierIScan/1.0") for r in site.seen)
+
+    loop, looping, _ = setup(
+        {(HOST, "/a"): httpx2.Response(302, headers={"Location": f"https://{HOST}/a"})}
+    )
+    with pytest.raises(TooManyRedirectsError):
+        looping.fetch(f"https://{HOST}/a")
+    assert paths(loop).count("/a") == 6  # the default cap of 5 redirects

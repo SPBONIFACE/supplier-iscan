@@ -11,6 +11,7 @@ permission resources and the redirects included.
 """
 
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -26,7 +27,12 @@ from app.crawl.permissions import (
     domain_of,
 )
 from app.db import utc_now
-from app.http_client import FetchSettings, GuardedClient
+from app.http_client import (
+    FetchSettings,
+    FetchTimeoutError,
+    GuardedClient,
+    TooManyRedirectsError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,36 +113,50 @@ class PermittedFetcher:
         self._record(permission)
 
     def fetch(self, url: str) -> FetchResult:
-        permission = self.permission(url)
-        if permission.decision == "excluded":
-            return FetchResult("excluded", url)
-        if permission.decision == "blocked":
-            return FetchResult("blocked", url)
-        if permission.decision != "allowed":
-            return FetchResult("not_crawled", url)
-        if permission.robots is not None and not permission.robots.can_fetch(url, SERVICE_NAME):
-            return FetchResult("disallowed", url)
+        """Fetch `url`, following redirects here, one hop at a time.
 
-        response = self._client.get(url)
-        final = str(response.url)
-        if domain_of(final) != permission.domain:
-            # Redirected to another domain: its signals count before anything is kept.
-            other = self.permission(final)
-            if other.decision != "allowed":
-                return FetchResult(
-                    "excluded" if other.decision == "excluded" else "not_crawled", url
+        The permissions of each target's domain (and its robots.txt rules for the path) are
+        checked before the target is requested, so no page of an excluded domain is ever
+        requested. The redirect cap and the total deadline are the client's settings.
+        """
+        settings = self._client.settings
+        deadline = time.monotonic() + settings.timeout_seconds
+        current = url
+        for _hop in range(settings.max_redirects + 1):
+            permission = self.permission(current)
+            if permission.decision == "excluded":
+                return FetchResult("excluded", url)
+            if permission.decision == "blocked":
+                return FetchResult("blocked", url)
+            if permission.decision != "allowed":
+                return FetchResult("not_crawled", url)
+            if permission.robots is not None and not permission.robots.can_fetch(
+                current, SERVICE_NAME
+            ):
+                return FetchResult("disallowed", url)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise FetchTimeoutError(
+                    f"The website did not respond within {settings.timeout_seconds:g} seconds."
                 )
-            permission = other
-        if permission.robots is not None and not permission.robots.can_fetch(final, SERVICE_NAME):
-            return FetchResult("disallowed", url)
-        if response.headers.get(TDM_HEADER, "").strip() == "1":
-            logger.info("Page of %s carries a TDM reservation; domain excluded", permission.domain)
-            self._mark(permission, "excluded")
-            return FetchResult("excluded", url)
-        if is_challenge(response):
-            logger.info(
-                "Domain %s blocked the crawler (%s)", permission.domain, response.status_code
-            )
-            self._mark(permission, "blocked")
-            return FetchResult("blocked", url)
-        return FetchResult("fetched", url, response)
+            response = self._client.get(current, timeout=remaining, follow_redirects=False)
+            if response.headers.get(TDM_HEADER, "").strip() == "1":
+                logger.info(
+                    "Page of %s carries a TDM reservation; domain excluded", permission.domain
+                )
+                self._mark(permission, "excluded")
+                return FetchResult("excluded", url)
+            target = self._client.redirect_target(current, response)
+            if target is not None:
+                current = target
+                continue
+            if is_challenge(response):
+                logger.info(
+                    "Domain %s blocked the crawler (%s)", permission.domain, response.status_code
+                )
+                self._mark(permission, "blocked")
+                return FetchResult("blocked", url)
+            return FetchResult("fetched", url, response)
+        raise TooManyRedirectsError(
+            f"The website redirected more than {settings.max_redirects} times."
+        )

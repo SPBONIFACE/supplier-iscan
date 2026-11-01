@@ -91,6 +91,11 @@ def _classify(status: int) -> _Fetched:
     return "absent"  # 404, 410 and the other client errors: nothing published
 
 
+def _decode(content: bytes) -> str:
+    """UTF-8 (RFC 9309), without a byte order mark and leading whitespace."""
+    return content.decode("utf-8-sig", errors="replace").lstrip("\ufeff \t\r\n")
+
+
 def _get(client: GuardedClient, url: str) -> tuple[_Fetched, str, bool]:
     """Fetch one permission resource: (outcome, text, tdm-reservation header is 1)."""
     try:
@@ -103,7 +108,7 @@ def _get(client: GuardedClient, url: str) -> tuple[_Fetched, str, bool]:
         return "unreachable", "", False
     reserved = response.headers.get(TDM_HEADER, "").strip() == "1"
     outcome = _classify(response.status_code)
-    return outcome, response.text if outcome == "ok" else "", reserved
+    return outcome, _decode(response.content) if outcome == "ok" else "", reserved
 
 
 def _names_blocked_crawler(robots_text: str, robots: Protego, origin: str) -> bool:
