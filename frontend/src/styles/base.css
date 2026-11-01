@@ -332,3 +332,181 @@ p {
 .skeleton.short {
   width: 60%;
 }
+
+/* New profile and identity chat (mock-ups 04-new-profile-*, 04-identity-chat-*) */
+.fld select,
+.fld textarea {
+  width: 100%;
+  min-height: var(--isc-size-control);
+  padding: var(--isc-space-2) var(--isc-space-3);
+  font: var(--isc-font-size-base) / var(--isc-font-line-height-compact) var(--isc-font-family-sans);
+  color: var(--isc-color-ink);
+  background: var(--isc-color-field);
+  border: var(--isc-border-control) solid var(--isc-color-border-control);
+  border-radius: var(--isc-radius-control);
+}
+.fld textarea {
+  min-height: calc(var(--isc-size-control) * 2);
+  resize: vertical;
+}
+.form fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.form legend {
+  font-size: var(--isc-font-size-sm);
+  font-weight: var(--isc-font-weight-semibold);
+  padding: 0;
+  margin-bottom: var(--isc-space-2);
+}
+.form fieldset.group {
+  border-top: var(--isc-border-hairline) solid var(--isc-color-rule);
+  padding-top: var(--isc-space-4);
+  display: grid;
+  gap: var(--isc-space-4);
+}
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--isc-space-1) var(--isc-space-5);
+}
+.radios label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--isc-space-3);
+  min-height: var(--isc-size-target-min);
+  cursor: pointer;
+}
+.radios input {
+  accent-color: var(--isc-color-cobalt);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+.chat {
+  max-width: var(--isc-size-measure);
+}
+.ts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink);
+}
+.turn {
+  padding: var(--isc-space-4) 0;
+  border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule);
+}
+.turn:focus {
+  outline: none;
+}
+.turn-h {
+  display: flex;
+  align-items: baseline;
+  gap: var(--isc-space-3);
+  margin-bottom: var(--isc-space-2);
+}
+.ml {
+  font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--isc-font-letter-spacing-micro);
+  color: var(--isc-color-ink-secondary);
+}
+.ml-ink {
+  color: var(--isc-color-ink);
+}
+.said {
+  font-weight: var(--isc-font-weight-medium);
+}
+.cand {
+  margin: var(--isc-space-4) 0 0;
+}
+.cand + .cand {
+  margin-top: var(--isc-space-5);
+  padding-top: var(--isc-space-4);
+  border-top: var(--isc-border-hairline) solid var(--isc-color-rule);
+}
+.cand h3 {
+  margin-bottom: var(--isc-space-2);
+}
+dl.dl {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  margin: 0;
+  border-top: var(--isc-border-hairline) solid var(--isc-color-rule);
+}
+dl.dl dt,
+dl.dl dd {
+  margin: 0;
+  padding: var(--isc-space-2) var(--isc-space-3) var(--isc-space-2) 0;
+  border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule);
+  line-height: var(--isc-font-line-height-compact);
+}
+dl.dl dt {
+  font-size: var(--isc-font-size-sm);
+  font-weight: var(--isc-font-weight-semibold);
+  color: var(--isc-color-ink-secondary);
+}
+.mono {
+  font-family: var(--isc-font-family-mono);
+}
+.srcline {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-secondary);
+  margin-top: var(--isc-space-2);
+}
+.composer {
+  margin-top: var(--isc-space-6);
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink);
+  padding-top: var(--isc-space-4);
+}
+.composer .row {
+  display: flex;
+  gap: var(--isc-space-3);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.composer .row > div {
+  flex: 1 1 300px;
+}
+.crumb {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-secondary);
+  margin-bottom: var(--isc-space-3);
+}
+.crumb ol {
+  display: flex;
+  gap: var(--isc-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.crumb li + li::before {
+  content: "/";
+  margin-right: var(--isc-space-2);
+}
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.turn .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--isc-space-3);
+  margin-top: var(--isc-space-4);
+}
+@media (max-width: 760px) {
+  dl.dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  dl.dl dt {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}

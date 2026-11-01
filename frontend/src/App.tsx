@@ -4,8 +4,10 @@ import { useAuth } from "./auth/AuthContext";
 import { homePath, LOGIN_PATH, loginUrl } from "./auth/paths";
 import { Layout } from "./components/Layout";
 import { LoadingIndicator } from "./components/ui";
+import { IdentityChatPage } from "./pages/IdentityChatPage";
 import { InvitationPage } from "./pages/InvitationPage";
 import { LoginPage } from "./pages/LoginPage";
+import { NewProfilePage } from "./pages/NewProfilePage";
 import { NotFoundPage, Placeholder } from "./pages/Simple";
 
 /** Protected routes: nothing is rendered for a signed-out user, who is sent to login and back. */
@@ -42,15 +44,13 @@ export function App() {
         <Route path="/invitations/:token" element={<InvitationPage />} />
         <Route element={<RequireAuth />}>
           <Route path="/" element={<Home />} />
-          {/* Placeholders: #32 list, #33 new profile, #34 run, #35 to #37 card, #38 comparison, #48 admin. */}
+          {/* Placeholders: #32 list, #34 run, #35 to #37 card, #38 comparison, #48 admin. */}
           <Route
             path="/workspace"
             element={<Placeholder titleKey="workspace.title" bodyKey="placeholder.workspace" />}
           />
-          <Route
-            path="/profiles/new"
-            element={<Placeholder titleKey="titles.newProfile" bodyKey="placeholder.newProfile" />}
-          />
+          <Route path="/profiles/new" element={<NewProfilePage />} />
+          <Route path="/profiles/new/:sessionId" element={<IdentityChatPage />} />
           <Route
             path="/profiles/:profileId/run"
             element={<Placeholder titleKey="titles.run" bodyKey="placeholder.run" />}

@@ -141,6 +141,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/identity/disclosure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The AI disclosure, in the requested UI language
+         * @description The text the chat shows as its first message, exactly as in spec F1 (no placeholder). The client displays it as returned and never rewords it.
+         */
+        get: operations["getIdentityDisclosure"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/identity-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open an identity session for a supplier name and optional hints
+         * @description An empty, whitespace-only or zero-width-only name, or an invalid website hint, answers 422 with the field name. The first turn of the session is the disclosure; the agent's first proposal follows. When one or both registries are unreachable the agent says so in a turn, never with an error response.
+         */
+        post: operations["createIdentitySession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/identity-sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read an identity session */
+        get: operations["getIdentitySession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/identity-sessions/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct or add details in free text; the agent proposes again
+         * @description Triggers a new registry search and a new proposal. A URL inside the text goes through the outbound-URL guard. An agent failure is a turn of kind `error` in the session (answer 200), never a 500. A confirmed session answers 409.
+         */
+        post: operations["sendIdentityMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/identity-sessions/{id}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The candidates other than the current proposal, best match first
+         * @description A hint lowers a candidate's rank and never removes it.
+         */
+        get: operations["listIdentityCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/identity-sessions/{id}/website": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * None of these: propose an identity from a website or domain
+         * @description The domain is checked by the outbound-URL guard and must respond. If it does, the new proposal is the last turn. If not, the last turn has kind `website_rejected` and carries the reason, and the session stays open (answer 200). A malformed address answers 422.
+         */
+        post: operations["submitIdentityWebsite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/identity-sessions/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm one candidate; this stores the identity record
+         * @description The only way a session ends. A second confirmation answers 409. `natural_person` is set when the legal form is a sole trader or another natural-person business.
+         */
+        post: operations["confirmIdentity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs": {
         parameters: {
             query?: never;
@@ -353,6 +490,101 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        Language: "en" | "fr";
+        IdentityDisclosure: {
+            language: components["schemas"]["Language"];
+            text: string;
+        };
+        IdentityHints: {
+            website?: string | null;
+            /** @description ISO 3166-1 alpha-2 code. */
+            country?: string | null;
+            sector?: string | null;
+        };
+        IdentitySessionCreate: {
+            name: string;
+            hints?: components["schemas"]["IdentityHints"];
+            profile_language: components["schemas"]["Language"];
+            ui_language: components["schemas"]["Language"];
+        };
+        IdentityMessage: {
+            text: string;
+        };
+        IdentityWebsite: {
+            /** @description A URL or a bare domain. */
+            website: string;
+        };
+        IdentityConfirm: {
+            candidate_id: string;
+        };
+        RegistryStatus: {
+            /** @enum {string} */
+            gleif: "ok" | "unreachable";
+            /** @enum {string} */
+            wikidata: "ok" | "unreachable";
+        };
+        IdentityCandidate: {
+            id: string;
+            legal_name: string;
+            legal_form: string | null;
+            website: string | null;
+            /** @description Country name in the session's UI language. */
+            country: string | null;
+            sector: string | null;
+            /** @description One line. */
+            description: string | null;
+            found_in: ("gleif" | "wikidata" | "website" | "web")[];
+            identifiers: {
+                scheme: string;
+                value: string;
+            }[];
+        };
+        IdentityCandidateList: {
+            candidates: components["schemas"]["IdentityCandidate"][];
+        };
+        IdentityTurn: {
+            id: string;
+            /** @enum {string} */
+            role: "assistant" | "user";
+            /**
+             * @description `disclosure` is always the first turn. `proposal` carries the top candidate. `notice` is an agent message without candidate (for example both registries down). `website_rejected` carries the reason a website was refused. `error` is an agent failure in plain words.
+             * @enum {string}
+             */
+            kind: "disclosure" | "text" | "proposal" | "notice" | "website_rejected" | "error";
+            text: string;
+            candidate: components["schemas"]["IdentityCandidate"] | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        IdentitySession: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            hints: components["schemas"]["IdentityHints"];
+            profile_language: components["schemas"]["Language"];
+            /** @enum {string} */
+            status: "open" | "confirmed";
+            turns: components["schemas"]["IdentityTurn"][];
+            registries: components["schemas"]["RegistryStatus"];
+            /** Format: uuid */
+            identity_id: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        IdentityConfirmed: {
+            /** Format: uuid */
+            identity_id: string;
+            candidate: components["schemas"]["IdentityCandidate"];
+            natural_person: boolean;
+            /** Format: date-time */
+            confirmed_at: string;
+        };
+        RunRefused: {
+            detail: string;
+            /** @enum {string} */
+            reason: "quota_reached" | "access_ended" | "not_activated" | "spend_cap_reached";
+        };
         ProfileField: {
             id: string;
             label: string;
@@ -642,6 +874,20 @@ export interface components {
                 "application/json": components["schemas"]["Error"];
             };
         };
+        /** @description The request conflicts with the current state (for example an identity already confirmed). */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "detail": "This identity is already confirmed."
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
+            };
+        };
         /** @description The database is unavailable. Plain message, no technical details. */
         ServiceUnavailable: {
             headers: {
@@ -859,6 +1105,201 @@ export interface operations {
             503: components["responses"]["ServiceUnavailable"];
         };
     };
+    getIdentityDisclosure: {
+        parameters: {
+            query: {
+                language: components["schemas"]["Language"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The disclosure. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityDisclosure"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    createIdentitySession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentitySessionCreate"];
+            };
+        };
+        responses: {
+            /** @description The session, with its first proposal. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentitySession"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getIdentitySession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The session with all its turns. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentitySession"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    sendIdentityMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityMessage"];
+            };
+        };
+        responses: {
+            /** @description The session with the new turns. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentitySession"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listIdentityCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The other candidates. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityCandidateList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    submitIdentityWebsite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityWebsite"];
+            };
+        };
+        responses: {
+            /** @description The session with the new turns. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentitySession"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    confirmIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityConfirm"];
+            };
+        };
+        responses: {
+            /** @description The stored identity. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityConfirmed"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
     listRuns: {
         parameters: {
             query?: never;
@@ -904,6 +1345,15 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            /** @description The run is refused, with the reason (#29): the profile quota is used, access has ended, the organisation is not activated, or the monthly spend cap is reached. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunRefused"];
+                };
+            };
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
