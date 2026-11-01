@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.6.0
+  version: 0.7.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -30,6 +30,8 @@ tags:
     description: User records
   - name: organisation
     description: The signed-in member's own organisation
+  - name: profile
+    description: The profile definition loaded at startup
   - name: runs
     description: Profile runs. They execute in a worker; no request waits for a stage.
   - name: admin
@@ -171,7 +173,9 @@ paths:
       summary: Return the signed-in member's own organisation
       description: >-
         The organisation of the session, never another one: there is no organisation id to pass.
-        The remaining profile quota is added in a later version.
+        Also says how many profiles may still be started and whether a new run would be refused
+        right now, and why, so that the workspace can show it before the member starts. No spend
+        amount is exposed.
       security:
         - sessionCookie: []
       responses:
@@ -183,6 +187,39 @@ paths:
                 $ref: "#/components/schemas/MemberOrganisation"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /profile-definition:
+    get:
+      operationId: getProfileDefinition
+      tags: [profile]
+      summary: Return the active profile definition
+      description: >-
+        The sections and fields of a profile, loaded at startup from the instance's profile
+        definition file (the shipped example when none is configured), with labels in the requested
+        language and the content hash that each run records. Any signed-in member may read it.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: language
+          in: query
+          required: false
+          description: Language of the labels. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The active definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileDefinition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /runs:
@@ -653,6 +690,50 @@ components:
           example:
             detail: The service is temporarily unavailable. Please try again in a few minutes.
   schemas:
+    ProfileField:
+      type: object
+      additionalProperties: false
+      required: [id, label, kind, certification, concerns_people]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        kind:
+          type: string
+          enum: [fact, assessment, buyer]
+        certification:
+          type: boolean
+        concerns_people:
+          type: boolean
+    ProfileSection:
+      type: object
+      additionalProperties: false
+      required: [id, label, fields]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileField"
+    ProfileDefinition:
+      type: object
+      additionalProperties: false
+      required: [hash, language, sections]
+      properties:
+        hash:
+          description: Content hash (`sha256:` and 64 hex digits) of the definition; each run records it.
+          type: string
+        language:
+          type: string
+          enum: [en, fr]
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileSection"
     RunStatus:
       type: string
       enum: [queued, running, paused, stopped, failed, insufficient_sources, partial, completed]
@@ -781,6 +862,7 @@ components:
           description: Plain-language reason of a failed run. Null otherwise.
           type: [string, "null"]
         profile_definition_hash:
+          description: Hash of the profile definition the run uses (ProfileDefinition.hash), set when the run starts.
           type: [string, "null"]
         prompt_set_hash:
           type: [string, "null"]
@@ -986,7 +1068,14 @@ components:
         What a member sees of their own organisation. Nothing about any other organisation.
       type: object
       additionalProperties: false
-      required: [name, status, seat_limit, profile_quota, access_ends_at]
+      required:
+        - name
+        - status
+        - seat_limit
+        - profile_quota
+        - profiles_remaining
+        - run_refusal_reason
+        - access_ends_at
       properties:
         name:
           type: string
@@ -999,6 +1088,17 @@ components:
         profile_quota:
           description: Maximum number of profile runs. Null means unlimited.
           type: [integer, "null"]
+        profiles_remaining:
+          description: >-
+            Profile runs that may still start: the quota minus the runs that count against it,
+            never below 0. Null when the quota is unlimited.
+          type: [integer, "null"]
+        run_refusal_reason:
+          description: >-
+            Why a new run would be refused now, or null when it would be accepted. Checked in
+            this order: not activated, access ended, quota used, instance monthly spend cap reached.
+          type: [string, "null"]
+          enum: [not_activated, access_ended, quota_reached, spend_cap_reached, null]
         access_ends_at:
           description: End of access. Null while not yet activated, or when the access is unlimited.
           type: [string, "null"]

@@ -33,6 +33,8 @@ PROVIDER_CONFIG_FILE = "PROVIDER_CONFIG_FILE"
 # Providers bill in USD and costs are shown in EUR, so the conversion rate is a setting
 # (EUR for 1 USD).
 PRICE_TABLE_FILE = "PRICE_TABLE_FILE"
+# Profile definition (#21): sections and fields of a profile; the shipped example when unset.
+PROFILE_DEFINITION_FILE = "PROFILE_DEFINITION_FILE"
 EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
@@ -43,6 +45,8 @@ WORKER_POLL_SECONDS = "WORKER_POLL_SECONDS"
 # Crawler identity (#17): the public contact page named in the User-Agent of every request to a
 # supplier site. No default: the operator publishes their own page (#47).
 CRAWLER_CONTACT_URL = "CRAWLER_CONTACT_URL"
+# Monthly LLM spend cap of the instance, in EUR (spec F7). Unset: no cap.
+MONTHLY_SPEND_CAP_EUR = "MONTHLY_SPEND_CAP_EUR"
 
 # Local defaults when the setting is empty, so that a self-hosted instance starts without them.
 # They are configuration, not product terms: every operator sets their own.
@@ -74,6 +78,7 @@ class Settings:
     admin_password: str | None = field(default=None, repr=False)
     provider_config_file: str | None = None
     price_table_file: str | None = None
+    profile_definition_file: str | None = None
     eur_per_usd: Decimal | None = None
     # How long an invitation link stays valid, and the shortest accepted password (#9).
     invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
@@ -81,6 +86,7 @@ class Settings:
     run_lease: timedelta = timedelta(seconds=DEFAULT_RUN_LEASE_SECONDS)
     worker_poll_seconds: int = DEFAULT_WORKER_POLL_SECONDS
     crawler_contact_url: str | None = None
+    monthly_spend_cap_eur: Decimal | None = None
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -143,6 +149,19 @@ def _parse_rate(raw: str) -> Decimal | None:
     return rate
 
 
+def _parse_spend_cap(raw: str) -> Decimal | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        cap = Decimal(value)
+    except InvalidOperation:
+        cap = Decimal(0)
+    if not cap.is_finite() or cap <= 0:
+        raise ConfigurationError(f"{MONTHLY_SPEND_CAP_EUR} must be a number above 0")
+    return cap
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
     raw_origins = env.get(CORS_ALLOWED_ORIGINS, "").strip() or DEFAULT_ALLOWED_ORIGINS
@@ -156,6 +175,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         admin_password=env.get(ADMIN_PASSWORD, "") or None,
         provider_config_file=env.get(PROVIDER_CONFIG_FILE, "").strip() or None,
         price_table_file=env.get(PRICE_TABLE_FILE, "").strip() or None,
+        profile_definition_file=env.get(PROFILE_DEFINITION_FILE, "").strip() or None,
         eur_per_usd=_parse_rate(env.get(EUR_PER_USD, "")),
         invitation_validity=timedelta(
             hours=_parse_positive_int(
@@ -172,4 +192,5 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
             env, WORKER_POLL_SECONDS, DEFAULT_WORKER_POLL_SECONDS
         ),
         crawler_contact_url=_parse_contact_url(env.get(CRAWLER_CONTACT_URL, "")),
+        monthly_spend_cap_eur=_parse_spend_cap(env.get(MONTHLY_SPEND_CAP_EUR, "")),
     )

@@ -22,6 +22,8 @@ from app.invitations.routes import admin_router as admin_invitations_router
 from app.invitations.routes import public_router as invitations_router
 from app.organisations.member_routes import router as organisation_router
 from app.organisations.routes import router as admin_organisations_router
+from app.profile_definition import ProfileDefinition, load_profile_definition
+from app.profile_routes import router as profile_router
 from app.providers import Providers, load_catalogue
 from app.providers.metering import UsageMeter
 from app.providers.pricing import check_prices, load_price_table
@@ -51,16 +53,28 @@ def load_providers(settings: Settings, database: Database) -> Providers:
         raise
 
 
+def load_definition(settings: Settings) -> ProfileDefinition:
+    """The profile definition. An invalid or missing file stops startup, naming it."""
+    path = Path(settings.profile_definition_file) if settings.profile_definition_file else None
+    try:
+        return load_profile_definition(path)
+    except ConfigurationError as error:
+        logger.error("Startup stopped: %s", error)
+        raise
+
+
 def create_app(
     settings: Settings | None = None,
     database_check: DatabaseCheck | None = None,
     engine: Engine | None = None,
     providers: Providers | None = None,
+    profile_definition: ProfileDefinition | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     check_database = database_check or make_database_check(settings.database_url)
     database = Database(settings.database_url, engine)
     providers = providers or load_providers(settings, database)
+    profile_definition = profile_definition or load_definition(settings)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
@@ -91,7 +105,7 @@ def create_app(
     # openapi.yaml is the only contract: no generated /openapi.json, no documentation pages.
     app = FastAPI(
         title="Supplier iScan API",
-        version="0.6.0",
+        version="0.7.0",
         openapi_url=None,
         docs_url=None,
         redoc_url=None,
@@ -99,6 +113,7 @@ def create_app(
     )
     app.state.database = database
     app.state.providers = providers
+    app.state.profile_definition = profile_definition
     app.state.settings = settings
     install_access_log_redaction()
     install_error_handlers(app)
@@ -133,6 +148,7 @@ def create_app(
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(organisation_router)
+    app.include_router(profile_router)
     app.include_router(runs_router)
     app.include_router(admin_organisations_router)
     app.include_router(admin_invitations_router)

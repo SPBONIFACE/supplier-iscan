@@ -110,9 +110,29 @@ export interface paths {
         };
         /**
          * Return the signed-in member's own organisation
-         * @description The organisation of the session, never another one: there is no organisation id to pass. The remaining profile quota is added in a later version.
+         * @description The organisation of the session, never another one: there is no organisation id to pass. Also says how many profiles may still be started and whether a new run would be refused right now, and why, so that the workspace can show it before the member starts. No spend amount is exposed.
          */
         get: operations["getOwnOrganisation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile-definition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Return the active profile definition
+         * @description The sections and fields of a profile, loaded at startup from the instance's profile definition file (the shipped example when none is configured), with labels in the requested language and the content hash that each run records. Any signed-in member may read it.
+         */
+        get: operations["getProfileDefinition"];
         put?: never;
         post?: never;
         delete?: never;
@@ -333,6 +353,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ProfileField: {
+            id: string;
+            label: string;
+            /** @enum {string} */
+            kind: "fact" | "assessment" | "buyer";
+            certification: boolean;
+            concerns_people: boolean;
+        };
+        ProfileSection: {
+            id: string;
+            label: string;
+            fields: components["schemas"]["ProfileField"][];
+        };
+        ProfileDefinition: {
+            /** @description Content hash (`sha256:` and 64 hex digits) of the definition; each run records it. */
+            hash: string;
+            /** @enum {string} */
+            language: "en" | "fr";
+            sections: components["schemas"]["ProfileSection"][];
+        };
         /** @enum {string} */
         RunStatus: "queued" | "running" | "paused" | "stopped" | "failed" | "insufficient_sources" | "partial" | "completed";
         /** @enum {string} */
@@ -389,6 +429,7 @@ export interface components {
             pause_reason: string | null;
             /** @description Plain-language reason of a failed run. Null otherwise. */
             error: string | null;
+            /** @description Hash of the profile definition the run uses (ProfileDefinition.hash), set when the run starts. */
             profile_definition_hash: string | null;
             prompt_set_hash: string | null;
             usage: components["schemas"]["RunUsage"];
@@ -495,6 +536,13 @@ export interface components {
             seat_limit: number | null;
             /** @description Maximum number of profile runs. Null means unlimited. */
             profile_quota: number | null;
+            /** @description Profile runs that may still start: the quota minus the runs that count against it, never below 0. Null when the quota is unlimited. */
+            profiles_remaining: number | null;
+            /**
+             * @description Why a new run would be refused now, or null when it would be accepted. Checked in this order: not activated, access ended, quota used, instance monthly spend cap reached.
+             * @enum {string|null}
+             */
+            run_refusal_reason: "not_activated" | "access_ended" | "quota_reached" | "spend_cap_reached" | null;
             /**
              * Format: date-time
              * @description End of access. Null while not yet activated, or when the access is unlimited.
@@ -797,6 +845,32 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getProfileDefinition: {
+        parameters: {
+            query?: {
+                /** @description Language of the labels. English when absent. */
+                language?: "en" | "fr";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The active definition. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileDefinition"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };
