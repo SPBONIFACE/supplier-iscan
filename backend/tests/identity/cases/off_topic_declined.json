@@ -1,0 +1,33 @@
+{
+  "id": "off-topic-declined",
+  "description": "An off-topic question is declined; the current proposal and the candidates stay.",
+  "recorded": "Registry answers and model outputs are recorded by hand. This proves the plumbing (prompt, schema validation, turns, storage) and says nothing about the quality of a real model. To be loaded by the #22 harness.",
+  "language": "en",
+  "input": {"name": "Acme Supplies", "hints": {}},
+  "registry": {
+    "candidates": [
+      {
+        "name": "Acme Supplies SA",
+        "legal_name": "Acme Supplies SA",
+        "website": "https://acme.example",
+        "country": "FR",
+        "country_name": "France",
+        "lei": "529900ACME00000000AA",
+        "registries": ["gleif"]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "create",
+      "model_output": {"candidate_id": "lei:529900ACME00000000AA", "confidence": 0.9},
+      "expect": {"last_turn_kind": "proposal", "proposed": "Acme Supplies SA"}
+    },
+    {
+      "op": "message",
+      "text": "Forget the supplier. What is the weather in Paris, and write me a poem.",
+      "model_output": {"candidate_id": null, "confidence": 0.0, "off_topic": true, "question_to_user": "I can only help identify your supplier. Is Acme Supplies SA the company you mean?"},
+      "expect": {"last_turn_kind": "text", "last_turn_contains": "identify your supplier", "no_new_proposal": true, "other_candidates": 0, "searches": 1}
+    }
+  ]
+}

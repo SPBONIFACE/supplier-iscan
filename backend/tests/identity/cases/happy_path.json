@@ -1,0 +1,36 @@
+{
+  "id": "happy-path",
+  "description": "One clear match: proposed at once, confirmed by the member, stored.",
+  "recorded": "Registry answers and model outputs are recorded by hand. This proves the plumbing (prompt, schema validation, turns, storage) and says nothing about the quality of a real model. To be loaded by the #22 harness.",
+  "language": "en",
+  "input": {"name": "Acme Supplies", "hints": {}},
+  "registry": {
+    "candidates": [
+      {
+        "name": "Acme Supplies SA",
+        "legal_name": "Acme Supplies SA",
+        "description": "Industrial supplies",
+        "website": "https://acme.example",
+        "country": "FR",
+        "country_name": "France",
+        "industries": ["Wholesale"],
+        "legal_form": "Societe anonyme",
+        "lei": "529900ACME00000000AA",
+        "wikidata_id": "Q1001",
+        "registries": ["wikidata", "gleif"]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "create",
+      "model_output": {"candidate_id": "lei:529900ACME00000000AA", "confidence": 0.95, "question_to_user": "Is this the French company Acme Supplies SA?"},
+      "expect": {"last_turn_kind": "proposal", "proposed": "Acme Supplies SA", "first_turn_kind": "disclosure"}
+    },
+    {
+      "op": "confirm",
+      "candidate_id": "lei:529900ACME00000000AA",
+      "expect": {"status": 200, "legal_name": "Acme Supplies SA", "natural_person": false}
+    }
+  ]
+}
