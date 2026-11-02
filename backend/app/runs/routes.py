@@ -17,7 +17,7 @@ from app.config import Settings
 from app.crawl.store import excluded_sources
 from app.db import DbSession, utc_now
 from app.errors import not_found
-from app.models import ProfileRun, SupplierIdentity, UsageEvent
+from app.models import ProfileRun, Source, SupplierIdentity, UsageEvent
 from app.models.runs import FINISHED_STATUSES
 from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.providers.usage import run_usage_totals
@@ -83,9 +83,27 @@ class RunOut(BaseModel):
     prompt_set_hash: str | None
     usage: RunUsageOut
     excluded_sources: list[ExcludedSourceOut]
+    identity_to_verify: bool
     created_at: datetime
     started_at: datetime | None
     finished_at: datetime | None
+
+
+class SourceOut(BaseModel):
+    """Mirrors components/schemas/Source (the text is not listed)."""
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    id: uuid.UUID
+    url: str
+    fetched_at: datetime
+    content_type: str
+
+
+class SourceListOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[SourceOut]
 
 
 class RunListOut(BaseModel):
@@ -143,6 +161,7 @@ def _run_out(
                 "roles": roles,
             },
             "excluded_sources": excluded,
+            "identity_to_verify": run.identity_to_verify,
             "created_at": run.created_at,
             "started_at": run.started_at,
             "finished_at": run.finished_at,
@@ -208,6 +227,15 @@ def list_runs(scope: OrganisationScoped, db: DbSession, request: Request) -> Run
 @router.get("/{id}", response_model=RunOut)
 def get_run(id: str, scope: OrganisationScoped, db: DbSession, request: Request) -> RunOut:
     return _one(db, scope, scope.get(db, ProfileRun, id), hide_names(request, scope))
+
+
+@router.get("/{id}/sources", response_model=SourceListOut)
+def list_sources(id: str, scope: OrganisationScoped, db: DbSession) -> SourceListOut:
+    run = scope.get(db, ProfileRun, id)  # the one 404 for an unknown or another organisation's run
+    rows = db.scalars(
+        scope.select(Source).where(Source.run_id == run.id).order_by(Source.fetched_at, Source.url)
+    ).all()
+    return SourceListOut(items=[SourceOut.model_validate(row) for row in rows])
 
 
 @router.post("/{id}/stop", response_model=RunOut)

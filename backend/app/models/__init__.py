@@ -9,6 +9,7 @@ from app.models.llm_usage import LlmUsage
 from app.models.ownership import OrganisationOwned
 from app.models.providers import ProviderConfig
 from app.models.runs import Job, ProfileRun, SupplierIdentity
+from app.models.sources import Source
 from app.models.usage import UsageEvent
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
     "OrganisationOwned",
     "ProfileRun",
     "ProviderConfig",
+    "Source",
     "SupplierIdentity",
     "SuppressionEntry",
     "UsageEvent",
