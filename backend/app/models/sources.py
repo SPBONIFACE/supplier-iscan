@@ -1,6 +1,6 @@
 """Collected sources (spec Data model; #18).
 
-A `Source` is one page or PDF of a run: URL, fetch time, content type, the extracted text and the
+A `Source` is one page or PDF of a run: URL, fetch time, content type, the redacted text and the
 author when the PDF names one. The text is written only by `app.collection.source_store`
 (redacted there from #19). `delete_after` and the retention jobs are #45.
 """
@@ -25,5 +25,5 @@ class Source(OrganisationOwned, Base):
     url: Mapped[str] = mapped_column(String(2000))
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     content_type: Mapped[str] = mapped_column(String(100))
-    text: Mapped[str] = mapped_column(Text)
+    redacted_text: Mapped[str] = mapped_column(Text)
     author: Mapped[str | None] = mapped_column(String(300))

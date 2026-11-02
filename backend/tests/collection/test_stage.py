@@ -60,7 +60,7 @@ def test_the_source_is_stored_once_per_run_and_url_and_replaced_on_a_second_stor
 
     with Session(engine) as db:
         (row,) = db.scalars(select(Source)).all()
-    assert (row.text, row.content_type, row.organisation_id) == (
+    assert (row.redacted_text, row.content_type, row.organisation_id) == (
         "second",
         "text/html",
         organisation_id,
@@ -85,7 +85,7 @@ def test_every_stored_text_passes_through_the_redaction_hook(
 
     with Session(engine) as db:
         (row,) = db.scalars(select(Source)).all()
-    assert (row.text, row.author) == ("BODY", "AN AUTHOR")
+    assert (row.redacted_text, row.author) == ("BODY", "AN AUTHOR")
 
 
 def test_the_guard_lifts_now_that_storage_redacts(monkeypatch: pytest.MonkeyPatch) -> None:

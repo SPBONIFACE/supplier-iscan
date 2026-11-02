@@ -26,6 +26,7 @@ import phonenumbers
 import spacy
 from spacy.cli.info import info as spacy_info
 
+from app.redaction import names
 from app.redaction.text import OMISSION, RedactedText, RedactionUnavailable, mint
 
 logger = logging.getLogger(__name__)
@@ -66,23 +67,7 @@ def fold(text: str) -> tuple[str, list[int]]:
     return "".join(out), index
 
 
-_ROLE_WORDS = """chief executive officer ceo cfo cto coo cio director managing general manager
-    finance financial operations technical sales marketing purchasing procurement human resources
-    commercial quality sustainability legal senior technology information vorstandsvorsitzende
-    finanzvorstand prokurist the our der die das dem des ein eine los las il lo gli un une una
-    president chairman chairwoman chair founder co-founder cofounder owner partner head vice vp
-    deputy
-    secretary treasurer board member mr mrs ms miss dr prof professor sir madam mx
-    directeur directrice général générale president présidente gérant gérante fondateur fondatrice
-    pdg dg m mme mlle me responsable
-    geschäftsführer geschäftsführerin vorstand vorsitzender vorsitzende inhaber inhaberin gründer
-    gründerin herr frau leiter leiterin
-    director directora gerente presidente fundador fundadora consejero consejera delegado delegada
-    sr sra srta don doña
-    amministratore amministratrice delegato delegata presidente direttore direttrice fondatore
-    fondatrice signor signora sig dott
-    and et und y e of de la le""".split()
-_ROLES = frozenset(fold(word)[0] for word in _ROLE_WORDS)
+_ROLES = names.ROLES
 _PARTICLES = frozenset(
     "von van der den de del della di da dos du la le bin al el ben ter ten zu zur af".split()
 )
@@ -136,6 +121,29 @@ Span = tuple[int, int]
 
 def _email_spans(text: str) -> list[Span]:
     return [match.span() for match in _EMAIL.finditer(text)]
+
+
+_AT = r"[\[\(\{<]\s*(?:at|arobase)\s*[\]\)\}>]"
+_DOT_WORD = r"(?:\s*[\[\(\{<]\s*(?:dot|point|punkt)\s*[\]\)\}>]\s*|[ \t]+(?:dot|point|punkt)[ \t]+)"
+_LABEL = r"[^\W_][\w-]*"
+_OBFUSCATED_BRACKET = re.compile(
+    rf"(?<![\w.+-])[\w.+%-]+[ \t]*{_AT}[ \t]*{_LABEL}(?:(?:{_DOT_WORD}|\.){_LABEL})+(?![\w-])",
+    re.IGNORECASE,
+)
+# "jean at acme dot com": the bare word "at" counts only when the domain is spelt with "dot".
+_OBFUSCATED_BARE = re.compile(
+    rf"(?<![\w.+-])[\w.+%-]+[ \t]+(?:at|arobase)[ \t]+{_LABEL}(?:\.{_LABEL})*{_DOT_WORD}{_LABEL}"
+    rf"(?:(?:{_DOT_WORD}|\.){_LABEL})*(?![\w-])",
+    re.IGNORECASE,
+)
+
+
+def _obfuscated_email_spans(text: str) -> list[Span]:
+    return [
+        match.span()
+        for pattern in (_OBFUSCATED_BRACKET, _OBFUSCATED_BARE)
+        for match in pattern.finditer(text)
+    ]
 
 
 def _phone_spans(text: str) -> list[Span]:
@@ -215,7 +223,15 @@ def _clean_person(text: str, start: int, end: int) -> Span | None:
 
 def _is_lead_noise(token: str) -> bool:
     key = _key(token)
-    return not key or key in _ROLES or not token[0].isupper()
+    if not key or key in _ROLES or not token[0].isupper():
+        return True
+    return names.not_a_name(names.fold(token.strip(".,;:()[]{}\"'")).rstrip("."), common=True)
+
+
+def _short_acronym(text: str, span: Span) -> bool:
+    """A lone ALL-CAPS word of four letters or fewer ("GRI", "IVA") is an acronym, not a name."""
+    inside = text[span[0] : span[1]]
+    return len(inside) <= 4 and inside.isalpha() and inside.isupper()
 
 
 def _is_name_token(token: str) -> bool:
@@ -243,10 +259,11 @@ def _skip_space(text: str, position: int) -> int:
     return position
 
 
-def _merge(spans: Iterable[Span]) -> list[Span]:
+def _merge(spans: Iterable[Span], text: str) -> list[Span]:
+    """Overlapping spans, and spans separated only by blanks, become one omission."""
     merged: list[Span] = []
     for start, end in sorted(spans):
-        if merged and start <= merged[-1][1]:
+        if merged and (start <= merged[-1][1] or not text[merged[-1][1] : start].strip()):
             merged[-1] = (merged[-1][0], max(end, merged[-1][1]))
         else:
             merged.append((start, end))
@@ -314,13 +331,18 @@ class Redactor:
             raise RedactionUnavailable
         self.load()
         keep_keys = [" ".join(fold(name)[0].split()) for name in context.keep]
-        spans = [*_email_spans(text), *_phone_spans(text), *_forced_spans(text, context)]
+        spans = [
+            *_email_spans(text),
+            *_obfuscated_email_spans(text),
+            *_phone_spans(text),
+            *_forced_spans(text, context),
+        ]
         for span in self._person_spans(text):
             if not _is_company(text, span, keep_keys):
                 spans.append(span)
         out: list[str] = []
         position = 0
-        for start, end in _merge(spans):
+        for start, end in _merge(spans, text):
             out.append(text[position:start])
             out.append(OMISSION)
             position = end
@@ -328,6 +350,21 @@ class Redactor:
         return "".join(out)
 
     def _person_spans(self, text: str) -> list[Span]:
+        """NER on the text and on a case-restored copy, widened and joined by the name rules."""
+        found = self._ner_spans(text)
+        restored = names.restore_case(text)
+        if restored != text:
+            found.extend(self._ner_spans(restored))
+        protected = names.protected_spans(text)
+        spans = [
+            span
+            for span in (names.extend(text, found_span) for found_span in found)
+            if not _short_acronym(text, span)
+            and not any(span[0] < end and start < span[1] for start, end in protected)
+        ]
+        return [*spans, *names.rule_spans(text)]
+
+    def _ner_spans(self, text: str) -> list[Span]:
         spans: list[Span] = []
         for offset, chunk in _chunks(text):
             keys = [key for key, _ in _LATIN_MODELS]

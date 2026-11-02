@@ -273,7 +273,7 @@ def test_if_redaction_fails_the_identity_chat_sends_nothing(
 
 def stored_texts(engine: Engine) -> str:
     with Session(engine) as db:
-        return "\n".join(f"{s.text}\n{s.author}" for s in db.scalars(select(Source)))
+        return "\n".join(f"{s.redacted_text}\n{s.author}" for s in db.scalars(select(Source)))
 
 
 def test_a_seeded_corpus_leaves_no_email_phone_or_name_in_the_database(engine: Engine) -> None:
@@ -330,7 +330,7 @@ def test_a_natural_persons_name_is_redacted_in_stored_text_a_companys_is_not(
         )
 
     with Session(engine) as db:
-        rows = {s.run_id: s.text for s in db.scalars(select(Source))}
+        rows = {s.run_id: s.redacted_text for s in db.scalars(select(Source))}
     assert "quast-ekdahl" not in rows[person_run].lower()
     assert "Quast Ekdahl Bau GmbH" in rows[person_run]
     assert "Quast Ekdahl Bau GmbH" in rows[company_run]

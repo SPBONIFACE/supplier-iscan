@@ -1,4 +1,4 @@
-"""The single source-storage function: the only writer of `Source.text`.
+"""The single source-storage function: the only writer of `Source.redacted_text`.
 
 Redaction (#19) happens in `redact_for_storage`, the one place text passes before it is written:
 emails, phone numbers and people's names become `[…]`, the active `person_name` suppression entries
@@ -76,7 +76,7 @@ def store_source(
             db.add(row)
         row.fetched_at = record.fetched_at
         row.content_type = record.content_type[:100]
-        row.text = text
+        row.redacted_text = text
         row.author = author
         db.commit()
         return row.id
