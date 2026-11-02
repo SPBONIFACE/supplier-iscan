@@ -1,20 +1,36 @@
 """From a registry candidate to the contract's IdentityCandidate, and the natural-person flag."""
 
 import re
+import unicodedata
 from typing import Any
 
 from app.registries import RegistryCandidate
 
 # Legal forms of a sole trader or another natural-person business (spec F1, F8 excluded uses).
 # Matched on the legal-form label published by the registry; a form not listed is not flagged.
-_NATURAL_PERSON_FORMS = re.compile(
-    r"sole\s+(trader|proprietor)|self[- ]employed|individual\s+(entrepreneur|business)"
-    r"|natural\s+person|entrepreneur\s+individuel|auto[- ]?entrepreneur|micro[- ]?entrepreneur"
-    r"|\bEIRL?\b|einzelunternehmen|einzelkaufmann|eingetragener\s+kaufmann|freiberuf"
-    r"|ditta\s+individuale|impresa\s+individuale|eenmanszaak|empresario\s+individual"
-    r"|persona\s+f[ií]sica|aut[oó]nomo|enskild\s+firma|enkeltmandsvirksomhed",
-    re.IGNORECASE,
+# The label is normalised first: lower case, no accents, dots removed, other signs as spaces.
+_LONG_FORMS = re.compile(
+    r"sole\s+(trader|proprietor)|self\s+employed|selbststandig|individual\s+(entrepreneur|business)"
+    r"|individual\s+proprietor|natural\s+person|entrepreneur\s+individuel|entreprise\s+individuelle"
+    r"|auto\s?entrepreneur|micro\s?entrepreneur|micro\s?entreprise|travailleur\s+independant"
+    r"|einzelunternehmer|einzelunternehmen|einzelfirma|einzelkaufmann|eingetragener\s+kaufmann|freiberuf"
+    r"|ditta\s+individuale|impresa\s+individuale|libero\s+professionista|eenmanszaak"
+    r"|empresario\s+individual|persona\s+fisica|autonomo|enskild\s+firma|enkeltmandsvirksomhed"
+    r"|doing\s+business\s+as"
 )
+# Short abbreviations: only as a whole token, and never when the label also carries a company form.
+_SHORT_FORMS = re.compile(r"(?<![a-z0-9])(eirl|ei|e\s?k|d\s?b\s?a)(?![a-z0-9])")
+_COMPANY_FORMS = re.compile(
+    r"(?<![a-z0-9])(sas|sasu|sarl|eurl|sa|gmbh|ug|ltd|limited|llc|llp|inc|corp|sl|slu|srl|spa|ag|kg|ohg"
+    r"|bv|nv|plc|sci|oy|ab|as|aps)(?![a-z0-9])"
+)
+
+
+def _normalise(label: str) -> str:
+    text = unicodedata.normalize("NFKD", label.lower())
+    text = "".join(c for c in text if not unicodedata.combining(c)).replace("\u00df", "ss")
+    text = text.replace(".", "")
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
 
 
 def candidate_id(candidate: RegistryCandidate) -> str:
@@ -22,7 +38,12 @@ def candidate_id(candidate: RegistryCandidate) -> str:
 
 
 def is_natural_person(legal_form: str | None) -> bool:
-    return bool(legal_form and _NATURAL_PERSON_FORMS.search(legal_form))
+    if not legal_form:
+        return False
+    text = _normalise(legal_form)
+    if _LONG_FORMS.search(text):
+        return True
+    return bool(_SHORT_FORMS.search(text)) and not _COMPANY_FORMS.search(text)
 
 
 def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
