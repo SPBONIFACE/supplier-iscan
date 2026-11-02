@@ -94,8 +94,71 @@ LABEL_WORDS: Final = _words(
     firmado firmato unterschrift auteur author autor autore name nom nombre nome by par
     por da persona personne person referente"""
 )
+# Closed-class words (articles, prepositions, pronouns, conjunctions, auxiliaries) and a few
+# channel nouns, in the five supported languages: a lower-case word of this list is never part of
+# a lower-case name found from a clue.
+FUNCTION_WORDS: Final = _words(
+    """a an the this that these those my our your his her its their i you he she it we they me us
+    him them who whom whose which what where when why how and or but nor so yet if then than as
+    of in on at by for with from to into onto over under about after before between through
+    during without within via per upon up down out off not no yes all any each every some such
+    other another both either neither more most less many much few one two three also only just
+    very too here there now today please is are was were be been being am do does did have has had
+    can could will would shall should may might must
+    le la les un une des du de d l au aux en dans sur sous par pour avec sans chez vers entre et
+    ou mais donc ni car que qui quoi dont où ce cet cette ces mon ma mes ton ta tes son sa ses
+    notre nos votre vos leur leurs je tu il elle on nous vous ils elles se lui y ne pas plus très
+    aussi tout tous toute toutes est sont être avoir
+    der die das den dem des ein eine einen einem einer eines und oder aber doch denn weil dass ob
+    wenn als wie wo zu zum zur von vom vor mit bei nach aus auf an im am um für über unter durch
+    gegen ohne bis seit ich du er sie es wir ihr ihre ihren ihrem ihrer unser unsere unseren
+    mein meine dein deine nicht kein keine auch nur sehr noch schon bitte ist sind war waren sein
+    haben hat wird werden kann können
+    el los las unos unas del al con sin por para sobre hacia desde hasta y o pero quien cual donde
+    como cuando mi mis tu tus su sus nuestro nuestra nuestros nuestras vuestro vuestra yo él ella
+    nosotros ustedes usted si también muy todo todos toda todas es son ser estar hay
+    il lo gli i uno di dello della dei degli delle allo alla ai agli alle da dal dallo dalla nel
+    nello nella sul tra fra e ma che chi cui dove come quando mio mia miei mie tuo tua suo sua
+    nostro nostra nostri nostre vostro vostra loro io lui lei noi voi non si anche molto tutto
+    tutti è sono essere
+    email mail phone telephone téléphone telefon teléfono telefono fax mobile web website online
+    form formulaire formular formulario modulo hand post internet"""
+)
+
+
+def _stopwords() -> frozenset[str]:
+    # spaCy's own closed-class word lists (shipped with spaCy, no download): not a new dependency.
+    from spacy.lang.de.stop_words import STOP_WORDS as de
+    from spacy.lang.en.stop_words import STOP_WORDS as en
+    from spacy.lang.es.stop_words import STOP_WORDS as es
+    from spacy.lang.fr.stop_words import STOP_WORDS as fr
+    from spacy.lang.it.stop_words import STOP_WORDS as it
+
+    return frozenset(fold(word) for word in (*en, *de, *fr, *es, *it))
+
+
+STOPWORDS: Final = _stopwords()
+# Articles, possessives and demonstratives: a capitalised word right after one is a common noun.
+DETERMINERS: Final = _words(
+    """the a an this that these those my our your his her its their some any each every
+    der die das den dem des ein eine einen einem einer eines unser unsere unseren unserem unserer
+    ihr ihre ihren ihrem ihrer mein meine meinen dein deine sein seine dieser diese dieses jede
+    jeder
+    le la les un une mon ma mes ton ta tes son sa ses notre nos votre vos leur leurs ce cet cette
+    ces
+    el los las unos unas mi mis tu tus su sus nuestro nuestra nuestros nuestras este esta estos
+    estas
+    il lo gli uno mio mia miei mie tuo tua suo sua nostro nostra nostri nostre vostro vostra
+    questo questa"""
+)
+# Short acronyms that are not a surname after a label ("Contact: HR").
+ACRONYMS: Final = _words("hr it pr qa eu uk us usa uae rd rh dg dsi rrhh sav hse ehs cs")
 ROLES_EXTRA: Final = _words(
-    """achats ventes einkauf vertrieb compras ventas acquisti vendite comptable comptabilité
+    """lead specialist consultant coordinator analyst administrator supervisor executive agent
+    adviser advisor associate controller gestionnaire conseiller technicien chef coordinateur
+    spécialiste referent leiter sachbearbeiter berater koordinator spezialist coordinador
+    especialista asesor consulente coordinatore specialista
+    achats ventes einkauf vertrieb compras ventas acquisti vendite comptable comptabilité
     buchhaltung contabilidad contabilità ressources humaines personal rrhh risorse umane
     commerciale comercial verkauf produktion production producción produzione
     calidad finanzas finanza finances finanzen informatique logistique
@@ -137,7 +200,8 @@ _LABELS: Final = (
     r"ansprechpartner(?:in)?|ansprechperson|kontakt(?:person)?|sign[ée]e?(?:\s+par)?|signed|"
     r"signature|signataire|unterschrift|unterzeichnet\s+von|gezeichnet|firmado(?:\s+por)?|"
     r"firma|firmato(?:\s+da)?|prepared\s+by|written\s+by|author|auteur|autor|autore|"
-    r"verfasser|representative|repr[ée]sentant|vertreter|attn|attention|name|nom|nombre|nome"
+    r"verfasser|representative|repr[ée]sentant|vertreter|attn|attention|name|nom|nombre|nome|"
+    r"responsable|responsabile|verantwortliche?r?|zust[äa]ndig"
 )
 _BY_LABELS: Final = (
     r"signed\s+by|sign[ée]e?\s+par|firmado\s+por|firmato\s+da|unterzeichnet\s+von|"
@@ -150,6 +214,13 @@ _CLOSINGS: Final = (
 )
 _LABEL: Final = re.compile(
     rf"(?<!\w)(?:(?:{_LABELS})\s*:|(?:{_BY_LABELS})(?=\s)|(?:{_CLOSINGS})\s*[,.!]?){_BLANKS}",
+    re.IGNORECASE,
+)
+_LABEL_ONLY: Final = re.compile(
+    rf"(?<!\w)(?:(?:{_LABELS})\s*:|(?:{_BY_LABELS})(?=\s))[ \t]*", re.IGNORECASE
+)
+_LABEL_LINE: Final = re.compile(
+    rf"(?<!\w)(?:(?:{_LABELS})\s*:|(?:{_BY_LABELS})(?=\s)|(?:{_CLOSINGS})\s*[,.!]?)[ \t]*",
     re.IGNORECASE,
 )
 
@@ -274,6 +345,20 @@ def _extend_left(text: str, start: int) -> int:
     return start
 
 
+def _capitalised_particle(text: str, match: re.Match[str]) -> bool:
+    """ "Le" in "Le Gallic", "Van" in "Van Der Berg": a particle written with a capital, when a
+    capitalised word follows."""
+    body = _body(match.group())
+    if fold(body) not in PARTICLES or _kind(body) != "cap":
+        return False
+    gap = _GAP.match(text, match.end())
+    following = WORD.match(text, gap.end()) if gap is not None and gap.end() > match.end() else None
+    if following is None:
+        return False
+    follow = _body(following.group())
+    return _kind(follow) in ("cap", "caps") and fold(follow) not in PARTICLES
+
+
 def _run(text: str, pos: int, *, limit: int, common_first: bool, minimum: int) -> Span | None:
     """The name tokens starting at `pos`: capitalised or ALL-CAPS words, initials, particles."""
     first, end, count, position = None, pos, 0, pos
@@ -285,12 +370,15 @@ def _run(text: str, pos: int, *, limit: int, common_first: bool, minimum: int) -
         token = match.group()
         body = _body(token)
         key = fold(body)
-        if _is_particle(body):
+        if _is_particle(body) or _capitalised_particle(text, match):
             lead = match.start() if lead is None and first is None else lead
         elif _kind(body) == "low":
             break
         else:
-            if key in PARTICLES or not_a_name(key, common=common_first and first is None):
+            lead_word = common_first and first is None
+            if key in PARTICLES or not_a_name(key, common=lead_word):
+                break
+            if lead_word and key in FUNCTION_WORDS:
                 break
             first = (lead if lead is not None else match.start()) if first is None else first
             end = match.end() - (len(token) - len(body))
@@ -352,7 +440,28 @@ def rule_spans(text: str) -> list[Span]:
         run = _run(text, match.end(), limit=4, common_first=True, minimum=2)
         if run:
             spans.append(run)
+    for match in _LABEL_ONLY.finditer(text):
+        short = _short_caps(text, match.end())
+        if short:
+            spans.append(short)
     return [*spans, *_table_spans(text), *_name_role_spans(text)]
+
+
+def _short_caps(text: str, pos: int) -> Span | None:
+    """A lone ALL-CAPS surname of two to four letters right after a label ("Contact: LI")."""
+    match = WORD.match(text, pos)
+    if match is None or match.group() != _body(match.group()):
+        return None
+    token = match.group()
+    key = fold(token)
+    if not (2 <= len(token) <= 4 and token.isupper() and token.isalpha()):
+        return None
+    if not_a_name(key, common=True) or key in ACRONYMS or key in FUNCTION_WORDS:
+        return None
+    rest = text[match.end() : match.end() + 40]
+    if re.match(r"[ \t]*(?:$|[\n,;.)(|/])", rest) is None:
+        return None
+    return match.start(), match.end()
 
 
 _NOT_ROLE_HEADS: Final = _words("eine miss madam herr frau dott team equipe")
@@ -424,3 +533,88 @@ def _table_spans(text: str) -> list[Span]:
                     spans.append(run)
         offset += len(line) + 1
     return spans
+
+
+def clue_ends(text: str) -> set[int]:
+    """Offsets right after an honorific, a label or a closing ("Contact:", "Mme", "Regards,")."""
+    ends: set[int] = set()
+    for pattern in (_HONORIFIC, _LABEL):
+        for match in pattern.finditer(text):
+            end = match.end()
+            while end > match.start() and text[end - 1].isspace():
+                end -= 1
+            ends.add(end)
+    return ends
+
+
+def after_clue(text: str, start: int, ends: set[int]) -> bool:
+    """Whether the text just before `start` is a clue (see `clue_ends`)."""
+    position = start
+    while position > 0 and text[position - 1] in " \t\n":
+        position -= 1
+    return position in ends
+
+
+_SENTENCE_START: Final = re.compile(r"[\n.!?:;•*#>\"“«(\-–—][ \t]*$")
+_PLACE_PREPOSITION: Final = re.compile(
+    r"(?:^|\W)(?:in|at|near|of|bei|nach|à|en|près|vers|dans|sur|a|di|de|du|del)[ \t]+$",
+    re.IGNORECASE,
+)
+_LIST_JOINER: Final = r"(?:[ \t]*[,;/&]|[ \t]+(?:and|or|et|ou|und|oder|y|o|e))"
+_LIST_BEFORE: Final = re.compile(rf"[A-ZÀ-ÝŒ][\w'’-]*{_LIST_JOINER}[ \t]+$")
+_LIST_AFTER: Final = re.compile(rf"{_LIST_JOINER}[ \t]+[A-ZÀ-ÝŒ]")
+
+
+def loose_position(text: str, span: Span, *, single: bool = True) -> bool:
+    """Where a word is as likely a place or an ordinary word as a name: at the start of a
+    sentence or line, after "in", "near", "of" ..., after a determiner and, for a lone word, in a
+    list of capitalised words ("Lyon, Nantes and Rennes"; a list of full names is not loose)."""
+    before = text[max(0, span[0] - 60) : span[0]]
+    if span[0] == 0:
+        return True
+    if _SENTENCE_START.search(before) or _PLACE_PREPOSITION.search(before):
+        return True
+    previous = _PREV.search(before.rstrip(" \t"))
+    if (
+        previous is not None
+        and fold(previous.group(1)) in DETERMINERS
+        and previous.group(1).islower()
+    ):
+        return (
+            True  # "unser Werk", "the Plant", "den Maschinenbau": a common noun after a determiner
+        )
+    return single and bool(_LIST_BEFORE.search(before) or _LIST_AFTER.match(text, span[1]))
+
+
+def name_word_count(text: str, span: Span) -> int:
+    """The words of the span, lower-case particles ("de", "von") not counted."""
+    return sum(
+        1
+        for match in WORD.finditer(text, span[0], span[1])
+        if not (_kind(_body(match.group())) == "low" and fold(_body(match.group())) in PARTICLES)
+    )
+
+
+def _line_words(text: str, span: Span) -> list[str]:
+    start = text.rfind("\n", 0, span[0]) + 1
+    end = text.find("\n", span[1])
+    return [_body(m.group()) for m in WORD.finditer(text, start, len(text) if end < 0 else end)]
+
+
+def is_heading_like(text: str, span: Span) -> bool:
+    """The whole line is written in capitals, the span included: a heading, not a name inside a
+    sentence."""
+    words = _line_words(text, span)
+    return bool(words) and all(_kind(w) == "caps" or len(w) < 2 for w in words)
+
+
+def is_whole_line(text: str, span: Span) -> bool:
+    """The span is all the words of its line (a name on its own line, or a one-line heading)."""
+    return len(_line_words(text, span)) == len(WORD.findall(text, span[0], span[1]))
+
+
+def has_stopword(text: str, span: Span) -> bool:
+    """A word of the span is an article, pronoun, preposition or other closed-class word of one of
+    the five languages (spaCy's stop-word lists): an ordinary phrase, rarely a name."""
+    keys = (fold(_body(m.group())) for m in WORD.finditer(text, span[0], span[1]))
+    return any(key in STOPWORDS and key not in PARTICLES for key in keys)

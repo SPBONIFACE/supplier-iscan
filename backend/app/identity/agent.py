@@ -67,6 +67,7 @@ def ask_model(
     organisation_id: uuid.UUID,
     *,
     person_names: Sequence[str] = (),
+    addresses: Sequence[str] = (),
     company_names: Sequence[str] = (),
 ) -> IdentityProposal:
     """The single call site of the model for the identity chat.
@@ -76,7 +77,12 @@ def ask_model(
     error.
     """
     client = providers.structuring()
-    data = gate.redact(rendered.data, person_names=person_names, company_names=company_names)
+    data = gate.redact(
+        rendered.data,
+        person_names=person_names,
+        addresses=addresses,
+        company_names=company_names,
+    )
     request = StructuringRequest(instructions=rendered.instructions, data=data)
     return client.structure(request, IdentityProposal, CallContext(organisation_id=organisation_id))
 
@@ -186,6 +192,14 @@ class IdentityAgent:
                 companies.append(name)
         return people, companies
 
+    def _natural_person_addresses(self, session: IdentitySession) -> list[str]:
+        """Registry addresses of the natural-person candidates: always redacted, never sent."""
+        return [
+            str(entry["registered_address"])
+            for entry in session.candidates
+            if entry.get("natural_person") and entry.get("registered_address")
+        ]
+
     def _ask(self, session: IdentitySession) -> IdentityProposal | None:
         rendered = self._prompts.render(
             "identity",
@@ -205,6 +219,7 @@ class IdentityAgent:
                 rendered,
                 session.organisation_id,
                 person_names=people,
+                addresses=self._natural_person_addresses(session),
                 company_names=companies,
             )
         except Exception as error:  # noqa: BLE001 - an agent failure is a turn, never a 500

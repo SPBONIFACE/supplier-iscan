@@ -294,6 +294,12 @@ def submit_website(
     return _session_out(session)
 
 
+def _stored_address(entry: dict[str, Any]) -> str | None:
+    """The registry address to keep: a natural person's only, and only if the registry gave one."""
+    address = entry.get("registered_address") if entry["natural_person"] else None
+    return str(address)[:500] if address else None
+
+
 @router.post("/identity-sessions/{id}/confirm", response_model=IdentityConfirmedOut)
 def confirm_identity(
     id: str, body: IdentityConfirmIn, scope: OrganisationScoped, db: DbSession
@@ -315,6 +321,8 @@ def confirm_identity(
         sector=(candidate["sector"] or None) and candidate["sector"][:200],
         registry_ids={key: entry[key] for key in ("lei", "wikidata_id") if entry.get(key)},
         natural_person=bool(entry["natural_person"]),
+        # Only for a natural person, and only what the registry gave; never in a response.
+        registered_address=_stored_address(entry),
         confirmed_by=scope.principal.user_id,
         confirmed_at=now,
     )

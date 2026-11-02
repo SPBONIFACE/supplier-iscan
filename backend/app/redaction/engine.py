@@ -26,7 +26,7 @@ import phonenumbers
 import spacy
 from spacy.cli.info import info as spacy_info
 
-from app.redaction import names
+from app.redaction import lowercase, names
 from app.redaction.text import OMISSION, RedactedText, RedactionUnavailable, mint
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,12 @@ _HAN = re.compile(r"[㐀-鿿豈-﫿]")
 _CJK = re.compile(r"[぀-ヿ㐀-鿿가-힯豈-﫿]")
 _TOKEN = re.compile(r"\S+")
 _ID_LABEL = re.compile(
-    r"(siren|siret|lei|vat|tva|ust|uid|nif|cif|hrb|hra|duns|isin|iban|ein|reg|n°|no\.?)[\s:.\-#]*$",
+    r"(siren|siret|lei|vat|tva|ust|uid|nif|cif|hrb|hra|duns|isin|iban|ein|reg|n°|nº|no\.?|nr\.?|"
+    r"num(?:ber|éro|mer|ero|ero)?|número|iva|rcs|registro|tomo)[\s:.\-#]*(?:[a-z]{2}\s*)?$",
+    re.IGNORECASE,
+)
+_PHONE_WORD = re.compile(
+    r"(?:tel|phone|mobile|handy|fax|cell|call|rufnummer|appel|llam|chiam|portable|whatsapp)",
     re.IGNORECASE,
 )
 _NAME_GAP = r"[\s,\-‐-―]+"
@@ -68,6 +73,7 @@ def fold(text: str) -> tuple[str, list[int]]:
 
 
 _ROLES = names.ROLES
+_JOINERS = frozenset("and et und y e of &".split())
 _PARTICLES = frozenset(
     "von van der den de del della di da dos du la le bin al el ben ter ten zu zur af".split()
 )
@@ -94,10 +100,83 @@ def _variants(name: str) -> list[str]:
     return [name] if transliterated == name else [name, transliterated]
 
 
-def _address_parts(address: str) -> list[str]:
-    parts = [part.strip() for part in address.split(",")]
-    lines = [part for part in parts if len(part) >= 6 and any(c.isdigit() for c in part)]
-    return [address.strip(), *lines]
+# Groups of equivalent street words and their common abbreviations (folded, no dots): "rue" and
+# "r", "Straße" and "Str.", "Street" and "St". A token of the stored address matches any member of
+# its groups in the text. Other abbreviations are not matched.
+_ABBREVIATIONS: Final = tuple(
+    frozenset(group.split())
+    for group in (
+        "street st str",
+        "road rd",
+        "lane ln",
+        "drive dr",
+        "court ct",
+        "square sq",
+        "avenue av ave",
+        "boulevard bd bvd blvd",
+        "saint st",
+        "sainte ste",
+        "number no nr n",
+        "rue r",
+        "chemin ch",
+        "place pl",
+        "route rte",
+        "impasse imp",
+        "allee all",
+        "quai q",
+        "strasse str",
+        "platz pl",
+        "calle c cl",
+        "avenida av avda",
+        "plaza pza pl",
+        "paseo pso",
+        "via v",
+        "viale vle",
+        "piazza pza p",
+        "corso cso c",
+        "strada str",
+    )
+)
+_ADDRESS_GAP: Final = r"[\W_]+"
+_ADDRESS_TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
+_MAX_ADDRESS_PARTS: Final = 6
+
+
+def _address_slices(address: str) -> list[str]:
+    """The whole address, and every run of its comma-separated parts that holds a digit and is
+    long enough to be an address (so a mention without the country, or the postcode and city
+    alone, is found)."""
+    parts = [part.strip() for part in address.split(",") if part.strip()][:_MAX_ADDRESS_PARTS]
+    slices = [address.strip()]
+    for first in range(len(parts)):
+        for last in range(first + 1, len(parts) + 1):
+            piece = ", ".join(parts[first:last])
+            if len(piece) >= 6 and any(char.isdigit() for char in piece) and piece not in slices:
+                slices.append(piece)
+    return slices
+
+
+def _address_pattern(address: str) -> re.Pattern[str] | None:
+    """A pattern for an address on folded text: ignores case, accents, spacing, punctuation and
+    line breaks, and accepts the abbreviation variants of `_ABBREVIATIONS` ("rue"/"r.",
+    "Straße"/"Str.", "Hauptstraße"/"Hauptstr.", "Street"/"St")."""
+    folded, _ = fold(address)
+    tokens = _ADDRESS_TOKEN.findall(folded)
+    if not tokens:
+        return None
+    pieces: list[str] = []
+    for token in tokens:
+        alternatives = {token}
+        for group in _ABBREVIATIONS:
+            if token in group:
+                alternatives |= group
+        if len(token) > 7 and token.endswith("strasse"):
+            alternatives.add(token[: -len("strasse")] + "str")
+        elif len(token) > 4 and token.endswith("str"):
+            alternatives.add(token[: -len("str")] + "strasse")
+        ordered = sorted(alternatives, key=len, reverse=True)
+        pieces.append("(?:" + "|".join(re.escape(item) for item in ordered) + ")")
+    return re.compile(r"(?<![^\W_])" + _ADDRESS_GAP.join(pieces) + r"(?![^\W_])", re.UNICODE)
 
 
 @dataclass(frozen=True)
@@ -130,20 +209,46 @@ _OBFUSCATED_BRACKET = re.compile(
     rf"(?<![\w.+-])[\w.+%-]+[ \t]*{_AT}[ \t]*{_LABEL}(?:(?:{_DOT_WORD}|\.){_LABEL})+(?![\w-])",
     re.IGNORECASE,
 )
-# "jean at acme dot com": the bare word "at" counts only when the domain is spelt with "dot".
+# "jean at acme dot com": the bare word "at" (an ordinary word) counts only as the shape
+# `word at word dot tld`, the domain spelt with "dot" and ending in a known top-level domain, and
+# a first word that is not an ordinary function word or a verb that takes "at" ("look at acme
+# dot com"). "arobase", "arroba" and "chiocciola" are never ordinary words.
 _OBFUSCATED_BARE = re.compile(
-    rf"(?<![\w.+-])[\w.+%-]+[ \t]+(?:at|arobase)[ \t]+{_LABEL}(?:\.{_LABEL})*{_DOT_WORD}{_LABEL}"
-    rf"(?:(?:{_DOT_WORD}|\.){_LABEL})*(?![\w-])",
+    rf"(?<![\w.+-])(?P<local>[\w.+%-]+)[ \t]+(?P<at>at|arobase|arroba|chiocciola)[ \t]+"
+    rf"(?P<domain>{_LABEL}(?:\.{_LABEL})*{_DOT_WORD}{_LABEL}(?:(?:{_DOT_WORD}|\.){_LABEL})*)"
+    rf"(?![\w-])",
+    re.IGNORECASE,
+)
+_TLDS = frozenset(
+    """com org net edu gov int info biz eu fr de es it uk nl be ch us ca io co pt se dk fi pl
+    ie cn jp ru br au nz cz gr tr""".split()
+)
+_AT_VERBS = frozenset(
+    """look looks looked looking stare glance arrive arrives arrived meet meets stay stays wait
+    waits aim aims shop shops work works worked working point points laugh smile guess marvel
+    excel start starts begin begins available found located visit see check read buy order
+    shown listed hosted online""".split()
+)
+_DOT_SPLIT = re.compile(
+    r"\s*[\[\(\{<]\s*(?:dot|point|punkt)\s*[\]\)\}>]\s*|[ \t]+(?:dot|point|punkt)[ \t]+|\.",
     re.IGNORECASE,
 )
 
 
+def _bare_email_ok(match: re.Match[str]) -> bool:
+    last = _DOT_SPLIT.split(match.group("domain"))[-1].casefold()
+    if last not in _TLDS:
+        return False
+    if match.group("at").casefold() != "at":
+        return True
+    local = fold(match.group("local"))[0]
+    return local not in names.FUNCTION_WORDS and local not in _AT_VERBS
+
+
 def _obfuscated_email_spans(text: str) -> list[Span]:
-    return [
-        match.span()
-        for pattern in (_OBFUSCATED_BRACKET, _OBFUSCATED_BARE)
-        for match in pattern.finditer(text)
-    ]
+    spans = [match.span() for match in _OBFUSCATED_BRACKET.finditer(text)]
+    spans.extend(match.span() for match in _OBFUSCATED_BARE.finditer(text) if _bare_email_ok(match))
+    return spans
 
 
 def _phone_spans(text: str) -> list[Span]:
@@ -165,7 +270,9 @@ def _accept_phone(text: str, start: int, end: int, raw: str) -> bool:
         return False
     if raw.startswith(("+", "00")):
         return True
-    if _ID_LABEL.search(text[max(0, start - 14) : start]):
+    if _ID_LABEL.search(text[max(0, start - 14) : start]) and not _PHONE_WORD.search(
+        text[max(0, start - 40) : start]
+    ):
         return False
     # Without an international prefix: a national trunk "0", or a bracketed / dashed grouping.
     return raw.startswith(("0", "(")) or "-" in raw
@@ -174,11 +281,14 @@ def _accept_phone(text: str, start: int, end: int, raw: str) -> bool:
 def _forced_spans(text: str, context: RedactionContext) -> list[Span]:
     folded, index = fold(text)
     spans: list[Span] = []
-    entries = [name for raw in context.names for name in _variants(raw)]
-    for address in context.addresses:
-        entries.extend(_address_parts(address))
-    for entry in entries:
-        pattern = _name_pattern(entry)
+    patterns = [_name_pattern(name) for raw in context.names for name in _variants(raw)]
+    patterns.extend(
+        _address_pattern(piece)
+        for address in context.addresses
+        for part in _address_slices(address)
+        for piece in _variants(part)
+    )
+    for pattern in patterns:
         if pattern is None:
             continue
         for match in pattern.finditer(folded):
@@ -187,7 +297,7 @@ def _forced_spans(text: str, context: RedactionContext) -> list[Span]:
 
 
 def _key(token: str) -> str:
-    folded = fold(token.strip(".,;:()[]{}\"'"))[0].rstrip(".")
+    folded = fold(token.strip(".,;:()[]{}\"'"))[0].replace(".", "")
     return re.split("['\u2019]", folded)[-1]
 
 
@@ -238,18 +348,59 @@ def _is_name_token(token: str) -> bool:
     key = _key(token)
     if key in _PARTICLES:
         return True
-    return token[0].isupper() and key not in _ROLES
+    return token[0].isupper() and key not in _ROLES and key not in names.ROLES_EXTRA
+
+
+def _is_legal_form(token: str) -> bool:
+    """A legal form or company word. An ambiguous short word ("as", "se", "co") counts only when
+    it is not written in plain lower case; a dotted form ("S.p.A.", "s.r.l.") always counts."""
+    dotted = token.strip(",;:()[]{}\"'")
+    if _DOTTED_FORM.fullmatch(dotted if dotted.endswith(".") else dotted + "."):
+        return True  # an initialism written with dots: S.p.A., S.r.l.s., S.L.U., e.V.
+    if _key(token) not in _COMPANY_WORDS:
+        return False
+    bare = token.strip(".,;:()[]{}\"'")
+    return "." in bare or bare != bare.lower() or len(bare) > 3
+
+
+_DOTTED_FORM = re.compile(r"(?:[^\W\d_]\.){2,}")
+
+
+def _carries_legal_form(text: str, span: Span) -> bool:
+    """A name-shaped phrase that carries a legal form is a company: the legal form is inside the
+    span, or follows it on the same line after capitalised words ("Brackley Precision Ltd")."""
+    end = span[1]
+    while end < len(text) and not text[end].isspace():
+        end += 1  # a model can cut inside a token ("S.p" of "S.p.A.")
+    if any(_is_legal_form(token) for token in text[span[0] : end].split()):
+        return True
+    if any(char in ",;:.!?" for char in text[span[1] : end]):
+        # the phrase ends at a comma or a full stop: only a legal form may follow, and only after
+        # a comma ("Villalba Fundiciones, S.A."), never in the next sentence
+        if "," not in text[span[1] : end]:
+            return False
+        following = _TOKEN.match(text, _skip_space(text, end))
+        return following is not None and _is_legal_form(following.group())
+    position = _skip_space(text, end)
+    for _ in range(5):
+        following = _TOKEN.match(text, position)
+        if following is None:
+            return False
+        word = following.group()
+        if _is_legal_form(word):
+            return True
+        if word[-1] in ",;:" or not (
+            word[0].isupper() or word == "&" or _key(word) in _PARTICLES | _JOINERS
+        ):
+            return False
+        position = _skip_space(text, following.end())
+    return False
 
 
 def _is_company(text: str, span: Span, keep_keys: Sequence[str]) -> bool:
-    inside = text[span[0] : span[1]]
-    keys = {_key(token) for token in inside.split()}
-    if keys & _COMPANY_WORDS:
+    if _carries_legal_form(text, span):
         return True
-    following = _TOKEN.match(text, _skip_space(text, span[1]))
-    if following and _key(following.group()) in _COMPANY_WORDS:
-        return True
-    folded = " ".join(fold(inside)[0].split())
+    folded = " ".join(fold(text[span[0] : span[1]])[0].split())
     return any(f" {folded} " in f" {kept} " for kept in keep_keys)
 
 
@@ -350,22 +501,60 @@ class Redactor:
         return "".join(out)
 
     def _person_spans(self, text: str) -> list[Span]:
-        """NER on the text and on a case-restored copy, widened and joined by the name rules."""
-        found = self._ner_spans(text)
+        """NER on the text and on a case-restored copy, widened and joined by the name rules.
+
+        A detected span with weak evidence is dropped: one model only, and either an ALL-CAPS
+        phrase (a heading) or a lone word at the start of a sentence, in a list of capitalised
+        words or after "in" / "near" (a city, an ordinary word), with no honorific, label or
+        closing right before it.
+        """
+        hits = self._ner_hits(text)
         restored = names.restore_case(text)
         if restored != text:
-            found.extend(self._ner_spans(restored))
+            hits.extend(self._ner_hits(restored))
         protected = names.protected_spans(text)
-        spans = [
-            span
-            for span in (names.extend(text, found_span) for found_span in found)
-            if not _short_acronym(text, span)
-            and not any(span[0] < end and start < span[1] for start, end in protected)
-        ]
+        clues = names.clue_ends(text)
+        widened = [(names.extend(text, hit.span), hit) for hit in hits]
+        spans: list[Span] = []
+        for span in {item[0] for item in widened}:
+            if _short_acronym(text, span) or any(
+                span[0] < end and start < span[1] for start, end in protected
+            ):
+                continue
+            support = {
+                hit.model
+                for other, hit in widened
+                if hit.clean and other[0] < span[1] and span[0] < other[1]
+            }
+            if _weak(text, span, clues, len(support)):
+                continue
+            spans.append(span)
+        strong, to_confirm = lowercase.spans(text)
+        spans.extend(strong)
+        spans.extend(span for span in to_confirm if self._looks_like_a_name(text, span))
         return [*spans, *names.rule_spans(text)]
 
-    def _ner_spans(self, text: str) -> list[Span]:
-        spans: list[Span] = []
+    def _looks_like_a_name(self, text: str, span: Span) -> bool:
+        """Whether a model takes the lower-case words after a label for a person once they are
+        capitalised ("contact: jean dupont" yes, "contact: reception desk" no)."""
+        start = max(text.rfind("\n", 0, span[0]) + 1, span[0] - 200)
+        end = text.find("\n", span[1])
+        end = min(len(text) if end < 0 else end, span[1] + 200)
+        window = lowercase.capitalised_copy(text[start:end], (span[0] - start, span[1] - start))
+        low, high = span[0] - start, span[1] - start
+        votes = sum(
+            any(
+                entity.label_ in _PERSON_LABELS
+                and entity.start_char < high
+                and low < entity.end_char
+                for entity in self._models[key](window).ents
+            )
+            for key, _ in _LATIN_MODELS
+        )
+        return votes >= 2
+
+    def _ner_hits(self, text: str) -> list["_Hit"]:
+        hits: list[_Hit] = []
         for offset, chunk in _chunks(text):
             keys = [key for key, _ in _LATIN_MODELS]
             if _HAN.search(chunk):
@@ -376,8 +565,52 @@ class Redactor:
                         continue
                     cleaned = _clean_person(chunk, entity.start_char, entity.end_char)
                     if cleaned:
-                        spans.append((offset + cleaned[0], offset + cleaned[1]))
-        return spans
+                        span = (offset + cleaned[0], offset + cleaned[1])
+                        hits.append(_Hit(span, key, not _has_lower_word(entity.text)))
+        return hits
+
+
+@dataclass(frozen=True)
+class _Hit:
+    """A person span found by one model; `clean` is False when the model's entity held ordinary
+    lower-case words (it then says little about the span)."""
+
+    span: Span
+    model: str
+    clean: bool
+
+
+def _has_lower_word(entity: str) -> bool:
+    return any(
+        token[0].islower() and _key(token) not in _PARTICLES
+        for token in entity.split()
+        if token[0].isalpha()
+    )
+
+
+def _weak(text: str, span: Span, clues: set[int], support: int) -> bool:
+    """Whether a detected span is too weak to redact without more evidence.
+
+    `support`: how many models found it, not counting a model whose entity held ordinary
+    lower-case words ("Angebot wurde von"). A clue right before it (honorific, label, closing)
+    makes it strong. Without a clue, the evidence needed grows with the risk that the span is an
+    ordinary word: a phrase of several words stands as it is; a lone word needs two models, and
+    three at the start of a sentence, in a list of capitalised words or after "in" / "near" (a
+    city, a common noun); so does a word in a line written entirely in capitals (a heading).
+    """
+    if names.after_clue(text, span[0], clues) or _CJK.search(text[span[0] : span[1]]):
+        return False
+    words = names.name_word_count(text, span)
+    if words == 0:
+        return False
+    if names.is_heading_like(text, span):
+        return not names.is_whole_line(text, span) or words > 2 or support < 3
+    if names.has_stopword(text, span):
+        return support < 3
+    loose = names.loose_position(text, span, single=words == 1)
+    if words > 1:
+        return loose and support < 2
+    return support < (3 if loose else 2)
 
 
 def _other_pipes(package: str) -> list[str]:

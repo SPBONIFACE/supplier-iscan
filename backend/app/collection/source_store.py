@@ -36,13 +36,17 @@ class IdentityRedaction:
     a company's legal name is protected from NER."""
 
     person_names: tuple[str, ...] = ()
+    addresses: tuple[str, ...] = ()
     company_names: tuple[str, ...] = ()
 
 
 def redact_for_storage(text: str, gate: RedactionGate, context: IdentityRedaction) -> str:
     """The text as it may be written: only `RedactedText` ever reaches `Source.redacted_text`."""
     redacted = gate.redact(
-        text, person_names=context.person_names, company_names=context.company_names
+        text,
+        person_names=context.person_names,
+        addresses=context.addresses,
+        company_names=context.company_names,
     )
     return redacted.text
 
@@ -56,7 +60,8 @@ def _identity_redaction(db: Session, run_id: uuid.UUID) -> IdentityRedaction:
     if identity is None:
         return IdentityRedaction()
     if identity.natural_person:
-        return IdentityRedaction(person_names=(identity.legal_name,))
+        addresses = (identity.registered_address,) if identity.registered_address else ()
+        return IdentityRedaction(person_names=(identity.legal_name,), addresses=addresses)
     return IdentityRedaction(company_names=(identity.legal_name,))
 
 
