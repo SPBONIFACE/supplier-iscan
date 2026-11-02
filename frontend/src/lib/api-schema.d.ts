@@ -322,6 +322,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{id}/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the sources collected for a run
+         * @description The pages and PDFs the collection stage stored for the run: URL, fetch time and content type, oldest first. The extracted text is not part of the listing. Another organisation's run answers 404, like an unknown id.
+         */
+        get: operations["listRunSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{id}/stop": {
         parameters: {
             query?: never;
@@ -667,12 +687,27 @@ export interface components {
             usage: components["schemas"]["RunUsage"];
             /** @description Domains the crawler did not use because the site owner reserved text and data mining, blocked AI crawlers, or asked for suppression. Only the domain and the message are shown; the crawl-permission record itself is readable by the administrator only. */
             excluded_sources: components["schemas"]["ExcludedSource"][];
+            /** @description True when, after collection, the confirmed legal name appears in none of the website's sources. The buyer verifies the identity; nothing is blocked. */
+            identity_to_verify: boolean;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             started_at: string | null;
             /** Format: date-time */
             finished_at: string | null;
+        };
+        /** @description A page or PDF collected for a run (the extracted text is not listed). */
+        Source: {
+            /** Format: uuid */
+            id: string;
+            url: string;
+            /** Format: date-time */
+            fetched_at: string;
+            /** @description Media type of the response, for example `text/html` or `application/pdf`. */
+            content_type: string;
+        };
+        SourceList: {
+            items: components["schemas"]["Source"][];
         };
         RunList: {
             items: components["schemas"]["Run"][];
@@ -1393,6 +1428,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Run"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRunSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The sources of the run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceList"];
                 };
             };
             401: components["responses"]["Unauthorized"];
