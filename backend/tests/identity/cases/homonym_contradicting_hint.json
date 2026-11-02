@@ -1,0 +1,48 @@
+{
+  "id": "homonym-contradicting-hint",
+  "description": "Two homonyms and a wrong country hint: the hint lowers the true company's rank but never removes it, and a correction in chat reaches it.",
+  "recorded": "Registry answers and model outputs are recorded by hand; ranking is the real ranking of app.registries. This proves the plumbing (ranking, prompt, schema validation, turns) and says nothing about the quality of a real model. To be loaded by the #22 harness.",
+  "language": "en",
+  "input": {"name": "Nova Industries", "hints": {"country": "DE"}},
+  "registry": {
+    "rank": true,
+    "candidates": [
+      {
+        "name": "Nova Industries SAS",
+        "legal_name": "Nova Industries SAS",
+        "website": "https://nova-industries.example",
+        "country": "FR",
+        "country_name": "France",
+        "lei": "969500NOVAFR000000AA",
+        "registries": ["gleif"]
+      },
+      {
+        "name": "Nova Industries GmbH",
+        "legal_name": "Nova Industries GmbH",
+        "website": "https://nova-industries.example.de",
+        "country": "DE",
+        "country_name": "Germany",
+        "lei": "969500NOVADE000000AA",
+        "registries": ["gleif"]
+      }
+    ]
+  },
+  "steps": [
+    {
+      "op": "create",
+      "model_output": {"candidate_id": "lei:969500NOVADE000000AA", "confidence": 0.6, "question_to_user": "Do you mean the German company?"},
+      "expect": {"last_turn_kind": "proposal", "proposed": "Nova Industries GmbH", "other_candidates": 1, "first_candidate_in_search": "Nova Industries GmbH", "all_candidates_in_search": ["Nova Industries GmbH", "Nova Industries SAS"]}
+    },
+    {
+      "op": "message",
+      "text": "No, the French one, with the website nova-industries.example",
+      "model_output": {"candidate_id": "lei:969500NOVAFR000000AA", "confidence": 0.85},
+      "expect": {"last_turn_kind": "proposal", "proposed": "Nova Industries SAS", "other_candidates": 1}
+    },
+    {
+      "op": "confirm",
+      "candidate_id": "lei:969500NOVAFR000000AA",
+      "expect": {"status": 200, "legal_name": "Nova Industries SAS", "natural_person": false}
+    }
+  ]
+}

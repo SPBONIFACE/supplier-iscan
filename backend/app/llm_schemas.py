@@ -31,6 +31,25 @@ class FieldExtraction(BaseModel):
         return self
 
 
+class IdentityProposal(BaseModel):
+    """The identity agent's answer (spec § LLM features, F1).
+
+    `candidate_id` names one of the candidates given to the model; code ignores any other value.
+    `search_name` and `country_hint` ask for a new registry search when the member's correction
+    points to another company (for example "the French subsidiary"). `off_topic` marks a message
+    that is not about identifying the supplier; the model then declines in `question_to_user`.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    candidate_id: str | None = Field(default=None, max_length=200)
+    confidence: float = Field(ge=0.0, le=1.0)
+    question_to_user: str | None = Field(default=None, max_length=1000)
+    off_topic: bool = False
+    search_name: str | None = Field(default=None, max_length=200)
+    country_hint: str | None = Field(default=None, max_length=2)
+
+
 class FieldExtractionBatch(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 

@@ -17,6 +17,7 @@ from app.config import ConfigurationError, Settings, load_settings
 from app.db import Database
 from app.errors import install_error_handlers
 from app.health import DatabaseCheck, HealthStatus, make_database_check
+from app.identity.routes import router as identity_router
 from app.invitations.log_redaction import install_access_log_redaction
 from app.invitations.routes import admin_router as admin_invitations_router
 from app.invitations.routes import public_router as invitations_router
@@ -113,6 +114,8 @@ def create_app(
             # Names only: the run cannot start until they are set (GET /health lists them too).
             logger.warning("Provider settings not set: %s", ", ".join(missing_settings))
         yield
+        if app.state.identity_services is not None:
+            app.state.identity_services.close()
         database.dispose()
 
     # openapi.yaml is the only contract: no generated /openapi.json, no documentation pages.
@@ -129,6 +132,8 @@ def create_app(
     app.state.profile_definition = profile_definition
     app.state.prompt_set = prompt_set
     app.state.settings = settings
+    # Registries, outbound HTTP and their event loop, built on first use (app.identity.routes).
+    app.state.identity_services = None
     install_access_log_redaction()
     install_error_handlers(app)
     # Exact origins from configuration, never a wildcard (load_settings rejects "*").
@@ -163,6 +168,7 @@ def create_app(
     app.include_router(users_router)
     app.include_router(organisation_router)
     app.include_router(profile_router)
+    app.include_router(identity_router)
     app.include_router(runs_router)
     app.include_router(admin_organisations_router)
     app.include_router(admin_invitations_router)
