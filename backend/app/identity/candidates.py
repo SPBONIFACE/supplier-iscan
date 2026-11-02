@@ -10,7 +10,7 @@ from app.registries import RegistryCandidate
 # Matched on the legal-form label published by the registry; a form not listed is not flagged.
 # The label is normalised first: lower case, no accents, dots removed, other signs as spaces.
 _LONG_FORMS = re.compile(
-    r"sole\s+(trader|proprietor)|self\s+employed|selbststandig|individual\s+(entrepreneur|business)"
+    r"sole\s+(trader|proprietor)|self\s+employed|selbst(st)?(ae|a)ndig|individual\s+(entrepreneur|business)"
     r"|individual\s+proprietor|natural\s+person|entrepreneur\s+individuel|entreprise\s+individuelle"
     r"|auto\s?entrepreneur|micro\s?entrepreneur|micro\s?entreprise|travailleur\s+independant"
     r"|einzelunternehmer|einzelunternehmen|einzelfirma|einzelkaufmann|eingetragener\s+kaufmann|freiberuf"
