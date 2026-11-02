@@ -47,6 +47,7 @@ from tests.providers.support import (
     httpx2_client,
     httpx_client,
 )
+from tests.redacted import redacted
 
 CATALOGUE = load_catalogue()  # the shipped list of approved configurations
 PRICES = load_price_table()
@@ -89,7 +90,8 @@ def _run(spec: ProviderConfigSpec, role: Role, recording: dict[str, Any]) -> Any
     result: Any
     if role == "structuring":
         request = StructuringRequest(
-            instructions=material["instructions"], data=render_sources(material["sources"])
+            instructions=material["instructions"],
+            data=redacted(render_sources(material["sources"])),
         )
         result = StructuringClient(spec, adapter, meter).structure(
             request, FieldExtractionBatch, CONTEXT
@@ -97,7 +99,7 @@ def _run(spec: ProviderConfigSpec, role: Role, recording: dict[str, Any]) -> Any
     else:
         result = RetrievalClient(spec, adapter, meter).retrieve(
             RetrievalRequest(
-                instructions=material["retrieval_instructions"], query=material["query"]
+                instructions=material["retrieval_instructions"], query=redacted(material["query"])
             ),
             CONTEXT,
         )

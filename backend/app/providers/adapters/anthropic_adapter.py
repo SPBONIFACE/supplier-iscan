@@ -69,7 +69,7 @@ class ClaudeStructuring:
             model=self._config.model_id,
             max_tokens=request.max_output_tokens,
             system=request.instructions,
-            messages=[{"role": "user", "content": request.data}],
+            messages=[{"role": "user", "content": request.data.text}],
             output_config={"format": {"type": "json_schema", "schema": json_schema}},
         )
         text = "".join(block.text for block in message.content if block.type == "text")
@@ -86,7 +86,7 @@ class ClaudeRetrieval:
             model=self._config.model_id,
             max_tokens=RETRIEVAL_MAX_TOKENS,
             system=request.instructions,
-            messages=[{"role": "user", "content": request.query}],
+            messages=[{"role": "user", "content": request.query.text}],
             tools=[
                 {
                     "type": "web_search_20250305",

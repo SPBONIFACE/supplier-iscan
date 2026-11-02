@@ -113,7 +113,7 @@ class MistralStructuring:
     ) -> StructuringOutput:
         messages: list[SystemMessage | UserMessage] = [
             SystemMessage(content=request.instructions),
-            UserMessage(content=request.data),
+            UserMessage(content=request.data.text),
         ]
         response = self._client.chat.complete(
             model=self._config.model_id,
@@ -141,7 +141,7 @@ class MistralRetrieval:
         response = self._client.beta.conversations.start(
             model=self._config.model_id,
             instructions=request.instructions,
-            inputs=request.query,
+            inputs=request.query.text,
             tools=[WebSearchTool()],
             store=False,
         )

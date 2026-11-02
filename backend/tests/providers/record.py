@@ -42,6 +42,7 @@ from tests.providers.replay import (
     recording_path,
     render_sources,
 )
+from tests.redacted import redacted
 
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 CONTEXT = CallContext(organisation_id=uuid.UUID(int=0))
@@ -106,13 +107,14 @@ def record(
         from app.llm_schemas import FieldExtractionBatch
 
         request = StructuringRequest(
-            instructions=material["instructions"], data=render_sources(material["sources"])
+            instructions=material["instructions"],
+            data=redacted(render_sources(material["sources"])),
         )
         StructuringClient(config, adapter, meter).structure(request, FieldExtractionBatch, CONTEXT)
     else:
         result = RetrievalClient(config, adapter, meter).retrieve(
             RetrievalRequest(
-                instructions=material["retrieval_instructions"], query=material["query"]
+                instructions=material["retrieval_instructions"], query=redacted(material["query"])
             ),
             CONTEXT,
         )

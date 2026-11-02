@@ -14,11 +14,19 @@ dependencies = [
     "mistralai==3.2.0",
     "openai==3.29.0",
     "perplexityai==0.43.8",
+    "phonenumbers==9.0.41",
     "protego==0.7.0",
     "psycopg[binary]==3.3.6",
     "pypdf==6.21.2",
+    "spacy==3.8.16",
+    "spacy-pkuseg==1.0.1",
     "sqlalchemy==2.0.54",
     "uvicorn==0.54.0",
+    # Name-detection models (#19): not on PyPI; pinned release wheels, sha256 in uv.lock.
+    "en-core-web-sm",
+    "de-core-news-sm",
+    "xx-ent-wiki-sm",
+    "zh-core-web-sm",
 ]
 
 [dependency-groups]
@@ -40,6 +48,12 @@ exclude-newer = "2026-10-13T20:00:00Z"
 # SEC exception (approved-dependencies.md): pypdf 6.21.2 fixes the advisories of 6.20.1 (#18).
 exclude-newer-package = { pypdf = "2026-10-22T00:00:00Z" }
 no-build = true
+
+[tool.uv.sources]
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
+de-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/de_core_news_sm-3.8.0/de_core_news_sm-3.8.0-py3-none-any.whl" }
+xx-ent-wiki-sm = { url = "https://github.com/explosion/spacy-models/releases/download/xx_ent_wiki_sm-3.8.0/xx_ent_wiki_sm-3.8.0-py3-none-any.whl" }
+zh-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.8.0/zh_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

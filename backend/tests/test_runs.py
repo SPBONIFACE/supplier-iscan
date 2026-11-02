@@ -19,6 +19,7 @@ from app.db import Database, utc_now
 from app.errors import NOT_FOUND
 from app.models import Job, ProfileRun, UsageEvent
 from app.providers.errors import ProviderCallError
+from app.redaction import RedactionUnavailable
 from app.runs.executor import INTERRUPTED, RUN_JOB
 from app.runs.stages import DEFAULT_STAGES, DependencyUnavailable, Stage, StageContext
 from app.worker import MAX_ATTEMPTS
@@ -493,6 +494,7 @@ def provider_error() -> Exception:
         (provider_error(), "llm_provider", "AI provider"),
         (OperationalError("SELECT 1", None, Exception("secret")), "database", "database"),
         (ConnectionError("down"), "network", "network"),
+        (RedactionUnavailable(), "llm_provider", "nothing was sent"),
     ],
 )
 def test_a_failing_dependency_pauses_the_run_and_names_it(

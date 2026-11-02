@@ -5,7 +5,8 @@ Boundaries that hold here:
   only returns an `IdentityProposal`, which code checks against the candidates it was given;
 - the member's text and the registry data reach the model as data, through the prompt set
   (`PromptSet.render`), never concatenated into instructions here;
-- `ask_model` is the only place that calls the model: the redaction gate of #19 wraps it;
+- `ask_model` is the only place that calls the model: the redaction gate of #19 wraps it, so chat
+  turns, candidates and registry data reach the model redacted (and a natural person's name too);
 - prompt and completion text are never logged.
 """
 
@@ -14,6 +15,7 @@ import json
 import logging
 import re
 import uuid
+from collections.abc import Sequence
 from typing import Any
 
 from app.db import utc_now
@@ -32,6 +34,7 @@ from app.models import IdentitySession
 from app.prompts import PromptSet, RenderedPrompt, log_render
 from app.providers import Providers, StructuringRequest
 from app.providers.metering import CallContext
+from app.redaction import RedactionGate
 from app.registries import RegistrySearchQuery, RegistrySearchResult
 from app.registries.models import MAX_HINT_LENGTH, MAX_NAME_LENGTH
 
@@ -58,14 +61,23 @@ def new_turn(
 
 
 def ask_model(
-    providers: Providers, rendered: RenderedPrompt, organisation_id: uuid.UUID
+    providers: Providers,
+    gate: RedactionGate,
+    rendered: RenderedPrompt,
+    organisation_id: uuid.UUID,
+    *,
+    person_names: Sequence[str] = (),
+    company_names: Sequence[str] = (),
 ) -> IdentityProposal:
     """The single call site of the model for the identity chat.
 
-    Structured output, one retry on a schema failure (inside the client), then the typed error.
+    The data part passes the redaction gate first (it raises `RedactionUnavailable`, and nothing is
+    sent). Structured output, one retry on a schema failure (inside the client), then the typed
+    error.
     """
     client = providers.structuring()
-    request = StructuringRequest(instructions=rendered.instructions, data=rendered.data)
+    data = gate.redact(rendered.data, person_names=person_names, company_names=company_names)
+    request = StructuringRequest(instructions=rendered.instructions, data=data)
     return client.structure(request, IdentityProposal, CallContext(organisation_id=organisation_id))
 
 
@@ -100,10 +112,15 @@ def links_in(text: str) -> list[str]:
 
 class IdentityAgent:
     def __init__(
-        self, prompt_set: PromptSet, providers: Providers, services: IdentityServices
+        self,
+        prompt_set: PromptSet,
+        providers: Providers,
+        services: IdentityServices,
+        gate: RedactionGate,
     ) -> None:
         self._prompts = prompt_set
         self._providers = providers
+        self._gate = gate
         self._services = services
 
     # --- registry search ---------------------------------------------------------------------
@@ -155,6 +172,20 @@ class IdentityAgent:
         shown = [_public(entry) for entry in session.candidates[:MAX_CANDIDATES_TO_MODEL]]
         return json.dumps(shown, ensure_ascii=False)
 
+    def _named_parties(self, session: IdentitySession) -> tuple[list[str], list[str]]:
+        """Legal names to always redact (natural persons) and to protect (companies)."""
+        people: list[str] = []
+        companies: list[str] = []
+        for entry in session.candidates:
+            name = _public(entry).get("legal_name")
+            if not name:
+                continue
+            if entry.get("natural_person"):
+                people.append(name)
+            elif _public(entry).get("found_in"):
+                companies.append(name)
+        return people, companies
+
     def _ask(self, session: IdentitySession) -> IdentityProposal | None:
         rendered = self._prompts.render(
             "identity",
@@ -167,7 +198,15 @@ class IdentityAgent:
         log_render(rendered)
         session.prompt_set_hash = self._prompts.content_hash
         try:
-            return ask_model(self._providers, rendered, session.organisation_id)
+            people, companies = self._named_parties(session)
+            return ask_model(
+                self._providers,
+                self._gate,
+                rendered,
+                session.organisation_id,
+                person_names=people,
+                company_names=companies,
+            )
         except Exception as error:  # noqa: BLE001 - an agent failure is a turn, never a 500
             # The type only: an error message can quote the prompt or the completion.
             logger.warning("Identity agent call failed: %s", type(error).__name__)

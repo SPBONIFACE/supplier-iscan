@@ -40,12 +40,15 @@ from tests.providers.support import (
     config,
     make_meter,
 )
+from tests.redacted import redacted
 from tests.runs_support import create_run
 from tests.support import LOCAL_ORIGIN
 
 GOOD = '{"legal_name": "Acme SA", "country": "FR"}'
 BAD = '{"legal_name": 7}'
-REQUEST = StructuringRequest(instructions="SECRET-INSTRUCTIONS", data="SECRET-DATA Acme SA")
+REQUEST = StructuringRequest(
+    instructions="SECRET-INSTRUCTIONS", data=redacted("SECRET-DATA Acme SA")
+)
 ENV = {"GEMINI_API_KEY": SENTINEL_KEY, "ANTHROPIC_API_KEY": SENTINEL_KEY}
 
 
@@ -224,7 +227,7 @@ def test_retrieval_is_metered_with_its_search_calls() -> None:
     usage = CallUsage(input_tokens=100, output_tokens=50, tool_calls=3)
     fake = FakeRetrievalAdapter([RuntimeError("boom"), RetrievalOutput(urls, usage)])
     client = providers_with(sink, retrieval=fake).retrieval()
-    request = RetrievalRequest(instructions="SECRET-INSTRUCTIONS", query="SECRET-QUERY")
+    request = RetrievalRequest(instructions="SECRET-INSTRUCTIONS", query=redacted("SECRET-QUERY"))
 
     with pytest.raises(ProviderCallError):
         client.retrieve(request, CONTEXT)
@@ -280,7 +283,7 @@ def test_run_totals_add_up_every_attempt_and_name_the_models_per_role(engine: En
 
     providers.structuring("primary").structure(REQUEST, Company, CallContext(organisation_id, run))
     providers.retrieval("searcher").retrieve(
-        RetrievalRequest(instructions="i", query="q"), CallContext(organisation_id, run)
+        RetrievalRequest(instructions="i", query=redacted("q")), CallContext(organisation_id, run)
     )
     providers.structuring("primary").structure(
         REQUEST, Company, CallContext(other_organisation, other_run)

@@ -23,6 +23,7 @@ from app.providers.metering import CallContext, CallUsage, ListSink
 from tests.auth_support import send_with_session
 from tests.factories import create_session, create_user
 from tests.providers.test_metering import providers_with
+from tests.redacted import redacted
 from tests.runs_support import create_identity, get_run
 from tests.support import LOCAL_ORIGIN
 
@@ -246,7 +247,7 @@ def test_prompt_text_and_completions_appear_in_no_log_and_no_api_response(
         "extraction", {"fields": "f", "source_id": "s1", "source_text": prompt_side}
     )
     log_render(rendered)
-    request = StructuringRequest(instructions=rendered.instructions, data=rendered.data)
+    request = StructuringRequest(instructions=rendered.instructions, data=redacted(rendered.data))
     structuring.structure(request, Answer, CallContext(uuid.uuid4()))
     logging.getLogger("app").info("rendered %r", rendered)
 

@@ -72,7 +72,9 @@ def test_every_stored_text_passes_through_the_redaction_hook(
 ) -> None:
     organisation_id = create_organisation(engine)
     run_id = create_run(engine, organisation_id)
-    monkeypatch.setattr(source_store, "redact_for_storage", lambda text: text.upper())
+    monkeypatch.setattr(
+        source_store, "redact_for_storage", lambda text, gate, context: text.upper()
+    )
 
     store_source(
         Database(None, engine),
@@ -86,13 +88,15 @@ def test_every_stored_text_passes_through_the_redaction_hook(
     assert (row.text, row.author) == ("BODY", "AN AUTHOR")
 
 
-def test_the_stage_refuses_to_exist_until_redaction_is_wired() -> None:
-    assert source_store.REDACTION_WIRED is False  # flip together with #19
-    with pytest.raises(RedactionNotWired):
+def test_the_guard_lifts_now_that_storage_redacts(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert source_store.REDACTION_WIRED is True  # lifted by #19
+    make_collection_stage(CONTACT, LIMITS)
+    monkeypatch.setattr(source_store, "REDACTION_WIRED", False)
+    with pytest.raises(RedactionNotWired):  # the guard itself is kept, should the flag drop again
         make_collection_stage(CONTACT, LIMITS)
     from app.runs.stages import DEFAULT_STAGES
 
-    assert DEFAULT_STAGES["collection"].__name__ == "no_op"
+    assert DEFAULT_STAGES["collection"].__name__ == "no_op"  # wiring the stage is not part of #19
 
 
 def run_stage(engine: Engine, pages: dict, name: str = "Acme Supplies SA") -> uuid.UUID:  # type: ignore[type-arg]
@@ -103,7 +107,6 @@ def run_stage(engine: Engine, pages: dict, name: str = "Acme Supplies SA") -> uu
     stage = make_collection_stage(
         CONTACT,
         LIMITS,
-        allow_unredacted=True,
         client_factory=lambda: build_client(
             CONTACT, resolver=RESOLVER, inner_transport=site.transport
         ),

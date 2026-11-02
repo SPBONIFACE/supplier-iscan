@@ -30,6 +30,7 @@ from tests.providers.support import (
     config,
     make_meter,
 )
+from tests.redacted import redacted
 from tests.support import BASE_URL, LOCAL_ORIGIN, make_client
 
 
@@ -175,7 +176,7 @@ def test_the_sentinel_key_never_appears_in_rows_logs_errors_or_responses(
     ) as client:
         health = client.get("/health")
     with pytest.raises(ProviderCallError) as raised:
-        providers.structuring().structure(StructuringRequest("i", "d"), Company, CONTEXT)
+        providers.structuring().structure(StructuringRequest("i", redacted("d")), Company, CONTEXT)
 
     with engine.connect() as connection:
         assert connection.execute(text("SELECT id FROM provider_configs")).scalars().all() == [

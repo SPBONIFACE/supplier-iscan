@@ -24,6 +24,7 @@ from app.http_client import DnsResolutionError, FetchTimeoutError
 from app.providers import Providers, StructuredOutputInvalid
 from app.providers.errors import ProviderError
 from app.providers.metering import CallContext
+from app.redaction import RedactionUnavailable
 
 # A stage returns None to go on, or the final status of a run that cannot go on.
 StageOutcome = Literal["insufficient_sources", "partial"]
@@ -62,6 +63,10 @@ def classify(error: BaseException) -> str | None:
     """The dependency behind a failure, or None when it is not a dependency failure."""
     if isinstance(error, DependencyUnavailable):
         return error.dependency
+    if isinstance(error, RedactionUnavailable):
+        # The contract's dependency list has no redaction entry: nothing reached a provider, so
+        # the run pauses as an AI-provider step, with its own plain-language reason.
+        return "llm_provider"
     if isinstance(error, StructuredOutputInvalid):
         return None  # the provider answered; the answer was unusable
     if isinstance(error, ProviderError):
@@ -71,6 +76,13 @@ def classify(error: BaseException) -> str | None:
     if isinstance(error, DnsResolutionError | FetchTimeoutError | ConnectionError | TimeoutError):
         return "network"
     return None
+
+
+def pause_reason(error: BaseException, dependency: str) -> str:
+    """The plain-language reason shown to the member for a paused run."""
+    if isinstance(error, RedactionUnavailable):
+        return RedactionUnavailable.REASON
+    return DEPENDENCY_REASONS[dependency]
 
 
 @dataclass(frozen=True)

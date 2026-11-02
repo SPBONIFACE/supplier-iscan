@@ -23,6 +23,7 @@ from app.providers.catalogue import ProviderConfigSpec, Role
 from app.providers.errors import ProviderCallError, ProviderError, StructuredOutputInvalid
 from app.providers.failures import classify_failure
 from app.providers.metering import NO_USAGE, CallContext, CallUsage, Outcome, UsageMeter
+from app.redaction.text import RedactedText
 
 logger = logging.getLogger(__name__)
 
@@ -31,20 +32,35 @@ STRUCTURING_ATTEMPTS = 2
 DEFAULT_MAX_OUTPUT_TOKENS = 8192
 
 
+def _require_redacted(value: object) -> None:
+    if not isinstance(value, RedactedText):
+        # The type only: the value is raw text and is never put in a message.
+        raise TypeError(
+            f"a provider takes only text that passed the redaction gate, not {type(value).__name__}"
+        )
+
+
 @dataclass(frozen=True)
 class StructuringRequest:
-    """`instructions` come from the prompt set (#55); `data` is the delimited data part."""
+    """`instructions` come from the prompt set (#55) and hold no member data; `data` is the
+    delimited data part, redacted (#19)."""
 
     instructions: str
-    data: str
+    data: RedactedText
     max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS
+
+    def __post_init__(self) -> None:
+        _require_redacted(self.data)
 
 
 @dataclass(frozen=True)
 class RetrievalRequest:
     instructions: str
-    query: str
+    query: RedactedText
     max_results: int = 10
+
+    def __post_init__(self) -> None:
+        _require_redacted(self.query)
 
 
 class RetrievedUrl(BaseModel):
@@ -149,6 +165,7 @@ class StructuringClient(_BoundClient):
     def structure[T: BaseModel](
         self, request: StructuringRequest, output_type: type[T], context: CallContext
     ) -> T:
+        _require_redacted(request.data)  # a request edited after its creation is refused too
         schema_name = output_type.__name__
         json_schema = output_type.model_json_schema()
         for attempt in range(1, STRUCTURING_ATTEMPTS + 1):
@@ -202,6 +219,7 @@ class RetrievalClient(_BoundClient):
         self._adapter = adapter
 
     def retrieve(self, request: RetrievalRequest, context: CallContext) -> RetrievalResult:
+        _require_redacted(request.query)
         failure: ProviderError | None = None
         output: RetrievalOutput | None = None
         try:

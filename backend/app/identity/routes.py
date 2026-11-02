@@ -21,6 +21,7 @@ from app.identity.services import IdentityServices, build_identity_services
 from app.identity.strings import disclosure_text
 from app.models import IdentitySession, SupplierIdentity
 from app.organisations.scope import OrganisationScoped
+from app.redaction import gate_for
 from app.registries.text import has_visible_text, normalise_text
 
 router = APIRouter(tags=["identity"])
@@ -180,7 +181,9 @@ def _services(request: Request) -> IdentityServices:
 
 def _agent(request: Request) -> IdentityAgent:
     state = request.app.state
-    return IdentityAgent(state.prompt_set, state.providers, _services(request))
+    return IdentityAgent(
+        state.prompt_set, state.providers, _services(request), gate_for(state.database)
+    )
 
 
 def _conflict() -> HTTPException:

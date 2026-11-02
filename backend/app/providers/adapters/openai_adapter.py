@@ -61,7 +61,7 @@ class OpenAIStructuring:
         response = self._client.responses.create(
             model=self._config.model_id,
             instructions=request.instructions,
-            input=request.data,
+            input=request.data.text,
             max_output_tokens=request.max_output_tokens,
             store=False,
             text={
@@ -85,7 +85,7 @@ class OpenAIRetrieval:
         response = self._client.responses.create(
             model=self._config.model_id,
             instructions=request.instructions,
-            input=request.query,
+            input=request.query.text,
             store=False,
             tools=[{"type": "web_search"}],
         )
