@@ -36,7 +36,7 @@ from app.http_client import (
 
 logger = logging.getLogger(__name__)
 
-FetchStatus = Literal["fetched", "excluded", "not_crawled", "disallowed", "blocked"]
+FetchStatus = Literal["fetched", "excluded", "not_crawled", "disallowed", "blocked", "too_large"]
 
 # Markers of a challenge page (CAPTCHA or bot check) that a person must solve.
 CAPTCHA_MARKERS = (
@@ -67,6 +67,26 @@ class FetchResult:
     url: str
     # The response when `status` is "fetched"; None otherwise (nothing of a refused page is kept).
     response: Any = None
+    # With `too_large`: the size announced by the site, or the bytes read when it announced none.
+    size: int | None = None
+
+
+@dataclass
+class BoundedResponse:
+    """A response whose body was read with a size limit (`PermittedFetcher.fetch(max_bytes=...)`).
+
+    `content` holds the bytes as the client decoded them (content encodings undone), never more
+    than the limit.
+    """
+
+    status_code: int
+    headers: Any
+    content: bytes
+    url: str
+
+    @property
+    def text(self) -> str:
+        return self.content.decode("utf-8", errors="replace")
 
 
 def is_challenge(response: Any) -> bool:
@@ -112,8 +132,28 @@ class PermittedFetcher:
             permission.tdm_reservation = True
         self._record(permission)
 
-    def fetch(self, url: str) -> FetchResult:
+    def _get(self, url: str, timeout: float, max_bytes: int | None) -> tuple[Any, int | None]:
+        """The response, and the size when it exceeds `max_bytes` (the body is then not kept)."""
+        if max_bytes is None:
+            return self._client.get(url, timeout=timeout, follow_redirects=False), None
+        with self._client.stream(url, timeout=timeout, follow_redirects=False) as response:
+            announced = response.headers.get("content-length", "")
+            if announced.isdigit() and int(announced) > max_bytes:
+                return response, int(announced)  # the body is never read
+            if self._client.redirect_target(url, response) is not None:
+                return response, None  # a redirect has no body worth reading
+            body = bytearray()
+            for chunk in response.iter_bytes():
+                body += chunk
+                if len(body) > max_bytes:  # Content-Length absent or wrong: stop reading here
+                    return response, len(body)
+            return BoundedResponse(response.status_code, response.headers, bytes(body), url), None
+
+    def fetch(self, url: str, max_bytes: int | None = None) -> FetchResult:
         """Fetch `url`, following redirects here, one hop at a time.
+
+        With `max_bytes`, the body is read while streaming and never beyond that limit: a larger
+        body gives `too_large` (with its size) and the rest is not downloaded.
 
         The permissions of each target's domain (and its robots.txt rules for the path) are
         checked before the target is requested, so no page of an excluded domain is ever
@@ -139,14 +179,18 @@ class PermittedFetcher:
                 raise FetchTimeoutError(
                     f"The website did not respond within {settings.timeout_seconds:g} seconds."
                 )
-            response = self._client.get(current, timeout=remaining, follow_redirects=False)
+            response, oversize = self._get(current, remaining, max_bytes)
             if response.headers.get(TDM_HEADER, "").strip() == "1":
                 logger.info(
                     "Page of %s carries a TDM reservation; domain excluded", permission.domain
                 )
                 self._mark(permission, "excluded")
                 return FetchResult("excluded", url)
-            target = self._client.redirect_target(current, response)
+            if oversize is not None:
+                return FetchResult("too_large", url, size=oversize)
+            # A body-bounded response was read to the end: it is not a redirect.
+            bounded = isinstance(response, BoundedResponse)
+            target = None if bounded else self._client.redirect_target(current, response)
             if target is not None:
                 current = target
                 continue

@@ -16,6 +16,7 @@ dependencies = [
     "perplexityai==0.43.8",
     "protego==0.7.0",
     "psycopg[binary]==3.3.6",
+    "pypdf==6.21.2",
     "sqlalchemy==2.0.54",
     "uvicorn==0.54.0",
 ]
@@ -36,6 +37,8 @@ required-version = "==0.12.24"
 # at the time of locking (last moved 27 Oct 2026 for #11, _docs/process/approved-dependencies.md).
 # Wheels only: no source distribution is ever built.
 exclude-newer = "2026-10-13T20:00:00Z"
+# SEC exception (approved-dependencies.md): pypdf 6.21.2 fixes the advisories of 6.20.1 (#18).
+exclude-newer-package = { pypdf = "2026-10-22T00:00:00Z" }
 no-build = true
 
 [tool.pytest.ini_options]

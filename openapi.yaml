@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.8.0
+  version: 0.9.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -544,6 +544,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/sources:
+    get:
+      operationId: listRunSources
+      tags: [runs]
+      summary: List the sources collected for a run
+      description: >-
+        The pages and PDFs the collection stage stored for the run: URL, fetch time and content
+        type, oldest first. The extracted text is not part of the listing. Another organisation's
+        run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The sources of the run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceList"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1281,6 +1307,7 @@ components:
         - prompt_set_hash
         - usage
         - excluded_sources
+        - identity_to_verify
         - created_at
         - started_at
         - finished_at
@@ -1330,6 +1357,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExcludedSource"
+        identity_to_verify:
+          description: >-
+            True when, after collection, the confirmed legal name appears in none of the
+            website's sources. The buyer verifies the identity; nothing is blocked.
+          type: boolean
         created_at:
           type: string
           format: date-time
@@ -1339,6 +1371,32 @@ components:
         finished_at:
           type: [string, "null"]
           format: date-time
+    Source:
+      description: A page or PDF collected for a run (the extracted text is not listed).
+      type: object
+      additionalProperties: false
+      required: [id, url, fetched_at, content_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+        fetched_at:
+          type: string
+          format: date-time
+        content_type:
+          description: Media type of the response, for example `text/html` or `application/pdf`.
+          type: string
+    SourceList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Source"
     RunList:
       type: object
       additionalProperties: false

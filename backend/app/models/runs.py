@@ -91,6 +91,8 @@ class ProfileRun(OrganisationOwned, Base):
     pause_dependency: Mapped[str | None] = mapped_column(String(30))
     pause_reason: Mapped[str | None] = mapped_column(String(300))
     error: Mapped[str | None] = mapped_column(String(300))
+    # Set by the collection stage (#18): the confirmed name is on none of the website's sources.
+    identity_to_verify: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     # Set by the stages that load the profile definition and the prompt set (#21, #26).
     profile_definition_hash: Mapped[str | None] = mapped_column(String(100))
     prompt_set_hash: Mapped[str | None] = mapped_column(String(100))
