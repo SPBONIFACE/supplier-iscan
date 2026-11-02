@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   listRuns: vi.fn(),
   getOrganisation: vi.fn(),
+  getDisclosure: vi.fn(),
 }));
 
 vi.mock("../lib/api", () => ({
@@ -16,6 +17,7 @@ vi.mock("../lib/api", () => ({
     getCurrentUser: mocks.getCurrentUser,
     listRuns: mocks.listRuns,
     getOrganisation: mocks.getOrganisation,
+    getDisclosure: mocks.getDisclosure,
   },
   setUnauthorizedHandler: vi.fn(),
 }));
@@ -70,6 +72,7 @@ const rows = ALL.map((status, index) =>
 beforeEach(async () => {
   for (const mock of Object.values(mocks)) mock.mockReset();
   mocks.getCurrentUser.mockResolvedValue(ok(member));
+  mocks.getDisclosure.mockResolvedValue(ok({ language: "en", text: "disclosure" }));
   const { initI18n } = await import("../i18n");
   await initI18n("en");
 });

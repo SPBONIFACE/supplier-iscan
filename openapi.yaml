@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.7.0
+  version: 0.8.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -26,6 +26,8 @@ tags:
     description: Operational endpoints
   - name: auth
     description: Sign-in, sign-out and the current user
+  - name: identity
+    description: Identity chat that turns a supplier name into a confirmed identity record
   - name: users
     description: User records
   - name: organisation
@@ -222,6 +224,243 @@ paths:
           $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /identity/disclosure:
+    get:
+      operationId: getIdentityDisclosure
+      tags: [identity]
+      summary: The AI disclosure, in the requested UI language
+      description: >-
+        The text the chat shows as its first message, exactly as in spec F1 (no placeholder). The
+        client displays it as returned and never rewords it.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: language
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Language"
+      responses:
+        "200":
+          description: The disclosure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityDisclosure"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions:
+    post:
+      operationId: createIdentitySession
+      tags: [identity]
+      summary: Open an identity session for a supplier name and optional hints
+      description: >-
+        An empty, whitespace-only or zero-width-only name, or an invalid website hint, answers 422
+        with the field name. The first turn of the session is the disclosure; the agent's first
+        proposal follows. When one or both registries are unreachable the agent says so in a
+        turn, never with an error response.
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentitySessionCreate"
+      responses:
+        "201":
+          description: The session, with its first proposal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}:
+    get:
+      operationId: getIdentitySession
+      tags: [identity]
+      summary: Read an identity session
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The session with all its turns.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}/messages:
+    post:
+      operationId: sendIdentityMessage
+      tags: [identity]
+      summary: Correct or add details in free text; the agent proposes again
+      description: >-
+        Triggers a new registry search and a new proposal. A URL inside the text goes through the
+        outbound-URL guard. An agent failure is a turn of kind `error` in the session (answer 200),
+        never a 500. A confirmed session answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityMessage"
+      responses:
+        "200":
+          description: The session with the new turns.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}/candidates:
+    get:
+      operationId: listIdentityCandidates
+      tags: [identity]
+      summary: The candidates other than the current proposal, best match first
+      description: A hint lowers a candidate's rank and never removes it.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The other candidates.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityCandidateList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}/website:
+    post:
+      operationId: submitIdentityWebsite
+      tags: [identity]
+      summary: "None of these: propose an identity from a website or domain"
+      description: >-
+        The domain is checked by the outbound-URL guard and must respond. If it does, the new
+        proposal is the last turn. If not, the last turn has kind `website_rejected` and carries
+        the reason, and the session stays open (answer 200). A malformed address answers 422.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityWebsite"
+      responses:
+        "200":
+          description: The session with the new turns.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}/confirm:
+    post:
+      operationId: confirmIdentity
+      tags: [identity]
+      summary: Confirm one candidate; this stores the identity record
+      description: >-
+        The only way a session ends. A second confirmation answers 409. `natural_person` is set
+        when the legal form is a sole trader or another natural-person business.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityConfirm"
+      responses:
+        "200":
+          description: The stored identity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityConfirmed"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /runs:
     post:
       operationId: startRun
@@ -249,6 +488,14 @@ paths:
                 $ref: "#/components/schemas/Run"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: >-
+            The run is refused, with the reason (#29): the profile quota is used, access has ended,
+            the organisation is not activated, or the monthly spend cap is reached.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRefused"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
@@ -681,6 +928,14 @@ components:
             $ref: "#/components/schemas/Error"
           example:
             detail: This invitation link is not valid. Ask your administrator for a new one.
+    Conflict:
+      description: The request conflicts with the current state (for example an identity already confirmed).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: This identity is already confirmed.
     ServiceUnavailable:
       description: The database is unavailable. Plain message, no technical details.
       content:
@@ -690,6 +945,205 @@ components:
           example:
             detail: The service is temporarily unavailable. Please try again in a few minutes.
   schemas:
+    Language:
+      type: string
+      enum: [en, fr]
+    IdentityDisclosure:
+      type: object
+      additionalProperties: false
+      required: [language, text]
+      properties:
+        language:
+          $ref: "#/components/schemas/Language"
+        text:
+          type: string
+    IdentityHints:
+      type: object
+      additionalProperties: false
+      properties:
+        website:
+          type: [string, "null"]
+        country:
+          description: ISO 3166-1 alpha-2 code.
+          type: [string, "null"]
+        sector:
+          type: [string, "null"]
+    IdentitySessionCreate:
+      type: object
+      additionalProperties: false
+      required: [name, profile_language, ui_language]
+      properties:
+        name:
+          type: string
+          maxLength: 300
+        hints:
+          $ref: "#/components/schemas/IdentityHints"
+        profile_language:
+          $ref: "#/components/schemas/Language"
+        ui_language:
+          $ref: "#/components/schemas/Language"
+    IdentityMessage:
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties:
+        text:
+          type: string
+          maxLength: 2000
+    IdentityWebsite:
+      type: object
+      additionalProperties: false
+      required: [website]
+      properties:
+        website:
+          description: A URL or a bare domain.
+          type: string
+          maxLength: 2000
+    IdentityConfirm:
+      type: object
+      additionalProperties: false
+      required: [candidate_id]
+      properties:
+        candidate_id:
+          type: string
+    RegistryStatus:
+      type: object
+      additionalProperties: false
+      required: [gleif, wikidata]
+      properties:
+        gleif:
+          type: string
+          enum: [ok, unreachable]
+        wikidata:
+          type: string
+          enum: [ok, unreachable]
+    IdentityCandidate:
+      type: object
+      additionalProperties: false
+      required: [id, legal_name, legal_form, website, country, sector, description, found_in, identifiers]
+      properties:
+        id:
+          type: string
+        legal_name:
+          type: string
+        legal_form:
+          type: [string, "null"]
+        website:
+          type: [string, "null"]
+        country:
+          description: Country name in the session's UI language.
+          type: [string, "null"]
+        sector:
+          type: [string, "null"]
+        description:
+          description: One line.
+          type: [string, "null"]
+        found_in:
+          type: array
+          items:
+            type: string
+            enum: [gleif, wikidata, website, web]
+        identifiers:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [scheme, value]
+            properties:
+              scheme:
+                type: string
+              value:
+                type: string
+    IdentityCandidateList:
+      type: object
+      additionalProperties: false
+      required: [candidates]
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdentityCandidate"
+    IdentityTurn:
+      type: object
+      additionalProperties: false
+      required: [id, role, kind, text, candidate, created_at]
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [assistant, user]
+        kind:
+          description: >-
+            `disclosure` is always the first turn. `proposal` carries the top candidate.
+            `notice` is an agent message without candidate (for example both registries down).
+            `website_rejected` carries the reason a website was refused. `error` is an agent
+            failure in plain words.
+          type: string
+          enum: [disclosure, text, proposal, notice, website_rejected, error]
+        text:
+          type: string
+        candidate:
+          oneOf:
+            - $ref: "#/components/schemas/IdentityCandidate"
+            - type: "null"
+        created_at:
+          type: string
+          format: date-time
+    IdentitySession:
+      type: object
+      additionalProperties: false
+      required: [id, name, hints, profile_language, status, turns, registries, identity_id, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        hints:
+          $ref: "#/components/schemas/IdentityHints"
+        profile_language:
+          $ref: "#/components/schemas/Language"
+        status:
+          type: string
+          enum: [open, confirmed]
+        turns:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdentityTurn"
+        registries:
+          $ref: "#/components/schemas/RegistryStatus"
+        identity_id:
+          type: [string, "null"]
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+    IdentityConfirmed:
+      type: object
+      additionalProperties: false
+      required: [identity_id, candidate, natural_person, confirmed_at]
+      properties:
+        identity_id:
+          type: string
+          format: uuid
+        candidate:
+          $ref: "#/components/schemas/IdentityCandidate"
+        natural_person:
+          type: boolean
+        confirmed_at:
+          type: string
+          format: date-time
+    RunRefused:
+      type: object
+      additionalProperties: false
+      required: [detail, reason]
+      properties:
+        detail:
+          type: string
+        reason:
+          type: string
+          enum: [quota_reached, access_ended, not_activated, spend_cap_reached]
     ProfileField:
       type: object
       additionalProperties: false

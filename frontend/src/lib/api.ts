@@ -6,6 +6,12 @@ import type { components, paths } from "./api-schema";
 
 export type CurrentUser = components["schemas"]["CurrentUser"];
 export type InvitationCheck = components["schemas"]["InvitationCheck"];
+export type Language = components["schemas"]["Language"];
+export type IdentitySession = components["schemas"]["IdentitySession"];
+export type IdentityTurn = components["schemas"]["IdentityTurn"];
+export type IdentityCandidate = components["schemas"]["IdentityCandidate"];
+export type IdentityConfirmed = components["schemas"]["IdentityConfirmed"];
+export type IdentitySessionCreate = components["schemas"]["IdentitySessionCreate"];
 export type MemberOrganisation = components["schemas"]["MemberOrganisation"];
 export type Run = components["schemas"]["Run"];
 export type RunStatus = components["schemas"]["RunStatus"];
@@ -15,9 +21,11 @@ export type FieldError = components["schemas"]["ValidationError"]["errors"][numb
 /** Why a call failed, in terms the screens act on. */
 export type ApiFailure = {
   ok: false;
-  kind: "unauthorized" | "not_found" | "conflict" | "validation" | "unavailable";
+  kind: "unauthorized" | "not_found" | "conflict" | "validation" | "refused" | "unavailable";
   status: number;
   errors: FieldError[];
+  /** Why a run start was refused (403 on POST /runs). */
+  reason?: RunRefusalReason;
 };
 export type ApiResult<T> = { ok: true; data: T } | ApiFailure;
 
@@ -60,7 +68,9 @@ const failure = (status: number, errors: FieldError[] = []): ApiFailure => {
           ? "conflict"
           : status === 422
             ? "validation"
-            : "unavailable";
+            : status === 403
+              ? "refused"
+              : "unavailable";
   return { ok: false, kind, status, errors };
 };
 
@@ -68,8 +78,9 @@ type Raw<T> = { data?: T; error?: unknown; response: Response };
 
 function settle<T>(raw: Raw<T>): ApiResult<T> {
   if (raw.response.ok && raw.data !== undefined) return { ok: true, data: raw.data };
-  const body = raw.error as { errors?: FieldError[] } | undefined;
-  return failure(raw.response.status, Array.isArray(body?.errors) ? body.errors : []);
+  const body = raw.error as { errors?: FieldError[]; reason?: RunRefusalReason } | undefined;
+  const result = failure(raw.response.status, Array.isArray(body?.errors) ? body.errors : []);
+  return result.kind === "refused" ? { ...result, reason: body?.reason } : result;
 }
 
 // A network error (API unreachable) is reported like a 503: the screens show the same plain message.
@@ -110,4 +121,43 @@ export const api = {
         body: { password },
       }),
     ),
+
+  getDisclosure: (language: Language) =>
+    call(() => client.GET("/identity/disclosure", { params: { query: { language } } })),
+
+  createIdentitySession: (body: IdentitySessionCreate) =>
+    call(() => client.POST("/identity-sessions", { body })),
+
+  getIdentitySession: (id: string) =>
+    call(() => client.GET("/identity-sessions/{id}", { params: { path: { id } } })),
+
+  sendIdentityMessage: (id: string, text: string) =>
+    call(() =>
+      client.POST("/identity-sessions/{id}/messages", {
+        params: { path: { id } },
+        body: { text },
+      }),
+    ),
+
+  listIdentityCandidates: (id: string) =>
+    call(() => client.GET("/identity-sessions/{id}/candidates", { params: { path: { id } } })),
+
+  submitIdentityWebsite: (id: string, website: string) =>
+    call(() =>
+      client.POST("/identity-sessions/{id}/website", {
+        params: { path: { id } },
+        body: { website },
+      }),
+    ),
+
+  confirmIdentity: (id: string, candidateId: string) =>
+    call(() =>
+      client.POST("/identity-sessions/{id}/confirm", {
+        params: { path: { id } },
+        body: { candidate_id: candidateId },
+      }),
+    ),
+
+  startRun: (identityId: string) =>
+    call(() => client.POST("/runs", { body: { identity_id: identityId } })),
 };
