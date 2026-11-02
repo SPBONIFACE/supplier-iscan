@@ -180,14 +180,14 @@ class PermittedFetcher:
                     f"The website did not respond within {settings.timeout_seconds:g} seconds."
                 )
             response, oversize = self._get(current, remaining, max_bytes)
-            if oversize is not None:
-                return FetchResult("too_large", url, size=oversize)
             if response.headers.get(TDM_HEADER, "").strip() == "1":
                 logger.info(
                     "Page of %s carries a TDM reservation; domain excluded", permission.domain
                 )
                 self._mark(permission, "excluded")
                 return FetchResult("excluded", url)
+            if oversize is not None:
+                return FetchResult("too_large", url, size=oversize)
             # A body-bounded response was read to the end: it is not a redirect.
             bounded = isinstance(response, BoundedResponse)
             target = None if bounded else self._client.redirect_target(current, response)

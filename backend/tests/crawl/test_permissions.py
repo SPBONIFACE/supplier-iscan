@@ -359,3 +359,39 @@ def test_allowed_redirects_are_followed_with_the_user_agent_and_the_cap_applies(
     with pytest.raises(TooManyRedirectsError):
         looping.fetch(f"https://{HOST}/a")
     assert paths(loop).count("/a") == 6  # the default cap of 5 redirects
+
+
+def big(length: str | None, **headers: str) -> httpx2.Response:
+    if length is not None:
+        headers["content-length"] = length
+    return httpx2.Response(200, content=b"x" * 50, headers=headers)
+
+
+@pytest.mark.parametrize("length", ["9999999", None, "5"], ids=["announced", "absent", "false"])
+def test_an_oversized_page_with_a_tdm_reservation_excludes_the_domain(length: str | None) -> None:
+    site, fetcher, recorded = setup(
+        {(HOST, "/r.pdf"): big(length, **{"tdm-reservation": "1"}), (HOST, "/b"): text("B")}
+    )
+    assert fetcher.fetch(f"https://{HOST}/r.pdf", max_bytes=10).status == "excluded"
+    assert recorded[-1].decision == "excluded" and recorded[-1].tdm_reservation
+    assert fetcher.fetch(f"https://{HOST}/b", max_bytes=10).status == "excluded"
+    assert "/b" not in paths(site)
+
+
+def test_an_oversized_page_with_a_tdm_reservation_after_a_redirect_excludes_the_domain() -> None:
+    _, fetcher, recorded = setup(
+        {
+            (HOST, "/a"): httpx2.Response(302, headers={"Location": f"https://{HOST}/r.pdf"}),
+            (HOST, "/r.pdf"): big("9999999", **{"tdm-reservation": "1"}),
+        }
+    )
+    assert fetcher.fetch(f"https://{HOST}/a", max_bytes=10).status == "excluded"
+    assert recorded[-1].decision == "excluded"
+
+
+@pytest.mark.parametrize("length", ["9999999", None], ids=["announced", "absent"])
+def test_an_oversized_page_without_the_header_is_still_too_large(length: str | None) -> None:
+    _, fetcher, recorded = setup({(HOST, "/r.pdf"): big(length)})
+    result = fetcher.fetch(f"https://{HOST}/r.pdf", max_bytes=10)
+    assert result.status == "too_large" and result.size is not None
+    assert recorded[-1].decision == "allowed"
