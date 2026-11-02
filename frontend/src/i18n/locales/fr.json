@@ -67,10 +67,58 @@
     "unavailable": "Erreur : le service n'est pas disponible pour le moment. Réessayez dans quelques minutes."
   },
   "workspace": {
-    "title": "Profils"
+    "title": "Profils",
+    "loadError": "Erreur : les profils n'ont pas pu être chargés. Réessayez ; si le problème continue, prévenez votre administrateur.",
+    "newProfile": "Nouveau profil",
+    "quotaUnlimited": "Profils restants : illimité",
+    "quotaRemaining": "Profils restants : {{remaining}}",
+    "quotaRemainingOf": "Profils restants : {{remaining}} sur {{quota}}",
+    "accessUntil": "Accès jusqu'au {{date}}",
+    "notePrefix": "Note :",
+    "refusalShort": {
+      "quota_reached": "Les nouvelles analyses sont refusées : votre organisation a utilisé son quota de profils.",
+      "access_ended": "Les nouvelles analyses sont refusées : l'accès de votre organisation a pris fin.",
+      "not_activated": "Les nouvelles analyses sont refusées : votre organisation n'est pas encore activée.",
+      "spend_cap_reached": "Les nouvelles analyses sont refusées : cette instance a atteint sa limite mensuelle."
+    },
+    "refusalLong": {
+      "quota_reached": "Les nouvelles analyses de profil sont refusées car votre organisation a utilisé son quota de profils. Vos profils existants restent consultables, vous pouvez encore les comparer et les télécharger en PDF. Votre administrateur peut vous indiquer comment poursuivre.",
+      "access_ended": "Les nouvelles analyses de profil sont refusées car l'accès de votre organisation a pris fin le {{date}}. Vos profils existants restent consultables, vous pouvez encore les comparer et les télécharger en PDF.",
+      "not_activated": "Les nouvelles analyses de profil sont refusées car votre organisation n'a pas encore été activée. Vos profils existants restent consultables. Votre administrateur peut vous indiquer comment poursuivre.",
+      "spend_cap_reached": "Les nouvelles analyses de profil sont refusées car cette instance a atteint sa limite mensuelle configurée d'utilisation de l'IA. Vos profils existants restent consultables, vous pouvez encore les comparer et les télécharger en PDF. Les nouvelles analyses redeviennent possibles le mois prochain, ou plus tôt si l'administrateur relève la limite."
+    },
+    "emptyTitle": "Aucun profil pour le moment",
+    "emptyIntro": "Votre organisation n'a pas encore de profil fournisseur. Un profil se construit en trois étapes :",
+    "emptyStep1": "Vous nommez le fournisseur ; l'assistant propose l'entreprise la plus probable et vous confirmez son identité.",
+    "emptyStep2": "L'analyse collecte des preuves publiques en arrière-plan et remplit le profil ; chaque fait porte sa citation, sa source et sa date.",
+    "emptyStep3": "Vous examinez chaque fait et chaque énoncé de l'évaluation : l'IA propose, vous décidez.",
+    "startFirst": "Démarrer votre premier profil",
+    "listHeading": "Liste des profils",
+    "caption": "Les profils fournisseurs de votre organisation, du plus récent au plus ancien",
+    "selectColumn": "Sélectionner pour comparer",
+    "compareColumn": "Comparer",
+    "supplier": "Fournisseur",
+    "status": "Statut",
+    "updated": "Dernière mise à jour",
+    "selected_one": "{{count}} profil sélectionné",
+    "selected_other": "{{count}} profils sélectionnés",
+    "compare": "Comparer la sélection",
+    "compareWhy": "Cochez au moins deux profils pour les comparer côte à côte.",
+    "selectFor": "Sélectionner {{name}} pour la comparaison",
+    "noProfileYet": "Pas encore de profil à comparer",
+    "nameHidden": "(nom non affiché)",
+    "statuses": {
+      "queued": "En attente",
+      "running": "En cours",
+      "paused": "En pause",
+      "stopped": "Arrêtée",
+      "failed": "Échouée",
+      "insufficient_sources": "Sources insuffisantes",
+      "partial": "Partielle",
+      "completed": "Terminée"
+    }
   },
   "placeholder": {
-    "workspace": "La liste des profils et le quota restant apparaîtront ici.",
     "run": "La progression de la collecte apparaîtra ici.",
     "card": "La fiche fournisseur, la revue des faits et l'évaluation apparaîtront ici.",
     "compare": "La comparaison côte à côte apparaîtra ici.",

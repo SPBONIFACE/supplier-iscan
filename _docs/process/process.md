@@ -38,7 +38,7 @@ Full PM → SWE → QA by default. SWE + QA when the issue was already groomed b
 - confined to one module
 - no new dependency
 
-QA is never dropped.
+QA is never dropped for the risky tasks listed under *Delivery mode*.
 
 ## Rules
 
@@ -51,7 +51,8 @@ QA is never dropped.
 
 ## Delivery mode
 
-- **Parallel waves.** The open issues are ordered into waves by their dependencies; the tasks of a wave run at the same time, each SWE in its own git worktree and branch, each pull request verified by its own QA. A wave starts when everything it depends on is merged.
+- **Sequential, bundled work (usage budget, 2 Nov 2026).** One agent runs at a time. A SWE may take 2–3 closely related issues in one run, one branch and pull request per issue where practical. Agents run on a lighter model than the orchestrator.
+- **QA proportionate to risk.** A separate QA agent verifies every task touching security, authentication, personal data, crawling or the LLM boundary (redaction, prompts, grounding). For other tasks, the SWE's tests, a green CI and the owner's digest are the check; the orchestrator reads the diff summary before merging.
 - **Merge on PASS.** The orchestrator merges when QA says PASS, CI is green and the pull request stays within its issue.
 - **Owner gates.** A pull request waits for the owner's review when it adds a dependency that is not in `_docs/process/approved-dependencies.md`, changes the spec or the scope, contains regulatory text, or builds a screen whose mock-up the owner has not approved. Design deliverables are always approved by the owner.
 - **Daily digest.** Once a day the orchestrator gives the owner a digest: what was merged (with links), QA verdicts, anything unusual. The owner may ask for any merged change to be reverted or amended.

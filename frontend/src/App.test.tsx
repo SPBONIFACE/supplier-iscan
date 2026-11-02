@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   checkInvitation: vi.fn(),
   acceptInvitation: vi.fn(),
   getDisclosure: vi.fn(),
+  listRuns: vi.fn(),
+  getOrganisation: vi.fn(),
   setUnauthorizedHandler: vi.fn(),
 }));
 
@@ -22,6 +24,8 @@ vi.mock("./lib/api", () => ({
     checkInvitation: mocks.checkInvitation,
     acceptInvitation: mocks.acceptInvitation,
     getDisclosure: mocks.getDisclosure,
+    listRuns: mocks.listRuns,
+    getOrganisation: mocks.getOrganisation,
   },
   setUnauthorizedHandler: mocks.setUnauthorizedHandler,
 }));
@@ -38,6 +42,8 @@ const invitation = {
 beforeEach(() => {
   for (const mock of Object.values(mocks)) mock.mockReset();
   mocks.getDisclosure.mockResolvedValue(ok({ language: "en", text: "disclosure" }));
+  mocks.listRuns.mockResolvedValue(ok({ items: [] }));
+  mocks.getOrganisation.mockResolvedValue(fail("unavailable", 503));
 });
 
 describe("login", () => {

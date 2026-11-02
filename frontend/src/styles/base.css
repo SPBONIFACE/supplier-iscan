@@ -333,6 +333,159 @@ p {
   width: 60%;
 }
 
+/* Workspace: profile list (mock-up 04-profile-list-*) */
+.ph {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--isc-space-4) var(--isc-space-6);
+  padding-bottom: var(--isc-space-5);
+}
+.ph .meta {
+  margin-top: var(--isc-space-3);
+}
+.ph-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--isc-space-3);
+  align-items: center;
+}
+.reason {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-secondary);
+  margin-top: var(--isc-space-2);
+  max-width: 40ch;
+}
+.ml {
+  display: inline-block;
+  font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--isc-font-letter-spacing-micro);
+  line-height: var(--isc-font-line-height-tight);
+  padding: var(--isc-space-0) var(--isc-space-2);
+  white-space: nowrap;
+  color: var(--isc-color-ink-secondary);
+}
+.ml-flag {
+  color: var(--isc-status-flag-fg);
+  background: var(--isc-status-flag-bg);
+  border-left: var(--isc-border-flag-rule) solid var(--isc-status-flag-rule);
+  padding-left: var(--isc-space-3);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--isc-space-3) var(--isc-space-5);
+  padding: var(--isc-space-3) var(--isc-space-0);
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink);
+}
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  line-height: var(--isc-font-line-height-compact);
+}
+.tbl th {
+  background: var(--isc-color-paper);
+  text-align: left;
+  vertical-align: bottom;
+  font-size: var(--isc-font-size-sm);
+  font-weight: var(--isc-font-weight-semibold);
+  color: var(--isc-color-ink-secondary);
+  padding: var(--isc-space-2) var(--isc-space-3);
+  border-bottom: var(--isc-border-hairline) solid var(--isc-color-ink);
+}
+.tbl td {
+  padding: var(--isc-space-2) var(--isc-space-3);
+  border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule);
+  vertical-align: top;
+  height: var(--isc-size-row);
+  overflow-wrap: anywhere;
+}
+.tbl tr > :first-child {
+  border-left: var(--isc-border-selection) solid transparent;
+}
+.tbl tbody tr:hover,
+.tbl tr.sel {
+  background: var(--isc-color-cobalt-tint);
+}
+.tbl tr.sel > td:first-child {
+  border-left-color: var(--isc-color-cobalt);
+}
+.tbl .name a {
+  font-weight: var(--isc-font-weight-medium);
+}
+.tbl .w-chk {
+  width: 44px;
+}
+.tbl .chk input {
+  accent-color: var(--isc-color-cobalt);
+  width: 16px;
+  height: 16px;
+  margin: var(--isc-space-0);
+}
+.tbl .chk input[disabled] {
+  cursor: not-allowed;
+}
+.empty {
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink);
+  padding: var(--isc-space-6) var(--isc-space-0) var(--isc-space-7);
+  max-width: var(--isc-size-measure);
+}
+.empty h2 {
+  margin-bottom: var(--isc-space-3);
+}
+.empty ol {
+  margin: var(--isc-space-4) var(--isc-space-0) var(--isc-space-5);
+  padding-left: var(--isc-space-6);
+}
+.empty li {
+  margin-bottom: var(--isc-space-2);
+}
+@media (max-width: 760px) {
+  .tbl thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+  }
+  .tbl,
+  .tbl tbody,
+  .tbl tr,
+  .tbl td {
+    display: block;
+    width: 100%;
+  }
+  .tbl tr {
+    border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule);
+    padding: var(--isc-space-3) var(--isc-space-0);
+  }
+  .tbl tr > :first-child {
+    border-left: 0;
+  }
+  .tbl tr.sel {
+    border-left: var(--isc-border-selection) solid var(--isc-color-cobalt);
+  }
+  .tbl td {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: var(--isc-space-3);
+    border: 0;
+    height: auto;
+    padding: var(--isc-space-1) var(--isc-space-3);
+  }
+  .tbl td::before {
+    content: attr(data-label);
+    font-size: var(--isc-font-size-sm);
+    font-weight: var(--isc-font-weight-semibold);
+    color: var(--isc-color-ink-secondary);
+  }
+}
+
 /* New profile and identity chat (mock-ups 04-new-profile-*, 04-identity-chat-*) */
 .fld select,
 .fld textarea {
@@ -406,13 +559,6 @@ p {
   align-items: baseline;
   gap: var(--isc-space-3);
   margin-bottom: var(--isc-space-2);
-}
-.ml {
-  font-size: var(--isc-font-size-micro);
-  font-weight: var(--isc-font-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: var(--isc-font-letter-spacing-micro);
-  color: var(--isc-color-ink-secondary);
 }
 .ml-ink {
   color: var(--isc-color-ink);

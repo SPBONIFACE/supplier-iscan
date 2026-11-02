@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Supplier iScan prompt set",
+  "description": "The instructions of the LLM features (spec, LLM features). A complete set: one entry per prompt id. Placeholders are written {name}; collected text, chat turns, facts, buyer criteria and buyer context may only appear in the data template.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["prompts"],
+  "properties": {
+    "$comment": { "type": "string" },
+    "prompts": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": { "$ref": "#/$defs/prompt" }
+    }
+  },
+  "$defs": {
+    "placeholder": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,39}$"
+    },
+    "prompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "instructions", "data_template", "placeholders", "output_schema"],
+      "properties": {
+        "id": {
+          "enum": ["identity", "retrieval", "extraction", "assessment", "fit", "recommendations"]
+        },
+        "version": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "instructions": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "data_template": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "placeholders": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/placeholder" }
+        },
+        "output_schema": {
+          "enum": ["IdentityProposal", "RetrievalResult", "FieldExtraction", "AssessmentStatement"]
+        }
+      }
+    }
+  }
+}

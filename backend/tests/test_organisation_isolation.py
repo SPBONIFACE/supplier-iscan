@@ -331,7 +331,15 @@ def test_get_organisation_returns_the_members_own_organisation(
 
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == {"name", "status", "seat_limit", "profile_quota", "access_ends_at"}
+    assert set(body) == {
+        "name",
+        "status",
+        "seat_limit",
+        "profile_quota",
+        "profiles_remaining",
+        "run_refusal_reason",
+        "access_ends_at",
+    }
     assert body["name"] == "Acme Buyers"
     assert body["status"] == "active"
     assert body["seat_limit"] == 5

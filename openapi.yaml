@@ -175,7 +175,9 @@ paths:
       summary: Return the signed-in member's own organisation
       description: >-
         The organisation of the session, never another one: there is no organisation id to pass.
-        The remaining profile quota is added in a later version.
+        Also says how many profiles may still be started and whether a new run would be refused
+        right now, and why, so that the workspace can show it before the member starts. No spend
+        amount is exposed.
       security:
         - sessionCookie: []
       responses:
@@ -1225,6 +1227,17 @@ components:
           type: string
         model_id:
           type: string
+    ExcludedSource:
+      description: A source the crawler did not use, at the site owner's request.
+      type: object
+      additionalProperties: false
+      required: [domain, message]
+      properties:
+        domain:
+          type: string
+        message:
+          description: Always "Source excluded at the site owner's request."
+          type: string
     RunUsage:
       description: Totals of every provider call attempt of the run (failed and retried included).
       type: object
@@ -1267,6 +1280,7 @@ components:
         - profile_definition_hash
         - prompt_set_hash
         - usage
+        - excluded_sources
         - created_at
         - started_at
         - finished_at
@@ -1308,6 +1322,14 @@ components:
           type: [string, "null"]
         usage:
           $ref: "#/components/schemas/RunUsage"
+        excluded_sources:
+          description: >-
+            Domains the crawler did not use because the site owner reserved text and data mining,
+            blocked AI crawlers, or asked for suppression. Only the domain and the message are
+            shown; the crawl-permission record itself is readable by the administrator only.
+          type: array
+          items:
+            $ref: "#/components/schemas/ExcludedSource"
         created_at:
           type: string
           format: date-time
@@ -1500,7 +1522,14 @@ components:
         What a member sees of their own organisation. Nothing about any other organisation.
       type: object
       additionalProperties: false
-      required: [name, status, seat_limit, profile_quota, access_ends_at]
+      required:
+        - name
+        - status
+        - seat_limit
+        - profile_quota
+        - profiles_remaining
+        - run_refusal_reason
+        - access_ends_at
       properties:
         name:
           type: string
@@ -1513,6 +1542,17 @@ components:
         profile_quota:
           description: Maximum number of profile runs. Null means unlimited.
           type: [integer, "null"]
+        profiles_remaining:
+          description: >-
+            Profile runs that may still start: the quota minus the runs that count against it,
+            never below 0. Null when the quota is unlimited.
+          type: [integer, "null"]
+        run_refusal_reason:
+          description: >-
+            Why a new run would be refused now, or null when it would be accepted. Checked in
+            this order: not activated, access ended, quota used, instance monthly spend cap reached.
+          type: [string, "null"]
+          enum: [not_activated, access_ended, quota_reached, spend_cap_reached, null]
         access_ends_at:
           description: End of access. Null while not yet activated, or when the access is unlimited.
           type: [string, "null"]
