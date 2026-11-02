@@ -393,6 +393,12 @@ export interface components {
             provider: string;
             model_id: string;
         };
+        /** @description A source the crawler did not use, at the site owner's request. */
+        ExcludedSource: {
+            domain: string;
+            /** @description Always "Source excluded at the site owner's request." */
+            message: string;
+        };
         /** @description Totals of every provider call attempt of the run (failed and retried included). */
         RunUsage: {
             calls: number;
@@ -427,6 +433,8 @@ export interface components {
             profile_definition_hash: string | null;
             prompt_set_hash: string | null;
             usage: components["schemas"]["RunUsage"];
+            /** @description Domains the crawler did not use because the site owner reserved text and data mining, blocked AI crawlers, or asked for suppression. Only the domain and the message are shown; the crawl-permission record itself is readable by the administrator only. */
+            excluded_sources: components["schemas"]["ExcludedSource"][];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */

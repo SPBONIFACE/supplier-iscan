@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Literal
+from urllib.parse import urlsplit
 
 # Local development origin of the Vite dev server (spec, Security model: Allowed origins).
 # Deployed environments set CORS_ALLOWED_ORIGINS to their own frontend origin.
@@ -43,6 +44,9 @@ PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the sett
 # idle worker looks for work.
 RUN_LEASE_SECONDS = "RUN_LEASE_SECONDS"
 WORKER_POLL_SECONDS = "WORKER_POLL_SECONDS"
+# Crawler identity (#17): the public contact page named in the User-Agent of every request to a
+# supplier site. No default: the operator publishes their own page (#47).
+CRAWLER_CONTACT_URL = "CRAWLER_CONTACT_URL"
 # Monthly LLM spend cap of the instance, in EUR (spec F7). Unset: no cap.
 MONTHLY_SPEND_CAP_EUR = "MONTHLY_SPEND_CAP_EUR"
 
@@ -84,6 +88,7 @@ class Settings:
     password_min_length: int = DEFAULT_PASSWORD_MIN_LENGTH
     run_lease: timedelta = timedelta(seconds=DEFAULT_RUN_LEASE_SECONDS)
     worker_poll_seconds: int = DEFAULT_WORKER_POLL_SECONDS
+    crawler_contact_url: str | None = None
     monthly_spend_cap_eur: Decimal | None = None
 
     @property
@@ -118,6 +123,20 @@ def _parse_positive_int(env: Mapping[str, str], name: str, default: int) -> int:
             f"{name} must be a whole number between 1 and {MAX_SETTING_NUMBER}"
         )
     return int(raw)
+
+
+def _parse_contact_url(raw: str) -> str | None:
+    value = raw.strip()
+    if not value:
+        return None
+    parts = urlsplit(value)
+    if parts.scheme not in ("http", "https") or not parts.hostname or parts.username:
+        raise ConfigurationError(f"{CRAWLER_CONTACT_URL} must be an http(s) address")
+    if any(
+        character.isspace() or character in "()<>" or ord(character) < 32 for character in value
+    ):
+        raise ConfigurationError(f"{CRAWLER_CONTACT_URL} must be an http(s) address")
+    return value
 
 
 def _parse_rate(raw: str) -> Decimal | None:
@@ -176,5 +195,6 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         worker_poll_seconds=_parse_positive_int(
             env, WORKER_POLL_SECONDS, DEFAULT_WORKER_POLL_SECONDS
         ),
+        crawler_contact_url=_parse_contact_url(env.get(CRAWLER_CONTACT_URL, "")),
         monthly_spend_cap_eur=_parse_spend_cap(env.get(MONTHLY_SPEND_CAP_EUR, "")),
     )

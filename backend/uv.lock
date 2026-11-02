@@ -753,6 +753,15 @@ wheels = [
 ]
 
 [[package]]
+name = "protego"
+version = "0.7.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7a/d9/5026b9e75db1172f02441a84eaf42efb199b4cea14dda7651a620d1acd40/protego-0.7.0.tar.gz", hash = "sha256:2c032d9736a1f4f0c4318f3558353ae34da5cd038f1a5e064ded7548df315e5a", size = 3144321, upload-time = "2026-09-21T10:54:00.107Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/20/e4382a85e4cf4746d11746481f83360b990165725dd36ba73d55e029e6a9/protego-0.7.0-py3-none-any.whl", hash = "sha256:944638aaee608f6c83fcad442695f3f9381a60be8d5007248f46b00f201fa5fc", size = 13714, upload-time = "2026-09-21T10:53:58.812Z" },
+]
+
+[[package]]
 name = "psycopg"
 version = "3.3.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1054,6 +1063,7 @@ dependencies = [
     { name = "mistralai" },
     { name = "openai" },
     { name = "perplexityai" },
+    { name = "protego" },
     { name = "psycopg", extra = ["binary"] },
     { name = "sqlalchemy" },
     { name = "uvicorn" },
@@ -1079,6 +1089,7 @@ requires-dist = [
     { name = "mistralai", specifier = "==3.2.0" },
     { name = "openai", specifier = "==3.29.0" },
     { name = "perplexityai", specifier = "==0.43.8" },
+    { name = "protego", specifier = "==0.7.0" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
     { name = "sqlalchemy", specifier = "==2.0.54" },
     { name = "uvicorn", specifier = "==0.54.0" },
