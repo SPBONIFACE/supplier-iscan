@@ -142,10 +142,6 @@ HTTP_CLIENT_INTERNAL_NAMES = frozenset(
 # module is usable only inside its own package (see `_allowed_module_findings`): it is not a way
 # around the guard for the rest of the application.
 ALLOWED_MODULES: dict[str, str] = {
-    "backend/app/registries/httpx2_fetch.py": (
-        "#14: the registries' single network module, to the fixed public hosts of Wikidata and "
-        "GLEIF only; to be switched to the guarded client in #16."
-    ),
     "backend/app/providers/adapters/anthropic_adapter.py": (
         "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
         "provider configuration only (never a user URL); reached only through "
@@ -594,89 +590,31 @@ def test_only_the_public_surface_of_the_http_client_may_be_imported() -> None:
     assert find_network_access("from app.http_client import GuardedClient") == []
 
 
-# QA's bypass on #15 (FAIL, criterion 6, third round): a module elsewhere using the registries'
-# unguarded fetcher, which accepts any URL.
-QA_PROBE_CRAWLER = """\
-from app.registries.httpx2_fetch import Httpx2Fetch
-async def fetch_supplier_page(url): return (await Httpx2Fetch(10.0)(url, {}, {})).body
-"""
-
-
-def test_the_allowed_module_and_its_names_are_known_to_the_scan() -> None:
-    fetcher, *adapters = ALLOWED
-
-    assert {adapter.package for adapter in adapters} == {"app.providers.adapters"}
-    assert {"make_client", "build_structuring"} <= adapters[0].names
-    assert fetcher.name == "app.registries.httpx2_fetch"
-    assert fetcher.package == "app.registries"
-    assert {"httpx2_fetch", "Httpx2Fetch"} <= fetcher.names
-
-
-def test_a_module_elsewhere_using_the_allowed_fetcher_fails_the_scan() -> None:
-    probe = BACKEND / "app" / "qa_probe_crawler.py"
-    sources = {**_application_sources(), probe: QA_PROBE_CRAWLER}
-
-    violations = _violations(sources)
-
-    assert list(violations) == ["backend/app/qa_probe_crawler.py"]
+def test_the_allowed_modules_and_their_names_are_known_to_the_scan() -> None:
+    # #16: the registries' own unguarded fetcher is gone; only the provider adapters remain.
+    assert {adapter.package for adapter in ALLOWED} == {"app.providers.adapters"}
+    assert {"make_client", "build_structuring"} <= ALLOWED[0].names
+    assert not (BACKEND / "app" / "registries" / "httpx2_fetch.py").exists()
 
 
 OUTSIDE = "app.services.crawler"
+ADAPTER = "app.providers.adapters.anthropic_adapter"
 
 
 @pytest.mark.parametrize(
     ("source", "module"),
     [
-        (QA_PROBE_CRAWLER, "app.qa_probe_crawler"),
-        ("from app.registries.httpx2_fetch import Httpx2Fetch", OUTSIDE),
-        ("from app.registries.httpx2_fetch import Httpx2Fetch as Fetch", OUTSIDE),
-        ("from app.registries.httpx2_fetch import *", OUTSIDE),
-        ("import app.registries.httpx2_fetch", OUTSIDE),
-        ("import app.registries.httpx2_fetch as f\nf.Httpx2Fetch(1.0)", OUTSIDE),
-        ("from app.registries import httpx2_fetch", OUTSIDE),
-        ("from app.registries import httpx2_fetch as f", OUTSIDE),
-        ("from app import registries\nregistries.httpx2_fetch.Httpx2Fetch", OUTSIDE),
-        ("import app.registries as r\nr.httpx2_fetch", OUTSIDE),
-        ("from app.registries import service\nservice.Httpx2Fetch", OUTSIDE),
-        # A re-export through the package or one of its modules.
-        ("from app.registries import Httpx2Fetch", OUTSIDE),
-        ("from app.registries.service import Httpx2Fetch", OUTSIDE),
-        ("from app.registries.service import *", OUTSIDE),
-        ("from app.registries import *", OUTSIDE),
-        # Relative imports, resolved against the module's own name.
-        ("from .registries.httpx2_fetch import Httpx2Fetch", "app.qa_probe_crawler"),
-        ("from .registries import httpx2_fetch", "app.qa_probe_crawler"),
-        ("from ..registries.httpx2_fetch import Httpx2Fetch", OUTSIDE),
-        ("from ..registries import Httpx2Fetch", OUTSIDE),
-        # Literal names given to getattr or import_module.
-        ("import importlib\nimportlib.import_module('app.registries.httpx2_fetch')", OUTSIDE),
-        ("import app.registries as r\ngetattr(r, 'httpx2_fetch')", OUTSIDE),
-        ("from app.registries import service\ngetattr(service, 'Httpx2Fetch')", OUTSIDE),
-        # Inside the package, the fetcher may not leave under another name.
-        ("from app.registries.httpx2_fetch import Httpx2Fetch as F", "app.registries.service"),
-        ("from .httpx2_fetch import Httpx2Fetch as Fetch", "app.registries.service"),
-        ("from . import httpx2_fetch as f", "app.registries.__init__"),
+        (f"from {ADAPTER} import make_client", OUTSIDE),
+        (f"from {ADAPTER} import make_client as f", OUTSIDE),
+        (f"import {ADAPTER}", OUTSIDE),
+        ("from app.providers.adapters import anthropic_adapter", OUTSIDE),
+        ("from app.providers import adapters\nadapters.anthropic_adapter", OUTSIDE),
+        ("from ..providers.adapters import anthropic_adapter", OUTSIDE),
+        (f"import importlib\nimportlib.import_module('{ADAPTER}')", OUTSIDE),
     ],
 )
-def test_the_allowed_fetcher_cannot_be_used_outside_its_package(source: str, module: str) -> None:
+def test_an_allowed_adapter_cannot_be_used_outside_its_package(source: str, module: str) -> None:
     assert find_network_access(source, module)
-
-
-@pytest.mark.parametrize(
-    ("source", "module"),
-    [
-        ("from app.registries.httpx2_fetch import Httpx2Fetch", "app.registries.service"),
-        ("from .httpx2_fetch import Httpx2Fetch", "app.registries.service"),
-        ("from . import httpx2_fetch", "app.registries.__init__"),
-        ("from app.registries.http import FetchError", "app.registries.gleif"),
-        # The registries' public surface stays usable from elsewhere.
-        ("from app.registries import RegistrySearchService", "app.main"),
-        ("from app.registries import build_registry_service, load_registry_settings", "app.main"),
-        ("from app.registries.models import RegistryCandidate", "app.api.suppliers"),
-    ],
-)
-def test_the_allowed_fetcher_is_usable_inside_its_package(source: str, module: str) -> None:
-    assert find_network_access(source, module) == []
 
 
 def test_the_guarded_clients_raw_client_is_an_internal_name() -> None:
