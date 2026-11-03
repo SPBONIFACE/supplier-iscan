@@ -1,7 +1,7 @@
 # Supplier iScan: the four project commands. Paths are relative to this file; nothing here depends
 # on the host machine beyond the prerequisites listed in README.md ("Running it").
 .DEFAULT_GOAL := help
-.PHONY: help install fetch-model test test-model lint run stop
+.PHONY: help install fetch-model test test-model lint run stop approve-dependency
 
 help: ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  make %-12s %s\n", $$1, $$2}'
@@ -34,3 +34,6 @@ run: ## Start the database, the API and the frontend with Docker Compose
 
 stop: ## Stop the containers started by make run (the database volume is kept)
 	docker compose down
+
+approve-dependency: ## Owner only: PACKAGE=name VERSION=x.y.z SCOPE=runtime|dev NOTE="why"
+	cd agent-pack && python3 scripts/approve_dependency.py --package "$(PACKAGE)" --version "$(VERSION)" --scope "$(SCOPE)" --note "$(NOTE)"
