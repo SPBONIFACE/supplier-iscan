@@ -1,17 +1,18 @@
 """Detection and removal of personal data (#19): email, phone, people's names, forced names.
 
 What is removed, each omission replaced by `[…]`:
-- email addresses (regex);
+- email addresses (regex, obfuscated forms included);
 - phone numbers (`phonenumbers`, with guards so that SIREN, LEI and VAT numbers survive);
-- people's names found by spaCy NER (`en`, `de` and the multilingual `xx` model, united: recall
-  first; `zh` when the text has Han characters), cleaned of roles and company words;
+- people's names: GLiNER (`detector.py`) on the text and on a case-restored copy, united with
+  spaCy `zh` for text with Han characters, widened over adjacent name tokens, plus precise rules
+  (honorifics, labels, table columns, lower-case clues; `names.py`, `lowercase.py`);
 - names the caller forces (suppression entries, the confirmed name and registered address of a
   natural person), matched ignoring case and accents, whatever the detection found.
 
-A company's name survives when NER mislabels it: spans with a legal form or company word, and
+A company's name survives when a model mislabels it: spans with a legal form or company word, and
 spans inside a registry company name the caller lists in `keep`, are not redacted (forced names
-always win over `keep`). Models are loaded once per process, only the `ner` pipe, never fetched.
-The text itself is never logged and never put in an exception message.
+always win over `keep`). Models are loaded once per process, never fetched. The text itself is
+never logged and never put in an exception message. Any failure is `RedactionUnavailable`.
 """
 
 import logging
@@ -19,32 +20,27 @@ import re
 import threading
 import unicodedata
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass, field
-from typing import Any, Final, cast
+from dataclasses import dataclass
+from typing import Final
 
 import phonenumbers
-import spacy
-from spacy.cli.info import info as spacy_info
 
 from app.redaction import lowercase, names
+from app.redaction.detector import (
+    GlinerDetector,
+    NameDetector,
+    SpacyHanDetector,
+    has_han,
+    strip_cjk,
+)
 from app.redaction.text import OMISSION, RedactedText, RedactionUnavailable, mint
 
 logger = logging.getLogger(__name__)
 
 MAX_TEXT_CHARS: Final = 4_000_000
-CHUNK_CHARS: Final = 20_000
-_LATIN_MODELS: Final = (
-    ("en", "en_core_web_sm"),
-    ("de", "de_core_news_sm"),
-    ("xx", "xx_ent_wiki_sm"),
-)
-_HAN_MODEL: Final = ("zh", "zh_core_web_sm")
-_PERSON_LABELS: Final = {"PERSON", "PER"}
 _PHONE_REGIONS: Final = ("FR", "DE", "GB", "US", "ES", "IT")
 
 _EMAIL = re.compile(r"(?<![\w.+-])[\w.+%-]+@[\w-]+(?:\.[\w-]+)+", re.UNICODE)
-_HAN = re.compile(r"[㐀-鿿豈-﫿]")
-_CJK = re.compile(r"[぀-ヿ㐀-鿿가-힯豈-﫿]")
 _TOKEN = re.compile(r"\S+")
 _ID_LABEL = re.compile(
     r"(siren|siret|lei|vat|tva|ust|uid|nif|cif|hrb|hra|duns|isin|iban|ein|reg|n°|nº|no\.?|nr\.?|"
@@ -301,56 +297,6 @@ def _key(token: str) -> str:
     return re.split("['\u2019]", folded)[-1]
 
 
-def _clean_person(text: str, start: int, end: int) -> Span | None:
-    """Trim roles, honorifics and trailing words off a detected span; None when nothing is left."""
-    span = text[start:end]
-    if _CJK.search(span):
-        stripped = span.strip(" \t\n,.;:()")
-        if not stripped:
-            return None
-        offset = start + span.index(stripped)
-        return offset, offset + len(stripped)
-    tokens = list(_TOKEN.finditer(span))
-    first, last = 0, len(tokens)
-    while first < last and _is_lead_noise(tokens[first].group()):
-        first += 1
-    stop = first
-    while stop < last and _is_name_token(tokens[stop].group()):
-        stop += 1
-    while stop > first and (
-        _key(tokens[stop - 1].group()) in _ROLES or _key(tokens[stop - 1].group()) in _PARTICLES
-    ):
-        stop -= 1
-    if stop <= first:
-        return None
-    new_start = start + tokens[first].start()
-    new_end = start + tokens[stop - 1].end()
-    cleaned = text[new_start:new_end].rstrip(",.;:)(\"'")
-    if not cleaned or any(c.isdigit() for c in cleaned):
-        return None
-    return new_start, new_start + len(cleaned)
-
-
-def _is_lead_noise(token: str) -> bool:
-    key = _key(token)
-    if not key or key in _ROLES or not token[0].isupper():
-        return True
-    return names.not_a_name(names.fold(token.strip(".,;:()[]{}\"'")).rstrip("."), common=True)
-
-
-def _short_acronym(text: str, span: Span) -> bool:
-    """A lone ALL-CAPS word of four letters or fewer ("GRI", "IVA") is an acronym, not a name."""
-    inside = text[span[0] : span[1]]
-    return len(inside) <= 4 and inside.isalpha() and inside.isupper()
-
-
-def _is_name_token(token: str) -> bool:
-    key = _key(token)
-    if key in _PARTICLES:
-        return True
-    return token[0].isupper() and key not in _ROLES and key not in names.ROLES_EXTRA
-
-
 def _is_legal_form(token: str) -> bool:
     """A legal form or company word. An ambiguous short word ("as", "se", "co") counts only when
     it is not written in plain lower case; a dotted form ("S.p.A.", "s.r.l.") always counts."""
@@ -421,30 +367,20 @@ def _merge(spans: Iterable[Span], text: str) -> list[Span]:
     return merged
 
 
-def _chunks(text: str) -> list[tuple[int, str]]:
-    """Pieces of at most CHUNK_CHARS, cut at a line break, a full stop or a space."""
-    pieces: list[tuple[int, str]] = []
-    position = 0
-    while position < len(text):
-        end = min(position + CHUNK_CHARS, len(text))
-        if end < len(text):
-            for separator in ("\n", ". ", " "):
-                cut = text.rfind(separator, position + CHUNK_CHARS // 2, end)
-                if cut != -1:
-                    end = cut + len(separator)
-                    break
-        pieces.append((position, text[position:end]))
-        position = end
-    return pieces
-
-
-@dataclass
 class Redactor:
-    """Loads the NER models once per process and redacts text."""
+    """Loads the detectors once per process and redacts text.
 
-    _models: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
-    _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
-    _loaded: bool = field(default=False, init=False)
+    `detector` and `han_detector` are injected by tests (a small fake); in the application they
+    are GLiNER and spaCy `zh`, built and loaded on first use.
+    """
+
+    def __init__(
+        self, detector: NameDetector | None = None, han_detector: NameDetector | None = None
+    ) -> None:
+        self._detector = detector
+        self._han_detector = han_detector
+        self._lock = threading.Lock()
+        self._loaded = detector is not None
 
     def load(self) -> None:
         """Load the models (idempotent). Raises RedactionUnavailable when one is missing."""
@@ -454,14 +390,14 @@ class Redactor:
             if self._loaded:
                 return
             try:
-                for key, package in (*_LATIN_MODELS, _HAN_MODEL):
-                    nlp = spacy.load(package, exclude=_other_pipes(package))
-                    nlp.max_length = CHUNK_CHARS * 2
-                    self._models[key] = nlp
+                gliner = GlinerDetector()
+                gliner.load()
+                han = SpacyHanDetector()
+                han.load()
             except Exception as error:  # noqa: BLE001 - any load failure is fail-closed
-                self._models.clear()
                 logger.error("Redaction models could not be loaded: %s", type(error).__name__)
                 raise RedactionUnavailable from None
+            self._detector, self._han_detector = gliner, han
             self._loaded = True
 
     def redact(self, text: str, context: RedactionContext | None = None) -> RedactedText:
@@ -477,6 +413,20 @@ class Redactor:
     def _redact(self, text: str, context: RedactionContext) -> str:
         if not text:
             return text
+        out: list[str] = []
+        position = 0
+        for start, end in self.removed_spans(text, context):
+            out.append(text[position:start])
+            out.append(OMISSION)
+            position = end
+        out.append(text[position:])
+        return "".join(out)
+
+    def removed_spans(self, text: str, context: RedactionContext | None = None) -> list[Span]:
+        """The merged character spans that `redact` replaces (also used by the measure script)."""
+        context = context or RedactionContext()
+        if not text:
+            return []
         if len(text) > MAX_TEXT_CHARS:
             logger.error("Redaction refused a text over %d characters", MAX_TEXT_CHARS)
             raise RedactionUnavailable
@@ -491,137 +441,51 @@ class Redactor:
         for span in self._person_spans(text):
             if not _is_company(text, span, keep_keys):
                 spans.append(span)
-        out: list[str] = []
-        position = 0
-        for start, end in _merge(spans, text):
-            out.append(text[position:start])
-            out.append(OMISSION)
-            position = end
-        out.append(text[position:])
-        return "".join(out)
+        return _merge(spans, text)
 
     def _person_spans(self, text: str) -> list[Span]:
-        """NER on the text and on a case-restored copy, widened and joined by the name rules.
-
-        A detected span with weak evidence is dropped: one model only, and either an ALL-CAPS
-        phrase (a heading) or a lone word at the start of a sentence, in a list of capitalised
-        words or after "in" / "near" (a city, an ordinary word), with no honorific, label or
-        closing right before it.
-        """
-        hits = self._ner_hits(text)
-        restored = names.restore_case(text)
-        if restored != text:
-            hits.extend(self._ner_hits(restored))
-        protected = names.protected_spans(text)
-        clues = names.clue_ends(text)
-        widened = [(names.extend(text, hit.span), hit) for hit in hits]
-        spans: list[Span] = []
-        for span in {item[0] for item in widened}:
-            if _short_acronym(text, span) or any(
-                span[0] < end and start < span[1] for start, end in protected
-            ):
-                continue
-            support = {
-                hit.model
-                for other, hit in widened
-                if hit.clean and other[0] < span[1] and span[0] < other[1]
-            }
-            if _weak(text, span, clues, len(support)):
-                continue
-            spans.append(span)
-        strong, to_confirm = lowercase.spans(text)
-        spans.extend(strong)
-        spans.extend(span for span in to_confirm if self._looks_like_a_name(text, span))
+        """Detector spans (text and case-restored copy; plus `zh` for Han text), widened over
+        adjacent name tokens, then the rules. A failure of any model call propagates."""
+        detector = self._detector
+        if detector is None:
+            raise RedactionUnavailable
+        copy = names.case_restored_copy(text)
+        batch = [text] if copy == text else [text, copy]
+        found = [span for spans in detector.person_spans(batch) for span in spans]
+        if has_han(text) and self._han_detector is not None:
+            for span in self._han_detector.person_spans([text])[0]:
+                cleaned = strip_cjk(text, span)
+                if cleaned:
+                    found.append(cleaned)
+        spans = [names.extend(text, span) for span in set(found)]
+        base, to_confirm = lowercase.spans(text)
+        spans.extend(base)
+        spans.extend(self._confirmed(text, to_confirm))
         return [*spans, *names.rule_spans(text)]
 
-    def _looks_like_a_name(self, text: str, span: Span) -> bool:
-        """Whether a model takes the lower-case words after a label for a person once they are
+    def _confirmed(self, text: str, candidates: list[Span]) -> list[Span]:
+        """Lower-case words after a label that the detector takes for a person once they are
         capitalised ("contact: jean dupont" yes, "contact: reception desk" no)."""
-        start = max(text.rfind("\n", 0, span[0]) + 1, span[0] - 200)
-        end = text.find("\n", span[1])
-        end = min(len(text) if end < 0 else end, span[1] + 200)
-        window = lowercase.capitalised_copy(text[start:end], (span[0] - start, span[1] - start))
-        low, high = span[0] - start, span[1] - start
-        votes = sum(
-            any(
-                entity.label_ in _PERSON_LABELS
-                and entity.start_char < high
-                and low < entity.end_char
-                for entity in self._models[key](window).ents
-            )
-            for key, _ in _LATIN_MODELS
-        )
-        return votes >= 2
-
-    def _ner_hits(self, text: str) -> list["_Hit"]:
-        hits: list[_Hit] = []
-        for offset, chunk in _chunks(text):
-            keys = [key for key, _ in _LATIN_MODELS]
-            if _HAN.search(chunk):
-                keys.append(_HAN_MODEL[0])
-            for key in keys:
-                for entity in self._models[key](chunk).ents:
-                    if entity.label_ not in _PERSON_LABELS:
-                        continue
-                    cleaned = _clean_person(chunk, entity.start_char, entity.end_char)
-                    if cleaned:
-                        span = (offset + cleaned[0], offset + cleaned[1])
-                        hits.append(_Hit(span, key, not _has_lower_word(entity.text)))
-        return hits
-
-
-@dataclass(frozen=True)
-class _Hit:
-    """A person span found by one model; `clean` is False when the model's entity held ordinary
-    lower-case words (it then says little about the span)."""
-
-    span: Span
-    model: str
-    clean: bool
-
-
-def _has_lower_word(entity: str) -> bool:
-    return any(
-        token[0].islower() and _key(token) not in _PARTICLES
-        for token in entity.split()
-        if token[0].isalpha()
-    )
-
-
-def _weak(text: str, span: Span, clues: set[int], support: int) -> bool:
-    """Whether a detected span is too weak to redact without more evidence.
-
-    `support`: how many models found it, not counting a model whose entity held ordinary
-    lower-case words ("Angebot wurde von"). A clue right before it (honorific, label, closing)
-    makes it strong. Without a clue, the evidence needed grows with the risk that the span is an
-    ordinary word: a phrase of several words stands as it is; a lone word needs two models, and
-    three at the start of a sentence, in a list of capitalised words or after "in" / "near" (a
-    city, a common noun); so does a word in a line written entirely in capitals (a heading).
-    """
-    if names.after_clue(text, span[0], clues) or _CJK.search(text[span[0] : span[1]]):
-        return False
-    words = names.name_word_count(text, span)
-    if words == 0:
-        return False
-    if names.is_heading_like(text, span):
-        return not names.is_whole_line(text, span) or words > 2 or support < 3
-    if names.has_stopword(text, span):
-        return support < 3
-    loose = names.loose_position(text, span, single=words == 1)
-    if words > 1:
-        return loose and support < 2
-    return support < (3 if loose else 2)
-
-
-def _other_pipes(package: str) -> list[str]:
-    """Every pipe except `ner`, read from the package metadata (no network, no download)."""
-    pipeline: list[str] = cast(dict[str, Any], spacy_info(package, silent=True))["pipeline"]
-    return [name for name in pipeline if name != "ner"]
+        if not candidates or self._detector is None:
+            return []
+        windows: list[tuple[str, Span]] = []
+        for span in candidates:
+            start = max(text.rfind("\n", 0, span[0]) + 1, span[0] - 200)
+            end = text.find("\n", span[1])
+            end = min(len(text) if end < 0 else end, span[1] + 200)
+            window = lowercase.capitalised_copy(text[start:end], (span[0] - start, span[1] - start))
+            windows.append((window, (span[0] - start, span[1] - start)))
+        found = self._detector.person_spans([window for window, _ in windows])
+        return [
+            span
+            for span, (_, (low, high)), hits in zip(candidates, windows, found, strict=True)
+            if any(start < high and low < end for start, end in hits)
+        ]
 
 
 _REDACTOR = Redactor()
 
 
 def get_redactor() -> Redactor:
-    """The process-wide redactor: models are loaded once, on first use (or at start-up)."""
+    """The process-wide redactor: models are loaded once, on first use."""
     return _REDACTOR

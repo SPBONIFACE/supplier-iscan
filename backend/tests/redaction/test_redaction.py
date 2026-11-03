@@ -1,9 +1,14 @@
-"""Redaction (#19): what is removed, what survives, forced names, fail closed, performance."""
+"""Redaction (#19): what is removed, what survives, forced names, fail closed, chunking.
+
+Fast tests with a fake detector (`support.FakeDetector`): the rules, the company logic, the gate
+around the detector. The real model is exercised in `test_model.py`.
+"""
 
 import logging
+import re
+from collections.abc import Sequence
 
 import pytest
-import spacy
 
 from app.redaction import (
     OMISSION,
@@ -11,39 +16,46 @@ from app.redaction import (
     RedactionContext,
     RedactionUnavailable,
     Redactor,
-    get_redactor,
 )
 from app.redaction import engine as engine_module
-from tests.redaction.corpora import COMPANY_CASES, CORPUS, HELD_OUT, Case
+from app.redaction.detector import chunk_text
+from tests.redaction.support import FakeDetector, fake_redactor
 
 
-def redact(text: str, context: RedactionContext | None = None) -> str:
-    return get_redactor().redact(text, context).text
+def redact(text: str, context: RedactionContext | None = None, *found: str) -> str:
+    return fake_redactor(*found).redact(text, context).text
 
 
-@pytest.mark.parametrize("case", [*CORPUS, *HELD_OUT], ids=lambda c: f"{c.language}-{c.text[:30]}")
-def test_personal_data_is_removed_and_roles_companies_and_identifiers_survive(case: Case) -> None:
-    out = redact(case.text)
-
-    for item in case.remove:
-        assert item not in out, item
-    for item in case.keep:
-        assert item in out, item
-    assert OMISSION in out
-
-
-@pytest.mark.parametrize("case", COMPANY_CASES, ids=lambda c: c.language)
-def test_a_company_name_survives_when_ner_mislabels_it(case: Case) -> None:
-    out = redact(case.text)
-
-    for item in case.keep:
-        assert item in out
-
-
-def test_the_role_stays_and_each_omission_is_marked() -> None:
-    out = redact("Anna Meyer, Chief Executive Officer, wrote to bob.jones@example.org.")
+def test_a_detected_name_is_removed_and_the_role_and_each_omission_are_marked() -> None:
+    out = redact(
+        "Anna Meyer, Chief Executive Officer, wrote to bob.jones@example.org.", None, "Anna Meyer"
+    )
 
     assert out == "[…], Chief Executive Officer, wrote to […]."
+
+
+@pytest.mark.parametrize(
+    "company",
+    [
+        "Acme Holdings Ltd",
+        "Kaltenbach & Söhne Maschinenbau GmbH & Co. KG",
+        "Aceros del Norte SL",
+        "Ferramenta Lombarda SRL",
+        "Metalurgica del Norte S.A.",
+        "Fonderia Rossi S.p.A.",
+    ],
+)
+def test_a_company_name_survives_when_the_detector_mislabels_it(company: str) -> None:
+    text = f"{company} supplies the plant."
+
+    assert redact(text, None, company) == text
+    assert redact(text, None, company.split(" ")[0]) == text
+
+
+def test_a_name_that_is_not_a_company_is_still_removed() -> None:
+    assert redact("Hijos de Villaescusa is a family.", None, "Villaescusa") != (
+        "Hijos de Villaescusa is a family."
+    )
 
 
 @pytest.mark.parametrize(
@@ -136,6 +148,19 @@ def test_a_registry_company_name_is_protected_from_ner_but_not_from_forced_names
     assert forced == f"{OMISSION} delivered."
 
 
+def test_a_registry_company_name_is_protected_from_ner_but_not_from_forced_names() -> None:
+    found = "Brightwater Anders"
+    kept = redact("Brightwater Anders delivered.", RedactionContext(keep=(found,)), found)
+    forced = redact(
+        "Brightwater Anders delivered.",
+        RedactionContext(keep=(found,), names=(found,)),
+        found,
+    )
+
+    assert kept == "Brightwater Anders delivered."
+    assert forced == f"{OMISSION} delivered."
+
+
 def test_text_without_personal_data_is_unchanged() -> None:
     text = "The company reported revenue of EUR 12.5 million and 240 employees in 2023."
 
@@ -143,14 +168,61 @@ def test_text_without_personal_data_is_unchanged() -> None:
     assert redact("") == ""
 
 
-def test_long_text_is_processed_in_bounded_chunks() -> None:
+def test_long_text_is_cut_into_overlapping_chunks_and_nothing_is_lost() -> None:
     sentence = "Our Chief Executive Officer, Anna Meyer, signed the report. "
-    text = sentence * (3 * engine_module.CHUNK_CHARS // len(sentence))
+    text = sentence * (4 * 1_200 // len(sentence))
+    detector = FakeDetector(["Anna Meyer"])
 
-    out = redact(text)
+    out = Redactor(detector).redact(text).text
 
-    assert "Meyer" not in out and "Chief Executive Officer" in out
-    assert out.count(OMISSION) >= text.count("Anna Meyer") - 3
+    assert "Meyer" not in out and out.count(OMISSION) == text.count("Anna Meyer")
+    assert len(chunk_text(text)) > 3
+
+
+@pytest.mark.parametrize("name", ["Anna Meyer", "Hollis Varney-Quick", "Thibaut de la Fresnaye"])
+def test_a_name_on_a_chunk_boundary_lies_whole_in_one_chunk(name: str) -> None:
+    for shift in range(0, 60):
+        filler = "lorem ipsum dolor sit amet " * 60
+        text = filler[: 1_200 - shift] + name + " " + filler
+        assert any(name in piece for _, piece in chunk_text(text)), shift
+
+
+def test_chunks_cover_every_position_with_a_stable_offset() -> None:
+    text = ("word " * 900) + "\n" + ("x" * 3_000) + " end"
+
+    pieces = chunk_text(text)
+
+    covered = [False] * len(text)
+    for offset, piece in pieces:
+        assert text[offset : offset + len(piece)] == piece
+        assert len(piece) <= 1_200
+        for index in range(offset, offset + len(piece)):
+            covered[index] = True
+    assert all(covered)
+
+
+def test_a_chunk_never_holds_more_words_than_the_model_reads() -> None:
+    text = ", ".join(["a"] * 2_000)
+
+    for _, piece in chunk_text(text, max_words=300):
+        assert sum(1 for _ in re.finditer(r"\w+(?:[-_]\w+)*|\S", piece)) <= 300
+
+
+def test_a_chunk_that_errors_fails_closed_without_the_text(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    class SecondChunkFails(FakeDetector):
+        def person_spans(self, texts: Sequence[str]) -> list[list[tuple[int, int]]]:
+            if any("secret-person" in text for text in texts):
+                raise RuntimeError("boom secret-person")
+            return super().person_spans(texts)
+
+    text = "calm text. " * 50 + "secret-person"
+    with caplog.at_level(logging.DEBUG), pytest.raises(RedactionUnavailable) as error:
+        Redactor(SecondChunkFails()).redact(text)
+
+    assert "secret-person" not in str(error.value) and "secret-person" not in caplog.text
+    assert error.value.__cause__ is None
 
 
 def test_a_text_over_the_limit_is_refused_not_truncated(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -160,67 +232,72 @@ def test_a_text_over_the_limit_is_refused_not_truncated(monkeypatch: pytest.Monk
         redact("x" * 101)
 
 
-def test_the_models_are_loaded_once_per_process_and_only_the_ner_pipe(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_the_models_are_loaded_once_per_process(monkeypatch: pytest.MonkeyPatch) -> None:
     loads: list[str] = []
-    real_load = spacy.load
 
-    def counting_load(name: str, **kwargs: object) -> object:
-        loads.append(name)
-        return real_load(name, **kwargs)  # type: ignore[arg-type]
+    class Counting(FakeDetector):
+        def load(self) -> None:
+            loads.append("gliner")
 
-    monkeypatch.setattr(spacy, "load", counting_load)
+    class CountingHan(Counting):
+        def load(self) -> None:
+            loads.append("zh")
+
+    monkeypatch.setattr(engine_module, "GlinerDetector", Counting)
+    monkeypatch.setattr(engine_module, "SpacyHanDetector", CountingHan)
     redactor = Redactor()
 
     for _ in range(3):
         redactor.redact("Anna Meyer called.")
 
-    assert sorted(loads) == [
-        "de_core_news_sm",
-        "en_core_web_sm",
-        "xx_ent_wiki_sm",
-        "zh_core_web_sm",
-    ]
-    assert all(nlp.pipe_names == ["ner"] for nlp in redactor._models.values())
+    assert sorted(loads) == ["gliner", "zh"]
 
 
-def test_the_process_wide_redactor_is_one_object() -> None:
-    assert get_redactor() is get_redactor()
+def test_the_han_detector_is_used_only_for_han_text_and_united_with_the_main_one() -> None:
+    main, han = FakeDetector(["Anna Meyer"]), FakeDetector(["王浩然"])
+    redactor = Redactor(main, han)
+
+    out = redactor.redact("Anna Meyer und 王浩然 sprachen. Anna Meyer allein.").text
+    redactor.redact("Only Latin text here.")
+
+    assert "Meyer" not in out and "王" not in out
+    assert len(han.calls) == 1
 
 
 def test_a_model_that_cannot_be_loaded_fails_closed_without_the_text(
-    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: pytest.TempPathFactory,
 ) -> None:
-    def broken(name: str, **kwargs: object) -> object:
-        raise OSError(f"[E050] cannot find {name}: secret-person-name")
-
-    monkeypatch.setattr(spacy, "load", broken)
+    monkeypatch.setenv("REDACTION_MODEL_DIR", str(tmp_path))
 
     with caplog.at_level(logging.DEBUG), pytest.raises(RedactionUnavailable) as error:
         Redactor().redact("Anna Meyer, anna@example.org")
 
-    assert "Anna" not in str(error.value) and "secret-person-name" not in str(error.value)
-    assert "Anna" not in caplog.text and "secret-person-name" not in caplog.text
+    assert "Anna" not in str(error.value) and "Anna" not in caplog.text
     assert error.value.__cause__ is None
 
 
 def test_an_exception_during_redaction_fails_closed(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
-    redactor = Redactor()
-    redactor.load()
-
     def explode(text: str) -> list[tuple[int, int]]:
         raise RuntimeError(f"boom with {text}")
 
     monkeypatch.setattr(engine_module, "_email_spans", explode)
 
     with caplog.at_level(logging.DEBUG), pytest.raises(RedactionUnavailable) as error:
-        redactor.redact("Anna Meyer, anna@example.org")
+        fake_redactor().redact("Anna Meyer, anna@example.org")
 
     assert "Anna" not in str(error.value) and "Anna" not in caplog.text
     assert error.value.__cause__ is None
+
+
+def test_a_detector_that_raises_fails_closed() -> None:
+    redactor = Redactor(FakeDetector(fail_on="Anna"))
+
+    with pytest.raises(RedactionUnavailable):
+        redactor.redact("Anna Meyer called.")
 
 
 def test_redacted_text_cannot_be_created_outside_the_redaction_module() -> None:
@@ -228,7 +305,7 @@ def test_redacted_text_cannot_be_created_outside_the_redaction_module() -> None:
         RedactedText("Anna Meyer")
     with pytest.raises(TypeError):
         RedactedText("Anna Meyer", _token=object())
-    secret = get_redactor().redact("Reach Anna Meyer.")
+    secret = fake_redactor("Anna Meyer").redact("Reach Anna Meyer.")
     assert "Anna" not in repr(secret) and "Anna" not in str(secret)
     with pytest.raises(AttributeError):
         secret._chars = "Anna Meyer"

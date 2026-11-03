@@ -25,7 +25,7 @@ jobs:
   check:
     name: install, lint, test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     services:
       # Same image and digest as docker-compose.yml. Throwaway, test-only credentials.
@@ -80,6 +80,14 @@ jobs:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: pnpm-store-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml') }}
 
+      # The name-detection model (1.2 GB, outside the repository). make install runs
+      # scripts/fetch_model.py, which checks the sha256 of every file whether cached or downloaded.
+      - name: Cache the redaction model
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/supplier-iscan
+          key: redaction-model-${{ hashFiles('backend/scripts/fetch_model.py') }}
+
       - name: make install
         run: make install
 
@@ -95,6 +103,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://ci:ci_test_only@localhost:5432/supplier_iscan_test
         run: make test
+
+      - name: make test-model (real name-detection model)
+        run: make test-model
 
       - name: Lockfiles unchanged
         run: git diff --exit-code -- backend/uv.lock frontend/pnpm-lock.yaml

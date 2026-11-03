@@ -126,18 +126,6 @@ FUNCTION_WORDS: Final = _words(
 )
 
 
-def _stopwords() -> frozenset[str]:
-    # spaCy's own closed-class word lists (shipped with spaCy, no download): not a new dependency.
-    from spacy.lang.de.stop_words import STOP_WORDS as de
-    from spacy.lang.en.stop_words import STOP_WORDS as en
-    from spacy.lang.es.stop_words import STOP_WORDS as es
-    from spacy.lang.fr.stop_words import STOP_WORDS as fr
-    from spacy.lang.it.stop_words import STOP_WORDS as it
-
-    return frozenset(fold(word) for word in (*en, *de, *fr, *es, *it))
-
-
-STOPWORDS: Final = _stopwords()
 # Articles, possessives and demonstratives: a capitalised word right after one is a common noun.
 DETERMINERS: Final = _words(
     """the a an this that these those my our your his her its their some any each every
@@ -405,28 +393,21 @@ def _skip_blank(text: str, position: int) -> int:
     return position
 
 
-_STREETS: Final = (
-    r"rue|avenue|boulevard|bd|via|viale|piazza|corso|calle|plaza|paseo|avenida|street|road|"
-    r"lane|way|platz|weg|allee|chemin|impasse|place|quai|carrer|rua"
-)
-_CAP_WORD: Final = r"[A-ZÀ-ÝŒ][\w'’-]*"
-_PROTECTED: Final = re.compile(
-    rf"(?<!\w)(?:{_STREETS})\.?[ \t]+{_CAP_WORD}(?:[ \t]+{_CAP_WORD}){{0,3}}[ \t]*,?[ \t]*\d+"
-    rf"|(?<!\w)[^\W\d_]+(?:stra(?:ß|ss)e|str\.|gasse|allee|platz|weg)[ \t]*\d+"
-    r"|(?<!\w)(?:registered\s+office|head\s+office|office|si[èe]ge(?:\s+social)?|sede(?:\s+legale)?"
-    r"|sitz|firmensitz|domicile|domicilio(?:\s+social)?|address|adresse|anschrift|indirizzo"
-    r"|direcci[óo]n)[ \t]*:[^\n]*"
-    r"|(?<!\w)(?:sign[ée]e?|fait|firmado|firmato|signed|gezeichnet|done|unterschrieben)"
-    rf"[ \t]+(?:à|a|en|in|at)[ \t]+{_CAP_WORD}(?:[ \t-]+{_CAP_WORD})?"
-    r"|(?<!\w)(?:EXW|FCA|CPT|CIP|DAP|DPU|DDP|FAS|FOB|CFR|CIF)"
-    rf"[ \t]+{_CAP_WORD}(?:[ \t]+{_CAP_WORD})?",
-    re.IGNORECASE,
-)
+def case_restored_copy(text: str) -> str:
+    """A copy with the same offsets in which ALL-CAPS words are capitalised and lower-case words
+    too, except function words and particles ("jean de la fontaine" becomes "Jean de la Fontaine"),
+    so that a model trained on ordinary text can read a name written in capitals or lower case."""
+    restored = restore_case(text)
 
+    def capitalise(match: re.Match[str]) -> str:
+        word = match.group()
+        bare = fold(word.rstrip("."))
+        if word[0].islower() and bare not in FUNCTION_WORDS and bare not in PARTICLES:
+            upper = word[0].upper()
+            return upper + word[1:] if len(upper) == 1 else word
+        return word
 
-def protected_spans(text: str) -> list[Span]:
-    """Addresses, signing places and incoterm places: a place is not a person."""
-    return [m.span() for m in _PROTECTED.finditer(text)]
+    return WORD.sub(capitalise, restored)
 
 
 def rule_spans(text: str) -> list[Span]:
@@ -533,88 +514,3 @@ def _table_spans(text: str) -> list[Span]:
                     spans.append(run)
         offset += len(line) + 1
     return spans
-
-
-def clue_ends(text: str) -> set[int]:
-    """Offsets right after an honorific, a label or a closing ("Contact:", "Mme", "Regards,")."""
-    ends: set[int] = set()
-    for pattern in (_HONORIFIC, _LABEL):
-        for match in pattern.finditer(text):
-            end = match.end()
-            while end > match.start() and text[end - 1].isspace():
-                end -= 1
-            ends.add(end)
-    return ends
-
-
-def after_clue(text: str, start: int, ends: set[int]) -> bool:
-    """Whether the text just before `start` is a clue (see `clue_ends`)."""
-    position = start
-    while position > 0 and text[position - 1] in " \t\n":
-        position -= 1
-    return position in ends
-
-
-_SENTENCE_START: Final = re.compile(r"[\n.!?:;•*#>\"“«(\-–—][ \t]*$")
-_PLACE_PREPOSITION: Final = re.compile(
-    r"(?:^|\W)(?:in|at|near|of|bei|nach|à|en|près|vers|dans|sur|a|di|de|du|del)[ \t]+$",
-    re.IGNORECASE,
-)
-_LIST_JOINER: Final = r"(?:[ \t]*[,;/&]|[ \t]+(?:and|or|et|ou|und|oder|y|o|e))"
-_LIST_BEFORE: Final = re.compile(rf"[A-ZÀ-ÝŒ][\w'’-]*{_LIST_JOINER}[ \t]+$")
-_LIST_AFTER: Final = re.compile(rf"{_LIST_JOINER}[ \t]+[A-ZÀ-ÝŒ]")
-
-
-def loose_position(text: str, span: Span, *, single: bool = True) -> bool:
-    """Where a word is as likely a place or an ordinary word as a name: at the start of a
-    sentence or line, after "in", "near", "of" ..., after a determiner and, for a lone word, in a
-    list of capitalised words ("Lyon, Nantes and Rennes"; a list of full names is not loose)."""
-    before = text[max(0, span[0] - 60) : span[0]]
-    if span[0] == 0:
-        return True
-    if _SENTENCE_START.search(before) or _PLACE_PREPOSITION.search(before):
-        return True
-    previous = _PREV.search(before.rstrip(" \t"))
-    if (
-        previous is not None
-        and fold(previous.group(1)) in DETERMINERS
-        and previous.group(1).islower()
-    ):
-        return (
-            True  # "unser Werk", "the Plant", "den Maschinenbau": a common noun after a determiner
-        )
-    return single and bool(_LIST_BEFORE.search(before) or _LIST_AFTER.match(text, span[1]))
-
-
-def name_word_count(text: str, span: Span) -> int:
-    """The words of the span, lower-case particles ("de", "von") not counted."""
-    return sum(
-        1
-        for match in WORD.finditer(text, span[0], span[1])
-        if not (_kind(_body(match.group())) == "low" and fold(_body(match.group())) in PARTICLES)
-    )
-
-
-def _line_words(text: str, span: Span) -> list[str]:
-    start = text.rfind("\n", 0, span[0]) + 1
-    end = text.find("\n", span[1])
-    return [_body(m.group()) for m in WORD.finditer(text, start, len(text) if end < 0 else end)]
-
-
-def is_heading_like(text: str, span: Span) -> bool:
-    """The whole line is written in capitals, the span included: a heading, not a name inside a
-    sentence."""
-    words = _line_words(text, span)
-    return bool(words) and all(_kind(w) == "caps" or len(w) < 2 for w in words)
-
-
-def is_whole_line(text: str, span: Span) -> bool:
-    """The span is all the words of its line (a name on its own line, or a one-line heading)."""
-    return len(_line_words(text, span)) == len(WORD.findall(text, span[0], span[1]))
-
-
-def has_stopword(text: str, span: Span) -> bool:
-    """A word of the span is an article, pronoun, preposition or other closed-class word of one of
-    the five languages (spaCy's stop-word lists): an ordinary phrase, rarely a name."""
-    keys = (fold(_body(m.group())) for m in WORD.finditer(text, span[0], span[1]))
-    return any(key in STOPWORDS and key not in PARTICLES for key in keys)
