@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.9.0
+  version: 0.10.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -570,6 +570,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SourceList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/failures:
+    get:
+      operationId: listRunFailures
+      tags: [runs]
+      summary: List the collection failures of a run
+      description: >-
+        The failure log of the collection stage, oldest first: for each failure the address, the
+        strategy tried, the kind of failure, the next strategy chosen and a plain-language
+        message. Another organisation's run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The failures of the run (empty when there were none).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunFailureList"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1308,6 +1334,7 @@ components:
         - usage
         - excluded_sources
         - identity_to_verify
+        - insufficient_sources_explanation
         - created_at
         - started_at
         - finished_at
@@ -1359,9 +1386,17 @@ components:
             $ref: "#/components/schemas/ExcludedSource"
         identity_to_verify:
           description: >-
-            True when, after collection, the confirmed legal name appears in none of the
-            website's sources. The buyer verifies the identity; nothing is blocked.
+            True when, after collection, nothing has confirmed the identity: the confirmed legal
+            name appears in none of the website's sources, or the website gave no source but
+            other sources were found. False when nothing at all was found (the run ends
+            `insufficient_sources`). The buyer verifies the identity; nothing is blocked.
           type: boolean
+        insufficient_sources_explanation:
+          description: >-
+            Plain-language explanation, set when the status is `insufficient_sources`: no usable
+            public source was collected, the failure log is available at
+            `GET /runs/{id}/failures`, and the run does not count against the quota. Null otherwise.
+          type: [string, "null"]
         created_at:
           type: string
           format: date-time
@@ -1397,6 +1432,56 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Source"
+    RunFailure:
+      type: object
+      additionalProperties: false
+      required: [id, url, strategy, kind, next_strategy, message, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          description: The address that failed; null for a failure that has none (the retrieval provider).
+          type: [string, "null"]
+        strategy:
+          $ref: "#/components/schemas/CollectionStrategy"
+        kind:
+          type: string
+          enum:
+            - http_error
+            - timeout
+            - unreachable
+            - empty_content
+            - blocked_by_robots
+            - refused
+            - too_large
+            - not_a_page
+            - provider_unavailable
+            - invalid_response
+            - attempt_cap
+        next_strategy:
+          description: The strategy chosen next; null when none is left.
+          oneOf:
+            - $ref: "#/components/schemas/CollectionStrategy"
+            - type: "null"
+        message:
+          description: Plain-language description. Absence is never a statement about the supplier.
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CollectionStrategy:
+      type: string
+      enum: [website, sitemap, retrieval]
+    RunFailureList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunFailure"
     RunList:
       type: object
       additionalProperties: false

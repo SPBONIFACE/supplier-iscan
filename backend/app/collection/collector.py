@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Any
 from urllib.parse import urldefrag, urljoin, urlsplit
 
+from app.collection.failures import Failure, Kind, RetrievalFailed, Strategy, make_failure
 from app.collection.html_text import parse_html
 from app.collection.identity import name_appears
 from app.collection.limiter import DomainRateLimiter
@@ -32,6 +33,8 @@ RETRYABLE: tuple[type[Exception], ...] = (*NETWORK_ERRORS, FetchTimeoutError)
 PER_KIND = 2  # pages kept per kind (for example two sustainability pages)
 RETRY_STATUSES = (429, 500, 502, 503, 504)
 MAX_BACKOFF_SECONDS = 60.0
+# The lacking page kinds in, the addresses the retrieval provider cited (best first) out.
+RetrieveFn = Callable[[list[str]], list[str]]
 HTML_TYPES = ("text/html", "application/xhtml+xml", "text/plain")
 SKIPPED_EXTENSIONS = (
     ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".zip", ".mp4", ".mp3", ".css", ".js",
@@ -43,7 +46,9 @@ SKIPPED_EXTENSIONS = (
 class CollectionResult:
     sources: list[SourceRecord] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)  # URLs not collected, with the reason logged
+    failures: list[Failure] = field(default_factory=list)  # the failure log (spec F2)
     identity_to_verify: bool = False
+    attempts: int = 0  # requests made for content, retries included (never above the cap)
 
 
 def _host(url: str) -> str:
@@ -75,49 +80,80 @@ class Collector:
         self._now = now
         self._check_stop = check_stop
         self.result = CollectionResult()
+        self._strategy: Strategy = "website"
+        self._cap_logged = False
+        self._website_texts: list[str] = []
+        self._kinds_found: set[str] = set()
+
+    # -- failures ---------------------------------------------------------------------------
+
+    def _fail(self, url: str | None, kind: Kind, status: int | None = None) -> None:
+        failure = make_failure(url, self._strategy, kind, status)
+        logger.info(
+            "Collection failure: url=%s strategy=%s kind=%s next=%s",
+            url,
+            failure.strategy,
+            kind,
+            failure.next_strategy,
+        )
+        self.result.failures.append(failure)
 
     # -- fetching ---------------------------------------------------------------------------
 
     def _fetch(self, url: str, max_bytes: int) -> Any:
         """The response of `url`, or None (refused, too large, not found, or failing after the
-        retries). Waits for the domain's slot before each request; backs off between retries."""
+        retries). Waits for the domain's slot before each request; backs off between retries.
+        Every request counts as an attempt; none is made beyond the cap of the run."""
         attempts = self._settings.retries + 1
+        kind: Kind = "unreachable"
+        status = None
         for attempt in range(attempts):
             self._check_stop()
+            if self.result.attempts >= self._settings.max_attempts:
+                if not self._cap_logged:
+                    self._cap_logged = True
+                    self._fail(None, "attempt_cap")
+                return self._skip(url)
+            self.result.attempts += 1
             try:
                 with self._limiter.slot(domain_of(url)):
                     result = self._fetcher.fetch(url, max_bytes=max_bytes)
             except RETRYABLE as error:
                 logger.warning("Fetch of %s failed (%s)", url, type(error).__name__)
+                kind = "timeout" if isinstance(error, FetchTimeoutError) else "unreachable"
                 result = None
             except FetchError as error:  # refused by the guard: not retried
                 logger.info("Fetch of %s refused (%s)", url, type(error).__name__)
-                return self._skip(url)
+                return self._skip(url, "refused")
             delay = self._settings.backoff_seconds * 2**attempt
             if result is not None:
                 if result.status == "too_large":
                     logger.warning("Skipped %s: %s bytes exceeds %s", url, result.size, max_bytes)
-                    return self._skip(url)
+                    return self._skip(url, "too_large")
                 if result.status != "fetched":
                     logger.info("Not fetched: %s (%s)", url, result.status)
-                    return self._skip(url)
+                    return self._skip(url, "blocked_by_robots")
                 status = result.response.status_code
                 if status not in RETRY_STATUSES:
                     if status >= 400:
                         logger.info("Not collected: %s answered %s", url, status)
-                        return self._skip(url)
+                        return self._skip(url, "http_error", status)
                     return result.response
+                kind = "http_error"
                 retry_after = result.response.headers.get("retry-after", "")
                 if retry_after.isdigit():
                     delay = max(delay, float(retry_after))
             if attempt + 1 < attempts:
                 self._sleep(min(delay, MAX_BACKOFF_SECONDS))
         logger.warning("Gave up on %s after %d attempts", url, attempts)
-        return self._skip(url)
+        return self._skip(url, kind, status)
 
-    def _skip(self, url: str) -> Any:
-        """Record a URL as not collected; returns None, for `return self._skip(url)`."""
+    def _skip(self, url: str, kind: Kind | None = None, status: int | None = None) -> Any:
+        """Record a URL as not collected (with the failure when it has a kind); returns None,
+        for `return self._skip(url)`."""
         self.result.skipped.append(url)
+        if kind is not None:
+            self._fail(url, kind, status)
         return None
 
     # -- discovery --------------------------------------------------------------------------
@@ -131,6 +167,7 @@ class Collector:
             queue = [*(s for s in robots.sitemaps if _host(s) == _host(home)), *queue]
         seen: set[str] = set()
         urls: list[str] = []
+        self._strategy = "sitemap"
         while queue and len(seen) < settings.max_sitemaps:
             url = queue.pop(0)
             if url in seen:
@@ -160,14 +197,61 @@ class Collector:
 
     # -- the run ----------------------------------------------------------------------------
 
-    def collect(self, website: str, legal_name: str) -> CollectionResult:
+    def collect(
+        self, website: str | None, legal_name: str, retrieve: RetrieveFn | None = None
+    ) -> CollectionResult:
+        """The ladder: the website (home page, its links, the sitemaps), then the retrieval
+        provider's addresses (`retrieve`), all under one cap of attempts. `website` is None when
+        the identity has none."""
+        if website:
+            self._crawl_website(website)
+        website_texts = list(self._website_texts)
+        website_sources = len(self.result.sources)
+        if retrieve is not None:
+            self._retrieve(retrieve)
+        # Identity (spec F1, owner decision D-065). Nothing found at all: the run ends
+        # insufficient_sources and is not flagged. The website gave no source but others were
+        # found: flagged, nothing has confirmed the identity. Otherwise, flagged when the name is
+        # on none of the website's texts.
+        if not self.result.sources:
+            self.result.identity_to_verify = False
+        elif website_sources == 0:
+            self.result.identity_to_verify = True
+        else:
+            self.result.identity_to_verify = not name_appears(legal_name, website_texts)
+        return self.result
+
+    def _retrieve(self, retrieve: RetrieveFn) -> None:
+        """Addresses from the retrieval provider, fetched and stored like any source. Only the
+        addresses are used: the provider's answer text and snippets are never stored."""
+        self._strategy = "retrieval"
+        lacking = [kind for kind in PAGE_KINDS if kind not in self._kinds_found]
+        if not lacking:
+            return
+        self._check_stop()
+        try:
+            urls = retrieve(lacking)
+        except RetrievalFailed as error:
+            self._fail(None, error.kind)
+            return
+        stored = {record.url for record in self.result.sources}
+        for url in urls[: self._settings.max_retrieval_urls]:
+            if url in stored or urlsplit(url).scheme not in ("http", "https"):
+                if url not in stored:
+                    self._skip(url, "refused")
+                continue
+            if url.lower().split("?", 1)[0].endswith(".pdf"):
+                self._take_pdf(url)
+            else:
+                self._take_page(url)
+
+    def _crawl_website(self, website: str) -> None:
         settings = self._settings
         parts = urlsplit(website)
         home = f"{parts.scheme}://{parts.netloc}/"
-        collected: list[str] = []  # texts of the stored sources
-        stored_urls: set[str] = set()
         pdf_links: list[str] = []
         ranked: dict[str, list[str]] = {kind: [] for kind in PAGE_KINDS}
+        self._strategy = "website"
 
         def add_candidate(url: str, anchor: str = "") -> None:
             kind = classify(url, anchor)
@@ -179,24 +263,7 @@ class Collector:
                     ranked[kind].append(url)
 
         def take_page(url: str) -> list[tuple[str, str]]:
-            """Fetch and store one page; the links found on it."""
-            response = self._fetch(url, settings.max_page_bytes)
-            if response is None:
-                return []
-            content_type = _content_type(response)
-            if content_type and content_type not in HTML_TYPES:
-                logger.info("Not a page: %s is %s", url, content_type)
-                self._skip(url)
-                return []
-            page = parse_html(response.content, response.headers.get("content-type", ""))
-            if not page.text:
-                logger.info("Empty content: %s", url)
-                self._skip(url)
-                return page.links
-            self._keep(SourceRecord(url, self._now(), content_type or "text/html", page.text))
-            collected.append(page.text)
-            stored_urls.add(url)
-            return page.links
+            return self._take_page(url) or []
 
         # The home page, its links, then the sitemaps.
         links = take_page(home)
@@ -208,8 +275,9 @@ class Collector:
             checked = self._absolute(home, url, home)
             if checked:
                 add_candidate(checked)
+        self._strategy = "website"
 
-        budget = settings.max_pages - len(stored_urls)
+        budget = settings.max_pages - len(self.result.sources)
         chosen: list[str] = []
         for rank in range(PER_KIND):  # first one of each kind, then the second ones
             for kind in PAGE_KINDS[1:]:
@@ -222,13 +290,25 @@ class Collector:
                     add_candidate(absolute)
 
         for url in pdf_links[: settings.max_pdfs]:
-            text = self._take_pdf(url)
-            if text:
-                collected.append(text)
+            self._take_pdf(url)
 
-        # Flag only when something was collected: with nothing, there is nothing to compare.
-        self.result.identity_to_verify = bool(collected) and not name_appears(legal_name, collected)
-        return self.result
+    def _take_page(self, url: str) -> list[tuple[str, str]] | None:
+        """Fetch and store one page; the links found on it, or None when it could not be read."""
+        response = self._fetch(url, self._settings.max_page_bytes)
+        if response is None:
+            return None
+        content_type = _content_type(response)
+        if content_type and content_type not in HTML_TYPES:
+            logger.info("Not a page: %s is %s", url, content_type)
+            self._skip(url, "not_a_page")
+            return None
+        page = parse_html(response.content, response.headers.get("content-type", ""))
+        if not page.text:
+            logger.info("Empty content: %s", url)
+            self._skip(url, "empty_content")
+            return page.links
+        self._keep(SourceRecord(url, self._now(), content_type or "text/html", page.text))
+        return page.links
 
     def _take_pdf(self, url: str) -> str | None:
         response = self._fetch(url, self._settings.max_pdf_bytes)
@@ -237,12 +317,12 @@ class Collector:
         content = response.content
         if _content_type(response) != "application/pdf" and not content.startswith(b"%PDF-"):
             logger.info("Not a PDF: %s", url)
-            self._skip(url)
+            self._skip(url, "not_a_page")
             return None
         pdf = extract_pdf(content, self._settings.max_pdf_pages)
         if not pdf.text:
             logger.info("Empty content: %s", url)
-            self._skip(url)
+            self._skip(url, "empty_content")
             return None
         self._keep(SourceRecord(url, self._now(), "application/pdf", pdf.text, pdf.author))
         return pdf.text
@@ -250,3 +330,8 @@ class Collector:
     def _keep(self, record: SourceRecord) -> None:
         self._store(record)
         self.result.sources.append(record)
+        if self._strategy != "retrieval":
+            self._website_texts.append(record.text)
+        kind = classify(record.url)
+        if kind:
+            self._kinds_found.add(kind)

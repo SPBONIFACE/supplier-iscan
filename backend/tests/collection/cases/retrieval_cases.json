@@ -1,0 +1,31 @@
+{
+  "note": "Retrieval cases for the #22 harness. In #20 they run against a fake provider and mock sites and prove plumbing only (ranking, fetch, store); they say nothing about retrieval quality.",
+  "cases": [
+    {
+      "id": "register-page-found-by-snippet",
+      "legal_name": "Acme Supplies SA",
+      "lacking": ["certifications", "sustainability"],
+      "provider_urls": [
+        {"url": "https://registry.example/entry/1", "snippet": "company register entry"},
+        {"url": "https://registry.example/iso-certificate", "snippet": "ISO 9001 certification of the supplier"}
+      ],
+      "pages": {
+        "https://registry.example/entry/1": "<p>Register entry of Acme Supplies SA</p>",
+        "https://registry.example/iso-certificate": "<p>Certificate ISO 9001 issued to Acme Supplies SA</p>"
+      },
+      "expect_first": "https://registry.example/iso-certificate",
+      "expect_stored": ["https://registry.example/entry/1", "https://registry.example/iso-certificate"]
+    },
+    {
+      "id": "unreachable-address-is-not-stored",
+      "legal_name": "Acme Supplies SA",
+      "lacking": ["about"],
+      "provider_urls": [
+        {"url": "https://registry.example/gone", "snippet": "about the company"}
+      ],
+      "pages": {},
+      "expect_first": "https://registry.example/gone",
+      "expect_stored": []
+    }
+  ]
+}
