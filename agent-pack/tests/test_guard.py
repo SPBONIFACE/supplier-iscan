@@ -192,10 +192,21 @@ ALLOWED_DEPENDENCY = [
     bash("gh pr create --title 'uv add is blocked' --body 'pnpm add x'"),
 ]
 LIST = "_docs/process/approved-dependencies.md"
-ASK = [
+BLOCKED_LIST = [
     tool("Edit", file_path=f"/repo/{LIST}", old_string="a", new_string="b"),
     tool("Write", file_path=LIST, content="x"),
     tool("MultiEdit", file_path=f"/repo/{LIST}"),
+    tool("NotebookEdit", notebook_path=LIST),
+    tool("Edit", file_path=f"/r/.claude/worktrees/agent-x/{LIST}", old_string="a", new_string="b"),
+    bash(f"echo x >> /r/.claude/worktrees/agent-x/{LIST}"),
+    bash(f"cp /tmp/x /abs/path/{LIST}"),
+    bash("make approve-dependency PACKAGE=x VERSION=1.0.0 SCOPE=dev NOTE=y"),
+    bash("cd /repo && make -s approve-dependency PACKAGE=x"),
+    bash("bash -c 'make approve-dependency PACKAGE=x'"),
+    bash("env FOO=1 make approve-dependency PACKAGE=x"),
+    bash("python3 agent-pack/scripts/approve_dependency.py --package x"),
+    bash("uv run python scripts/approve_dependency.py --package x"),
+    bash("./agent-pack/scripts/approve_dependency.py --package x"),
     bash(f"echo '| x |' >> {LIST}"),
     bash(f"cat new > {LIST}"),
     bash(f"cat new >{LIST}"),
@@ -210,7 +221,7 @@ ASK = [
     bash(f"bash -c 'echo x >> {LIST}'"),
     bash(f"cd repo && perl -pi -e 's/a/b/' {LIST}"),
 ]
-NO_ASK = [
+ALLOWED_LIST = [
     tool("Read", file_path=f"/repo/{LIST}"),
     tool("Grep", pattern="pypdf", path=LIST),
     tool("Edit", file_path="_docs/process/process.md", old_string="a", new_string="b"),
@@ -221,6 +232,11 @@ NO_ASK = [
     bash(f"git add {LIST}"),
     bash(f"wc -l {LIST} > /tmp/count"),
     bash(f"gh pr create --title 'x' --body 'Changes {LIST}'"),
+    bash("gh pr create --title 'x' --body 'Use make approve-dependency'"),
+    bash("grep -rn approve-dependency Makefile"),
+    bash("make install"),
+    bash("uv sync --locked"),
+    tool("Write", file_path="agent-pack/scripts/other.py", content="x"),
 ]
 # Legitimate long commands: a quote or an apostrophe in the text must not block.
 HEREDOCS = [
@@ -254,27 +270,33 @@ def test_dependency_install_still_allowed(stdin: str) -> None:
     assert result.stdout == ""
 
 
-@pytest.mark.parametrize("stdin", ASK)
-def test_approved_list_write_asks_owner(stdin: str) -> None:
+@pytest.mark.parametrize("stdin", BLOCKED_LIST)
+def test_approved_list_write_is_blocked(stdin: str) -> None:
     result = run(stdin)
-    assert result.returncode == 0, (stdin, result.stderr)
-    decision = json.loads(result.stdout)["hookSpecificOutput"]
-    assert decision["hookEventName"] == "PreToolUse"
-    assert decision["permissionDecision"] == "ask"
-    assert "owner" in decision["permissionDecisionReason"]
+    assert result.returncode == 2, stdin
+    assert result.stdout == ""
+    assert "only the owner" in result.stderr
+    assert "report" in result.stderr
 
 
-@pytest.mark.parametrize("stdin", NO_ASK)
-def test_approved_list_read_does_not_ask(stdin: str) -> None:
+@pytest.mark.parametrize("stdin", ALLOWED_LIST)
+def test_approved_list_read_is_allowed(stdin: str) -> None:
     result = run(stdin)
     assert result.returncode == 0, (stdin, result.stderr)
     assert result.stdout == ""
 
 
-def test_block_wins_over_ask() -> None:
-    result = run(bash(f"uv add x && echo y >> {LIST}"))
+def test_no_environment_variable_bypass() -> None:
+    env = {"CLAUDE_OWNER": "1", "ALLOW_LIST_EDIT": "1", "OWNER": "1"}
+    result = subprocess.run(  # noqa: S603
+        [sys.executable, "-I", str(GUARD)],
+        input=tool("Write", file_path=LIST, content="x"),
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
     assert result.returncode == 2
-    assert result.stdout == ""
 
 
 @pytest.mark.parametrize("command", HEREDOCS)

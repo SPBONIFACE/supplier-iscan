@@ -11,10 +11,14 @@ agent. Rules (AGENTS.md):
      `pnpm up|update|upgrade`, alone, in a pipeline, after `&&` or through the wrappers below.
      `pnpm install` without a package and `uv sync` stay allowed
      (`make install`). New dependencies are the owner's decision.
-  4. An Edit or Write of `_docs/process/approved-dependencies.md`, or a shell command that writes it
-     (redirection, `tee`, `cp`, `mv`, `sed -i`, an interpreter, ...), is not blocked: it ASKS the
-     owner (PreToolUse `permissionDecision: "ask"`, exit 0). Where nobody can answer (`-p`,
-     `dontAsk`), Claude Code denies an ask, so it fails safe. A block always wins over an ask.
+  4. Only the owner changes `_docs/process/approved-dependencies.md`. An Edit, Write, MultiEdit or
+     NotebookEdit of it, or a shell command that writes it (redirection, `tee`, `cp`, `mv`,
+     `sed -i`, an interpreter, `git checkout`, ...), is blocked (exit 2) in every session, the
+     orchestrator's included: a hook "ask" did not stop a sub-agent. The file name is matched
+     wherever it is (any worktree, absolute or relative path). Reading it stays allowed. The
+     owner's step, `make approve-dependency` (agent-pack/scripts/approve_dependency.py), is
+     blocked for agents too, also through wrappers; the owner runs it in their own terminal.
+     There is no bypass by environment variable.
 Input the script cannot parse is blocked, never allowed.
 """
 
@@ -39,10 +43,10 @@ DEPENDENCY_RULE = (
     "(AGENTS.md: no new dependency without asking). Stop and report the package you need "
     "to the owner. Allowed: pnpm install (no package), uv sync, make install."
 )
-ASK_REASON = (
-    "_docs/process/approved-dependencies.md is the owner's list of approved dependencies. "
-    "Approve only if the owner has approved this change; an agent never approves its own "
-    "dependency."
+LIST_RULE = (
+    "Blocked: only the owner changes _docs/process/approved-dependencies.md (AGENTS.md: no new "
+    "dependency without asking). Do not edit it, and do not run make approve-dependency. Stop "
+    "and report the package and the exact version you need, and why. Reading the file is allowed."
 )
 PARSE_RULE = "Blocked: the hook input could not be parsed, so it cannot be checked."
 
@@ -69,6 +73,8 @@ NPM_BLOCKED = {"install", "i", "in", "ins", "inst", "add", "ci", "clean-install"
 WRAPPERS = {"sudo", "env", "command", "exec", "time", "nohup", "nice", "xargs", "builtin"}
 SHELLS = {"bash", "sh", "zsh", "dash", "ksh"}
 LIST_NAME = "approved-dependencies.md"
+APPROVE_NAME = "approve-dependency"  # make target and script (approve_dependency.py)
+RUNNERS = {"make", "gmake", "uv", "uvx"}
 PNPM_VALUE_FLAGS = {"--filter", "-f", "-c", "--dir", "--prefix", "--registry", "--reporter"}
 PNPM_UPGRADES = {"up", "update", "upgrade"}
 PNPM_INSTALLS = {"install", "i"}
@@ -215,6 +221,8 @@ def check_argv(args: list[str], depth: int) -> None:
         return
     cmd = args[0].rsplit("/", 1)[-1]
     rest = args[1:]
+    if runs_approval(cmd, rest):
+        raise Block(LIST_RULE)
     if cmd == "npx":
         raise Block(NPM_RULE)
     if cmd == "npm" and npm_subcommand(rest) in NPM_BLOCKED:
@@ -246,6 +254,17 @@ def check_argv(args: list[str], depth: int) -> None:
         check_command(" ".join(rest), depth + 1)
     elif cmd in SHELLS and "-c" in rest and rest.index("-c") + 1 < len(rest):
         check_command(rest[rest.index("-c") + 1], depth + 1)
+
+
+def runs_approval(cmd: str, rest: list[str]) -> bool:
+    """True for the owner's approval step: the make target or the script, run by name."""
+
+    def names_it(word: str) -> bool:
+        return APPROVE_NAME in word.lower().replace("_", "-")
+
+    if names_it(cmd):
+        return True
+    return (cmd in RUNNERS or PYTHON_NAME.match(cmd) is not None) and any(names_it(a) for a in rest)
 
 
 def is_list_name(value: str) -> bool:
@@ -290,7 +309,7 @@ def command_writes_list(command: str, depth: int = 0) -> bool:
     return False
 
 
-def needs_owner(payload: dict[str, Any]) -> bool:
+def writes_list(payload: dict[str, Any]) -> bool:
     tool_input = payload["tool_input"]
     if payload["tool_name"] in {"Edit", "Write", "MultiEdit", "NotebookEdit"}:
         return any(
@@ -303,8 +322,8 @@ def needs_owner(payload: dict[str, Any]) -> bool:
     )
 
 
-def check(payload: object) -> bool:
-    """Raise Block to refuse; return True when the owner must be asked."""
+def check(payload: object) -> None:
+    """Raise Block to refuse; return when the call is allowed."""
     if not isinstance(payload, dict):
         raise Block(PARSE_RULE)
     tool_name = payload.get("tool_name")
@@ -317,24 +336,14 @@ def check(payload: object) -> bool:
         if not isinstance(command, str):
             raise Block(PARSE_RULE)
         check_command(command)
-    return needs_owner(payload)  # only reached when nothing was blocked
+    if writes_list(payload):
+        raise Block(LIST_RULE)
 
 
 def main() -> int:
     try:
         payload = json.loads(sys.stdin.read())
-        if check(payload):
-            print(
-                json.dumps(
-                    {
-                        "hookSpecificOutput": {
-                            "hookEventName": "PreToolUse",
-                            "permissionDecision": "ask",
-                            "permissionDecisionReason": ASK_REASON,
-                        }
-                    }
-                )
-            )
+        check(payload)
     except Block as block:
         print(block, file=sys.stderr)
         return 2
