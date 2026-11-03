@@ -10,6 +10,10 @@
   delay doubling each time.
 - `COLLECT_MAX_SITEMAPS` (5), `COLLECT_MAX_SITEMAP_URLS` (2000), `COLLECT_MAX_SITEMAP_BYTES`
   (2 MB, after decompression): caps on the (hostile) sitemaps.
+- `COLLECT_MAX_ATTEMPTS` (60): requests for content per run, retries included, across every
+  strategy and every address of the retrieval provider; none is made beyond it. The permission
+  checks of a domain (robots.txt, TDM) are not attempts.
+- `COLLECT_MAX_RETRIEVAL_URLS` (5): addresses of the retrieval provider fetched per run.
 The request timeout is `FETCH_TIMEOUT_SECONDS` of the HTTP client (#15).
 """
 
@@ -33,6 +37,8 @@ class CollectionSettings:
     max_sitemaps: int = 5
     max_sitemap_urls: int = 2000
     max_sitemap_bytes: int = 2_000_000
+    max_attempts: int = 60
+    max_retrieval_urls: int = 5
 
 
 def _number(env: Mapping[str, str], name: str, default: float, *, whole: bool) -> float:
@@ -69,4 +75,6 @@ def load_collection_settings(environ: Mapping[str, str] | None = None) -> Collec
         max_sitemaps=whole("COLLECT_MAX_SITEMAPS", d.max_sitemaps),
         max_sitemap_urls=whole("COLLECT_MAX_SITEMAP_URLS", d.max_sitemap_urls),
         max_sitemap_bytes=whole("COLLECT_MAX_SITEMAP_BYTES", d.max_sitemap_bytes),
+        max_attempts=whole("COLLECT_MAX_ATTEMPTS", d.max_attempts),
+        max_retrieval_urls=whole("COLLECT_MAX_RETRIEVAL_URLS", d.max_retrieval_urls),
     )

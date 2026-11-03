@@ -15,7 +15,9 @@ from app.crawl.permissions import DomainPermission
 from tests.http_client.support import PUBLIC_V4, MockSite, StubResolver
 
 HOST = "acme.example"
-RESOLVER = StubResolver({HOST: [PUBLIC_V4]})
+OTHER = "registry.example"
+INTERNAL = "internal.example"
+RESOLVER = StubResolver({HOST: [PUBLIC_V4], OTHER: [PUBLIC_V4], INTERNAL: ["10.0.0.5"]})
 CONTACT = "https://iscan.example/contact"
 
 

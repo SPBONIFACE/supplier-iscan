@@ -51,7 +51,7 @@ def redact_for_storage(text: str, gate: RedactionGate, context: IdentityRedactio
     return redacted.text
 
 
-def _identity_redaction(db: Session, run_id: uuid.UUID) -> IdentityRedaction:
+def identity_redaction(db: Session, run_id: uuid.UUID) -> IdentityRedaction:
     identity = db.scalar(
         select(SupplierIdentity)
         .join(ProfileRun, ProfileRun.identity_id == SupplierIdentity.id)
@@ -71,7 +71,7 @@ def store_source(
     """Store a source of the run; storing the same URL again replaces it (a resumed stage)."""
     gate = gate_for(database)
     with database.session() as db:
-        context = _identity_redaction(db, run_id)
+        context = identity_redaction(db, run_id)
         # Redacted before anything is written; a failure raises before the row is touched.
         text = redact_for_storage(record.text, gate, context)
         author = redact_for_storage(record.author, gate, context)[:300] if record.author else None

@@ -48,7 +48,7 @@ criterion below is meant to be verifiable by looking at the running application.
 - [ ] The member can correct the agent in free text; the agent searches again and presents a new candidate.
 - [ ] "None of these, enter the website" creates an identity from the given domain, after checking that the domain responds.
 - [ ] The exchange ends only when the member explicitly confirms; the stored identity record conforms to the `IdentityRecord` schema.
-- [ ] After collection, if the confirmed company name does not appear in the collected content of its website, the profile is flagged "identity to verify".
+- [ ] After collection, the profile is flagged "identity to verify" when nothing has confirmed the identity: the confirmed company name does not appear in the collected content of its website, or the website gave no source but other sources were found (for example through the retrieval provider). A run that finds no source at all is not flagged: it ends "insufficient sources" (F2).
 - [ ] If both registries are unreachable, the agent says so and offers the website fallback; no error page.
 - [ ] At the first interaction, before any input, the chat states that the member is talking to an AI assistant, in the UI language, with exactly this text:
   - English: "You are talking to an AI assistant. Its role: supplier research. As AI can make mistakes, please verify the legal entity of the selected supplier and the sources provided."

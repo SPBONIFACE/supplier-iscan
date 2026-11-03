@@ -17,7 +17,7 @@ from app.config import Settings
 from app.crawl.store import excluded_sources
 from app.db import DbSession, utc_now
 from app.errors import not_found
-from app.models import ProfileRun, Source, SupplierIdentity, UsageEvent
+from app.models import ProfileRun, RunFailure, Source, SupplierIdentity, UsageEvent
 from app.models.runs import FINISHED_STATUSES
 from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.providers.usage import run_usage_totals
@@ -28,6 +28,10 @@ router = APIRouter(prefix="/runs", tags=["runs"])
 LIST_LIMIT = 100
 ALREADY_FINISHED = "The run has already finished."
 NOT_PAUSED = "The run is not paused."
+INSUFFICIENT_SOURCES = (
+    "No public source could be collected for this supplier, so no profile could be built. "
+    "The failure log shows what was tried. This run does not count against your quota."
+)
 
 
 class RunStart(BaseModel):
@@ -84,6 +88,7 @@ class RunOut(BaseModel):
     usage: RunUsageOut
     excluded_sources: list[ExcludedSourceOut]
     identity_to_verify: bool
+    insufficient_sources_explanation: str | None
     created_at: datetime
     started_at: datetime | None
     finished_at: datetime | None
@@ -104,6 +109,26 @@ class SourceListOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     items: list[SourceOut]
+
+
+class RunFailureOut(BaseModel):
+    """Mirrors components/schemas/RunFailure."""
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    id: uuid.UUID
+    url: str | None
+    strategy: Literal["website", "sitemap", "retrieval"]
+    kind: str
+    next_strategy: Literal["website", "sitemap", "retrieval"] | None
+    message: str
+    created_at: datetime
+
+
+class RunFailureListOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[RunFailureOut]
 
 
 class RunListOut(BaseModel):
@@ -162,6 +187,9 @@ def _run_out(
             },
             "excluded_sources": excluded,
             "identity_to_verify": run.identity_to_verify,
+            "insufficient_sources_explanation": (
+                INSUFFICIENT_SOURCES if run.status == "insufficient_sources" else None
+            ),
             "created_at": run.created_at,
             "started_at": run.started_at,
             "finished_at": run.finished_at,
@@ -236,6 +264,17 @@ def list_sources(id: str, scope: OrganisationScoped, db: DbSession) -> SourceLis
         scope.select(Source).where(Source.run_id == run.id).order_by(Source.fetched_at, Source.url)
     ).all()
     return SourceListOut(items=[SourceOut.model_validate(row) for row in rows])
+
+
+@router.get("/{id}/failures", response_model=RunFailureListOut)
+def list_failures(id: str, scope: OrganisationScoped, db: DbSession) -> RunFailureListOut:
+    run = scope.get(db, ProfileRun, id)  # the one 404 for an unknown or another organisation's run
+    rows = db.scalars(
+        scope.select(RunFailure)
+        .where(RunFailure.run_id == run.id)
+        .order_by(RunFailure.position, RunFailure.id)
+    ).all()
+    return RunFailureListOut(items=[RunFailureOut.model_validate(row) for row in rows])
 
 
 @router.post("/{id}/stop", response_model=RunOut)
