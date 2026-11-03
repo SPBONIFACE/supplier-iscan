@@ -72,7 +72,7 @@ class GeminiStructuring:
     ) -> StructuringOutput:
         response = self._client.models.generate_content(
             model=self._config.model_id,
-            contents=request.data,
+            contents=request.data.text,
             config=types.GenerateContentConfig(
                 system_instruction=request.instructions,
                 response_mime_type="application/json",
@@ -91,7 +91,7 @@ class GeminiRetrieval:
     def search(self, request: RetrievalRequest) -> RetrievalOutput:
         response = self._client.models.generate_content(
             model=self._config.model_id,
-            contents=request.query,
+            contents=request.query.text,
             config=types.GenerateContentConfig(
                 system_instruction=request.instructions,
                 tools=[types.Tool(google_search=types.GoogleSearch())],

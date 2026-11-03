@@ -17,13 +17,13 @@ from app.models import ProfileRun
 from app.models.runs import RUN_STAGES
 from app.providers import Providers
 from app.runs.stages import (
-    DEPENDENCY_REASONS,
     LeaseLost,
     RunStopped,
     Stage,
     StageContext,
     StageOutcome,
     classify,
+    pause_reason,
 )
 
 logger = logging.getLogger(__name__)
@@ -71,14 +71,14 @@ def fail_run(database: Database, run_id: uuid.UUID, reason: str) -> None:
     _update(database, run_id, change)
 
 
-def _pause(database: Database, run_id: uuid.UUID, dependency: str) -> None:
+def _pause(database: Database, run_id: uuid.UUID, dependency: str, reason: str) -> None:
     def change(run: ProfileRun) -> None:
         if run.stop_requested:
             _finish(run, "stopped")
             return
         run.status = "paused"
         run.pause_dependency = dependency
-        run.pause_reason = DEPENDENCY_REASONS[dependency]
+        run.pause_reason = reason
         run.counts_against_quota = False
 
     _update(database, run_id, change)
@@ -155,4 +155,4 @@ def execute_run(env: RunEnvironment, run_id: uuid.UUID) -> None:
                 dependency,
                 type(error).__name__,
             )
-            _pause(env.database, run_id, dependency)
+            _pause(env.database, run_id, dependency, pause_reason(error, dependency))

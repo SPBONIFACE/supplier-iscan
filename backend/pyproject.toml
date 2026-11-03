@@ -14,11 +14,22 @@ dependencies = [
     "mistralai==3.2.0",
     "openai==3.29.0",
     "perplexityai==0.43.8",
+    "phonenumbers==9.0.41",
     "protego==0.7.0",
+    "protobuf==7.36.2",
     "psycopg[binary]==3.3.6",
     "pypdf==6.21.2",
+    "spacy==3.8.16",
+    "spacy-pkuseg==1.0.1",
     "sqlalchemy==2.0.54",
     "uvicorn==0.54.0",
+    # Name-detection models (#19): not on PyPI; pinned release wheels, sha256 in uv.lock.
+    "zh-core-web-sm",
+    # Name detection (#19, owner decisions D-066 and D-068): GLiNER on CPU PyTorch. The model files
+    # are not Python packages: scripts/fetch_model.py downloads them at build time, sha256-checked.
+    "gliner==0.2.29",
+    "torch==2.14.1",
+    "transformers==5.16.1",
 ]
 
 [dependency-groups]
@@ -41,9 +52,21 @@ exclude-newer = "2026-10-13T20:00:00Z"
 exclude-newer-package = { pypdf = "2026-10-22T00:00:00Z" }
 no-build = true
 
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+# CPU build of PyTorch on Linux (the PyPI Linux wheel pulls about 3 GB of CUDA libraries). macOS wheels
+# on PyPI are CPU only.
+torch = { index = "pytorch-cpu", marker = "sys_platform == 'linux'" }
+zh-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/zh_core_web_sm-3.8.0/zh_core_web_sm-3.8.0-py3-none-any.whl" }
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers -m 'not model'"
+markers = ["model: needs the real name-detection model (make fetch-model); run by make test-model and CI"]
 
 [tool.ruff]
 line-length = 100

@@ -76,7 +76,7 @@ class PerplexityStructuring:
             model=self._config.model_id,
             messages=[
                 {"role": "system", "content": request.instructions},
-                {"role": "user", "content": request.data},
+                {"role": "user", "content": request.data.text},
             ],
             max_tokens=request.max_output_tokens,
             disable_search=True,
@@ -101,7 +101,7 @@ class PerplexityRetrieval:
             model=self._config.model_id,
             messages=[
                 {"role": "system", "content": request.instructions},
-                {"role": "user", "content": request.query},
+                {"role": "user", "content": request.query.text},
             ],
             stream=False,
         )

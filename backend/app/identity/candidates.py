@@ -64,11 +64,15 @@ def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
         "found_in": list(candidate.registries),
         "identifiers": identifiers,
     }
+    natural_person = is_natural_person(candidate.legal_form)
     return {
         "candidate": public,
-        "natural_person": is_natural_person(candidate.legal_form),
+        "natural_person": natural_person,
         "wikidata_id": candidate.wikidata_id,
         "lei": candidate.lei,
+        # Server-only, never in `candidate` (the public part): a sole trader's registry address is
+        # personal data, kept for redaction. A company's address is not kept.
+        "registered_address": candidate.registered_address if natural_person else None,
     }
 
 

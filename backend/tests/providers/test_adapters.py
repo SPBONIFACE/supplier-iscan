@@ -42,6 +42,7 @@ from tests.providers.support import (
     httpx_client,
     make_meter,
 )
+from tests.redacted import redacted
 
 ENDPOINT = "https://provider.example.test"
 EXPECTED_URLS = ["https://acme.example/report", "https://acme.example/about"]
@@ -199,12 +200,13 @@ def retrieval_client(case: Case, recorder: Recorder) -> RetrievalClient:
 def call(case: Case, recorder: Recorder) -> Any:
     if case in STRUCTURING_CASES:
         return structuring_client(case, recorder).structure(
-            StructuringRequest(instructions="Extract.", data="<data>Acme SA</data>"),
+            StructuringRequest(instructions="Extract.", data=redacted("<data>Acme SA</data>")),
             Company,
             CONTEXT,
         )
     return retrieval_client(case, recorder).retrieve(
-        RetrievalRequest(instructions="Find sources.", query="Acme SA annual report"), CONTEXT
+        RetrievalRequest(instructions="Find sources.", query=redacted("Acme SA annual report")),
+        CONTEXT,
     )
 
 
@@ -343,7 +345,7 @@ def test_the_mistral_client_has_no_sdk_tracing_hook(monkeypatch: pytest.MonkeyPa
 
     assert mistral_adapter.tracing_hooks(client) == []
     StructuringClient(cfg, case.adapter(cfg, client), make_meter()).structure(
-        StructuringRequest(instructions="Extract.", data="Acme SA"), Company, CONTEXT
+        StructuringRequest(instructions="Extract.", data=redacted("Acme SA")), Company, CONTEXT
     )
     assert [request.url.path for request in recorder.requests] == ["/v1/chat/completions"]
 

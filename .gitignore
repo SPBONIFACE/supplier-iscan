@@ -7,6 +7,11 @@ CLAUDE.local.md
 .env.*
 !.env.example
 
+# Name-detection model files (fetched by `make fetch-model` into ~/.cache/supplier-iscan, never committed)
+*.bin
+*.safetensors
+spm.model
+
 # Python
 .venv/
 __pycache__/

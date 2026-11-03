@@ -28,9 +28,10 @@ from tests.providers.support import (
     config,
     make_meter,
 )
+from tests.redacted import redacted
 
 GOOD = '{"legal_name": "Acme SA", "country": "FR"}'
-REQUEST = StructuringRequest(instructions="Extract.", data="<data>Acme SA</data>")
+REQUEST = StructuringRequest(instructions="Extract.", data=redacted("<data>Acme SA</data>"))
 ENV = {"GEMINI_API_KEY": SENTINEL_KEY, "ANTHROPIC_API_KEY": SENTINEL_KEY}
 
 
@@ -150,7 +151,9 @@ def test_retrieval_uses_the_configured_retrieval_configuration() -> None:
         roles={"retrieval": "searcher"},
     )
 
-    result = providers.retrieval().retrieve(RetrievalRequest(instructions="i", query="q"), CONTEXT)
+    result = providers.retrieval().retrieve(
+        RetrievalRequest(instructions="i", query=redacted("q")), CONTEXT
+    )
 
     assert [item.url for item in result.urls] == ["https://a.example/1"]
     assert providers.selected("retrieval") == "searcher"
