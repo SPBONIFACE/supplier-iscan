@@ -105,6 +105,8 @@ jobs:
         run: make test
 
       - name: make test-model (real name-detection model)
+        env:
+          DATABASE_URL: postgresql://ci:ci_test_only@localhost:5432/supplier_iscan_test
         run: make test-model
 
       - name: Lockfiles unchanged
