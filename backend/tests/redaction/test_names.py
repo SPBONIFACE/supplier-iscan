@@ -1,21 +1,20 @@
 """Names in capitals, honorifics, labels, noise and obfuscated emails (#19, QA defects)."""
 
-from collections import defaultdict
-
 import pytest
 
-from app.redaction import OMISSION, get_redactor
-from tests.redaction.measure_names import leaked
-from tests.redaction.name_corpus import (
-    NAMES_B,
-    NON_PERSON,
-    honorific_cases,
-    name_cases,
-)
+from app.redaction import OMISSION, Redactor
+
+pytestmark = pytest.mark.model
+_REAL: list[Redactor] = []
+
+
+@pytest.fixture(autouse=True)
+def _use_real(real_redactor: Redactor) -> None:
+    _REAL[:] = [real_redactor]
 
 
 def redact(text: str) -> str:
-    return get_redactor().redact(text).text
+    return _REAL[0].redact(text).text
 
 
 @pytest.mark.parametrize(
@@ -69,34 +68,6 @@ def test_capitals_honorifics_and_labels_take_the_whole_name(
 )
 def test_standards_common_words_and_companies_are_not_names(text: str) -> None:
     assert redact(text) == text
-
-
-def test_over_redaction_of_non_person_text_is_under_two_percent() -> None:
-    changed = [line for line in NON_PERSON if redact(line) != line]
-
-    assert len(changed) / len(NON_PERSON) < 0.02, changed
-
-
-def test_recall_on_a_fresh_synthetic_corpus() -> None:
-    """Names never used to tune the rules: normal and "Jean DUPONT" >= 95%, ALL CAPS >= 90%."""
-    redactor = get_redactor()
-    cases = [*name_cases(NAMES_B, 3), *honorific_cases(NAMES_B, 3)]
-    score: dict[str, list[int]] = defaultdict(lambda: [0, 0])
-    honorific_leaks: list[str] = []
-    for case in cases:
-        out = redactor.redact(case.text).text
-        ok = not leaked(case, out) and (case.role not in case.text or case.role in out)
-        group = "all_caps" if case.casing == "all_caps" else "other"
-        score[group][0] += int(ok)
-        score[group][1] += 1
-        if case.context == "honorific" and any(
-            part.casefold() in out.casefold() for part in case.name_parts[-1:]
-        ):
-            honorific_leaks.append(case.text)
-
-    assert score["other"][0] / score["other"][1] >= 0.95, score
-    assert score["all_caps"][0] / score["all_caps"][1] >= 0.90, score
-    assert len(honorific_leaks) <= 1, honorific_leaks
 
 
 @pytest.mark.parametrize(

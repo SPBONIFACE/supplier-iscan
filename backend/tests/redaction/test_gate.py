@@ -22,7 +22,6 @@ from app.redaction import (
     RedactionGate,
     RedactionUnavailable,
     Redactor,
-    get_redactor,
 )
 from app.redaction import engine as engine_module
 from tests.factories import create_organisation
@@ -30,6 +29,7 @@ from tests.identity.support import candidate, found, proposal
 from tests.identity.test_identity import setup
 from tests.providers.support import SENTINEL_KEY, Company, catalogue, config, make_meter
 from tests.redaction.corpora import CORPUS, HELD_OUT
+from tests.redaction.support import fake_redactor
 from tests.runs_support import create_run
 
 APP = Path(__file__).resolve().parents[2] / "app"
@@ -56,7 +56,9 @@ def providers_with(
 
 
 def gate(names: tuple[str, ...] = ()) -> RedactionGate:
-    return RedactionGate(lambda: names, get_redactor())
+    return RedactionGate(
+        lambda: names, fake_redactor("Anna Keller-Brandt", "Zoë Okonkwo-Lindqvist")
+    )
 
 
 def assert_clean(text: str) -> None:
@@ -276,7 +278,10 @@ def stored_texts(engine: Engine) -> str:
         return "\n".join(f"{s.redacted_text}\n{s.author}" for s in db.scalars(select(Source)))
 
 
-def test_a_seeded_corpus_leaves_no_email_phone_or_name_in_the_database(engine: Engine) -> None:
+@pytest.mark.model
+def test_a_seeded_corpus_leaves_no_email_phone_or_name_in_the_database(
+    engine: Engine, real_redactor: Redactor
+) -> None:
     organisation_id = create_organisation(engine)
     run_id = create_run(engine, organisation_id)
     database = Database(None, engine)
@@ -365,4 +370,4 @@ def test_the_suppression_reader_failing_stops_the_call() -> None:
         raise RuntimeError("database down")
 
     with pytest.raises(RedactionUnavailable):
-        RedactionGate(unreadable, get_redactor()).redact("hello")
+        RedactionGate(unreadable, fake_redactor()).redact("hello")

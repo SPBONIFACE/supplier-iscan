@@ -138,17 +138,6 @@ def test_a_natural_person_identity_loses_name_and_address_a_company_keeps_its_na
 
 
 def test_a_registry_company_name_is_protected_from_ner_but_not_from_forced_names() -> None:
-    kept = redact("Brightwater Anders delivered.", RedactionContext(keep=("Brightwater Anders",)))
-    forced = redact(
-        "Brightwater Anders delivered.",
-        RedactionContext(keep=("Brightwater Anders",), names=("Brightwater Anders",)),
-    )
-
-    assert kept == "Brightwater Anders delivered."
-    assert forced == f"{OMISSION} delivered."
-
-
-def test_a_registry_company_name_is_protected_from_ner_but_not_from_forced_names() -> None:
     found = "Brightwater Anders"
     kept = redact("Brightwater Anders delivered.", RedactionContext(keep=(found,)), found)
     forced = redact(

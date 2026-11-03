@@ -91,9 +91,9 @@ def report(label: str, folder: str, report_part: bool) -> None:
         good = 0
         for item in titles:
             removed = redactor.removed_spans(item["text"])
-            good += covered(item["text"], *item["name_span"], removed) and not touched(
-                item["text"], *item["title_span"], removed
-            )
+            good += covered(
+                item["text"], item["name_span"][0], item["name_span"][1], removed
+            ) and not touched(item["text"], item["title_span"][0], item["title_span"][1], removed)
         print(f"name hidden and title kept: {good} of {len(titles)}")
 
 

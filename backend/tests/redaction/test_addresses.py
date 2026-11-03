@@ -9,11 +9,12 @@ abbreviations, a misspelling, an address split by words that are not in the stor
 
 import pytest
 
-from app.redaction import OMISSION, RedactionContext, get_redactor
+from app.redaction import OMISSION, RedactionContext
+from tests.redaction.support import fake_redactor
 
 
 def redact(text: str, *addresses: str) -> str:
-    return get_redactor().redact(text, RedactionContext(addresses=addresses)).text
+    return fake_redactor().redact(text, RedactionContext(addresses=addresses)).text
 
 
 @pytest.mark.parametrize(

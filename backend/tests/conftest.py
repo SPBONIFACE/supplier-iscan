@@ -21,6 +21,20 @@ from tests.db_support import temporary_database, truncate_all
 from tests.support import LOCAL_ORIGIN, make_client
 
 
+@pytest.fixture(autouse=True)
+def _fast_name_detector(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The process-wide redactor uses a fake name detector (no model, quick) in every test but
+    those marked `model`, which use the real one (see tests/redaction/conftest.py)."""
+    if request.node.get_closest_marker("model"):
+        return
+    from app.redaction import engine
+    from tests.redaction.support import fake_redactor
+
+    monkeypatch.setattr(
+        engine, "_REDACTOR", fake_redactor("Anna Keller-Brandt", "Zoë Okonkwo-Lindqvist")
+    )
+
+
 @pytest.fixture(scope="session")
 def server_url() -> str:
     url = os.environ.get("DATABASE_URL", "").strip()

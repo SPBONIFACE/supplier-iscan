@@ -9,7 +9,7 @@ from collections import defaultdict
 
 import pytest
 
-from app.redaction import OMISSION, Redactor, RedactionContext
+from app.redaction import OMISSION, RedactionContext, Redactor
 from tests.redaction.measure_detector import covered, load, touched
 
 pytestmark = pytest.mark.model
@@ -108,7 +108,7 @@ def test_ordinary_lines_are_left_alone_and_titles_stay(redactor: Redactor) -> No
     good = 0
     for item in titles:
         removed = redactor.removed_spans(item["text"])
-        good += covered(item["text"], *item["name_span"], removed) and not touched(
-            item["text"], *item["title_span"], removed
-        )
+        good += covered(
+            item["text"], item["name_span"][0], item["name_span"][1], removed
+        ) and not touched(item["text"], item["title_span"][0], item["title_span"][1], removed)
     assert good >= len(titles) - 1

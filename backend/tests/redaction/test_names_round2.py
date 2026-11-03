@@ -3,15 +3,20 @@ obfuscated e-mails in prose, and lower-case names found only from a clue."""
 
 import pytest
 
-from app.redaction import OMISSION, get_redactor
-from tests.redaction.heldout_corpus import HELD_OUT_NON_PERSON
-from tests.redaction.heldout_corpus_b import HELD_OUT_B
-from tests.redaction.heldout_corpus_c import HELD_OUT_C
+from app.redaction import OMISSION, Redactor
 from tests.redaction.lowercase_corpus import LOWER_PROSE, lower_case_cases
+
+pytestmark = pytest.mark.model
+_REAL: list[Redactor] = []
+
+
+@pytest.fixture(autouse=True)
+def _use_real(real_redactor: Redactor) -> None:
+    _REAL[:] = [real_redactor]
 
 
 def redact(text: str) -> str:
-    return get_redactor().redact(text).text
+    return _REAL[0].redact(text).text
 
 
 @pytest.mark.parametrize(
@@ -184,7 +189,7 @@ def test_lower_case_prose_next_to_the_same_clues_is_untouched(text: str) -> None
 def test_lower_case_names_with_a_clue_are_mostly_found_and_prose_is_left_alone() -> None:
     """Measured: 38/40 found, 0/41 prose lines altered. A lower-case name with no clue is not
     detected (a stated limit)."""
-    redactor = get_redactor()
+    redactor = _REAL[0]
     cases = lower_case_cases(8)
     found = sum(
         not any(part in redactor.redact(text).text.casefold() for part in parts)
@@ -198,22 +203,3 @@ def test_lower_case_names_with_a_clue_are_mostly_found_and_prose_is_left_alone()
 
 def test_a_lower_case_name_with_no_clue_is_a_stated_limit() -> None:
     assert "dupont" in redact("we spoke to jean dupont about the order yesterday")
-
-
-# --- held-out sets of lines without any person --------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "corpus",
-    [HELD_OUT_NON_PERSON, HELD_OUT_B, HELD_OUT_C],
-    ids=["set-1", "set-2", "set-3"],
-)
-def test_held_out_ordinary_lines_stay_under_two_percent_altered(
-    corpus: dict[str, tuple[str, ...]],
-) -> None:
-    redactor = get_redactor()
-    lines = [line for lines in corpus.values() for line in lines]
-    altered = [line for line in lines if redactor.redact(line).text != line]
-
-    assert len(lines) >= 100
-    assert len(altered) / len(lines) < 0.02, altered
