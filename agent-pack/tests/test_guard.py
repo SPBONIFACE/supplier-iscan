@@ -143,3 +143,153 @@ def test_allowed(stdin: str) -> None:
     result = run(stdin)
     assert result.returncode == 0, (stdin, result.stderr)
     assert result.stderr == ""
+
+
+BLOCKED_DEPENDENCY = [
+    bash("uv add protobuf"),
+    bash("cd backend && uv add --dev x"),
+    bash("uv pip install x"),
+    bash("uv --directory backend add x"),
+    bash("uv run pip install x"),
+    bash("uv run --locked python -m pip install x"),
+    bash("pip install x"),
+    bash("pip3 install -r requirements.txt"),
+    bash("python3 -m pip install x"),
+    bash("/usr/bin/pip install x"),
+    bash("pnpm add react"),
+    bash("pnpm -C frontend add -D x"),
+    bash("pnpm --filter web add x"),
+    bash("pnpm install left-pad"),
+    bash("pnpm i left-pad"),
+    bash("pnpm install -D x"),
+    bash("pnpm up --latest"),
+    bash("pnpm update"),
+    bash("pnpm upgrade -L"),
+    bash("make test && pnpm add x"),
+    bash("echo hi | pip install x"),
+    bash("sudo pip install x"),
+    bash("sh -c 'uv add x'"),
+    bash("corepack pnpm add x"),
+    bash("pnpm exec pip install x"),
+    bash("cd a\nuv add x"),
+    bash("FOO=1 uv add x"),
+]
+ALLOWED_DEPENDENCY = [
+    bash("uv sync"),
+    bash("uv sync --locked"),
+    bash("uv lock --check"),
+    bash("uv run --locked pytest"),
+    bash("uv pip list"),
+    bash("pip --version"),
+    bash("pip list"),
+    bash("pnpm install"),
+    bash("pnpm install --frozen-lockfile"),
+    bash("pnpm -C frontend install --frozen-lockfile"),
+    bash("pnpm i"),
+    bash("pnpm test"),
+    bash("make install"),
+    bash("echo 'uv add x'"),
+    bash("gh pr create --title 'uv add is blocked' --body 'pnpm add x'"),
+]
+LIST = "_docs/process/approved-dependencies.md"
+ASK = [
+    tool("Edit", file_path=f"/repo/{LIST}", old_string="a", new_string="b"),
+    tool("Write", file_path=LIST, content="x"),
+    tool("MultiEdit", file_path=f"/repo/{LIST}"),
+    bash(f"echo '| x |' >> {LIST}"),
+    bash(f"cat new > {LIST}"),
+    bash(f"cat new >{LIST}"),
+    bash(f"printf x | tee -a {LIST}"),
+    bash(f"sed -i 's/a/b/' {LIST}"),
+    bash(f"sed -ni 's/a/b/p' {LIST}"),
+    bash(f"cp /tmp/x {LIST}"),
+    bash(f"mv /tmp/x {LIST}"),
+    bash(f"git checkout origin/main -- {LIST}"),
+    bash(f"python3 -c \"open('{LIST}', 'w').write('x')\""),
+    bash(f"uv run python -c \"open('{LIST}', 'a')\""),
+    bash(f"bash -c 'echo x >> {LIST}'"),
+    bash(f"cd repo && perl -pi -e 's/a/b/' {LIST}"),
+]
+NO_ASK = [
+    tool("Read", file_path=f"/repo/{LIST}"),
+    tool("Grep", pattern="pypdf", path=LIST),
+    tool("Edit", file_path="_docs/process/process.md", old_string="a", new_string="b"),
+    bash(f"cat {LIST}"),
+    bash(f"grep -n protobuf {LIST}"),
+    bash(f"sed -n '1,5p' {LIST}"),
+    bash(f"git diff origin/main -- {LIST}"),
+    bash(f"git add {LIST}"),
+    bash(f"wc -l {LIST} > /tmp/count"),
+    bash(f"gh pr create --title 'x' --body 'Changes {LIST}'"),
+]
+# Legitimate long commands: a quote or an apostrophe in the text must not block.
+HEREDOCS = [
+    "gh issue create --body \"$(cat <<'EOF'\nIt doesn't fail; 5\" pipe, `code`.\nEOF\n)\"",
+    "gh pr create --body-file - <<'EOF'\nIt's done and the owner's call.\nEOF",
+    "git commit -m \"$(cat <<'EOF'\nfix: don't crash\n\nCo-Authored-By: X\nEOF\n)\"",
+    "cat > /tmp/note.md <<'EOF'\nuv add protobuf is blocked; it's a rule\nEOF\nls",
+]
+HEREDOC_STILL_CHECKED = [
+    "bash <<'EOF'\nnpm install\nEOF",  # the body is a script: checked
+    "cat <<EOF\n$(npm install)\nEOF",  # unquoted delimiter: the shell expands it
+    "cat <<'EOF'\nok\nEOF\nnpm install",  # a command after the body
+    "cat <<'EOF'\nsecret\nEOF\ncat .env",
+    "cat <<'EOF'\nit's\nEOF\nuv add x",
+    "gh issue create --body-file - <<'EOF'\ncat .env\nEOF",  # a .env name in the text
+]
+
+
+@pytest.mark.parametrize("stdin", BLOCKED_DEPENDENCY)
+def test_dependency_change_blocked(stdin: str) -> None:
+    result = run(stdin)
+    assert result.returncode == 2, stdin
+    assert "dependency" in result.stderr
+    assert "owner" in result.stderr
+
+
+@pytest.mark.parametrize("stdin", ALLOWED_DEPENDENCY)
+def test_dependency_install_still_allowed(stdin: str) -> None:
+    result = run(stdin)
+    assert result.returncode == 0, (stdin, result.stderr)
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize("stdin", ASK)
+def test_approved_list_write_asks_owner(stdin: str) -> None:
+    result = run(stdin)
+    assert result.returncode == 0, (stdin, result.stderr)
+    decision = json.loads(result.stdout)["hookSpecificOutput"]
+    assert decision["hookEventName"] == "PreToolUse"
+    assert decision["permissionDecision"] == "ask"
+    assert "owner" in decision["permissionDecisionReason"]
+
+
+@pytest.mark.parametrize("stdin", NO_ASK)
+def test_approved_list_read_does_not_ask(stdin: str) -> None:
+    result = run(stdin)
+    assert result.returncode == 0, (stdin, result.stderr)
+    assert result.stdout == ""
+
+
+def test_block_wins_over_ask() -> None:
+    result = run(bash(f"uv add x && echo y >> {LIST}"))
+    assert result.returncode == 2
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize("command", HEREDOCS)
+def test_heredoc_text_is_not_parsed_as_shell(command: str) -> None:
+    result = run(bash(command))
+    assert result.returncode == 0, (command, result.stderr)
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize("command", HEREDOC_STILL_CHECKED)
+def test_heredoc_does_not_hide_commands(command: str) -> None:
+    assert run(bash(command)).returncode == 2, command
+
+
+def test_truly_unparseable_stays_blocked() -> None:
+    result = run(bash("echo \"unclosed $(cat <<'EOF'\nfine\nEOF\n"))
+    assert result.returncode == 2
+    assert "could not be parsed" in result.stderr

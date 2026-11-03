@@ -6,8 +6,19 @@ agent. Rules (AGENTS.md):
      directly or through a shell command. .env.example is allowed.
   2. Never `npm install`, `npm i`, `npm ci` or `npx`, alone, in a pipeline or after `&&`.
      Use `pnpm` (`pnpm install`, `pnpm exec`) and `uv` (`uv run`).
+  3. Never add or upgrade a dependency from the command line: `uv add`, `uv pip install`,
+     `pip install`, `pnpm add`, `pnpm install <package>`, `pnpm i <package>`,
+     `pnpm up|update|upgrade`, alone, in a pipeline, after `&&` or through the wrappers below.
+     `pnpm install` without a package and `uv sync` stay allowed
+     (`make install`). New dependencies are the owner's decision.
+  4. An Edit or Write of `_docs/process/approved-dependencies.md`, or a shell command that writes it
+     (redirection, `tee`, `cp`, `mv`, `sed -i`, an interpreter, ...), is not blocked: it ASKS the
+     owner (PreToolUse `permissionDecision: "ask"`, exit 0). Where nobody can answer (`-p`,
+     `dontAsk`), Claude Code denies an ask, so it fails safe. A block always wins over an ask.
 Input the script cannot parse is blocked, never allowed.
 """
+
+from __future__ import annotations  # the hook also starts under an older system python3
 
 import json
 import re
@@ -22,6 +33,16 @@ ENV_RULE = (
 NPM_RULE = (
     "Blocked: npm install / npm i / npm ci / npx are not allowed (AGENTS.md: pnpm and uv only). "
     "Allowed: pnpm install, pnpm exec, uv run."
+)
+DEPENDENCY_RULE = (
+    "Blocked: adding or upgrading a dependency from the command line is not allowed "
+    "(AGENTS.md: no new dependency without asking). Stop and report the package you need "
+    "to the owner. Allowed: pnpm install (no package), uv sync, make install."
+)
+ASK_REASON = (
+    "_docs/process/approved-dependencies.md is the owner's list of approved dependencies. "
+    "Approve only if the owner has approved this change; an agent never approves its own "
+    "dependency."
 )
 PARSE_RULE = "Blocked: the hook input could not be parsed, so it cannot be checked."
 
@@ -47,6 +68,33 @@ OPERATORS = re.compile(r"^[();<>|&]+$")
 NPM_BLOCKED = {"install", "i", "in", "ins", "inst", "add", "ci", "clean-install", "it", "cit"}
 WRAPPERS = {"sudo", "env", "command", "exec", "time", "nohup", "nice", "xargs", "builtin"}
 SHELLS = {"bash", "sh", "zsh", "dash", "ksh"}
+LIST_NAME = "approved-dependencies.md"
+PNPM_VALUE_FLAGS = {"--filter", "-f", "-c", "--dir", "--prefix", "--registry", "--reporter"}
+PNPM_UPGRADES = {"up", "update", "upgrade"}
+PNPM_INSTALLS = {"install", "i"}
+UV_VALUE_FLAGS = {"--directory", "--project", "--python", "-p", "--config-file", "--cache-dir"}
+PIP_NAME = re.compile(r"^pip[0-9.]*$")
+PYTHON_NAME = re.compile(r"^python[0-9.]*$")
+WRITERS = {  # commands that may write the file they are given
+    "tee", "cp", "mv", "install", "rm", "truncate", "dd", "ed", "ex", "vi", "vim", "nano", "perl",
+    "ruby", "node", "awk", "gawk", "patch", "ln", "rsync", "curl", "wget", "python", "python3",
+}  # fmt: skip
+GIT_WRITES = {
+    "checkout",
+    "restore",
+    "apply",
+    "stash",
+    "reset",
+    "revert",
+    "merge",
+    "rebase",
+    "mv",
+    "rm",
+}
+HEREDOC = re.compile(r"<<-?\s*(['\"])([A-Za-z_][A-Za-z0-9_]*)\1")
+HEREDOC_RUNNERS = re.compile(
+    r"[\s;&|(`](bash|sh|zsh|dash|ksh|python[0-9.]*|node|perl|ruby|eval|source|\.)\s"
+)
 PATH_KEYS = ("file_path", "path", "notebook_path", "pattern", "glob")
 
 
@@ -83,18 +131,41 @@ def split_segments(tokens: list[str]) -> list[list[str]]:
     return [s for s in segments if s]
 
 
-def check_command(command: str, depth: int = 0) -> None:
-    if depth > 3:
-        raise Block(PARSE_RULE)
+def strip_heredocs(command: str) -> str:
+    """Drop the body of a heredoc with a quoted delimiter: it is data (an issue or pull request
+    text), not shell, and its apostrophes and quotes broke the tokenizer. A body fed to a shell or
+    an interpreter (`bash <<'EOF'`) is kept, so it is still checked; so is the body of an unquoted
+    delimiter, where the shell expands `$(...)`. .env names are still searched in the whole text."""
+    out: list[str] = []
+    end: str | None = None
+    for line in command.split("\n"):
+        if end is not None:
+            if line.strip() == end:
+                end = None
+            continue
+        out.append(line)
+        match = HEREDOC.search(line)
+        if match and not HEREDOC_RUNNERS.search(" " + line[: match.start()] + " "):
+            end = match.group(2)
+    return "\n".join(out)
+
+
+def tokenize(command: str) -> list[str]:
     # Newlines and backticks separate commands; replacing them inside quotes is harmless here.
-    flat = command.replace("\n", " ; ").replace("`", " ( ")
+    flat = strip_heredocs(command).replace("\n", " ; ").replace("`", " ( ")
     lexer = shlex.shlex(flat, posix=True, punctuation_chars=True)
     lexer.whitespace_split = True
     lexer.commenters = ""
     try:
-        tokens = list(lexer)
+        return list(lexer)
     except ValueError as exc:
         raise Block(PARSE_RULE) from exc
+
+
+def check_command(command: str, depth: int = 0) -> None:
+    if depth > 3:
+        raise Block(PARSE_RULE)
+    tokens = tokenize(command)
 
     if mentions_env_file(command):
         raise Block(ENV_RULE)
@@ -126,6 +197,19 @@ def npm_subcommand(rest: list[str]) -> str | None:
     return None
 
 
+def positional_words(rest: list[str], value_flags: set[str]) -> list[str]:
+    """Words that are not options, skipping the value of options such as --filter x."""
+    words: list[str] = []
+    it = iter(rest)
+    for arg in it:
+        if arg.startswith("-"):
+            if arg.lower() in value_flags:
+                next(it, None)
+            continue
+        words.append(arg)
+    return words
+
+
 def check_argv(args: list[str], depth: int) -> None:
     if depth > 3 or not args:
         return
@@ -138,16 +222,89 @@ def check_argv(args: list[str], depth: int) -> None:
     if cmd == "corepack":
         check_argv(rest, depth + 1)
     if cmd == "pnpm":
-        words = [a for a in rest if not a.startswith("-")]
+        words = positional_words(rest, PNPM_VALUE_FLAGS)
         if words[:1] in (["exec"], ["dlx"]):
             check_argv(rest[rest.index(words[0]) + 1 :], depth + 1)
+        if words[:1] and (words[0] == "add" or words[0] in PNPM_UPGRADES):
+            raise Block(DEPENDENCY_RULE)
+        if words[:1] and words[0] in PNPM_INSTALLS and len(words) > 1:
+            raise Block(DEPENDENCY_RULE)
+    if cmd == "uv":
+        words = positional_words(rest, UV_VALUE_FLAGS)
+        if words[:1] == ["add"] or words[:2] == ["pip", "install"]:
+            raise Block(DEPENDENCY_RULE)
+        if words[:1] == ["run"]:  # uv run pip install x, uv run python -m pip install x
+            sub = rest[rest.index("run") + 1 :]
+            while sub and sub[0].startswith("-"):
+                sub = sub[1:]
+            check_argv(sub, depth + 1)
+    if PIP_NAME.match(cmd) and "install" in positional_words(rest, set())[:1]:
+        raise Block(DEPENDENCY_RULE)
+    if PYTHON_NAME.match(cmd) and rest[:2] == ["-m", "pip"]:
+        check_argv(rest[1:], depth + 1)
     if cmd == "eval":
         check_command(" ".join(rest), depth + 1)
     elif cmd in SHELLS and "-c" in rest and rest.index("-c") + 1 < len(rest):
         check_command(rest[rest.index("-c") + 1], depth + 1)
 
 
-def check(payload: object) -> None:
+def is_list_name(value: str) -> bool:
+    return value.strip().rstrip("/").rsplit("/", 1)[-1].lower() == LIST_NAME
+
+
+def command_writes_list(command: str, depth: int = 0) -> bool:
+    """True when a command line writes the approved-dependencies list: a redirection onto it, or a
+    segment that names it and runs a command able to write (tee, cp, mv, sed -i, an interpreter,
+    git checkout ...). Reading it (cat, grep, git diff) and mentioning it in a pull request text
+    are not writes. Obfuscated names (a glob, a variable) are not caught."""
+    if depth > 3 or LIST_NAME not in command.lower():
+        return False
+    tokens = tokenize(command)
+    for i, tok in enumerate(tokens):
+        if ">" in tok and OPERATORS.match(tok):
+            # `> file` or `>> file`; the target may also be glued to the operator.
+            nxt = tokens[i + 1] if i + 1 < len(tokens) else ""
+            if is_list_name(nxt):
+                return True
+    for segment in split_segments(tokens):
+        args = list(segment)
+        while args and (ASSIGNMENT.match(args[0]) or args[0].rsplit("/", 1)[-1] in WRAPPERS):
+            args.pop(0)
+        if not args:
+            continue
+        cmd, rest = args[0].rsplit("/", 1)[-1], args[1:]
+        if cmd in SHELLS and "-c" in rest and rest.index("-c") + 1 < len(rest):
+            if command_writes_list(rest[rest.index("-c") + 1], depth + 1):
+                return True
+        if not any(LIST_NAME in a.lower() for a in rest):
+            continue  # this segment does not name the file
+        if cmd in {"sed", "gsed"}:
+            if any(re.match(r"^(-[a-zA-Z]*i|--in-place)", a) for a in rest):
+                return True
+        elif cmd == "git":
+            sub = positional_words(rest, {"-C", "-c"})[:1]
+            if sub and sub[0] in GIT_WRITES:
+                return True
+        elif cmd in WRITERS or PYTHON_NAME.match(cmd) or cmd in {"uv", "uvx"}:
+            return True
+    return False
+
+
+def needs_owner(payload: dict[str, Any]) -> bool:
+    tool_input = payload["tool_input"]
+    if payload["tool_name"] in {"Edit", "Write", "MultiEdit", "NotebookEdit"}:
+        return any(
+            isinstance(tool_input.get(k), str) and is_list_name(tool_input[k])
+            for k in ("file_path", "path", "notebook_path")
+        )
+    command = tool_input.get("command")
+    return (
+        payload["tool_name"] == "Bash" and isinstance(command, str) and command_writes_list(command)
+    )
+
+
+def check(payload: object) -> bool:
+    """Raise Block to refuse; return True when the owner must be asked."""
     if not isinstance(payload, dict):
         raise Block(PARSE_RULE)
     tool_name = payload.get("tool_name")
@@ -160,12 +317,24 @@ def check(payload: object) -> None:
         if not isinstance(command, str):
             raise Block(PARSE_RULE)
         check_command(command)
+    return needs_owner(payload)  # only reached when nothing was blocked
 
 
 def main() -> int:
     try:
         payload = json.loads(sys.stdin.read())
-        check(payload)
+        if check(payload):
+            print(
+                json.dumps(
+                    {
+                        "hookSpecificOutput": {
+                            "hookEventName": "PreToolUse",
+                            "permissionDecision": "ask",
+                            "permissionDecisionReason": ASK_REASON,
+                        }
+                    }
+                )
+            )
     except Block as block:
         print(block, file=sys.stderr)
         return 2
