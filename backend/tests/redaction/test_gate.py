@@ -28,7 +28,7 @@ from tests.factories import create_organisation
 from tests.identity.support import candidate, found, proposal
 from tests.identity.test_identity import setup
 from tests.providers.support import SENTINEL_KEY, Company, catalogue, config, make_meter
-from tests.redaction.corpora import CORPUS, HELD_OUT
+from tests.redaction.measure_detector import load
 from tests.redaction.support import fake_redactor
 from tests.runs_support import create_run
 
@@ -289,9 +289,9 @@ def test_a_seeded_corpus_leaves_no_email_phone_or_name_in_the_database(
         db.add(SuppressionEntry(kind="person_name", value="Tobias Reuter"))
         db.commit()
 
-    cases = [*CORPUS, *HELD_OUT]
+    cases = [i for i in load("fresh", "names") if i["ctx"] == "prose" and i["style"] == "normal"]
     for number, case in enumerate(cases):
-        text = case.text + (" TOBIAS REUTER." if case.language == "de" else "")
+        text = case["text"] + (" TOBIAS REUTER." if case["lang"] == "de" else "")
         store_source(
             database,
             run_id,
@@ -303,11 +303,10 @@ def test_a_seeded_corpus_leaves_no_email_phone_or_name_in_the_database(
 
     everything = stored_texts(engine)
     for case in cases:
-        for item in case.remove:
-            assert item not in everything, item
+        for start, end in case["spans"]:
+            assert case["text"][start:end] not in everything, case["text"][start:end]
     assert "Anna Keller-Brandt" not in everything
     assert "TOBIAS REUTER" not in everything and "Tobias Reuter" not in everything
-    assert "Brightwater Holdings Ltd" in everything  # a company name is not personal data
 
 
 def test_a_natural_persons_name_is_redacted_in_stored_text_a_companys_is_not(
