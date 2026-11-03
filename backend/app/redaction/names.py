@@ -41,7 +41,7 @@ ROLES: Final = _words(
     president chairman chairwoman chair founder co-founder cofounder owner partner head vice vp
     deputy secretary treasurer board member mr mrs ms miss dr prof professor sir madam mx
     directeur directrice général générale président présidente gérant gérante fondateur
-    fondatrice pdg dg m mme mlle me responsable
+    fondatrice pdg dg m mme mlle me responsable responsabile
     geschäftsführer geschäftsführerin vorstand vorsitzender vorsitzende inhaber inhaberin gründer
     gründerin herr frau leiter leiterin
     directora gerente fundador fundadora consejero consejera delegado delegada

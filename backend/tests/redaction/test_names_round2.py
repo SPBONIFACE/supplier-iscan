@@ -3,7 +3,7 @@ obfuscated e-mails in prose, and lower-case names found only from a clue."""
 
 import pytest
 
-from app.redaction import OMISSION, Redactor
+from app.redaction import OMISSION, RedactionContext, Redactor
 from tests.redaction.lowercase_corpus import LOWER_PROSE, lower_case_cases
 
 pytestmark = pytest.mark.model
@@ -199,3 +199,33 @@ def test_lower_case_names_with_a_clue_are_mostly_found_and_prose_is_left_alone()
 
     assert found / len(cases) >= 0.9, (found, len(cases))
     assert len(altered) / len(LOWER_PROSE) <= 0.05, altered  # measured 2 of 41
+
+
+@pytest.mark.parametrize("label", ["Responsabile", "Responsable"])
+def test_a_role_word_that_is_also_a_label_keeps_its_title_and_the_name_is_hidden(
+    label: str,
+) -> None:
+    out = redact(f"Ludovica Spadafora\n{label} acquisti")
+    assert "Spadafora" not in out
+    assert "Ludovica" not in out
+    assert f"{label} acquisti" in out
+    labelled = redact(f"{label}: Mario Bianchi")
+    assert "Bianchi" not in labelled
+    assert "Mario" not in labelled
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Contact: Mario Rossi. Rossi S.p.A. makes valves.",
+        "Contact: M. Rossi. Rossi S.p.A. makes valves.",
+        "Our buyer Mario Rossi called. Rossi S.p.A. makes valves.",
+        "Mr Rossi called. Rossi S.p.A. makes valves.",
+    ],
+)
+def test_keeping_a_company_name_does_not_protect_a_person_with_the_same_surname(
+    text: str,
+) -> None:
+    out = _REAL[0].redact(text, RedactionContext(keep=("Rossi S.p.A.",))).text
+    assert "Rossi S.p.A. makes valves." in out
+    assert out.count("Rossi") == 1

@@ -343,11 +343,25 @@ def _carries_legal_form(text: str, span: Span) -> bool:
     return False
 
 
-def _is_company(text: str, span: Span, keep_keys: Sequence[str]) -> bool:
+def _kept_ranges(text: str, keep: Sequence[str]) -> list[Span]:
+    """Where each `keep` company name appears in full in the text (ignoring case, accents and
+    spacing). A fragment of it elsewhere ("Mr Rossi" for "Rossi S.p.A.") is not protected."""
+    folded, index = fold(text)
+    ranges: list[Span] = []
+    for name in keep:
+        words = fold(name)[0].split()
+        if not words:
+            continue
+        pattern = r"(?<!\w)" + r"\s+".join(re.escape(word) for word in words) + r"(?!\w)"
+        for match in re.finditer(pattern, folded):
+            ranges.append((index[match.start()], index[match.end() - 1] + 1))
+    return ranges
+
+
+def _is_company(text: str, span: Span, kept_ranges: Sequence[Span]) -> bool:
     if _carries_legal_form(text, span):
         return True
-    folded = " ".join(fold(text[span[0] : span[1]])[0].split())
-    return any(f" {folded} " in f" {kept} " for kept in keep_keys)
+    return any(start <= span[0] and span[1] <= end for start, end in kept_ranges)
 
 
 def _skip_space(text: str, position: int) -> int:
@@ -431,7 +445,7 @@ class Redactor:
             logger.error("Redaction refused a text over %d characters", MAX_TEXT_CHARS)
             raise RedactionUnavailable
         self.load()
-        keep_keys = [" ".join(fold(name)[0].split()) for name in context.keep]
+        kept_ranges = _kept_ranges(text, context.keep)
         spans = [
             *_email_spans(text),
             *_obfuscated_email_spans(text),
@@ -439,7 +453,7 @@ class Redactor:
             *_forced_spans(text, context),
         ]
         for span in self._person_spans(text):
-            if not _is_company(text, span, keep_keys):
+            if not _is_company(text, span, kept_ranges):
                 spans.append(span)
         return _merge(spans, text)
 
