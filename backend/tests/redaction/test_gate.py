@@ -176,8 +176,9 @@ def test_adapters_are_called_only_by_the_provider_clients() -> None:
 
 
 def test_every_request_is_built_from_a_gate_result_never_from_a_literal() -> None:
-    """The one place that builds provider requests today is the identity agent, with the result of
-    `gate.redact`. A new call site must be added here on purpose, and be reviewed."""
+    """The places that build provider requests are the identity agent and the retrieval step of
+    collection (#20), each with the result of `gate.redact`. A new call site must be added here on
+    purpose, and be reviewed."""
     builders: dict[str, list[str]] = {}
     for path in python_files():
         if relative(path).startswith("providers/"):
@@ -192,7 +193,26 @@ def test_every_request_is_built_from_a_gate_result_never_from_a_literal() -> Non
                 for keyword in node.keywords:
                     if keyword.arg in {"data", "query"}:
                         assert not isinstance(keyword.value, ast.Constant | ast.JoinedStr)
-    assert builders == {"identity/agent.py": ["StructuringRequest"]}
+    assert builders == {
+        "identity/agent.py": ["StructuringRequest"],
+        "collection/retrieval.py": ["RetrievalRequest"],
+    }
+
+
+def test_the_retrieval_step_redacts_before_it_builds_the_request() -> None:
+    source = (APP / "collection" / "retrieval.py").read_text(encoding="utf-8")
+    function = next(
+        node
+        for node in ast.walk(ast.parse(source))
+        if isinstance(node, ast.FunctionDef) and node.name == "retrieve"
+    )
+    found = sorted(
+        (node.lineno, node.func.attr if isinstance(node.func, ast.Attribute) else node.func.id)  # type: ignore[attr-defined]
+        for node in ast.walk(function)
+        if isinstance(node, ast.Call)
+    )
+    calls = [name for _line, name in found]  # in source order
+    assert calls.index("redact") < calls.index("RetrievalRequest") < calls.index("retrieve")
 
 
 def test_the_identity_agent_redacts_before_it_builds_the_request() -> None:
