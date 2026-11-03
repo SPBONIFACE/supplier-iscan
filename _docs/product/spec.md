@@ -236,7 +236,7 @@ Each country row carries a "last checked" date. Where access is paid, the app li
 - **Secrets:** provider API keys, database URL, the first administrator's credentials: a secret manager in deployed environments, CI secrets for the pipeline, a gitignored `.env` (with a committed `.env.example`) for self-hosting. Never in the repository, logs or telemetry.
 
 ## Data protection and source safeguards
-- **Redaction before any LLM call** and storage of redacted text only (F2).
+- **Redaction before any LLM call** and storage of redacted text only (F2). Names are detected by a multilingual model (GLiNER, run locally on CPU, fetched at build time and never downloaded at run time) and by precise rules, on the text and on a case-restored copy. Stated limits, measured on a synthetic set: a name split over two lines in Chinese is often missed; a name on its own in a lower-case line with no clue can be missed; a few ordinary lines (sign-offs, a company with a surname) lose a word; detection takes about a second per 1,000 characters on CPU. Redaction can miss a name, so stored text is treated as personal data (data model).
 - **Crawl permissions** checked and recorded per domain; TDM reservations and AI-crawler blocks honoured (F2).
 - **Quotes:** short, attributed, visually distinct from the app's own analysis; a rights-complaint and takedown route is published.
 - **Suppression list:** a person or domain can ask to be excluded; matching extracts are redacted in existing profiles and in future runs. The administrator can remove an entry (for example one added by mistake), stating a reason; each addition and removal is recorded with who and when, and a removal applies to future runs only.

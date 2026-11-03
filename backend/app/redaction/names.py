@@ -181,6 +181,28 @@ _HONORIFIC: Final = re.compile(
     rf"(?<![\w.])(?:{_HONORIFIC_ALTERNATIVES})(?![^\W\d_])[ \t]*\n?[ \t]*"
 )
 
+_LEADING_HONORIFIC: Final = re.compile(_HONORIFIC.pattern, re.IGNORECASE)
+
+
+def trim_honorific(text: str, span: Span) -> Span | None:
+    """A span without the honorific the detector put in front of the name ("Mme FONTAINE" gives
+    "FONTAINE": the title is not personal data and stays); None when only the title is left."""
+    match = _LEADING_HONORIFIC.match(text, span[0], span[1])
+    if match is None:
+        return span
+    return (match.end(), span[1]) if match.end() < span[1] else None
+
+
+def trim_roles(text: str, span: Span) -> Span:
+    """A span without job-title words at its end ("John\nBuyer" gives "John"): the extension over
+    capitalised tokens can run into the role line that follows a name."""
+    tokens = list(re.finditer(r"\S+", text[span[0] : span[1]]))
+    stop = len(tokens)
+    while stop > 1 and fold(tokens[stop - 1].group().strip(".,;:()")) in ROLES | ROLES_EXTRA:
+        stop -= 1
+    return span[0], span[0] + tokens[stop - 1].end()
+
+
 _BLANKS: Final = r"[ \t]*(?:\n[ \t]*){0,2}"
 _LABELS: Final = (
     r"contact(?:\s+person)?|personne\s+de\s+contact|contact\s+commercial|contacto|"

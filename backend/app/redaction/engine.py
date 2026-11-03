@@ -457,7 +457,11 @@ class Redactor:
                 cleaned = strip_cjk(text, span)
                 if cleaned:
                     found.append(cleaned)
-        spans = [names.extend(text, span) for span in set(found)]
+        spans: list[Span] = []
+        for span in set(found):
+            trimmed = names.trim_honorific(text, span)
+            if trimmed:
+                spans.append(names.trim_roles(text, names.extend(text, trimmed)))
         base, to_confirm = lowercase.spans(text)
         spans.extend(base)
         spans.extend(self._confirmed(text, to_confirm))

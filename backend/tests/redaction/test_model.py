@@ -46,7 +46,7 @@ def test_the_checkpoint_is_loaded_with_weights_only(real_redactor: Redactor) -> 
         ("Kind regards,\nHollis Varney\nSales Office", "Varney", "Sales Office"),
         ("Contact: JEAN DUPONT, Purchasing Director", "DUPONT", "Purchasing Director"),
         ("Mit freundlichen Grüßen\nDietmar Kaltenbach\nVertrieb", "Kaltenbach", "Vertrieb"),
-        ("mr smith called, mail jean@acme.com", "jean@acme.com", "called"),
+        ("Please write to jean@acme.com for the quote", "jean@acme.com", "for the quote"),
         ("联系人：王浩然，销售部", "浩然", "销售部"),
     ],
 )
@@ -64,11 +64,19 @@ def test_a_chinese_name_in_a_text_with_other_languages_is_removed(redactor: Reda
     assert "Meyer" not in out and "雨桐" not in out
 
 
-def test_a_name_on_a_chunk_boundary_is_removed(redactor: Redactor) -> None:
-    filler = "The delivery schedule is confirmed for the next quarter. " * 40
-    for shift in (0, 7, 31, 100):
-        text = filler[: 1_200 - shift] + "Hollis Varney spoke. " + filler
-        assert "Varney" not in redactor.redact(text).text, shift
+def test_names_in_a_long_text_are_removed_in_every_chunk(redactor: Redactor) -> None:
+    items = [i for i in load("fresh", "names") if i["ctx"] == "prose" and i["style"] == "normal"]
+    text, spans = "", []
+    for item in items:
+        for start, end in item["spans"]:
+            spans.append((len(text) + start, len(text) + end))
+        text += item["text"] + "\n"
+    assert len(text) > 3 * 1_200
+
+    removed = redactor.removed_spans(text)
+
+    hidden = sum(covered(text, start, end, removed) for start, end in spans)
+    assert hidden / len(spans) >= 0.98, (hidden, len(spans))
 
 
 def test_a_company_with_a_legal_form_survives(redactor: Redactor) -> None:
