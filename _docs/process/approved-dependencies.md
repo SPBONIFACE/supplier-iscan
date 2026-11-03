@@ -140,6 +140,24 @@ The hook uses the standard library only.
 | `google-github-actions/setup-gcloud` | v3.0.1 (commit `aa5489c8933f4cc7a4f7d45035b3b1440c9c10db`) | Apache-2.0 | `gcloud run deploy`, Artifact Registry push, Cloud Monitoring alert policy | `deploy-cloudrun` action not needed |
 | `anthropics/claude-code-action` | v1.0.248 (9 Oct; commit resolved at install) | MIT | On-call agent runtime (#53) | (owner decision 6). Daily releases: pin a commit ≥ 14 days old. |
 
+## Already locked in the repository (recorded 3 Nov 2026 for `agent-pack/scripts/check_dependencies.py`)
+
+These direct dependencies were in the repository before the check existed; the "Already locked, no change" rule above
+named them without versions. The check compares exact versions, so they are listed here as they stand in
+`backend/pyproject.toml` and `frontend/package.json`. **`spacy-pkuseg` was in no earlier table: the owner is asked to
+confirm it** (Chinese word segmentation of the `zh-core-web-sm` model, direct pin added with #19).
+
+| Package | Exact version | Runtime/dev | Note |
+| :--- | :--- | :--- | :--- |
+| `fastapi` | 0.143.0 | runtime | Backend |
+| `uvicorn` | 0.54.0 | runtime | Backend |
+| `psycopg[binary]` | 3.3.6 | runtime | Database driver |
+| `spacy-pkuseg` | 1.0.1 | runtime | To confirm by the owner |
+| `react`, `react-dom` | 19.3.0, 19.3.0 | runtime (frontend) | |
+| `@types/react`, `@types/react-dom` | 19.3.0, 19.3.0 | dev (frontend) | |
+| `vite`, `@vitejs/plugin-react`, `vitest` | 8.3.4, 6.1.2, 5.0.3 | dev (frontend) | |
+| `typescript`, `@biomejs/biome` | 6.0.3, 2.5.15 | dev (frontend) | |
+
 ## Counts
 
 - Backend runtime: 22 new direct entries (17 PyPI packages + 4 spaCy model wheels + 1 security constraint; on 3 Nov 2026 three spaCy models removed and `gliner`, `torch`, `transformers`, `protobuf` added), 1 moved

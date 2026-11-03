@@ -42,7 +42,7 @@ select = ["E", "F", "W", "I", "B", "UP", "S"]
 [tool.mypy]
 python_version = "3.13"
 strict = true
-files = ["hooks", "mcp_server", "tests"]
+files = ["hooks", "mcp_server", "scripts", "tests"]
 
 [[tool.mypy.overrides]]
 module = ["yaml"]
