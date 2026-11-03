@@ -342,6 +342,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{id}/failures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the collection failures of a run
+         * @description The failure log of the collection stage, oldest first: for each failure the address, the strategy tried, the kind of failure, the next strategy chosen and a plain-language message. Another organisation's run answers 404, like an unknown id.
+         */
+        get: operations["listRunFailures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{id}/stop": {
         parameters: {
             query?: never;
@@ -687,8 +707,10 @@ export interface components {
             usage: components["schemas"]["RunUsage"];
             /** @description Domains the crawler did not use because the site owner reserved text and data mining, blocked AI crawlers, or asked for suppression. Only the domain and the message are shown; the crawl-permission record itself is readable by the administrator only. */
             excluded_sources: components["schemas"]["ExcludedSource"][];
-            /** @description True when, after collection, the confirmed legal name appears in none of the website's sources. The buyer verifies the identity; nothing is blocked. */
+            /** @description True when, after collection, nothing has confirmed the identity: the confirmed legal name appears in none of the website's sources, or the website gave no source but other sources were found. False when nothing at all was found (the run ends `insufficient_sources`). The buyer verifies the identity; nothing is blocked. */
             identity_to_verify: boolean;
+            /** @description Plain-language explanation, set when the status is `insufficient_sources`: no usable public source was collected, the failure log is available at `GET /runs/{id}/failures`, and the run does not count against the quota. Null otherwise. */
+            insufficient_sources_explanation: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -708,6 +730,26 @@ export interface components {
         };
         SourceList: {
             items: components["schemas"]["Source"][];
+        };
+        RunFailure: {
+            /** Format: uuid */
+            id: string;
+            /** @description The address that failed; null for a failure that has none (the retrieval provider). */
+            url: string | null;
+            strategy: components["schemas"]["CollectionStrategy"];
+            /** @enum {string} */
+            kind: "http_error" | "timeout" | "unreachable" | "empty_content" | "blocked_by_robots" | "refused" | "too_large" | "not_a_page" | "provider_unavailable" | "invalid_response" | "attempt_cap";
+            /** @description The strategy chosen next; null when none is left. */
+            next_strategy: components["schemas"]["CollectionStrategy"] | null;
+            /** @description Plain-language description. Absence is never a statement about the supplier. */
+            message: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /** @enum {string} */
+        CollectionStrategy: "website" | "sitemap" | "retrieval";
+        RunFailureList: {
+            items: components["schemas"]["RunFailure"][];
         };
         RunList: {
             items: components["schemas"]["Run"][];
@@ -1454,6 +1496,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourceList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRunFailures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The failures of the run (empty when there were none). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunFailureList"];
                 };
             };
             401: components["responses"]["Unauthorized"];
