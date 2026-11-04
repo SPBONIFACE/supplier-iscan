@@ -28,7 +28,7 @@ def test_values_from_the_environment() -> None:
     ("name", "value"),
     [
         ("EXTRACT_MAX_INPUT_CHARS", "ten"),
-        ("EXTRACT_MAX_INPUT_CHARS", "10"),
+        ("EXTRACT_MAX_INPUT_CHARS", "42"),
         ("IAF_CERTSEARCH_URL", "javascript:alert(1)"),
         ("IAF_CERTSEARCH_URL", "ftp://certsearch.example"),
         ("IAF_CERTSEARCH_URL", "https://user:pw@certsearch.example"),
