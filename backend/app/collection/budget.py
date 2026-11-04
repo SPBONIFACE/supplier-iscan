@@ -7,6 +7,7 @@ at every hop (or a hostile sitemap) cannot spread the run over the web. It is at
 client as its `before_request` hook, so no code path can bypass it.
 """
 
+import threading
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -34,9 +35,13 @@ class RequestBudget:
     max_domains: int
     sent: int = 0
     domains: set[str] = field(default_factory=set)
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     def __call__(self, url: HasHost) -> None:
-        domain = url.host.lower().removeprefix("www.")
+        with self._lock:
+            self._count(url.host.lower().removeprefix("www."))
+
+    def _count(self, domain: str) -> None:
         if self.sent >= self.max_requests:
             raise RequestLimitReached
         if domain not in self.domains:

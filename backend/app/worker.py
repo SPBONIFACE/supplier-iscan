@@ -16,7 +16,7 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
 from app import queue
-from app.config import Settings, load_settings
+from app.config import CRAWLER_CONTACT_URL, Settings, load_settings
 from app.db import Database, utc_now
 from app.providers import Providers
 from app.runs.executor import INTERRUPTED, RUN_JOB, RunEnvironment, execute_run, fail_run
@@ -72,6 +72,8 @@ def main() -> None:
     settings = load_settings()
     if not settings.database_url:
         raise SystemExit("DATABASE_URL is not set")
+    if not settings.crawler_contact_url:
+        raise SystemExit(f"{CRAWLER_CONTACT_URL} is not set: collection cannot start without it")
     from app.main import load_providers  # imported here: it builds the API's providers
 
     database = Database(settings.database_url)

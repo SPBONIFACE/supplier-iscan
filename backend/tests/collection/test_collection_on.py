@@ -3,6 +3,7 @@ requests, the natural-person rule, and the whole path from POST /runs, with synt
 mock transports and the fake provider (no network, no key)."""
 
 import logging
+import threading
 import uuid
 from collections.abc import Callable
 from typing import Any
@@ -266,6 +267,27 @@ def test_the_budget_counts_every_request_and_every_domain() -> None:
     other(httpx2.URL("https://a.example/"))
     with pytest.raises(DomainLimitReached):
         other(httpx2.URL("https://b.example/"))
+
+
+def test_the_budget_holds_under_concurrent_requests() -> None:
+    budget = RequestBudget(max_requests=100, max_domains=50)
+    refused: list[int] = []
+
+    def send(index: int) -> None:
+        for _ in range(50):
+            try:
+                budget(httpx2.URL(f"https://h{index}.example/"))
+            except RequestLimitReached:
+                refused.append(index)
+
+    threads = [threading.Thread(target=send, args=(i,)) for i in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert budget.sent == 100
+    assert len(refused) == 8 * 50 - 100
 
 
 def test_the_default_ceilings_and_their_environment_variables() -> None:
