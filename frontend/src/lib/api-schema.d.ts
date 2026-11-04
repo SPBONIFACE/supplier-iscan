@@ -362,6 +362,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{id}/facts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the facts extracted for a run
+         * @description One entry per `fact` field of the profile definition the run uses, in the order of the definition: a proposed fact (value, verbatim quote in its source language, source, attribution) or `not_found`, which is shown as "No public evidence found". It is never a negative statement about the supplier: an entry without a kept value carries no value and no quote, and a certification field without a kept value is `not_found`, never "not certified". Empty until the extraction stage has stored its results. Another organisation's run answers 404, like an unknown id.
+         */
+        get: operations["listRunFacts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{id}/stop": {
         parameters: {
             query?: never;
@@ -709,6 +729,10 @@ export interface components {
             excluded_sources: components["schemas"]["ExcludedSource"][];
             /** @description True when, after collection, nothing has confirmed the identity: the confirmed legal name appears in none of the website's sources, or the website gave no source but other sources were found. False when nothing at all was found (the run ends `insufficient_sources`). The buyer verifies the identity; nothing is blocked. */
             identity_to_verify: boolean;
+            /** @description Extraction: the number of values discarded because their quote was not found in the stored text of the cited source (also a quote that cites a source that is not the one given, a quote over 300 characters, and a value its quote does not support). 0 until the extraction stage has run. */
+            grounding_failures: number;
+            /** @description Extraction: the number of items the structuring provider returned that did not match the schema, dropped after one retry. 0 until the extraction stage has run. */
+            invalid_items: number;
             /** @description Plain-language explanation, set when the status is `insufficient_sources`: no usable public source was collected, the failure log is available at `GET /runs/{id}/failures`, and the run does not count against the quota. Null otherwise. */
             insufficient_sources_explanation: string | null;
             /** Format: date-time */
@@ -750,6 +774,52 @@ export interface components {
         CollectionStrategy: "website" | "sitemap" | "retrieval";
         RunFailureList: {
             items: components["schemas"]["RunFailure"][];
+        };
+        /**
+         * @description `proposed` for a value kept by extraction; `not_found` for a field with no kept value ("No public evidence found"). Review (`approved`, `corrected`) is added with the review endpoints.
+         * @enum {string}
+         */
+        FactStatus: "proposed" | "not_found";
+        /**
+         * @description `supplier_claim` ("Supplier's own claim"): the source is on the confirmed website's domain or one of its subdomains (with or without `www`), on a domain listed in the identity's registry identifiers, or is a PDF linked from a page of the confirmed website, wherever it is hosted. `third_party` ("Third-party source") otherwise.
+         * @enum {string}
+         */
+        SourceType: "supplier_claim" | "third_party";
+        /** @description The extracted value of one `fact` field with its evidence. For `not_found` every evidence member is null (and `quote_redacted` is false). */
+        Fact: {
+            /** Format: uuid */
+            id: string;
+            /** @description Id of the section of the profile definition. */
+            section: string;
+            /** @description Id of the field of the profile definition. */
+            field: string;
+            status: components["schemas"]["FactStatus"];
+            value: string | null;
+            /** @description At most 300 characters, verbatim from the source in its source language (never translated), found in the stored redacted text of the source. May be identifiable. */
+            quote: string | null;
+            /** @description True when the quote contains a redaction mark `[…]` ("Redacted extract"). */
+            quote_redacted: boolean;
+            /**
+             * Format: uuid
+             * @description The source of the quote (see `GET /runs/{id}/sources`).
+             */
+            source_id: string | null;
+            source_url: string | null;
+            source_type: components["schemas"]["SourceType"] | null;
+            /** @description The site name or, failing that, the domain of the source. */
+            publisher: string | null;
+            /** @description The author of the source when it names one (a PDF); otherwise null. */
+            author: string | null;
+            /**
+             * Format: date-time
+             * @description When the source was fetched ("Found in <source> on <date>").
+             */
+            fetched_at: string | null;
+            /** @description For a certification field with a kept value: the IAF CertSearch address where the buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise. */
+            verification_url: string | null;
+        };
+        FactList: {
+            items: components["schemas"]["Fact"][];
         };
         RunList: {
             items: components["schemas"]["Run"][];
@@ -1522,6 +1592,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunFailureList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    listRunFacts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The facts of the run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactList"];
                 };
             };
             401: components["responses"]["Unauthorized"];
