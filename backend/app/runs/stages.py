@@ -1,8 +1,8 @@
 """The stages of a run, and how a failure is told apart.
 
 A stage is a function of a `StageContext`. Collection is real (#103); the others are still
-no-ops: #23 and #24 (extraction), #25 and #26 (assessment) replace them in `DEFAULT_STAGES`. Rules for a
-stage:
+no-ops: #23 and #24 (extraction), #25 and #26 (assessment) replace them in `DEFAULT_STAGES`.
+Rules for a stage:
 
 - It may be executed again after a crash or a resume, so it must not duplicate stored results
   (it writes with a key such as the run id and the field, and skips what is stored).

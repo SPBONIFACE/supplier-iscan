@@ -101,6 +101,11 @@ example `ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='…' make run`. They are re
 afterwards changes nothing unless you start from an empty database (`docker compose down -v` deletes the local
 data). Outside Docker Compose the application has no default and refuses to start without both.
 
+Collection of public evidence is on in every run. Its worker needs `CRAWLER_CONTACT_URL`, the public page named in
+the User-Agent of every request to a supplier's site; without it a run fails at collection. Every outbound request of
+a run is capped (`COLLECT_MAX_REQUESTS`, default 200, permission checks included) as are the distinct websites
+contacted (`COLLECT_MAX_DOMAINS`, default 10).
+
 ### Commands
 
 | Command | What it does |

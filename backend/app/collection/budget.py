@@ -8,8 +8,12 @@ client as its `before_request` hook, so no code path can bypass it.
 """
 
 from dataclasses import dataclass, field
+from typing import Protocol
 
-import httpx2
+
+class HasHost(Protocol):
+    @property
+    def host(self) -> str: ...
 
 
 class RequestLimitReached(Exception):
@@ -28,15 +32,15 @@ class DomainLimitReached(Exception):
 class RequestBudget:
     max_requests: int
     max_domains: int
-    requests: int = 0
+    sent: int = 0
     domains: set[str] = field(default_factory=set)
 
-    def __call__(self, url: httpx2.URL) -> None:
+    def __call__(self, url: HasHost) -> None:
         domain = url.host.lower().removeprefix("www.")
-        if self.requests >= self.max_requests:
+        if self.sent >= self.max_requests:
             raise RequestLimitReached
         if domain not in self.domains:
             if len(self.domains) >= self.max_domains:
                 raise DomainLimitReached(domain)
             self.domains.add(domain)
-        self.requests += 1
+        self.sent += 1
