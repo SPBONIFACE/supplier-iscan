@@ -413,6 +413,8 @@ def test_an_instruction_injected_in_a_page_does_not_put_its_value_in_the_profile
                 out.append(item(name, "5000", "Acme employs 5000 people", asked.source_id))
             elif name == "environmental_management":  # a real quote, an invented figure
                 out.append(item(name, "ISO 45001", "makes valves in Lyon", asked.source_id))
+            elif name == "main_products":  # a real quote, a word value from nowhere
+                out.append(item(name, "Nuclear reactors", "makes valves in Lyon", asked.source_id))
             else:
                 out.append(not_found(name))
         return out
@@ -422,7 +424,7 @@ def test_an_instruction_injected_in_a_page_does_not_put_its_value_in_the_profile
     facts = facts_of(engine, run_id)
     assert all(fact.status == "not_found" for fact in facts.values())
     row = run_row(engine, run_id)
-    assert (row.grounding_failures, row.invalid_items) == (1, 1)  # the figure check is "invalid"
+    assert (row.grounding_failures, row.invalid_items) == (1, 2)  # the value check is "invalid"
     assert "5000" not in {fact.value for fact in facts.values()}
 
 

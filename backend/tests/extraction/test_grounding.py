@@ -106,9 +106,15 @@ def test_the_quote_limit_is_300_characters() -> None:
         ("1.2", "croissance de 1,2 pour cent"),
         ("2005-03-14", "Founded on 14 March 2005"),
         ("2005-03", "Gegründet im März 2005"),
-        ("Yes", "We hold ISO 9001 certification"),  # words are not checked
-        ("Germany", "Headquarters in Stuttgart"),
-        ("CEO", "Directeur général"),
+        ("ISO 9001", "ISO 9001 certified"),
+        ("Valves", "The company makes valves in Lyon"),  # a shared word
+        ("Valve", "makes industrial valves in Lyon"),  # a plural
+        ("CEO", "Directeur général"),  # translated from French
+        ("Managing director", "Geschäftsführer Hans Müller"),  # from German
+        ("Yes", "Nous détenons la certification ISO 9001"),
+        ("12/03/2005", "12 mars 2005"),
+        ("12/03/2005", "Founded 12 March 2005"),
+        ("12/03/2005", "Gegründet am 12.03.2005"),
         ("Lyon, France", "employs 250 people at its plant in Lyon"),
     ],
 )
@@ -124,6 +130,12 @@ def test_a_legitimate_value_is_supported(value: str, quote: str) -> None:
         ("2006-03-14", "Founded on 14 March 2005"),
         ("1200001", "capital of 1 200 000 euros"),
         ("  ", "some quote of text"),
+        ("Nuclear reactors", "makes valves in Lyon"),
+        ("Germany", "Headquarters in Stuttgart"),
+        ("Yes", "We hold ISO 9001 certification"),
+        ("12/03/2005", "Founded in March 2005"),
+        ("12/03/2005", "Founded 14 March 2005"),
+        ("ISO 45001", "makes valves in Lyon"),
     ],
 )
 def test_an_invented_figure_or_an_empty_value_is_not_supported(value: str, quote: str) -> None:

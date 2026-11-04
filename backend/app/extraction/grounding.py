@@ -6,8 +6,8 @@ A value is kept only when
   whitespace and typography normalisation (quotes, apostrophes, dashes), and
 - the quote is long enough to carry evidence (`quote_long_enough`).
 
-A kept value must also pass `value_supported`, a narrow guard on numbers; a value it rejects is
-counted with the invalid items, not with the grounding failures.
+A kept value must also pass `value_supported`, a light guard on figures and words; a value it
+rejects is counted with the invalid items, not with the grounding failures.
 
 Case, accents and wording are never normalised for the quote: it is verbatim. The text and the
 quote are only compared; neither is logged.
@@ -88,16 +88,98 @@ def _found(token: str, in_quote: set[str]) -> bool:
     return one in in_quote or all(run in in_quote for run in _DIGITS.findall(token))
 
 
+_LETTERS: Final = re.compile(r"[^\W\d_]+")
+_DATE: Final = re.compile(r"(\d{1,4})[/.\-](\d{1,2})[/.\-](\d{1,4})")
+_MONTHS: Final = frozenset(
+    "january february march april may june july august september october november december "
+    "janvier fevrier mars avril mai juin juillet aout septembre octobre novembre decembre "
+    "januar februar marz juni juli oktober dezember "
+    "enero febrero marzo abril mayo junio julio agosto septiembre noviembre diciembre "
+    "gennaio febbraio aprile maggio giugno luglio settembre ottobre dicembre".split()
+)
+_STOP: Final = {
+    "en": "the and of to in is are was for with by on at from that this has have our we its an a",
+    "fr": "le la les des du de et un une est sont pour avec par sur dans qui que au aux nous notre"
+    " directeur general gerant societe fondee entreprise",
+    "de": "der die das und ist sind von mit fur auf im dem den ein eine wir unser"
+    " geschaftsfuhrer gegrundet unternehmen gesellschaft",
+    "es": "el los las del y es son por con para una en que nuestro nosotros"
+    " director gerente sociedad fundada empresa",
+    "it": "il lo gli dei della delle e sono per con una che nostro noi"
+    " amministratore societa fondata azienda",
+}
+_STOPWORDS: Final = {lang: frozenset(words.split()) for lang, words in _STOP.items()}
+_ALL_STOP: Final = frozenset().union(*_STOPWORDS.values())
+
+
+def _fold(text: str) -> str:
+    """Lower case, accents removed."""
+    decomposed = unicodedata.normalize("NFKD", normalise(text).casefold())
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
+
+
+def _words(text: str) -> list[str]:
+    return _LETTERS.findall(_fold(text))
+
+
+def _meaningful(text: str) -> set[str]:
+    return {w for w in _words(text) if len(w) >= 3 and w not in _ALL_STOP}
+
+
+def _share_a_word(value: str, quote: str) -> bool:
+    """A meaningful word in common, a plural or ending tolerated by the first five letters."""
+    in_quote = _meaningful(quote)
+    return any(
+        v == q or (len(v) >= 5 and len(q) >= 5 and v[:5] == q[:5])
+        for v in _meaningful(value)
+        for q in in_quote
+    )
+
+
+def _quote_is_not_english(quote: str) -> bool:
+    """Whether the quote is in another language than English (values are in English): a Han,
+    Kana or Hangul character, or more stop-words of fr, de, es or it than of en."""
+    if has_cjk(quote):
+        return True
+    words = _words(quote)
+    score = {lang: sum(w in stop for w in words) for lang, stop in _STOPWORDS.items()}
+    return max(score["fr"], score["de"], score["es"], score["it"]) > score["en"]
+
+
+def _date_supported(value: str, quote: str) -> bool | None:
+    """None when the value is not a numeric date. Year and day in the quote, and the month as
+    digits or by a month name (en, fr, de, es, it)."""
+    match = _DATE.fullmatch(value)
+    if not match:
+        return None
+    parts = match.groups()
+    years = [p for p in parts if len(p) == 4]
+    others = [int(p) for p in parts if len(p) != 4]
+    if len(years) != 1 or len(others) != 2:
+        return None
+    seen = {int(n) for n in _DIGITS.findall(normalise(quote))}
+    if int(years[0]) not in seen:
+        return False
+    named = bool(_MONTHS & set(_words(quote)))
+    return all(n in seen for n in others) or (named and any(n in seen for n in others))
+
+
 def value_supported(value: str, quote: str) -> bool:
-    """A guard, not a truth test: it only stops a figure invented next to a real quote. Every
-    number of the value must be a number of the quote (see `_numbers`); an ISO date is accepted
-    when its year is in the quote. Words are not checked: they may be translated or inferred, and
-    the buyer reviews each fact against its quote. A wrong figure that also occurs in the quote
-    passes; #22 measures accuracy on the reference set."""
+    """A guard, not a truth test; the buyer reviews each fact against its quote. A value with
+    digits: every number of the value must be a number of the quote (see `_numbers`); an ISO date
+    is accepted when its year is in the quote, another numeric date by year, day and month. A
+    value without digits: kept when it shares a meaningful word with the quote, or when the quote
+    is not in English (a translation). There is no boolean field kind, so "Yes" follows this rule.
+    A wrong figure that also occurs in the quote passes; #22 measures accuracy."""
     value = normalise(value)
     if not value:
         return False
     in_quote = _numbers(quote)
     if _ISO_DATE.fullmatch(value):
         return value[:4] in in_quote
-    return all(_found(token, in_quote) for token in _GROUPED.findall(value))
+    dated = _date_supported(value, quote)
+    if dated is not None:
+        return dated
+    if _DIGITS.search(value):
+        return all(_found(token, in_quote) for token in _GROUPED.findall(value))
+    return _share_a_word(value, quote) or _quote_is_not_english(quote)
