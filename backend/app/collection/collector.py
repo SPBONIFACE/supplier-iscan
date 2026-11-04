@@ -65,6 +65,10 @@ def _host(url: str) -> str:
     return host.removeprefix("www.")
 
 
+def _is_pdf(url: str) -> bool:
+    return url.lower().split("?", 1)[0].endswith(".pdf")
+
+
 def _content_type(response: Any) -> str:
     raw = str(response.headers.get("content-type", ""))
     return raw.split(";", 1)[0].strip().lower()
@@ -231,6 +235,21 @@ class Collector:
             return None
         return url
 
+    def _link(self, base: str, href: str, home: str) -> str | None:
+        """A link of a page of the website: an address of the website, or a PDF wherever it is
+        hosted (a PDF linked from the supplier's website is its own claim, owner decision 27 Oct
+        2026; it is still fetched through the permission checks and the ceilings of the run)."""
+        url = self._absolute(base, href, home)
+        if url:
+            return url
+        try:
+            other, _fragment = urldefrag(urljoin(base, href.strip()))
+            if urlsplit(other).scheme in ("http", "https") and _is_pdf(other):
+                return other
+        except ValueError:
+            pass
+        return None
+
     # -- the run ----------------------------------------------------------------------------
 
     def collect(
@@ -286,14 +305,17 @@ class Collector:
         parts = urlsplit(website)
         home = f"{parts.scheme}://{parts.netloc}/"
         pdf_links: list[str] = []
+        linked_from: dict[str, str] = {}  # a PDF's address -> the page that linked to it
         ranked: dict[str, list[str]] = {kind: [] for kind in PAGE_KINDS}
         self._strategy = "website"
 
-        def add_candidate(url: str, anchor: str = "") -> None:
+        def add_candidate(url: str, anchor: str = "", page: str | None = None) -> None:
             kind = classify(url, anchor)
-            if url.lower().split("?", 1)[0].endswith(".pdf"):
+            if _is_pdf(url):
                 if url not in pdf_links:
                     pdf_links.append(url)
+                if page:
+                    linked_from.setdefault(url, page)
             elif kind and kind != "home" and url not in ranked[kind]:
                 if not urlsplit(url).path.lower().endswith(SKIPPED_EXTENSIONS):
                     ranked[kind].append(url)
@@ -304,9 +326,9 @@ class Collector:
         # The home page, its links, then the sitemaps.
         links = take_page(home)
         for href, anchor in links:
-            url = self._absolute(home, href, home)
+            url = self._link(home, href, home)
             if url:
-                add_candidate(url, anchor)
+                add_candidate(url, anchor, home)
         for url in self._sitemap_urls(home):
             checked = self._absolute(home, url, home)
             if checked:
@@ -321,12 +343,12 @@ class Collector:
                     chosen.append(ranked[kind][rank])
         for url in chosen[: max(budget, 0)]:
             for href, _anchor in take_page(url):
-                absolute = self._absolute(url, href, home)
-                if absolute and absolute.lower().split("?", 1)[0].endswith(".pdf"):
-                    add_candidate(absolute)
+                absolute = self._link(url, href, home)
+                if absolute and _is_pdf(absolute):
+                    add_candidate(absolute, page=url)
 
         for url in pdf_links[: settings.max_pdfs]:
-            self._take_pdf(url)
+            self._take_pdf(url, linked_from.get(url))
 
     def _take_page(self, url: str) -> list[tuple[str, str]] | None:
         """Fetch and store one page; the links found on it, or None when it could not be read."""
@@ -346,7 +368,7 @@ class Collector:
         self._keep(SourceRecord(url, self._now(), content_type or "text/html", page.text))
         return page.links
 
-    def _take_pdf(self, url: str) -> str | None:
+    def _take_pdf(self, url: str, linked_from: str | None = None) -> str | None:
         response = self._fetch(url, self._settings.max_pdf_bytes)
         if response is None:
             return None
@@ -360,7 +382,9 @@ class Collector:
             logger.info("Empty content: %s", url)
             self._skip(url, "empty_content")
             return None
-        self._keep(SourceRecord(url, self._now(), "application/pdf", pdf.text, pdf.author))
+        self._keep(
+            SourceRecord(url, self._now(), "application/pdf", pdf.text, pdf.author, linked_from)
+        )
         return pdf.text
 
     def _keep(self, record: SourceRecord) -> None:

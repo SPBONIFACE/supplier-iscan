@@ -54,3 +54,26 @@ class FieldExtractionBatch(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     extractions: list[FieldExtraction]
+
+
+class RawFieldExtraction(BaseModel):
+    """One item of the provider's answer before it is validated as a `FieldExtraction`.
+
+    The extraction stage asks for `FieldExtractionAnswer`, whose items only have to be objects of
+    the right shape, and validates each item as a `FieldExtraction` itself: one invalid item is
+    then dropped and counted, instead of the whole batch being refused (spec, Robustness cases).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    field: str | None = None
+    status: str | None = None
+    value: str | None = None
+    quote: str | None = None
+    source_id: str | None = None
+
+
+class FieldExtractionAnswer(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    extractions: list[RawFieldExtraction]
