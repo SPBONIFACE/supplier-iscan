@@ -95,6 +95,7 @@ class Collector:
         self.result = CollectionResult()
         self._strategy: Strategy = "website"
         self._cap_logged = False
+        self._final_url = ""  # address answered by the last successful `_fetch`
         self._requests_exhausted = False  # the ceiling on all outbound requests was reached
         self._domains_refused: set[str] = set()
         self._website_texts: list[str] = []
@@ -165,6 +166,7 @@ class Collector:
                     if status >= 400:
                         logger.info("Not collected: %s answered %s", url, status)
                         return self._skip(url, "http_error", status)
+                    self._final_url = result.final_url or url
                     return result.response
                 kind = "http_error"
                 retry_after = result.response.headers.get("retry-after", "")
@@ -355,6 +357,7 @@ class Collector:
         response = self._fetch(url, self._settings.max_page_bytes)
         if response is None:
             return None
+        final = self._final_url  # after redirects: the source is what was answered there
         content_type = _content_type(response)
         if content_type and content_type not in HTML_TYPES:
             logger.info("Not a page: %s is %s", url, content_type)
@@ -365,13 +368,16 @@ class Collector:
             logger.info("Empty content: %s", url)
             self._skip(url, "empty_content")
             return page.links
-        self._keep(SourceRecord(url, self._now(), content_type or "text/html", page.text))
+        if final != url and self._already_kept(final):
+            return page.links
+        self._keep(SourceRecord(final, self._now(), content_type or "text/html", page.text))
         return page.links
 
     def _take_pdf(self, url: str, linked_from: str | None = None) -> str | None:
         response = self._fetch(url, self._settings.max_pdf_bytes)
         if response is None:
             return None
+        final = self._final_url
         content = response.content
         if _content_type(response) != "application/pdf" and not content.startswith(b"%PDF-"):
             logger.info("Not a PDF: %s", url)
@@ -382,10 +388,21 @@ class Collector:
             logger.info("Empty content: %s", url)
             self._skip(url, "empty_content")
             return None
+        if final != url and self._already_kept(final):
+            return pdf.text
+        # A PDF linked from the supplier's page stays the supplier's own claim wherever it is
+        # hosted (owner decision, 27 Oct 2026), but only for the address that was linked: when
+        # the link redirects to another host, the text is that host's, so the link is dropped
+        # and the final address alone decides the source type.
+        if linked_from and _host(final) != _host(url):
+            linked_from = None
         self._keep(
-            SourceRecord(url, self._now(), "application/pdf", pdf.text, pdf.author, linked_from)
+            SourceRecord(final, self._now(), "application/pdf", pdf.text, pdf.author, linked_from)
         )
         return pdf.text
+
+    def _already_kept(self, url: str) -> bool:
+        return any(record.url == url for record in self.result.sources)
 
     def _keep(self, record: SourceRecord) -> None:
         self._store(record)

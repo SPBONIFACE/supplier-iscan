@@ -9,8 +9,17 @@ from app.collection.source_store import SourceRecord, store_source
 from app.db import Database, utc_now
 from app.extraction.source_type import classify_source
 from app.models import Source
-from tests.collection.support import HOST, OTHER, html, make_collector, pdf_bytes, pdf_response
+from tests.collection.support import (
+    HOST,
+    OTHER,
+    SUBDOMAIN,
+    html,
+    make_collector,
+    pdf_bytes,
+    pdf_response,
+)
 from tests.factories import create_organisation
+from tests.http_client.support import redirect
 from tests.runs_support import create_run
 
 NAME = "Acme Supplies SA"
@@ -108,3 +117,70 @@ def test_the_recorded_link_makes_the_pdf_the_suppliers_claim() -> None:
     pdf = f"https://{OTHER}/files/acme-profile.pdf"
     assert classify_source(pdf, SITE) == "third_party"
     assert classify_source(pdf, SITE, linked_from_url=SITE) == "supplier_claim"
+
+
+def classify_collected(stored: list[SourceRecord]) -> dict[str, str]:
+    return {r.url: classify_source(r.url, SITE, linked_from_url=r.linked_from_url) for r in stored}
+
+
+def test_a_page_redirected_to_another_site_is_stored_and_classified_on_the_final_address() -> None:
+    final = f"https://{OTHER}/landing"
+    pages = {
+        (HOST, "/"): html("<a href='/about'>About</a>"),
+        (HOST, "/about"): redirect(final),
+        (OTHER, "/landing"): html("<p>The registry's own text.</p>"),
+    }
+    collector, _site, stored, _sleeps, _ = make_collector(pages)
+
+    collector.collect(SITE, NAME)
+
+    kinds = classify_collected(stored)
+    assert f"https://{HOST}/about" not in kinds
+    assert kinds[final] == "third_party"
+
+
+def test_a_redirect_inside_the_suppliers_domain_stays_its_own_claim() -> None:
+    final = f"https://{SUBDOMAIN}/about-us"
+    pages = {
+        (HOST, "/"): html("<a href='/about'>About</a>"),
+        (HOST, "/about"): redirect(final),
+        (SUBDOMAIN, "/about-us"): html("<p>About Acme.</p>"),
+    }
+    collector, _site, stored, _sleeps, _ = make_collector(pages)
+
+    collector.collect(SITE, NAME)
+
+    assert classify_collected(stored)[final] == "supplier_claim"
+
+
+def test_a_redirected_pdf_is_classified_on_its_final_address() -> None:
+    final = f"https://{OTHER}/real.pdf"
+    pages = {
+        (HOST, "/"): html("<a href='/files/report.pdf'>Report</a>"),
+        (HOST, "/files/report.pdf"): redirect(final),
+        (OTHER, "/real.pdf"): pdf_response(pdf_bytes("Registry document")),
+    }
+    collector, _site, stored, _sleeps, _ = make_collector(pages)
+
+    collector.collect(SITE, NAME)
+
+    pdf = next(r for r in stored if r.content_type == "application/pdf")
+    assert pdf.url == final and pdf.linked_from_url is None  # the link is not the claim
+    assert classify_collected(stored)[final] == "third_party"
+
+
+def test_a_linked_pdf_redirected_inside_its_host_stays_the_suppliers_claim() -> None:
+    linked = f"https://{OTHER}/files/a.pdf"
+    final = f"https://{OTHER}/files/b.pdf"
+    pages = {
+        (HOST, "/"): html(f"<a href='{linked}'>Profile</a>"),
+        (OTHER, "/files/a.pdf"): redirect(final),
+        (OTHER, "/files/b.pdf"): pdf_response(pdf_bytes("Profile of Acme")),
+    }
+    collector, _site, stored, _sleeps, _ = make_collector(pages)
+
+    collector.collect(SITE, NAME)
+
+    pdf = next(r for r in stored if r.content_type == "application/pdf")
+    assert pdf.url == final and pdf.linked_from_url == SITE
+    assert classify_collected(stored)[final] == "supplier_claim"

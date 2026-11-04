@@ -32,10 +32,10 @@ from app.collection.source_store import IdentityRedaction, identity_redaction
 from app.db import Database
 from app.extraction.grounding import (
     MAX_QUOTE_CHARS,
-    fold,
     is_redacted_quote,
     normalise,
     quote_in_text,
+    quote_long_enough,
     value_supported,
 )
 from app.extraction.settings import ExtractionSettings, load_extraction_settings
@@ -72,7 +72,6 @@ class SourceText:
     source_type: str
     publisher: str
     normalised: str = field(repr=False)
-    folded: str = field(repr=False)
 
 
 @dataclass(frozen=True)
@@ -118,7 +117,11 @@ def groups_of(definition: ProfileDefinition) -> list[tuple[str, list[FieldDefini
 
 
 def judge(
-    item: FieldExtraction, source: SourceText, tally: Tally, requested: dict[str, FieldDefinition]
+    item: FieldExtraction,
+    source: SourceText,
+    tally: Tally,
+    requested: dict[str, FieldDefinition],
+    limits: ExtractionSettings | None = None,
 ) -> Kept | None:
     """The grounding check of one `found` item, counted on `tally` when it is discarded."""
     if (
@@ -130,13 +133,17 @@ def judge(
         tally.invalid_items += 1  # not a field that was asked for: not an answer to the request
         return None
     quote = item.quote.strip()
+    limits = limits or ExtractionSettings()
     if (
         item.source_id.strip() != str(source.id)  # a source that is not the one given
         or len(quote) > MAX_QUOTE_CHARS
         or not quote_in_text(quote, source.normalised)
-        or not value_supported(item.value, quote, source.folded)
+        or not quote_long_enough(quote, limits.min_quote_chars, limits.min_quote_chars_cjk)
     ):
         tally.grounding_failures += 1
+        return None
+    if not value_supported(item.value, quote):  # a guard on figures: counted as invalid
+        tally.invalid_items += 1
         return None
     return Kept(item.value.strip(), quote, is_redacted_quote(quote), source)
 
@@ -229,7 +236,7 @@ def make_extraction_stage(
                     for item in answered:
                         if item.status != "found" or item.field in kept:
                             continue
-                        result = judge(item, source, tally, wanted)
+                        result = judge(item, source, tally, wanted, limits)
                         if result is not None:
                             kept[item.field] = result
                     pending = [i for i in pending if i.id not in kept]
@@ -300,7 +307,6 @@ def _load(database: Database, run_id: uuid.UUID) -> tuple[list[SourceText], Iden
                 ),
                 publisher=host_of(row.url) or row.url[:300],
                 normalised=normalise(row.redacted_text),
-                folded=fold(row.redacted_text),
             )
             for row in rows
         ]

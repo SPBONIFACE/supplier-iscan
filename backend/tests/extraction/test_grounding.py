@@ -5,10 +5,10 @@ import pytest
 
 from app.extraction.grounding import (
     MAX_QUOTE_CHARS,
-    fold,
     is_redacted_quote,
     normalise,
     quote_in_text,
+    quote_long_enough,
     value_supported,
 )
 from app.extraction.stage import chunks
@@ -95,35 +95,61 @@ def test_the_quote_limit_is_300_characters() -> None:
     assert MAX_QUOTE_CHARS == 300
 
 
-def test_a_value_supported_by_its_quote() -> None:
-    text = fold("The company employs 250 people at its plant in Lyon (France).")
-    quote = "employs 250 people at its plant in Lyon"
-    assert value_supported("250", quote, text)
-    assert value_supported("Lyon, France", quote, text)
-    assert value_supported("250 employees", quote, fold("250 employees " + text))
+@pytest.mark.parametrize(
+    ("value", "quote"),
+    [
+        ("250", "employs 250 people at its plant in Lyon"),
+        ("1200000", "capital of 1 200 000 euros"),
+        ("1 200 000", "capital of 1.200.000 euros"),
+        ("1.200.000", "capital of 1200000 euros"),
+        ("1,2", "growth of 1.2 percent"),
+        ("1.2", "croissance de 1,2 pour cent"),
+        ("2005-03-14", "Founded on 14 March 2005"),
+        ("2005-03", "Gegründet im März 2005"),
+        ("Yes", "We hold ISO 9001 certification"),  # words are not checked
+        ("Germany", "Headquarters in Stuttgart"),
+        ("CEO", "Directeur général"),
+        ("Lyon, France", "employs 250 people at its plant in Lyon"),
+    ],
+)
+def test_a_legitimate_value_is_supported(value: str, quote: str) -> None:
+    assert value_supported(value, quote)
 
 
-def test_a_number_that_is_not_in_the_quote_is_not_supported() -> None:
-    text = fold("Founded in 1998. In 2020 the company had 250 employees.")
-    assert not value_supported("2020", "Founded in 1998", text)  # in the source, not the quote
-    assert not value_supported("1066", "Founded in 1998", text)
+@pytest.mark.parametrize(
+    ("value", "quote"),
+    [
+        ("2020", "Founded in 1998"),
+        ("1066", "Founded in 1998"),
+        ("2006-03-14", "Founded on 14 March 2005"),
+        ("1200001", "capital of 1 200 000 euros"),
+        ("  ", "some quote of text"),
+    ],
+)
+def test_an_invented_figure_or_an_empty_value_is_not_supported(value: str, quote: str) -> None:
+    assert not value_supported(value, quote)
 
 
-def test_a_word_that_is_not_in_the_source_is_not_supported() -> None:
-    text = fold("Acme is a family business based in Lyon.")
-    assert not value_supported("Zorgon Holdings", "a family business based in Lyon", text)
-
-
-def test_support_ignores_case_and_accents_and_works_for_cjk() -> None:
-    text = fold("Société anonyme au capital de 1 000 000 euros")
-    assert value_supported("SOCIETE ANONYME", "Société anonyme", text)
-    cjk = fold("本社は東京にあります。")
-    assert value_supported("東京", "本社は東京にあります", cjk)
-    assert not value_supported("大阪", "本社は東京にあります", cjk)
-
-
-def test_a_value_with_nothing_to_check_is_not_supported() -> None:
-    assert not value_supported("--", "quote", fold("text"))
+@pytest.mark.parametrize(
+    ("quote", "minimum", "minimum_cjk", "expected"),
+    [
+        ("x" * 12, 12, 4, True),
+        ("x" * 11, 12, 4, False),
+        ("5", 12, 4, False),
+        ("  room   number 5  ", 12, 4, True),  # counted after normalisation: 13 characters
+        ("a  b  c  d  e  f ", 12, 4, False),  # 11 once the spaces are reduced
+        ("東京本社", 12, 4, True),
+        ("東京本", 12, 4, False),
+        ("서울 본사", 12, 4, True),
+        ("カタカナ", 12, 4, True),
+        ("ひらがな", 12, 4, True),
+        ("Tokyo 本社", 12, 4, True),  # has CJK: the limit of 4 applies
+    ],
+)
+def test_a_quote_must_carry_evidence(
+    quote: str, minimum: int, minimum_cjk: int, expected: bool
+) -> None:
+    assert quote_long_enough(quote, minimum, minimum_cjk) is expected
 
 
 def test_chunks_cover_the_text_within_the_size() -> None:

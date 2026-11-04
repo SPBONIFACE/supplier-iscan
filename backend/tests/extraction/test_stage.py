@@ -341,10 +341,10 @@ def test_discarded_values_are_counted_as_grounding_failures(engine: Engine) -> N
             out.append(item("founding_year", "2005", "was founded in 2005 in Lyon", other_source))
         if "employee_count" in asked.fields:  # a quote over 300 characters
             out.append(item("employee_count", "250", long_quote, asked.source_id))
-        if "management_team" in asked.fields:  # a quote found, a value it does not support
-            out.append(
-                item("management_team", "Zorgon Holdings", "Acme Supplies SA", asked.source_id)
-            )
+        if "management_team" in asked.fields:  # a quote found, a figure it does not support
+            out.append(item("management_team", "Zorgon 1066", "Acme Supplies SA", asked.source_id))
+        if "production_sites" in asked.fields:  # a quote too short to carry evidence
+            out.append(item("production_sites", "5", "5", asked.source_id))
         if "quality_management" in asked.fields:  # fine
             out.append(
                 item("quality_management", "ISO 9001", "certified ISO 9001", asked.source_id)
@@ -354,11 +354,13 @@ def test_discarded_values_are_counted_as_grounding_failures(engine: Engine) -> N
     run_stage(engine, organisation_id, run_id, scripted(respond))
 
     facts = facts_of(engine, run_id)
-    for name in ("legal_form", "founding_year", "employee_count", "management_team"):
+    unsupported = ("legal_form", "founding_year", "employee_count", "management_team")
+    for name in (*unsupported, "production_sites"):
         assert facts[name].status == "not_found", name
     assert facts["quality_management"].status == "proposed"
     row = run_row(engine, run_id)
-    assert (row.grounding_failures, row.invalid_items) == (4, 0)
+    # the figure the quote lacks is an invalid item, not a grounding failure
+    assert (row.grounding_failures, row.invalid_items) == (4, 1)
     assert source_id  # the run's only source
 
 
@@ -409,10 +411,8 @@ def test_an_instruction_injected_in_a_page_does_not_put_its_value_in_the_profile
         for name in asked.fields:
             if name == "employee_count":  # an invented quote
                 out.append(item(name, "5000", "Acme employs 5000 people", asked.source_id))
-            elif name == "environmental_management":  # a real quote, an invented value
+            elif name == "environmental_management":  # a real quote, an invented figure
                 out.append(item(name, "ISO 45001", "makes valves in Lyon", asked.source_id))
-            elif name == "main_products":  # a real quote, a value from nowhere
-                out.append(item(name, "Nuclear reactors", "makes valves in Lyon", asked.source_id))
             else:
                 out.append(not_found(name))
         return out
@@ -421,7 +421,8 @@ def test_an_instruction_injected_in_a_page_does_not_put_its_value_in_the_profile
 
     facts = facts_of(engine, run_id)
     assert all(fact.status == "not_found" for fact in facts.values())
-    assert run_row(engine, run_id).grounding_failures == 3
+    row = run_row(engine, run_id)
+    assert (row.grounding_failures, row.invalid_items) == (1, 1)  # the figure check is "invalid"
     assert "5000" not in {fact.value for fact in facts.values()}
 
 

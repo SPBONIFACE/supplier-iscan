@@ -4,7 +4,10 @@ A value is kept only when
 - its quote is at most 300 characters,
 - the quote is found in the stored redacted text of the cited source, after Unicode (NFKC),
   whitespace and typography normalisation (quotes, apostrophes, dashes), and
-- the value is supported by that quote (`value_supported`).
+- the quote is long enough to carry evidence (`quote_long_enough`).
+
+A kept value must also pass `value_supported`, a narrow guard on numbers; a value it rejects is
+counted with the invalid items, not with the grounding failures.
 
 Case, accents and wording are never normalised for the quote: it is verbatim. The text and the
 quote are only compared; neither is logged.
@@ -31,8 +34,11 @@ _TYPOGRAPHY: Final = {
 _INVISIBLE: Final = re.compile(
     "[" + "".join(map(chr, (0xAD, 0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF))) + "]"
 )
-_NUMBER: Final = re.compile(r"\d+")
-_LETTERS: Final = re.compile(r"[^\W\d_]+")
+_DIGITS: Final = re.compile(r"\d+")
+_GROUPED: Final = re.compile(r"\d+(?:[ .,']\d+)*")
+_SEPARATORS: Final = {ord("."): None, ord(","): None, ord("'"): None}
+_ISO_DATE: Final = re.compile(r"\d{4}-\d{2}(?:-\d{2})?")
+_CJK: Final = re.compile("[\u2e80-\u9fff\u3040-\u30ff\uac00-\ud7af\uf900-\ufaff\uff66-\uff9f]")
 
 
 def normalise(text: str) -> str:
@@ -53,26 +59,45 @@ def is_redacted_quote(quote: str) -> bool:
     return REDACTION_MARK in normalise(quote)
 
 
-def fold(text: str) -> str:
-    """For comparing a value with its evidence: normalised, and case and accents do not matter."""
-    decomposed = unicodedata.normalize("NFKD", normalise(text).casefold())
-    return "".join(c for c in decomposed if not unicodedata.combining(c))
+def has_cjk(text: str) -> bool:
+    """Whether the text has a Han, Hiragana, Katakana or Hangul character."""
+    return bool(_CJK.search(text))
 
 
-def value_supported(value: str, quote: str, folded_text: str) -> bool:
-    """A cheap check that the value comes from the evidence and is not invented next to a real
-    quote: every number of the value is a number of the quote, and every word of the value (three
-    characters or more; a run of CJK characters counts as one word) is in the source text
-    (`folded_text`, folded once per source with `fold`).
+def quote_long_enough(quote: str, minimum: int, minimum_cjk: int) -> bool:
+    """A quote must carry evidence: at least `minimum` characters after normalisation, or
+    `minimum_cjk` when it has a CJK character (a few characters carry more there)."""
+    text = normalise(quote)
+    return len(text) >= (minimum_cjk if has_cjk(text) else minimum)
 
-    It does not prove that the value means what the quote says (a wrong figure that also occurs
-    in the quote passes); #22 measures accuracy on the reference set.
-    """
-    folded_value = fold(value)
-    numbers, words = _NUMBER.findall(folded_value), _LETTERS.findall(folded_value)
-    if not numbers and not words:
+
+def _numbers(text: str) -> set[str]:
+    """The numbers of a text as digit strings, thousands separators (space, point, comma,
+    apostrophe) and the decimal mark removed, so that "1 200 000", "1.200.000" and "1200000" are
+    one number, and "1,2" and "1.2" too. The plain digit runs are kept as well."""
+    text = normalise(text)
+    return {m.replace(" ", "").translate(_SEPARATORS) for m in _GROUPED.findall(text)} | set(
+        _DIGITS.findall(text)
+    )
+
+
+def _found(token: str, in_quote: set[str]) -> bool:
+    """A number of the value (as written) is a number of the quote, as one number or as each of
+    its digit runs ("2005 2006" against "2005 and 2006")."""
+    one = token.replace(" ", "").translate(_SEPARATORS)
+    return one in in_quote or all(run in in_quote for run in _DIGITS.findall(token))
+
+
+def value_supported(value: str, quote: str) -> bool:
+    """A guard, not a truth test: it only stops a figure invented next to a real quote. Every
+    number of the value must be a number of the quote (see `_numbers`); an ISO date is accepted
+    when its year is in the quote. Words are not checked: they may be translated or inferred, and
+    the buyer reviews each fact against its quote. A wrong figure that also occurs in the quote
+    passes; #22 measures accuracy on the reference set."""
+    value = normalise(value)
+    if not value:
         return False
-    quote_numbers = set(_NUMBER.findall(fold(quote)))
-    if any(number not in quote_numbers for number in numbers):
-        return False
-    return all(word in folded_text for word in words if len(word) >= 3 or not word.isascii())
+    in_quote = _numbers(quote)
+    if _ISO_DATE.fullmatch(value):
+        return value[:4] in in_quote
+    return all(_found(token, in_quote) for token in _GROUPED.findall(value))
