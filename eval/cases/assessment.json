@@ -1,0 +1,4 @@
+{
+  "note": "Assessment reference set (#25 adds the cases and enables the area; until then the harness reports 'not implemented'). Format of a case, validated by the loader: id; description; kind (statement | recommendation | natural_person); facts [{id, field, value, quote}]; buyer_criteria (text, may be empty); buyer_context (text, or null when no buyer context was entered); expected {cited_fact_ids: [...], cites_buyer_context: bool, first_evaluation_assumption: bool (recommendations without buyer context), no_recommendation: bool (natural_person identity)}; recorded [one list of AssessmentStatement per model call, for the fake provider]. Synthetic or public companies only; facts in redacted form.",
+  "cases": []
+}

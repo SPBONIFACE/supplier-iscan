@@ -65,6 +65,8 @@ zh-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/dow
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The evaluation harness (#22) lives in ../eval and is imported as the package `eval`.
+pythonpath = [".."]
 addopts = "-ra --strict-markers -m 'not model'"
 markers = ["model: needs the real name-detection model (make fetch-model); run by make test-model and CI"]
 
@@ -82,7 +84,8 @@ select = ["E", "F", "W", "I", "B", "UP", "S"]
 [tool.mypy]
 python_version = "3.13"
 strict = true
-files = ["app", "tests"]
+files = ["app", "tests", "../eval"]
+mypy_path = [".."]
 
 [[tool.mypy.overrides]]
 module = ["yaml", "jsonschema", "jsonschema.*"]

@@ -12,6 +12,10 @@ CLAUDE.local.md
 *.safetensors
 spm.model
 
+# Evaluation reports (make eval) and the reviewer's rating file
+eval/reports/
+eval/ratings.csv
+
 # Python
 .venv/
 __pycache__/
