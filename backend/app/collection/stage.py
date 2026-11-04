@@ -1,9 +1,11 @@
 """The collection stage of a run (spec Flow 1 step 4, F2).
 
-GUARD (#19): the stage is not in `DEFAULT_STAGES`, and `make_collection_stage` raises
-`RedactionNotWired` until `source_store.REDACTION_WIRED` is True, that is until #19 makes the
-single source-storage function redact. Personal data on a real site would otherwise be stored
-unredacted. Tests pass `allow_unredacted=True` with synthetic fixture sites and mock transports.
+Since #103 the stage is `DEFAULT_STAGES["collection"]` (`app.runs.stages.collection_stage`).
+GUARD (#19): `make_collection_stage` raises `RedactionNotWired` unless
+`source_store.REDACTION_WIRED` is True, that is unless the single source-storage function
+redacts. Tests pass `allow_unredacted=True` with synthetic fixture sites and mock transports.
+
+Every outbound request of the run (permission checks included) passes a `RequestBudget` (#103).
 """
 
 import logging
@@ -13,6 +15,7 @@ from functools import partial
 from sqlalchemy import delete, select
 
 from app.collection import source_store
+from app.collection.budget import RequestBudget
 from app.collection.collector import Collector
 from app.collection.retrieval import IdentityRecord, make_retriever
 from app.collection.settings import CollectionSettings, load_collection_settings
@@ -43,7 +46,7 @@ def make_collection_stage(
     settings: CollectionSettings | None = None,
     *,
     allow_unredacted: bool = False,
-    client_factory: Callable[[], GuardedClient] | None = None,
+    client_factory: Callable[..., GuardedClient] | None = None,
     prompt_set: PromptSet | None = None,
 ) -> Stage:
     """The `collection` stage. `client_factory` is for tests (a client over a mock transport).
@@ -67,8 +70,17 @@ def make_collection_stage(
                 return None
             record = IdentityRecord(identity.legal_name, identity.website, identity.country)
             redaction = identity_redaction(db, context.run_id)
+            # Owner decision (3 Nov 2026): a natural person's name and address are hidden from the
+            # provider, so with no website to anchor it the query would identify nobody.
+            skip_retrieval = identity.natural_person and not identity.website
         retriever = None
-        if context.providers is not None:
+        if skip_retrieval:
+            logger.info(
+                "Run %s: the search for further sources was skipped, because the supplier is a "
+                "natural person without a website and the query would identify nobody.",
+                context.run_id,
+            )
+        elif context.providers is not None:
             retriever = make_retriever(
                 context.providers,
                 prompt_set or load_prompt_set(),
@@ -77,7 +89,13 @@ def make_collection_stage(
                 record,
                 context.call_context,
             )
-        client = client_factory() if client_factory else build_client(contact_url)
+        # Every outbound request of the run, permission checks included, passes this budget.
+        budget = RequestBudget(limits.max_requests, limits.max_domains)
+        client = (
+            client_factory(before_request=budget)
+            if client_factory
+            else build_client(contact_url, before_request=budget)
+        )
         with client:
             fetcher = PermittedFetcher(
                 client,

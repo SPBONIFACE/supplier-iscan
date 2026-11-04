@@ -59,8 +59,8 @@ def make_stage(pages: dict[tuple[str, str], httpx2.Response]) -> Any:
     return make_collection_stage(
         CONTACT,
         LIMITS,
-        client_factory=lambda: build_client(
-            CONTACT, resolver=RESOLVER, inner_transport=site.transport
+        client_factory=lambda **kw: build_client(
+            CONTACT, resolver=RESOLVER, inner_transport=site.transport, **kw
         ),
     )
 

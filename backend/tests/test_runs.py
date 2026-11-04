@@ -14,7 +14,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app import queue
-from app.config import Settings
+from app.config import ConfigurationError, Settings
 from app.db import Database, utc_now
 from app.errors import NOT_FOUND
 from app.models import Job, ProfileRun, UsageEvent
@@ -258,14 +258,15 @@ def test_the_worker_runs_the_stages_in_order_and_completes(
     assert call(client, "GET", f"/runs/{run_id}", token).json()["status"] == "completed"
 
 
-def test_default_stages_are_no_ops_that_complete_the_run(
-    engine: Engine, settings: Settings
+def test_default_stages_run_collection_and_end_a_run_without_sources(
+    engine: Engine, settings: Settings, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    run_id = create_run(engine, create_organisation(engine))
+    monkeypatch.setenv("CRAWLER_CONTACT_URL", "https://iscan.example/contact")
+    run_id = create_run(engine, create_organisation(engine))  # no website, no providers
 
     work(engine, settings, DEFAULT_STAGES)
 
-    assert get_run(engine, run_id).status == "completed"
+    assert get_run(engine, run_id).status == "insufficient_sources"
 
 
 def test_stages_get_the_call_context_of_the_run(engine: Engine, settings: Settings) -> None:
@@ -574,6 +575,39 @@ def test_an_unexpected_error_fails_the_run_without_crashing_the_worker(
     assert (run.status, run.error) == ("failed", "The run failed unexpectedly.")
     assert run.counts_against_quota is True
     assert "failed in stage identity" in caplog.text
+
+
+def test_a_missing_crawler_contact_fails_the_run_with_a_plain_message(
+    engine: Engine, settings: Settings, caplog: pytest.LogCaptureFixture
+) -> None:
+    run_id = create_run(engine, create_organisation(engine), stage="collection")
+    error = ConfigurationError("CRAWLER_CONTACT_URL must be set before supplier sites are fetched")
+
+    with caplog.at_level("ERROR"):
+        work(engine, settings, Counter("collection", error).stages())
+
+    run = get_run(engine, run_id)
+    assert run.status == "failed"
+    assert run.error == (
+        "Collection is not available because the service is not fully configured. "
+        "Please contact the administrator."
+    )
+    assert "CRAWLER_CONTACT_URL" not in run.error
+    assert "not configured" in caplog.text
+
+
+def test_the_worker_refuses_to_start_without_the_crawler_contact(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app import worker
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@127.0.0.1:1/db")
+    monkeypatch.delenv("CRAWLER_CONTACT_URL", raising=False)
+
+    with pytest.raises(SystemExit) as stopped:
+        worker.main()
+
+    assert str(stopped.value).startswith("CRAWLER_CONTACT_URL is not set")
 
 
 def test_insufficient_sources_does_not_count_against_the_quota(

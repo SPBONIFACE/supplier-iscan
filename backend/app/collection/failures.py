@@ -60,11 +60,24 @@ class Failure:
     message: str
 
 
+# The ceilings of #103 use the contract's `attempt_cap` kind with their own plain message.
+REQUEST_CAP_MESSAGE: Final = (
+    "The limit of requests for this run was reached; the run went on with what it had."
+)
+DOMAIN_CAP_MESSAGE: Final = (
+    "The limit of websites contacted for this run was reached; this address was not requested."
+)
+
+
 def make_failure(
-    url: str | None, strategy: Strategy, kind: Kind, status: int | None = None
+    url: str | None,
+    strategy: Strategy,
+    kind: Kind,
+    status: int | None = None,
+    message: str | None = None,
 ) -> Failure:
-    message = MESSAGES[kind]
-    if kind == "http_error" and status is not None:
+    message = message or MESSAGES[kind]
+    if message == MESSAGES[kind] and kind == "http_error" and status is not None:
         message = f"The page answered with an error ({status}) and could not be read."
     return Failure(url, strategy, kind, NEXT_STRATEGY[strategy], message)
 

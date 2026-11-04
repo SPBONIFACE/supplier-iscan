@@ -13,6 +13,9 @@
 - `COLLECT_MAX_ATTEMPTS` (60): requests for content per run, retries included, across every
   strategy and every address of the retrieval provider; none is made beyond it. The permission
   checks of a domain (robots.txt, TDM) are not attempts.
+- `COLLECT_MAX_REQUESTS` (200): ALL outbound requests per run, permission checks, redirect hops
+  and retries included; none is sent beyond it and the run continues with what it has.
+- `COLLECT_MAX_DOMAINS` (10): distinct domains contacted per run; a further one is refused.
 - `COLLECT_MAX_RETRIEVAL_URLS` (5): addresses of the retrieval provider fetched per run.
 The request timeout is `FETCH_TIMEOUT_SECONDS` of the HTTP client (#15).
 """
@@ -39,6 +42,8 @@ class CollectionSettings:
     max_sitemap_bytes: int = 2_000_000
     max_attempts: int = 60
     max_retrieval_urls: int = 5
+    max_requests: int = 200
+    max_domains: int = 10
 
 
 def _number(env: Mapping[str, str], name: str, default: float, *, whole: bool) -> float:
@@ -77,4 +82,6 @@ def load_collection_settings(environ: Mapping[str, str] | None = None) -> Collec
         max_sitemap_bytes=whole("COLLECT_MAX_SITEMAP_BYTES", d.max_sitemap_bytes),
         max_attempts=whole("COLLECT_MAX_ATTEMPTS", d.max_attempts),
         max_retrieval_urls=whole("COLLECT_MAX_RETRIEVAL_URLS", d.max_retrieval_urls),
+        max_requests=whole("COLLECT_MAX_REQUESTS", d.max_requests),
+        max_domains=whole("COLLECT_MAX_DOMAINS", d.max_domains),
     )

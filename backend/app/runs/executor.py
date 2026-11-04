@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from sqlalchemy import select
 
+from app.config import ConfigurationError
 from app.db import Database, utc_now
 from app.models import ProfileRun
 from app.models.runs import RUN_STAGES
@@ -31,6 +32,10 @@ logger = logging.getLogger(__name__)
 RUN_JOB = "profile_run"  # the kind of the queue job that executes a run
 INTERRUPTED = "The run was interrupted too many times and was ended."
 FAILED = "The run failed unexpectedly."
+NOT_CONFIGURED = (
+    "Collection is not available because the service is not fully configured. "
+    "Please contact the administrator."
+)
 
 
 @dataclass(frozen=True)
@@ -142,6 +147,13 @@ def execute_run(env: RunEnvironment, run_id: uuid.UUID) -> None:
         raise
     except RunStopped:
         _update(env.database, run_id, lambda run: _finish(run, "stopped"))
+    except ConfigurationError:
+        # The operator named the setting in the log; the member gets a plain message, and the run
+        # ends as failed (no request was sent).
+        logger.error(
+            "Run %s failed in stage %s: the service is not configured", run_id, stage, exc_info=True
+        )
+        fail_run(env.database, run_id, NOT_CONFIGURED)
     except Exception as error:
         dependency = classify(error)
         if dependency is None:

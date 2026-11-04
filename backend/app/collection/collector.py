@@ -13,7 +13,16 @@ from datetime import datetime
 from typing import Any
 from urllib.parse import urldefrag, urljoin, urlsplit
 
-from app.collection.failures import Failure, Kind, RetrievalFailed, Strategy, make_failure
+from app.collection.budget import DomainLimitReached, RequestLimitReached
+from app.collection.failures import (
+    DOMAIN_CAP_MESSAGE,
+    REQUEST_CAP_MESSAGE,
+    Failure,
+    Kind,
+    RetrievalFailed,
+    Strategy,
+    make_failure,
+)
 from app.collection.html_text import parse_html
 from app.collection.identity import name_appears
 from app.collection.limiter import DomainRateLimiter
@@ -82,13 +91,17 @@ class Collector:
         self.result = CollectionResult()
         self._strategy: Strategy = "website"
         self._cap_logged = False
+        self._requests_exhausted = False  # the ceiling on all outbound requests was reached
+        self._domains_refused: set[str] = set()
         self._website_texts: list[str] = []
         self._kinds_found: set[str] = set()
 
     # -- failures ---------------------------------------------------------------------------
 
-    def _fail(self, url: str | None, kind: Kind, status: int | None = None) -> None:
-        failure = make_failure(url, self._strategy, kind, status)
+    def _fail(
+        self, url: str | None, kind: Kind, status: int | None = None, message: str | None = None
+    ) -> None:
+        failure = make_failure(url, self._strategy, kind, status, message)
         logger.info(
             "Collection failure: url=%s strategy=%s kind=%s next=%s",
             url,
@@ -109,6 +122,8 @@ class Collector:
         status = None
         for attempt in range(attempts):
             self._check_stop()
+            if self._requests_exhausted:
+                return self._skip(url)
             if self.result.attempts >= self._settings.max_attempts:
                 if not self._cap_logged:
                     self._cap_logged = True
@@ -122,6 +137,14 @@ class Collector:
                 logger.warning("Fetch of %s failed (%s)", url, type(error).__name__)
                 kind = "timeout" if isinstance(error, FetchTimeoutError) else "unreachable"
                 result = None
+            except RequestLimitReached:
+                self._request_ceiling()
+                return self._skip(url)
+            except DomainLimitReached as error:
+                if error.domain not in self._domains_refused:
+                    self._domains_refused.add(error.domain)
+                    self._fail(url, "attempt_cap", message=DOMAIN_CAP_MESSAGE)
+                return self._skip(url)
             except FetchError as error:  # refused by the guard: not retried
                 logger.info("Fetch of %s refused (%s)", url, type(error).__name__)
                 return self._skip(url, "refused")
@@ -148,6 +171,13 @@ class Collector:
         logger.warning("Gave up on %s after %d attempts", url, attempts)
         return self._skip(url, kind, status)
 
+    def _request_ceiling(self) -> None:
+        """The ceiling on all requests was reached: logged once, nothing more is requested."""
+        if not self._requests_exhausted:
+            self._requests_exhausted = True
+            logger.warning("Collection reached its limit of requests; going on with what it has")
+            self._fail(None, "attempt_cap", message=REQUEST_CAP_MESSAGE)
+
     def _skip(self, url: str, kind: Kind | None = None, status: int | None = None) -> Any:
         """Record a URL as not collected (with the failure when it has a kind); returns None,
         for `return self._skip(url)`."""
@@ -161,7 +191,13 @@ class Collector:
     def _sitemap_urls(self, home: str) -> list[str]:
         settings = self._settings
         queue = [urljoin(home, "/sitemap.xml")]
-        permission = self._fetcher.permission(home)
+        try:
+            permission = self._fetcher.permission(home)
+        except RequestLimitReached:
+            self._request_ceiling()
+            return []
+        except DomainLimitReached:
+            return []
         robots = permission.robots
         if robots is not None:
             queue = [*(s for s in robots.sitemaps if _host(s) == _host(home)), *queue]
@@ -207,7 +243,7 @@ class Collector:
             self._crawl_website(website)
         website_texts = list(self._website_texts)
         website_sources = len(self.result.sources)
-        if retrieve is not None:
+        if retrieve is not None and not self._requests_exhausted:
             self._retrieve(retrieve)
         # Identity (spec F1, owner decision D-065). Nothing found at all: the run ends
         # insufficient_sources and is not flagged. The website gave no source but others were
