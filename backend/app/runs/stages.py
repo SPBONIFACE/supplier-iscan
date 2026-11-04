@@ -1,7 +1,7 @@
 """The stages of a run, and how a failure is told apart.
 
-A stage is a function of a `StageContext`. Here every stage is a no-op: #17 to #20 (collection),
-#23 and #24 (extraction), #25 and #26 (assessment) replace them in `DEFAULT_STAGES`. Rules for a
+A stage is a function of a `StageContext`. Collection is real (#103); the others are still
+no-ops: #23 and #24 (extraction), #25 and #26 (assessment) replace them in `DEFAULT_STAGES`. Rules for a
 stage:
 
 - It may be executed again after a crash or a resume, so it must not duplicate stored results
@@ -107,9 +107,18 @@ def no_op(context: StageContext) -> None:
     return None
 
 
+def collection_stage(context: StageContext) -> StageOutcome | None:
+    """The real collection stage (#18 to #20), built when the stage runs in the worker: the
+    crawler's contact page comes from the settings (`CRAWLER_CONTACT_URL`, #17)."""
+    from app.collection.stage import make_collection_stage  # imported here: it imports this module
+    from app.config import load_settings
+
+    return make_collection_stage(load_settings().crawler_contact_url)(context)
+
+
 DEFAULT_STAGES: Mapping[str, Stage] = {
     "identity": no_op,
-    "collection": no_op,
+    "collection": collection_stage,
     "extraction": no_op,
     "assessment": no_op,
 }

@@ -16,7 +16,7 @@ Internal module: other modules use `app.http_client` (see its `__all__`), never 
 """
 
 import time
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any
@@ -151,12 +151,18 @@ class GuardedTransport(httpx2.BaseTransport):
         *,
         resolver: Resolver = system_resolver,
         inner: httpx2.BaseTransport | None = None,
+        before_request: Callable[[httpx2.URL], None] | None = None,
     ) -> None:
         self._resolver = resolver
+        # Called with the URL of every request that passed validation, before it is resolved or
+        # sent (redirect hops and permission resources included). It may raise to refuse it.
+        self._before_request = before_request
         self._inner = inner if inner is not None else _DeadlineHTTPTransport()
 
     def handle_request(self, request: httpx2.Request) -> httpx2.Response:
         url = validate_url(request.url)
+        if self._before_request is not None:
+            self._before_request(url)
         host = url.raw_host.decode("ascii")
         timeout = request.extensions.get("timeout", {}).get("connect")
         deadline = _deadline.get()

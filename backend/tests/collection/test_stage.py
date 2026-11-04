@@ -96,7 +96,7 @@ def test_the_guard_lifts_now_that_storage_redacts(monkeypatch: pytest.MonkeyPatc
         make_collection_stage(CONTACT, LIMITS)
     from app.runs.stages import DEFAULT_STAGES
 
-    assert DEFAULT_STAGES["collection"].__name__ == "no_op"  # wiring the stage is not part of #19
+    assert DEFAULT_STAGES["collection"].__name__ == "collection_stage"  # wired by #103
 
 
 def run_stage(engine: Engine, pages: dict, name: str = "Acme Supplies SA") -> uuid.UUID:  # type: ignore[type-arg]
@@ -107,8 +107,8 @@ def run_stage(engine: Engine, pages: dict, name: str = "Acme Supplies SA") -> uu
     stage = make_collection_stage(
         CONTACT,
         LIMITS,
-        client_factory=lambda: build_client(
-            CONTACT, resolver=RESOLVER, inner_transport=site.transport
+        client_factory=lambda **kw: build_client(
+            CONTACT, resolver=RESOLVER, inner_transport=site.transport, **kw
         ),
     )
     assert stage(context(engine, run_id, organisation_id)) is None

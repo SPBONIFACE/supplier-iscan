@@ -258,14 +258,15 @@ def test_the_worker_runs_the_stages_in_order_and_completes(
     assert call(client, "GET", f"/runs/{run_id}", token).json()["status"] == "completed"
 
 
-def test_default_stages_are_no_ops_that_complete_the_run(
-    engine: Engine, settings: Settings
+def test_default_stages_run_collection_and_end_a_run_without_sources(
+    engine: Engine, settings: Settings, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    run_id = create_run(engine, create_organisation(engine))
+    monkeypatch.setenv("CRAWLER_CONTACT_URL", "https://iscan.example/contact")
+    run_id = create_run(engine, create_organisation(engine))  # no website, no providers
 
     work(engine, settings, DEFAULT_STAGES)
 
-    assert get_run(engine, run_id).status == "completed"
+    assert get_run(engine, run_id).status == "insufficient_sources"
 
 
 def test_stages_get_the_call_context_of_the_run(engine: Engine, settings: Settings) -> None:

@@ -12,7 +12,7 @@ Configuration (environment, all optional):
 
 import os
 import time
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 
@@ -125,12 +125,15 @@ class GuardedClient:
         resolver: Resolver = system_resolver,
         inner_transport: httpx2.BaseTransport | None = None,
         headers: Mapping[str, str] | None = None,
+        before_request: Callable[[httpx2.URL], None] | None = None,
     ) -> None:
         self.settings = settings or load_fetch_settings()
         # Name-mangled: the raw client is still guarded (its transport is `GuardedTransport`) but
         # has no total deadline, so it is not an attribute other modules can reach by accident.
         self.__client = httpx2.Client(
-            transport=GuardedTransport(resolver=resolver, inner=inner_transport),
+            transport=GuardedTransport(
+                resolver=resolver, inner=inner_transport, before_request=before_request
+            ),
             trust_env=False,
             follow_redirects=False,
             headers=dict(headers or {}),

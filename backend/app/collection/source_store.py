@@ -72,9 +72,12 @@ def store_source(
     gate = gate_for(database)
     with database.session() as db:
         context = identity_redaction(db, run_id)
-        # Redacted before anything is written; a failure raises before the row is touched.
-        text = redact_for_storage(record.text, gate, context)
-        author = redact_for_storage(record.author, gate, context)[:300] if record.author else None
+    # Redacted before anything is written; a failure raises before the row is touched. Redaction
+    # can take a minute on a long text: no database session (no connection, no transaction) is
+    # held meanwhile (#52, deployment findings).
+    text = redact_for_storage(record.text, gate, context)
+    author = redact_for_storage(record.author, gate, context)[:300] if record.author else None
+    with database.session() as db:
         row = db.scalar(select(Source).where(Source.run_id == run_id, Source.url == record.url))
         if row is None:
             row = Source(run_id=run_id, organisation_id=organisation_id, url=record.url)
