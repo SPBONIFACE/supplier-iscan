@@ -28,6 +28,8 @@ class SourceRecord:
     content_type: str
     text: str
     author: str | None = None
+    # For a PDF: the address of the page of the run that linked to it (stored before it).
+    linked_from_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -86,5 +88,15 @@ def store_source(
         row.content_type = record.content_type[:100]
         row.redacted_text = text
         row.author = author
+        # The page that linked to a PDF, when that page was stored (a page with no text is not).
+        row.linked_from_source_id = (
+            db.scalar(
+                select(Source.id).where(
+                    Source.run_id == run_id, Source.url == record.linked_from_url
+                )
+            )
+            if record.linked_from_url
+            else None
+        )
         db.commit()
         return row.id

@@ -69,6 +69,8 @@ class FetchResult:
     response: Any = None
     # With `too_large`: the size announced by the site, or the bytes read when it announced none.
     size: int | None = None
+    # With `fetched`: the address answered after the redirects (equal to `url` without any).
+    final_url: str | None = None
 
 
 @dataclass
@@ -200,7 +202,7 @@ class PermittedFetcher:
                 )
                 self._mark(permission, "blocked")
                 return FetchResult("blocked", url)
-            return FetchResult("fetched", url, response)
+            return FetchResult("fetched", url, response, final_url=current)
         raise TooManyRedirectsError(
             f"The website redirected more than {settings.max_redirects} times."
         )

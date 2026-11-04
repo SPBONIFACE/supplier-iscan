@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.10.0
+  version: 0.11.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -596,6 +596,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RunFailureList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/facts:
+    get:
+      operationId: listRunFacts
+      tags: [runs]
+      summary: List the facts extracted for a run
+      description: >-
+        One entry per `fact` field of the profile definition the run uses, in the order of the
+        definition: a proposed fact (value, verbatim quote in its source language, source,
+        attribution) or `not_found`, which is shown as "No public evidence found". It is never a
+        negative statement about the supplier: an entry without a kept value carries no value and
+        no quote, and a certification field without a kept value is `not_found`, never "not
+        certified". Empty until the extraction stage has stored its results. Another
+        organisation's run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The facts of the run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FactList"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1334,6 +1364,8 @@ components:
         - usage
         - excluded_sources
         - identity_to_verify
+        - grounding_failures
+        - invalid_items
         - insufficient_sources_explanation
         - created_at
         - started_at
@@ -1391,6 +1423,20 @@ components:
             other sources were found. False when nothing at all was found (the run ends
             `insufficient_sources`). The buyer verifies the identity; nothing is blocked.
           type: boolean
+        grounding_failures:
+          description: >-
+            Extraction: the number of values discarded because their quote was not found in the
+            stored text of the cited source (also a quote that cites a source that is not the one
+            given, a quote over 300 characters, and a value its quote does not support). 0 until
+            the extraction stage has run.
+          type: integer
+          minimum: 0
+        invalid_items:
+          description: >-
+            Extraction: the number of items the structuring provider returned that did not match
+            the schema, dropped after one retry. 0 until the extraction stage has run.
+          type: integer
+          minimum: 0
         insufficient_sources_explanation:
           description: >-
             Plain-language explanation, set when the status is `insufficient_sources`: no usable
@@ -1482,6 +1528,98 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RunFailure"
+    FactStatus:
+      description: >-
+        `proposed` for a value kept by extraction; `not_found` for a field with no kept value
+        ("No public evidence found"). Review (`approved`, `corrected`) is added with the review
+        endpoints.
+      type: string
+      enum: [proposed, not_found]
+    SourceType:
+      description: >-
+        `supplier_claim` ("Supplier's own claim"): the source is on the confirmed website's domain
+        or one of its subdomains (with or without `www`), on a domain listed in the identity's
+        registry identifiers, or is a PDF linked from a page of the confirmed website, wherever it
+        is hosted. `third_party` ("Third-party source") otherwise.
+      type: string
+      enum: [supplier_claim, third_party]
+    Fact:
+      description: >-
+        The extracted value of one `fact` field with its evidence. For `not_found` every
+        evidence member is null (and `quote_redacted` is false).
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - section
+        - field
+        - status
+        - value
+        - quote
+        - quote_redacted
+        - source_id
+        - source_url
+        - source_type
+        - publisher
+        - author
+        - fetched_at
+        - verification_url
+      properties:
+        id:
+          type: string
+          format: uuid
+        section:
+          description: Id of the section of the profile definition.
+          type: string
+        field:
+          description: Id of the field of the profile definition.
+          type: string
+        status:
+          $ref: "#/components/schemas/FactStatus"
+        value:
+          type: [string, "null"]
+        quote:
+          description: >-
+            At most 300 characters, verbatim from the source in its source language (never
+            translated), found in the stored redacted text of the source. May be identifiable.
+          type: [string, "null"]
+        quote_redacted:
+          description: True when the quote contains a redaction mark `[…]` ("Redacted extract").
+          type: boolean
+        source_id:
+          description: The source of the quote (see `GET /runs/{id}/sources`).
+          type: [string, "null"]
+          format: uuid
+        source_url:
+          type: [string, "null"]
+        source_type:
+          oneOf:
+            - $ref: "#/components/schemas/SourceType"
+            - type: "null"
+        publisher:
+          description: The site name or, failing that, the domain of the source.
+          type: [string, "null"]
+        author:
+          description: The author of the source when it names one (a PDF); otherwise null.
+          type: [string, "null"]
+        fetched_at:
+          description: When the source was fetched ("Found in <source> on <date>").
+          type: [string, "null"]
+          format: date-time
+        verification_url:
+          description: >-
+            For a certification field with a kept value: the IAF CertSearch address where the
+            buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise.
+          type: [string, "null"]
+    FactList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fact"
     RunList:
       type: object
       additionalProperties: false

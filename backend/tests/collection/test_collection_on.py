@@ -24,7 +24,7 @@ from app.providers import Providers, RetrievedUrl
 from app.providers.fake import FakeRetrievalAdapter, fake_adapters
 from app.redaction import RedactionGate, RedactionUnavailable
 from app.runs.executor import RunEnvironment, execute_run
-from app.runs.stages import DEFAULT_STAGES, StageContext
+from app.runs.stages import DEFAULT_STAGES, StageContext, no_op
 from tests.auth_support import send_with_session
 from tests.collection.support import CONTACT, HOST, OTHER, RESOLVER, html
 from tests.factories import create_organisation, create_session, create_user
@@ -107,7 +107,8 @@ def real_wiring(monkeypatch: pytest.MonkeyPatch) -> Callable[[MockSite], None]:
 
 
 def work(engine: Engine, run_id: uuid.UUID, providers: Providers | None) -> None:
-    env = RunEnvironment(Database(None, engine), DEFAULT_STAGES, providers, lambda: None)
+    stages = {**DEFAULT_STAGES, "extraction": no_op}  # extraction has its own tests
+    env = RunEnvironment(Database(None, engine), stages, providers, lambda: None)
     execute_run(env, run_id)
 
 

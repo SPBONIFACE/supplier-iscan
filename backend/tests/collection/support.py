@@ -17,7 +17,10 @@ from tests.http_client.support import PUBLIC_V4, MockSite, StubResolver
 HOST = "acme.example"
 OTHER = "registry.example"
 INTERNAL = "internal.example"
-RESOLVER = StubResolver({HOST: [PUBLIC_V4], OTHER: [PUBLIC_V4], INTERNAL: ["10.0.0.5"]})
+SUBDOMAIN = f"shop.{HOST}"
+RESOLVER = StubResolver(
+    {HOST: [PUBLIC_V4], SUBDOMAIN: [PUBLIC_V4], OTHER: [PUBLIC_V4], INTERNAL: ["10.0.0.5"]}
+)
 CONTACT = "https://iscan.example/contact"
 
 

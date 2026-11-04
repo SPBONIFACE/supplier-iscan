@@ -65,6 +65,10 @@ def _host(url: str) -> str:
     return host.removeprefix("www.")
 
 
+def _is_pdf(url: str) -> bool:
+    return url.lower().split("?", 1)[0].endswith(".pdf")
+
+
 def _content_type(response: Any) -> str:
     raw = str(response.headers.get("content-type", ""))
     return raw.split(";", 1)[0].strip().lower()
@@ -91,6 +95,7 @@ class Collector:
         self.result = CollectionResult()
         self._strategy: Strategy = "website"
         self._cap_logged = False
+        self._final_url = ""  # address answered by the last successful `_fetch`
         self._requests_exhausted = False  # the ceiling on all outbound requests was reached
         self._domains_refused: set[str] = set()
         self._website_texts: list[str] = []
@@ -161,6 +166,7 @@ class Collector:
                     if status >= 400:
                         logger.info("Not collected: %s answered %s", url, status)
                         return self._skip(url, "http_error", status)
+                    self._final_url = result.final_url or url
                     return result.response
                 kind = "http_error"
                 retry_after = result.response.headers.get("retry-after", "")
@@ -231,6 +237,21 @@ class Collector:
             return None
         return url
 
+    def _link(self, base: str, href: str, home: str) -> str | None:
+        """A link of a page of the website: an address of the website, or a PDF wherever it is
+        hosted (a PDF linked from the supplier's website is its own claim, owner decision 27 Oct
+        2026; it is still fetched through the permission checks and the ceilings of the run)."""
+        url = self._absolute(base, href, home)
+        if url:
+            return url
+        try:
+            other, _fragment = urldefrag(urljoin(base, href.strip()))
+            if urlsplit(other).scheme in ("http", "https") and _is_pdf(other):
+                return other
+        except ValueError:
+            pass
+        return None
+
     # -- the run ----------------------------------------------------------------------------
 
     def collect(
@@ -286,14 +307,17 @@ class Collector:
         parts = urlsplit(website)
         home = f"{parts.scheme}://{parts.netloc}/"
         pdf_links: list[str] = []
+        linked_from: dict[str, str] = {}  # a PDF's address -> the page that linked to it
         ranked: dict[str, list[str]] = {kind: [] for kind in PAGE_KINDS}
         self._strategy = "website"
 
-        def add_candidate(url: str, anchor: str = "") -> None:
+        def add_candidate(url: str, anchor: str = "", page: str | None = None) -> None:
             kind = classify(url, anchor)
-            if url.lower().split("?", 1)[0].endswith(".pdf"):
+            if _is_pdf(url):
                 if url not in pdf_links:
                     pdf_links.append(url)
+                if page:
+                    linked_from.setdefault(url, page)
             elif kind and kind != "home" and url not in ranked[kind]:
                 if not urlsplit(url).path.lower().endswith(SKIPPED_EXTENSIONS):
                     ranked[kind].append(url)
@@ -304,9 +328,9 @@ class Collector:
         # The home page, its links, then the sitemaps.
         links = take_page(home)
         for href, anchor in links:
-            url = self._absolute(home, href, home)
+            url = self._link(home, href, home)
             if url:
-                add_candidate(url, anchor)
+                add_candidate(url, anchor, home)
         for url in self._sitemap_urls(home):
             checked = self._absolute(home, url, home)
             if checked:
@@ -321,18 +345,19 @@ class Collector:
                     chosen.append(ranked[kind][rank])
         for url in chosen[: max(budget, 0)]:
             for href, _anchor in take_page(url):
-                absolute = self._absolute(url, href, home)
-                if absolute and absolute.lower().split("?", 1)[0].endswith(".pdf"):
-                    add_candidate(absolute)
+                absolute = self._link(url, href, home)
+                if absolute and _is_pdf(absolute):
+                    add_candidate(absolute, page=url)
 
         for url in pdf_links[: settings.max_pdfs]:
-            self._take_pdf(url)
+            self._take_pdf(url, linked_from.get(url))
 
     def _take_page(self, url: str) -> list[tuple[str, str]] | None:
         """Fetch and store one page; the links found on it, or None when it could not be read."""
         response = self._fetch(url, self._settings.max_page_bytes)
         if response is None:
             return None
+        final = self._final_url  # after redirects: the source is what was answered there
         content_type = _content_type(response)
         if content_type and content_type not in HTML_TYPES:
             logger.info("Not a page: %s is %s", url, content_type)
@@ -343,13 +368,16 @@ class Collector:
             logger.info("Empty content: %s", url)
             self._skip(url, "empty_content")
             return page.links
-        self._keep(SourceRecord(url, self._now(), content_type or "text/html", page.text))
+        if final != url and self._already_kept(final):
+            return page.links
+        self._keep(SourceRecord(final, self._now(), content_type or "text/html", page.text))
         return page.links
 
-    def _take_pdf(self, url: str) -> str | None:
+    def _take_pdf(self, url: str, linked_from: str | None = None) -> str | None:
         response = self._fetch(url, self._settings.max_pdf_bytes)
         if response is None:
             return None
+        final = self._final_url
         content = response.content
         if _content_type(response) != "application/pdf" and not content.startswith(b"%PDF-"):
             logger.info("Not a PDF: %s", url)
@@ -360,8 +388,21 @@ class Collector:
             logger.info("Empty content: %s", url)
             self._skip(url, "empty_content")
             return None
-        self._keep(SourceRecord(url, self._now(), "application/pdf", pdf.text, pdf.author))
+        if final != url and self._already_kept(final):
+            return pdf.text
+        # A PDF linked from the supplier's page stays the supplier's own claim wherever it is
+        # hosted (owner decision, 27 Oct 2026), but only for the address that was linked: when
+        # the link redirects to another host, the text is that host's, so the link is dropped
+        # and the final address alone decides the source type.
+        if linked_from and _host(final) != _host(url):
+            linked_from = None
+        self._keep(
+            SourceRecord(final, self._now(), "application/pdf", pdf.text, pdf.author, linked_from)
+        )
         return pdf.text
+
+    def _already_kept(self, url: str) -> bool:
+        return any(record.url == url for record in self.result.sources)
 
     def _keep(self, record: SourceRecord) -> None:
         self._store(record)

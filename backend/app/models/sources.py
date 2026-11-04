@@ -27,3 +27,8 @@ class Source(OrganisationOwned, Base):
     content_type: Mapped[str] = mapped_column(String(100))
     redacted_text: Mapped[str] = mapped_column(Text)
     author: Mapped[str | None] = mapped_column(String(300))
+    # For a PDF linked from a page of the run: the source of that page (owner decision, 27 Oct
+    # 2026: a PDF linked from the supplier's website is its own claim, wherever it is hosted).
+    linked_from_source_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("sources.id", ondelete="SET NULL")
+    )

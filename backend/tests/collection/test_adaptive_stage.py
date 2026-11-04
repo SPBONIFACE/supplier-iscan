@@ -20,7 +20,7 @@ from app.providers.fake import FakeRetrievalAdapter, fake_adapters
 from app.providers.metering import ListSink
 from app.redaction import RedactionGate, RedactionUnavailable
 from app.runs.executor import RunEnvironment, execute_run
-from app.runs.stages import DEFAULT_STAGES, StageContext
+from app.runs.stages import DEFAULT_STAGES, StageContext, no_op
 from tests.auth_support import send_with_session
 from tests.collection.support import CONTACT, HOST, OTHER, RESOLVER, html
 from tests.contract.test_auth_contract import assert_matches_contract
@@ -66,7 +66,7 @@ def make_stage(pages: dict[tuple[str, str], httpx2.Response]) -> Any:
 
 
 def environment(engine: Engine, stage: Any, providers: Providers | None) -> RunEnvironment:
-    stages = {**DEFAULT_STAGES, "collection": stage}
+    stages = {**DEFAULT_STAGES, "collection": stage, "extraction": no_op}
     return RunEnvironment(Database(None, engine), stages, providers, lambda: None)
 
 

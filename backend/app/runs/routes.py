@@ -17,9 +17,11 @@ from app.config import Settings
 from app.crawl.store import excluded_sources
 from app.db import DbSession, utc_now
 from app.errors import not_found
-from app.models import ProfileRun, RunFailure, Source, SupplierIdentity, UsageEvent
+from app.extraction.settings import load_extraction_settings
+from app.models import Fact, ProfileRun, RunFailure, Source, SupplierIdentity, UsageEvent
 from app.models.runs import FINISHED_STATUSES
 from app.organisations.scope import OrganisationScope, OrganisationScoped
+from app.profile_definition import ProfileDefinition
 from app.providers.usage import run_usage_totals
 from app.runs.executor import RUN_JOB
 
@@ -88,6 +90,8 @@ class RunOut(BaseModel):
     usage: RunUsageOut
     excluded_sources: list[ExcludedSourceOut]
     identity_to_verify: bool
+    grounding_failures: int
+    invalid_items: int
     insufficient_sources_explanation: str | None
     created_at: datetime
     started_at: datetime | None
@@ -129,6 +133,33 @@ class RunFailureListOut(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     items: list[RunFailureOut]
+
+
+class FactOut(BaseModel):
+    """Mirrors components/schemas/Fact."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: uuid.UUID
+    section: str
+    field: str
+    status: Literal["proposed", "not_found"]
+    value: str | None
+    quote: str | None
+    quote_redacted: bool
+    source_id: uuid.UUID | None
+    source_url: str | None
+    source_type: Literal["supplier_claim", "third_party"] | None
+    publisher: str | None
+    author: str | None
+    fetched_at: datetime | None
+    verification_url: str | None
+
+
+class FactListOut(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[FactOut]
 
 
 class RunListOut(BaseModel):
@@ -187,6 +218,8 @@ def _run_out(
             },
             "excluded_sources": excluded,
             "identity_to_verify": run.identity_to_verify,
+            "grounding_failures": run.grounding_failures,
+            "invalid_items": run.invalid_items,
             "insufficient_sources_explanation": (
                 INSUFFICIENT_SOURCES if run.status == "insufficient_sources" else None
             ),
@@ -275,6 +308,46 @@ def list_failures(id: str, scope: OrganisationScoped, db: DbSession) -> RunFailu
         .order_by(RunFailure.position, RunFailure.id)
     ).all()
     return RunFailureListOut(items=[RunFailureOut.model_validate(row) for row in rows])
+
+
+@router.get("/{id}/facts", response_model=FactListOut)
+def list_facts(id: str, scope: OrganisationScoped, db: DbSession, request: Request) -> FactListOut:
+    """One entry per `fact` field of the profile definition that extraction has stored, in the
+    order of the definition. A field with no kept value is `not_found`, with no value and no
+    quote: never a negative statement about the supplier."""
+    run = scope.get(db, ProfileRun, id)  # the one 404 for an unknown or another organisation's run
+    stored = {
+        fact.field: fact for fact in db.scalars(scope.select(Fact).where(Fact.run_id == run.id))
+    }
+    certsearch = load_extraction_settings().certsearch_url
+    definition: ProfileDefinition = request.app.state.profile_definition
+    items = []
+    for section in definition.sections:
+        for item in section.fields:
+            fact = stored.get(item.id)
+            if item.kind != "fact" or fact is None:
+                continue
+            items.append(
+                FactOut(
+                    id=fact.id,
+                    section=section.id,
+                    field=fact.field,
+                    status=fact.status,  # type: ignore[arg-type]  # proposed or not_found (#28 adds more)
+                    value=fact.value,
+                    quote=fact.quote,
+                    quote_redacted=fact.quote_redacted,
+                    source_id=fact.source_id,
+                    source_url=fact.source_url,
+                    source_type=fact.source_type,  # type: ignore[arg-type]
+                    publisher=fact.publisher,
+                    author=fact.author,
+                    fetched_at=fact.fetched_at,
+                    verification_url=(
+                        certsearch if item.certification and fact.status != "not_found" else None
+                    ),
+                )
+            )
+    return FactListOut(items=items)
 
 
 @router.post("/{id}/stop", response_model=RunOut)

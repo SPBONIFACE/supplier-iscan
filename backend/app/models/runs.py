@@ -96,6 +96,10 @@ class ProfileRun(OrganisationOwned, Base):
     error: Mapped[str | None] = mapped_column(String(300))
     # Set by the collection stage (#18): the confirmed name is on none of the website's sources.
     identity_to_verify: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Set by the extraction stage (#23): values discarded by the grounding check, and items that
+    # did not match the schema after one retry.
+    grounding_failures: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    invalid_items: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # Set by the stages that load the profile definition and the prompt set (#21, #26).
     profile_definition_hash: Mapped[str | None] = mapped_column(String(100))
     prompt_set_hash: Mapped[str | None] = mapped_column(String(100))
