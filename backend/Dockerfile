@@ -17,6 +17,16 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 WORKDIR /app
 
+# System libraries of WeasyPrint 70.0 (PDF, #39), exact Debian trixie versions (approved-dependencies.md):
+# Pango and HarfBuzz subsetting; fontconfig, FreeType and HarfBuzz come with them. The fonts are
+# copied with the code (app/pdf/fonts), not installed.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpango-1.0-0=1.56.3-1 \
+        libpangoft2-1.0-0=1.56.3-1 \
+        libharfbuzz-subset0=10.2.0-1+deb13u1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Runtime dependencies only, installed from the committed lockfile without changing it.
 COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --locked --no-dev

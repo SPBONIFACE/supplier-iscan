@@ -3,6 +3,7 @@
 import html as htmllib
 import io
 import json
+import os
 import socket
 from typing import Any
 
@@ -283,6 +284,8 @@ def test_the_renderer_reads_only_the_files_of_its_own_folder() -> None:
     try:
         fetcher = _fetcher()
     except OSError:
+        if os.environ.get("CI"):
+            pytest.fail("WeasyPrint's system libraries (Pango) must be installed in CI")
         pytest.skip("WeasyPrint's system libraries are not installed here")
     for url in (
         "http://example.test/x.css",
