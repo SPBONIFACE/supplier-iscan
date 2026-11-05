@@ -382,6 +382,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{id}/assessment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the assessment draft of a run
+         * @description The AI-drafted assessment statements of the run: SWOT points, risk indicators, evidence gaps and the procurement recommendations. Every statement cites facts of this run (or is an evidence gap naming the missing evidence), carries its provenance and is an `ai_draft` until reviewed. There is no aggregate score. `pending` until the assessment stage has stored its results. For an identity flagged `natural_person` the status is `not_assessed`, the message reads "Not assessed: natural-person business" and no statement exists: nothing is requested from or stored by the provider for it. `buyer_context_version` is null while the run has no buyer context; every recommendation text then starts with "Assuming a first evaluation of this supplier:" (French: "En supposant une première évaluation de ce fournisseur :"). Another organisation's run answers 404, like an unknown id.
+         */
+        get: operations["getRunAssessment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{id}/stop": {
         parameters: {
             query?: never;
@@ -731,7 +751,7 @@ export interface components {
             identity_to_verify: boolean;
             /** @description Extraction: the number of values discarded because their quote was not found in the stored text of the cited source (also a quote that cites a source that is not the one given, a quote over 300 characters, and a value its quote does not support). 0 until the extraction stage has run. */
             grounding_failures: number;
-            /** @description Extraction: the number of items the structuring provider returned that did not match the schema, dropped after one retry. 0 until the extraction stage has run. */
+            /** @description Extraction and assessment: the number of items the structuring provider returned that did not match the schema, dropped after one retry. 0 until those stages have run. */
             invalid_items: number;
             /** @description Plain-language explanation, set when the status is `insufficient_sources`: no usable public source was collected, the failure log is available at `GET /runs/{id}/failures`, and the run does not count against the quota. Null otherwise. */
             insufficient_sources_explanation: string | null;
@@ -817,6 +837,69 @@ export interface components {
             fetched_at: string | null;
             /** @description For a certification field with a kept value: the IAF CertSearch address where the buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise. */
             verification_url: string | null;
+        };
+        /**
+         * @description SWOT (`strength`, `weakness`, `opportunity`, `threat`), `risk_indicator`, `evidence_gap`, and the six recommendation kinds. Each recommendation kind other than `next_action` appears at most once per draft.
+         * @enum {string}
+         */
+        AssessmentKind: "strength" | "weakness" | "opportunity" | "threat" | "risk_indicator" | "evidence_gap" | "procurement_implication" | "relationship_level" | "contract_approach" | "volume_share" | "next_action" | "procurement_priority";
+        /**
+         * @description A qualitative level. There is no numeric score anywhere in the assessment.
+         * @enum {string}
+         */
+        AssessmentLevel: "low" | "medium" | "high";
+        /** @enum {string} */
+        RelationshipLabel: "strategic" | "preferred" | "transactional";
+        /**
+         * @description Review status of a statement. Review itself (`approved`, `corrected`, `deleted`) is added with the review endpoints.
+         * @enum {string}
+         */
+        AssessmentStatus: "ai_draft" | "approved" | "corrected" | "deleted";
+        AssessmentProvenance: {
+            provider: string;
+            model_id: string;
+            /** @description The id of the approved provider configuration that pins the exact model version. */
+            model_version: string;
+            prompt_id: string;
+            prompt_version: string;
+            /** Format: date-time */
+            generated_at: string;
+            status: components["schemas"]["AssessmentStatus"];
+        };
+        AssessmentStatement: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["AssessmentKind"];
+            /** @description The statement, in the profile language. A recommendation starts with the first-evaluation assumption when the run has no buyer context. Never a negative claim about the supplier. */
+            text: string;
+            /** @description Required for `procurement_priority`; only ever together with cited facts. */
+            level: components["schemas"]["AssessmentLevel"] | null;
+            /** @description Required for `relationship_level`; null for every other kind. */
+            label: components["schemas"]["RelationshipLabel"] | null;
+            /** @description Required for `next_action` (for example "within 2 weeks"); null otherwise. */
+            timing: string | null;
+            /** @description Ids of facts of this run (see `GET /runs/{id}/facts`), never a `not_found` fact. Empty only for an `evidence_gap`. */
+            cited_fact_ids: string[];
+            /** @description True when the statement rests on the buyer context (always false until buyer context exists). */
+            cites_buyer_context: boolean;
+            /** @description For an `evidence_gap`, the evidence that would close it; null otherwise. */
+            gap_evidence: string | null;
+            /** @description The buyer-context version the statement used; null without buyer context. */
+            buyer_context_version: number | null;
+            provenance: components["schemas"]["AssessmentProvenance"];
+        };
+        Assessment: {
+            /**
+             * @description `pending` before the assessment stage has stored its results, `drafted` after, `not_assessed` for an identity flagged `natural_person`.
+             * @enum {string}
+             */
+            status: "pending" | "drafted" | "not_assessed";
+            /** @description "Not assessed: natural-person business" when the status is `not_assessed`; null otherwise. */
+            message: string | null;
+            buyer_context_version: number | null;
+            /** @description The number of drafted items rejected by the validation rules (no cited fact, a fact that is not in this run or is `not_found`, a level without facts, a missing label, timing or gap evidence, a duplicate recommendation, a claim on buyer context, a statement citing a field about people, a financial-stability gap). Items that did not match the schema are counted in `invalid_items` of the run. */
+            rejected_statements: number;
+            items: components["schemas"]["AssessmentStatement"][];
         };
         FactList: {
             items: components["schemas"]["Fact"][];
@@ -1618,6 +1701,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FactList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getRunAssessment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The assessment of the run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assessment"];
                 };
             };
             401: components["responses"]["Unauthorized"];
