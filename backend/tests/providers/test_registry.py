@@ -145,7 +145,7 @@ def test_retrieval_uses_the_configured_retrieval_configuration() -> None:
     fake = FakeRetrievalAdapter([urls])
     providers = make(
         config("structurer"),
-        config("searcher", "perplexity", "chat_completions"),
+        config("searcher", "perplexity", "agent"),
         retrieval={"searcher": fake},
         environ={**ENV, "PERPLEXITY_API_KEY": SENTINEL_KEY},
         roles={"retrieval": "searcher"},
@@ -175,7 +175,7 @@ def test_a_missing_key_is_refused_before_any_call_naming_the_setting() -> None:
 
 
 def test_run_start_reports_missing_settings_by_name() -> None:
-    configs = (config("structurer"), config("searcher", "perplexity", "chat_completions"))
+    configs = (config("structurer"), config("searcher", "perplexity", "agent"))
     roles = {"retrieval": "searcher"}
     providers = make(*configs, environ={"GEMINI_API_KEY": "  "}, roles=roles)
 
