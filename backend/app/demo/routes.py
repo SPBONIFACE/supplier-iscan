@@ -20,6 +20,7 @@ from app.auth.access import PUBLIC
 from app.comparison.routes import _distinct
 from app.config import Settings
 from app.db import Database, utc_now
+from app.demo import pdf_cache
 from app.errors import InvalidField, not_found, parse_resource_id
 from app.models import DemoProfile
 from app.pdf.disclaimer import DisclaimerError, disclaimer_text
@@ -264,11 +265,21 @@ def card_input(
 def get_demo_profile_pdf(id: str, request: Request, db: DemoDb, lang: LangQuery = "en") -> Response:
     row = _one(db, id)
     now = utc_now()
-    try:
+
+    def render() -> bytes:
         card = card_input(
             row, request.app.state.settings, request.app.state.profile_definition, lang, now
         )
-        content = render_pdf(card)
+        return render_pdf(card)
+
+    try:
+        content = pdf_cache.cached_pdf(row.id, lang, render)
+    except pdf_cache.Busy:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=pdf_cache.BUSY,
+            headers={"Retry-After": str(pdf_cache.RETRY_AFTER_SECONDS)},
+        ) from None
     except (PdfUnavailable, DisclaimerError):
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=UNAVAILABLE) from None
     filename = safe_filename(row.supplier_name, now.strftime("%Y%m%d"))

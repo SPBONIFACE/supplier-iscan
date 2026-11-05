@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import Principal
 from app.config import Settings
+from app.demo import pdf_cache
 from app.models import DemoProfile, ProfileRun, Source, SupplierIdentity
 from app.organisations.scope import OrganisationScope
 from app.profile_definition import ProfileDefinition
@@ -195,4 +196,5 @@ def load_demo_profiles(
     db.execute(delete(DemoProfile))
     db.add_all(profiles)
     db.commit()
+    pdf_cache.clear()  # the new profiles have new ids; this process drops the old files too
     return Copied(profiles=len(profiles), skipped_natural_person=skipped)
