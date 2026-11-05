@@ -22,6 +22,7 @@ class FieldOut(BaseModel):
     kind: FieldKind
     certification: bool
     concerns_people: bool
+    key_figure: bool
 
 
 class SectionOut(BaseModel):
@@ -55,6 +56,7 @@ def render(definition: ProfileDefinition, language: Language) -> ProfileDefiniti
                         kind=field.kind,
                         certification=field.certification,
                         concerns_people=field.concerns_people,
+                        key_figure=field.key_figure,
                     )
                     for field in section.fields
                 ],

@@ -812,6 +812,8 @@ export interface components {
             kind: "fact" | "assessment" | "buyer";
             certification: boolean;
             concerns_people: boolean;
+            /** @description True when the supplier card repeats this field in its band of key figures, under the header (the definition file chooses which). */
+            key_figure: boolean;
         };
         ProfileSection: {
             id: string;
@@ -871,6 +873,14 @@ export interface components {
             identity_id: string;
             /** @description The confirmed legal name. Null for an administrator of a hosted instance. */
             supplier_name: string | null;
+            /** @description The website of the confirmed identity, as given or found. Null when there is none, and for an administrator of a hosted instance. */
+            supplier_website: string | null;
+            /** @description The country of the confirmed identity. Null when unknown, and for an administrator of a hosted instance. */
+            supplier_country: string | null;
+            /** @description The sector of the confirmed identity. Null when unknown, and for an administrator of a hosted instance. */
+            supplier_sector: string | null;
+            /** @description True when the confirmed supplier is a natural person (a sole trader). The assessment is not prepared for them (owner decision D-073); the card says so neutrally, because of the legal form. False for an administrator of a hosted instance. */
+            natural_person: boolean;
             status: components["schemas"]["RunStatus"];
             stage: components["schemas"]["RunStage"];
             stop_requested: boolean;

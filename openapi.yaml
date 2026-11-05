@@ -1630,7 +1630,7 @@ components:
     ProfileField:
       type: object
       additionalProperties: false
-      required: [id, label, kind, certification, concerns_people]
+      required: [id, label, kind, certification, concerns_people, key_figure]
       properties:
         id:
           type: string
@@ -1642,6 +1642,11 @@ components:
         certification:
           type: boolean
         concerns_people:
+          type: boolean
+        key_figure:
+          description: >-
+            True when the supplier card repeats this field in its band of key figures, under the
+            header (the definition file chooses which).
           type: boolean
     ProfileSection:
       type: object
@@ -1753,6 +1758,10 @@ components:
         - id
         - identity_id
         - supplier_name
+        - supplier_website
+        - supplier_country
+        - supplier_sector
+        - natural_person
         - status
         - stage
         - stop_requested
@@ -1784,6 +1793,21 @@ components:
         supplier_name:
           description: The confirmed legal name. Null for an administrator of a hosted instance.
           type: [string, "null"]
+        supplier_website:
+          description: The website of the confirmed identity, as given or found. Null when there is none, and for an administrator of a hosted instance.
+          type: [string, "null"]
+        supplier_country:
+          description: The country of the confirmed identity. Null when unknown, and for an administrator of a hosted instance.
+          type: [string, "null"]
+        supplier_sector:
+          description: The sector of the confirmed identity. Null when unknown, and for an administrator of a hosted instance.
+          type: [string, "null"]
+        natural_person:
+          description: >-
+            True when the confirmed supplier is a natural person (a sole trader). The assessment
+            is not prepared for them (owner decision D-073); the card says so neutrally, because of
+            the legal form. False for an administrator of a hosted instance.
+          type: boolean
         status:
           $ref: "#/components/schemas/RunStatus"
         stage:

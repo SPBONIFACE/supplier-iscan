@@ -31,6 +31,8 @@ class FieldDefinition:
     extraction_hint: str
     certification: bool
     concerns_people: bool
+    # Shown again in the key-figures band at the top of the supplier card (spec F5).
+    key_figure: bool
 
 
 @dataclass(frozen=True)
@@ -100,6 +102,7 @@ def load_profile_definition(path: Path | None = None) -> ProfileDefinition:
                         extraction_hint=f["extraction_hint"],
                         certification=f.get("certification", False),
                         concerns_people=f.get("concerns_people", False),
+                        key_figure=f.get("key_figure", False),
                     )
                     for f in s["fields"]
                 ),

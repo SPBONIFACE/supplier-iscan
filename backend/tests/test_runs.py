@@ -157,6 +157,72 @@ def test_list_is_newest_first_and_scoped(client: TestClient, engine: Engine) -> 
     assert ids == [str(second), str(first)]
 
 
+def test_a_run_carries_the_identity_header_of_the_supplier_card(
+    client: TestClient, engine: Engine
+) -> None:
+    user, token = member_session(engine)
+    identity_id = create_identity(
+        engine,
+        user.organisation_id,
+        website="https://acme-supplies.example",
+        country="France",
+        sector="Precision machining",
+        natural_person=True,
+    )
+
+    started = call(client, "POST", "/runs", token, json={"identity_id": str(identity_id)}).json()
+    read = call(client, "GET", f"/runs/{started['id']}", token).json()
+    listed = call(client, "GET", "/runs", token).json()["items"][0]
+
+    for body in (started, read, listed):
+        assert body["supplier_website"] == "https://acme-supplies.example"
+        assert (body["supplier_country"], body["supplier_sector"]) == (
+            "France",
+            "Precision machining",
+        )
+        assert body["natural_person"] is True
+
+
+def test_a_run_without_website_country_or_sector_says_so_with_nulls(
+    client: TestClient, engine: Engine
+) -> None:
+    user, token = member_session(engine)
+    run_id = create_run(engine, user.organisation_id)
+
+    body = call(client, "GET", f"/runs/{run_id}", token).json()
+
+    assert body["supplier_website"] is body["supplier_country"] is body["supplier_sector"] is None
+    assert body["natural_person"] is False
+
+
+def test_a_hosted_administrator_gets_no_identity_header(engine: Engine, settings: Settings) -> None:
+    organisation_id = create_organisation(engine)
+    token = create_session(
+        engine, create_user(engine, role="admin", organisation_id=organisation_id).id
+    )
+    identity_id = create_identity(
+        engine,
+        organisation_id,
+        website="https://secret-supplier.example",
+        country="Elbonia",
+        sector="Secret sector",
+        natural_person=True,
+    )
+    with Session(engine) as db:
+        run = ProfileRun(organisation_id=organisation_id, identity_id=identity_id)
+        db.add(run)
+        db.commit()
+        run_id = run.id
+    hosted = make_client(settings=replace(settings, instance_mode="hosted"), engine=engine)  # type: ignore[arg-type]
+
+    body = call(hosted, "GET", f"/runs/{run_id}", token)
+
+    text = body.text
+    for secret in ("secret-supplier", "Elbonia", "Secret sector"):
+        assert secret not in text
+    assert body.json()["natural_person"] is False
+
+
 def admin_sees(engine: Engine, settings: Settings, mode: str) -> str:
     organisation_id = create_organisation(engine)
     token = create_session(

@@ -27,11 +27,19 @@ def create_identity(
     organisation_id: uuid.UUID,
     legal_name: str = "Acme Supplies SA",
     confirmed: bool = True,
+    website: str | None = None,
+    country: str | None = None,
+    sector: str | None = None,
+    natural_person: bool = False,
 ) -> uuid.UUID:
     with Session(engine) as db:
         identity = SupplierIdentity(
             organisation_id=organisation_id,
             legal_name=legal_name,
+            website=website,
+            country=country,
+            sector=sector,
+            natural_person=natural_person,
             confirmed_at=utc_now() if confirmed else None,
         )
         db.add(identity)

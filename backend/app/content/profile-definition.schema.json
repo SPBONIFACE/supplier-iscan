@@ -58,7 +58,8 @@
         "kind": { "enum": ["fact", "assessment", "buyer"] },
         "extraction_hint": { "type": "string", "minLength": 1, "maxLength": 500 },
         "certification": { "type": "boolean", "default": false },
-        "concerns_people": { "type": "boolean", "default": false }
+        "concerns_people": { "type": "boolean", "default": false },
+        "key_figure": { "type": "boolean", "default": false }
       }
     }
   }
