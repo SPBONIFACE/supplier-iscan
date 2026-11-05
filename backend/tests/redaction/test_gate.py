@@ -290,9 +290,7 @@ def test_assessment_redacts_the_facts_again_before_it_builds_the_request() -> No
     assert structure_callers == ["ask"]
 
 
-def test_fit_and_recommendation_drafting_reach_the_model_only_through_the_assessment_call_site() -> (
-    None
-):
+def test_fit_and_recommendations_reach_the_model_only_through_the_assessment_call_site() -> None:
     """Fit and the recommendations redraft (#26) add no call site: the worker job builds no
     request and calls no provider itself; the criteria and the buyer context are values of the
     prompt that `draft_part` hands to `ask`, which redacts them before the request is built."""
@@ -315,7 +313,7 @@ def test_fit_and_recommendation_drafting_reach_the_model_only_through_the_assess
         if isinstance(node, ast.FunctionDef) and node.name == "draft_part"
     )
     inside = [
-        node.func.id  # type: ignore[attr-defined]
+        node.func.id
         for node in ast.walk(draft_part)
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
     ]

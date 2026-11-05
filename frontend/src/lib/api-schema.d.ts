@@ -1092,7 +1092,7 @@ export interface components {
             gap_evidence: string | null;
             /** @description The buyer-context version the statement used; null without buyer context. */
             buyer_context_version: number | null;
-            /** @description True for a recommendation drafted with a buyer context older than the current one (the context was changed after the draft): redraft it to take the change into account. False otherwise. */
+            /** @description True for a recommendation drafted with a buyer context older than the current one (the context was changed after the draft), or drafted on the first-evaluation assumption while a context is stored now: redraft it to take the context into account. False otherwise, and always false for the other kinds. */
             buyer_context_outdated: boolean;
             provenance: components["schemas"]["AssessmentProvenance"];
         };
