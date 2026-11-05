@@ -130,11 +130,14 @@ def test_a_member_approves_a_fact_and_the_proposed_count_falls(
     body = response.json()
     assert body["status"] == "approved" and body["version"] == 2
     assert body["reviewed_by"] == str(reviewed.user.id) and body["reviewed_at"]
+    assert body["reviewed_by_email"] == reviewed.user.email  # who reviewed, readable by members
     assert body["value"] == AI_VALUE and body["original_value"] is None
     assert body["quote"] == AI_QUOTE and body["source_url"] == "https://www.acme.example/about"
     assert proposed(client, reviewed) == 1
     listed = {e["field"]: e for e in reviewed.get(client, "/facts").json()["items"]}
     assert listed["environmental_management"]["status"] == "approved"
+    assert listed["environmental_management"]["reviewed_by_email"] == reviewed.user.email
+    assert listed["founding_year"]["reviewed_by_email"] is None  # still proposed
     assert_matches_contract(reviewed.get(client, "/facts"), "/runs/{id}/facts", "get")
 
 
@@ -292,6 +295,7 @@ def test_a_review_based_on_an_outdated_version_returns_409_with_the_current_fact
     current = stale.json()["current"]
     assert current["value"] == "First correction" and current["version"] == 2
     assert current["original_value"] == AI_VALUE and current["reviewed_by"] == str(colleague.id)
+    assert current["reviewed_by_email"] == colleague.email  # the conflict names who changed it
     assert "Lost edit" not in reviewed.fact_row(reviewed.environmental).value  # type: ignore[operator]
     retry = reviewed.review_fact(
         client,

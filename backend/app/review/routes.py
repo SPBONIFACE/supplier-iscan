@@ -32,7 +32,7 @@ from app.models.buyer import BUYER_CONTEXT
 from app.models.runs import FINISHED_STATUSES
 from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.profile_definition import ProfileDefinition
-from app.runs.routes import AssessmentStatementOut, FactOut, fact_out, statement_out
+from app.runs.routes import AssessmentStatementOut, FactOut, fact_out, statement_out, user_emails
 
 router = APIRouter(tags=["review"])
 
@@ -117,6 +117,7 @@ def review_fact(
             fact,
             _certification(definition, fact.field),
             load_extraction_settings().certsearch_url,
+            user_emails(db, scope, {fact.reviewed_by}),
         )
 
     if not _finished(db, fact.run_id):

@@ -2022,6 +2022,7 @@ components:
         - original_value
         - version
         - reviewed_by
+        - reviewed_by_email
         - reviewed_at
       properties:
         id:
@@ -2086,6 +2087,11 @@ components:
           description: The member who last approved or corrected the fact; null while `proposed` or `not_found`.
           type: [string, "null"]
           format: uuid
+        reviewed_by_email:
+          description: >-
+            The email of that member, to show who reviewed (members cannot read other user
+            records). Null while `proposed` or `not_found`. It stays within the organisation.
+          type: [string, "null"]
         reviewed_at:
           type: [string, "null"]
           format: date-time
