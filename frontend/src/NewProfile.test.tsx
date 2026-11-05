@@ -15,6 +15,9 @@ const mocks = vi.hoisted(() => ({
   submitIdentityWebsite: vi.fn(),
   confirmIdentity: vi.fn(),
   startRun: vi.fn(),
+  getRun: vi.fn(),
+  listRunFailures: vi.fn(),
+  listRunSources: vi.fn(),
 }));
 
 vi.mock("./lib/api", () => ({ api: mocks, setUnauthorizedHandler: vi.fn() }));
@@ -69,6 +72,10 @@ beforeEach(async () => {
   window.localStorage.removeItem(LANGUAGE_STORAGE_KEY);
   await i18n.changeLanguage("en");
   mocks.getCurrentUser.mockResolvedValue(ok(member));
+  // The run screen opens after a successful start; it only has to find nothing.
+  for (const read of [mocks.getRun, mocks.listRunFailures, mocks.listRunSources]) {
+    read.mockResolvedValue(fail("not_found", 404));
+  }
   mocks.getDisclosure.mockImplementation(async (language: string) =>
     ok({ language, text: language === "fr" ? FR : EN }),
   );
