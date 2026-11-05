@@ -29,6 +29,7 @@ from app.models import BuyerInput, ProfileRun
 from app.models.buyer import BUYER_CONTEXT, FIT_CRITERIA, RESERVED_FIELDS
 from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.profile_definition import ProfileDefinition
+from app.runs.routes import user_emails
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -50,6 +51,7 @@ class CriteriaOut(BaseModel):
     criteria: list[str]
     version: int
     updated_by: uuid.UUID | None
+    updated_by_email: str | None
     updated_at: datetime
 
 
@@ -76,6 +78,7 @@ class BuyerContextOut(BaseModel):
     notes: str | None
     version: int
     updated_by: uuid.UUID | None
+    updated_by_email: str | None
     updated_at: datetime
 
 
@@ -95,19 +98,36 @@ class BuyerInputOut(BaseModel):
     text: str
     version: int
     updated_by: uuid.UUID | None
+    updated_by_email: str | None
     updated_at: datetime
 
 
-def criteria_out(row: BuyerInput) -> CriteriaOut:
+class BuyerInputsOut(BaseModel):
+    """Mirrors components/schemas/BuyerInputs."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    criteria: CriteriaOut | None
+    buyer_context: BuyerContextOut | None
+    inputs: list[BuyerInputOut]
+
+
+def _email(db: DbSession, scope: OrganisationScope, row: BuyerInput) -> str | None:
+    """The email of the member who saved `row`, within the caller's organisation."""
+    return user_emails(db, scope, {row.updated_by}).get(row.updated_by) if row.updated_by else None
+
+
+def criteria_out(row: BuyerInput, email: str | None) -> CriteriaOut:
     return CriteriaOut(
         criteria=load_criteria_text(row.text),
         version=row.version,
         updated_by=row.updated_by,
+        updated_by_email=email,
         updated_at=row.updated_at,
     )
 
 
-def context_out(row: BuyerInput) -> BuyerContextOut:
+def context_out(row: BuyerInput, email: str | None) -> BuyerContextOut:
     value = load_context_text(row.text)
     return BuyerContextOut(
         relationship=value.relationship,
@@ -117,16 +137,18 @@ def context_out(row: BuyerInput) -> BuyerContextOut:
         notes=value.notes,
         version=row.version,
         updated_by=row.updated_by,
+        updated_by_email=email,
         updated_at=row.updated_at,
     )
 
 
-def input_out(row: BuyerInput) -> BuyerInputOut:
+def input_out(row: BuyerInput, email: str | None) -> BuyerInputOut:
     return BuyerInputOut(
         field=row.field,
         text=row.text,
         version=row.version,
         updated_by=row.updated_by,
+        updated_by_email=email,
         updated_at=row.updated_at,
     )
 
@@ -181,8 +203,10 @@ def put_criteria(
     row = _write(db, scope, run, FIT_CRITERIA, dump_criteria(criteria), body.version)
     if row is None:
         current = stored(db, run.id, FIT_CRITERIA)
-        return _conflict(criteria_out(current) if current is not None else None)
-    return criteria_out(row)
+        return _conflict(
+            criteria_out(current, _email(db, scope, current)) if current is not None else None
+        )
+    return criteria_out(row, _email(db, scope, row))
 
 
 @router.put("/{id}/buyer-context", response_model=BuyerContextOut)
@@ -206,8 +230,10 @@ def put_buyer_context(
     row = _write(db, scope, run, BUYER_CONTEXT, dump_context(value), body.version)
     if row is None:
         current = stored(db, run.id, BUYER_CONTEXT)
-        return _conflict(context_out(current) if current is not None else None)
-    return context_out(row)
+        return _conflict(
+            context_out(current, _email(db, scope, current)) if current is not None else None
+        )
+    return context_out(row, _email(db, scope, row))
 
 
 @router.put("/{id}/buyer-inputs/{field}", response_model=BuyerInputOut)
@@ -232,5 +258,32 @@ def put_buyer_input(
     row = _write(db, scope, run, field, body.text, body.version)
     if row is None:
         current = stored(db, run.id, field)
-        return _conflict(input_out(current) if current is not None else None)
-    return input_out(row)
+        return _conflict(
+            input_out(current, _email(db, scope, current)) if current is not None else None
+        )
+    return input_out(row, _email(db, scope, row))
+
+
+@router.get("/{id}/buyer-inputs", response_model=BuyerInputsOut)
+def get_buyer_inputs(id: str, scope: OrganisationScoped, db: DbSession) -> BuyerInputsOut:
+    """What the members saved for the profile: criteria, buyer context and the buyer fields, each
+    with its version (to send with the next edit), who saved it and when."""
+    run = scope.get(db, ProfileRun, id)  # the one 404 for another organisation
+    rows = list(db.scalars(scope.select(BuyerInput).where(BuyerInput.run_id == run.id)))
+    emails = user_emails(db, scope, {row.updated_by for row in rows})
+
+    def email(row: BuyerInput) -> str | None:
+        return emails.get(row.updated_by) if row.updated_by else None
+
+    by_field = {row.field: row for row in rows}
+    criteria = by_field.get(FIT_CRITERIA)
+    context = by_field.get(BUYER_CONTEXT)
+    return BuyerInputsOut(
+        criteria=criteria_out(criteria, email(criteria)) if criteria is not None else None,
+        buyer_context=context_out(context, email(context)) if context is not None else None,
+        inputs=[
+            input_out(row, email(row))
+            for row in sorted(rows, key=lambda item: item.field)
+            if row.field not in RESERVED_FIELDS
+        ],
+    )

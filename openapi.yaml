@@ -839,6 +839,32 @@ paths:
                 $ref: "#/components/schemas/Error"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/buyer-inputs:
+    get:
+      operationId: getRunBuyerInputs
+      tags: [runs]
+      summary: Read the fit criteria, the buyer context and the buyer fields of a profile
+      description: >-
+        What the members saved for this profile, with the version of each part (to send with the
+        next edit) and who saved it and when. Visible to the owning organisation only, like the
+        values themselves. Another organisation's run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The saved criteria, buyer context and buyer fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerInputs"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /runs/{id}/buyer-inputs/{field}:
     put:
       operationId: putRunBuyerInput
@@ -2147,7 +2173,7 @@ components:
     Criteria:
       type: object
       additionalProperties: false
-      required: [criteria, version, updated_by, updated_at]
+      required: [criteria, version, updated_by, updated_by_email, updated_at]
       properties:
         criteria:
           type: array
@@ -2159,6 +2185,11 @@ components:
         updated_by:
           type: [string, "null"]
           format: uuid
+        updated_by_email:
+          description: >-
+            The email of that member, to show who saved (members cannot read other user records).
+            It stays within the organisation.
+          type: [string, "null"]
         updated_at:
           type: string
           format: date-time
@@ -2210,6 +2241,7 @@ components:
         - notes
         - version
         - updated_by
+        - updated_by_email
         - updated_at
       properties:
         relationship:
@@ -2231,6 +2263,11 @@ components:
         updated_by:
           type: [string, "null"]
           format: uuid
+        updated_by_email:
+          description: >-
+            The email of that member, to show who saved (members cannot read other user records).
+            It stays within the organisation.
+          type: [string, "null"]
         updated_at:
           type: string
           format: date-time
@@ -2249,7 +2286,7 @@ components:
     BuyerInput:
       type: object
       additionalProperties: false
-      required: [field, text, version, updated_by, updated_at]
+      required: [field, text, version, updated_by, updated_by_email, updated_at]
       properties:
         field:
           type: string
@@ -2261,9 +2298,35 @@ components:
         updated_by:
           type: [string, "null"]
           format: uuid
+        updated_by_email:
+          description: >-
+            The email of that member, to show who saved (members cannot read other user records).
+            It stays within the organisation.
+          type: [string, "null"]
         updated_at:
           type: string
           format: date-time
+    BuyerInputs:
+      description: >-
+        What the members of the organisation have entered for a profile, to show it and to send the
+        version of each edit: the fit criteria, the buyer context and the free text of each `buyer`
+        field. A part nobody saved is null (or absent from `inputs`).
+      type: object
+      additionalProperties: false
+      required: [criteria, buyer_context, inputs]
+      properties:
+        criteria:
+          oneOf:
+            - $ref: "#/components/schemas/Criteria"
+            - type: "null"
+        buyer_context:
+          oneOf:
+            - $ref: "#/components/schemas/BuyerContext"
+            - type: "null"
+        inputs:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuyerInput"
     DraftingAccepted:
       type: object
       additionalProperties: false
@@ -2417,6 +2480,7 @@ components:
         - generated_at
         - status
         - reviewed_by
+        - reviewed_by_email
         - reviewed_at
       properties:
         provider:
@@ -2442,6 +2506,11 @@ components:
           description: The member who last reviewed the statement; null while `ai_draft`.
           type: [string, "null"]
           format: uuid
+        reviewed_by_email:
+          description: >-
+            The email of that member, to show who reviewed (members cannot read other user
+            records). Null while `ai_draft`. It stays within the organisation.
+          type: [string, "null"]
         reviewed_at:
           type: [string, "null"]
           format: date-time

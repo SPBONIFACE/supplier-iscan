@@ -20,6 +20,19 @@ export type RunDependency = components["schemas"]["RunDependency"];
 export type RunFailure = components["schemas"]["RunFailure"];
 export type Fact = components["schemas"]["Fact"];
 export type FactReview = components["schemas"]["FactReview"];
+export type Assessment = components["schemas"]["Assessment"];
+export type AssessmentStatement = components["schemas"]["AssessmentStatement"];
+export type StatementReview = components["schemas"]["StatementReview"];
+export type FinancialGuidance = components["schemas"]["FinancialGuidance"];
+export type BuyerInputs = components["schemas"]["BuyerInputs"];
+export type BuyerInput = components["schemas"]["BuyerInput"];
+export type BuyerContext = components["schemas"]["BuyerContext"];
+export type BuyerContextUpdate = components["schemas"]["BuyerContextUpdate"];
+export type StrategicIntent = components["schemas"]["StrategicIntent"];
+export type Criteria = components["schemas"]["Criteria"];
+export type CriteriaUpdate = components["schemas"]["CriteriaUpdate"];
+export type BuyerInputUpdate = components["schemas"]["BuyerInputUpdate"];
+export type DraftingPart = components["schemas"]["DraftingAccepted"]["part"];
 export type ProfileField = components["schemas"]["ProfileField"];
 export type ProfileDefinition = components["schemas"]["ProfileDefinition"];
 export type RunRefusalReason = NonNullable<MemberOrganisation["run_refusal_reason"]>;
@@ -192,6 +205,32 @@ export const api = {
 
   reviewFact: (id: string, body: FactReview) =>
     call(() => client.PATCH("/facts/{id}", { params: { path: { id } }, body })),
+
+  reviewAssessmentStatement: (id: string, body: StatementReview) =>
+    call(() => client.PATCH("/assessment-statements/{id}", { params: { path: { id } }, body })),
+
+  getRunAssessment: (id: string) =>
+    call(() => client.GET("/runs/{id}/assessment", { params: { path: { id } } })),
+
+  getRunBuyerInputs: (id: string) =>
+    call(() => client.GET("/runs/{id}/buyer-inputs", { params: { path: { id } } })),
+
+  putRunCriteria: (id: string, body: CriteriaUpdate) =>
+    call(() => client.PUT("/runs/{id}/criteria", { params: { path: { id } }, body })),
+
+  putRunBuyerContext: (id: string, body: BuyerContextUpdate) =>
+    call(() => client.PUT("/runs/{id}/buyer-context", { params: { path: { id } }, body })),
+
+  putRunBuyerInput: (id: string, field: string, body: BuyerInputUpdate) =>
+    call(() =>
+      client.PUT("/runs/{id}/buyer-inputs/{field}", { params: { path: { id, field } }, body }),
+    ),
+
+  draftRunFit: (id: string) =>
+    call(() => client.POST("/runs/{id}/fit", { params: { path: { id } } })),
+
+  draftRunRecommendations: (id: string) =>
+    call(() => client.POST("/runs/{id}/recommendations", { params: { path: { id } } })),
 
   stopRun: (id: string) => call(() => client.POST("/runs/{id}/stop", { params: { path: { id } } })),
 
