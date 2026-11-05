@@ -213,7 +213,7 @@ def test_a_hosted_administrator_gets_no_identity_header(engine: Engine, settings
         db.add(run)
         db.commit()
         run_id = run.id
-    hosted = make_client(settings=replace(settings, instance_mode="hosted"), engine=engine)  # type: ignore[arg-type]
+    hosted = make_client(settings=replace(settings, instance_mode="hosted"), engine=engine)
 
     body = call(hosted, "GET", f"/runs/{run_id}", token)
 
