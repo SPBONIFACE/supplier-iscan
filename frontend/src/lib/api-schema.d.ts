@@ -311,7 +311,7 @@ export interface paths {
         };
         /**
          * Read a run
-         * @description Status, stage, provider and model ID per role, tokens and cost (totals of every attempt, failed and retried ones included). On a hosted instance an administrator gets run metadata only: `supplier_name` is null for them.
+         * @description Status, stage, provider and model ID per role, tokens and cost (totals of every attempt, failed and retried ones included). A run that reached its cost budget ends `partial` and lists the `uncovered_sections` with a plain `partial_explanation`. On a hosted instance an administrator gets run metadata only: `supplier_name` is null for them.
          */
         get: operations["getRun"];
         put?: never;
@@ -371,7 +371,7 @@ export interface paths {
         };
         /**
          * List the facts extracted for a run
-         * @description One entry per `fact` field of the profile definition the run uses, in the order of the definition: a proposed fact (value, verbatim quote in its source language, source, attribution) or `not_found`, which is shown as "No public evidence found". It is never a negative statement about the supplier: an entry without a kept value carries no value and no quote, and a certification field without a kept value is `not_found`, never "not certified". Empty until the extraction stage has stored its results. Another organisation's run answers 404, like an unknown id.
+         * @description One entry per `fact` field of the profile definition the run uses, in the order of the definition: a proposed fact (value, verbatim quote in its source language, source, attribution) or `not_found`, which is shown as "No public evidence found". It is never a negative statement about the supplier: an entry without a kept value carries no value and no quote, and a certification field without a kept value is `not_found`, never "not certified". Empty until the extraction stage has stored its results. When the run ended `partial`, the fields of the sections in its `uncovered_sections` that were not extracted are absent: they were not examined, which is not "No public evidence found". Another organisation's run answers 404, like an unknown id.
          */
         get: operations["listRunFacts"];
         put?: never;
@@ -433,7 +433,7 @@ export interface paths {
         put?: never;
         /**
          * Draft the fit statements against the stored criteria
-         * @description Queues the drafting of fit statements (kind `fit`, or an `evidence_gap`) against the criteria stored for this profile, and only against them. The worker drafts them with the same validation, provenance and metering as the rest of the assessment; redrafting replaces the earlier `ai_draft` fit statements and never a reviewed one. Read the result with `GET /runs/{id}/assessment` (`pending` lists `fit` while the job is queued or running). 409 when no criteria are stored ("Enter your criteria to assess fit"), when the assessment has not been drafted yet, or for an identity flagged `natural_person` ("Not assessed: natural-person business").
+         * @description Queues the drafting of fit statements (kind `fit`, or an `evidence_gap`) against the criteria stored for this profile, and only against them. The worker drafts them with the same validation, provenance and metering as the rest of the assessment; redrafting replaces the earlier `ai_draft` fit statements and never a reviewed one. Read the result with `GET /runs/{id}/assessment` (`pending` lists `fit` while the job is queued or running). 409 when no criteria are stored ("Enter your criteria to assess fit"), when the assessment has not been drafted yet, for an identity flagged `natural_person` ("Not assessed: natural-person business"), or when the run is `partial` or has used its cost budget ("The run reached its cost budget; no further AI call is made for it.").
          */
         post: operations["draftRunFit"];
         delete?: never;
@@ -473,7 +473,7 @@ export interface paths {
         put?: never;
         /**
          * Redraft the procurement recommendations with the buyer context
-         * @description Queues the redrafting of the six recommendation kinds with the current buyer context, or on the first-evaluation assumption when none is stored. The worker applies the same validation as the assessment stage. Each recommendation drafted with a context stores the `buyer_context_version` it used. Redrafting replaces the earlier `ai_draft` recommendations and never a reviewed one. 409 when the assessment has not been drafted yet, or for an identity flagged `natural_person` ("Not assessed: natural-person business").
+         * @description Queues the redrafting of the six recommendation kinds with the current buyer context, or on the first-evaluation assumption when none is stored. The worker applies the same validation as the assessment stage. Each recommendation drafted with a context stores the `buyer_context_version` it used. Redrafting replaces the earlier `ai_draft` recommendations and never a reviewed one. 409 when the assessment has not been drafted yet, for an identity flagged `natural_person` ("Not assessed: natural-person business"), or when the run is `partial` or has used its cost budget ("The run reached its cost budget; no further AI call is made for it.").
          */
         post: operations["draftRunRecommendations"];
         delete?: never;
@@ -853,6 +853,10 @@ export interface components {
             grounding_failures: number;
             /** @description Extraction and assessment: the number of items the structuring provider returned that did not match the schema, dropped after one retry. 0 until those stages have run. */
             invalid_items: number;
+            /** @description Set when the status is `partial` (the run reached its per-run cost budget, a setting the operator chooses; it always applies): the ids of the sections of the profile definition that were not covered, in the order of the definition, a section whose facts were only partly extracted included, and the reserved id `recommendations` for the procurement recommendations (they are not a section of the definition). A section listed here was not examined: its fields are absent from `GET /runs/{id}/facts`, never `not_found`, and "No public evidence found" is not said of them. Empty for every other status. */
+            uncovered_sections: string[];
+            /** @description Plain-language explanation, set when the status is `partial`: the run stopped at its cost budget, what was done and what was not (the sections listed in `uncovered_sections`), that the uncovered parts say nothing about the supplier, and that what was produced before the stop is kept. A partial run counts against the organisation's quota and makes no further AI call. Null otherwise. */
+            partial_explanation: string | null;
             /** @description Plain-language explanation, set when the status is `insufficient_sources`: no usable public source was collected, the failure log is available at `GET /runs/{id}/failures`, and the run does not count against the quota. Null otherwise. */
             insufficient_sources_explanation: string | null;
             /** Format: date-time */
@@ -1098,10 +1102,10 @@ export interface components {
         };
         Assessment: {
             /**
-             * @description `pending` before the assessment stage has stored its results, `drafted` after, `not_assessed` for an identity flagged `natural_person`.
+             * @description `pending` before the assessment stage has stored its results, `drafted` after, `not_assessed` for an identity flagged `natural_person`, `partial` when the run reached its cost budget before the assessment was complete (see `uncovered_sections` of the run; the statements already drafted are returned and no more are drafted).
              * @enum {string}
              */
-            status: "pending" | "drafted" | "not_assessed";
+            status: "pending" | "drafted" | "partial" | "not_assessed";
             /** @description "Not assessed: natural-person business" when the status is `not_assessed`; null otherwise. */
             message: string | null;
             buyer_context_version: number | null;
@@ -2023,7 +2027,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
-            /** @description No criteria are stored, the assessment is not drafted yet, or the identity is a natural-person business. */
+            /** @description No criteria are stored, the assessment is not drafted yet, the identity is a natural-person business, or the run reached its cost budget. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2090,7 +2094,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
-            /** @description The assessment is not drafted yet, or the identity is a natural-person business. */
+            /** @description The assessment is not drafted yet, the identity is a natural-person business, or the run reached its cost budget. */
             409: {
                 headers: {
                     [name: string]: unknown;

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.13.0
+  version: 0.15.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -531,7 +531,8 @@ paths:
       summary: Read a run
       description: >-
         Status, stage, provider and model ID per role, tokens and cost (totals of every attempt,
-        failed and retried ones included). On a hosted instance an administrator gets
+        failed and retried ones included). A run that reached its cost budget ends `partial`
+        and lists the `uncovered_sections` with a plain `partial_explanation`. On a hosted instance an administrator gets
         run metadata only: `supplier_name` is null for them.
       security:
         - sessionCookie: []
@@ -613,7 +614,9 @@ paths:
         attribution) or `not_found`, which is shown as "No public evidence found". It is never a
         negative statement about the supplier: an entry without a kept value carries no value and
         no quote, and a certification field without a kept value is `not_found`, never "not
-        certified". Empty until the extraction stage has stored its results. Another
+        certified". Empty until the extraction stage has stored its results. When the run ended
+        `partial`, the fields of the sections in its `uncovered_sections` that were not extracted
+        are absent: they were not examined, which is not "No public evidence found". Another
         organisation's run answers 404, like an unknown id.
       security:
         - sessionCookie: []
@@ -719,8 +722,9 @@ paths:
         replaces the earlier `ai_draft` fit statements and never a reviewed one. Read the result
         with `GET /runs/{id}/assessment` (`pending` lists `fit` while the job is queued or
         running). 409 when no criteria are stored ("Enter your criteria to assess fit"), when
-        the assessment has not been drafted yet, or for an identity flagged `natural_person`
-        ("Not assessed: natural-person business").
+        the assessment has not been drafted yet, for an identity flagged `natural_person`
+        ("Not assessed: natural-person business"), or when the run is `partial` or has used its
+        cost budget ("The run reached its cost budget; no further AI call is made for it.").
       security:
         - sessionCookie: []
       parameters:
@@ -738,8 +742,8 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           description: >-
-            No criteria are stored, the assessment is not drafted yet, or the identity is a
-            natural-person business.
+            No criteria are stored, the assessment is not drafted yet, the identity is a
+            natural-person business, or the run reached its cost budget.
           content:
             application/json:
               schema:
@@ -800,8 +804,9 @@ paths:
         validation as the assessment stage. Each recommendation drafted with a context stores the
         `buyer_context_version` it used. Redrafting replaces the earlier `ai_draft`
         recommendations and never a reviewed one. 409 when the assessment has not been drafted
-        yet, or for an identity flagged `natural_person` ("Not assessed: natural-person
-        business").
+        yet, for an identity flagged `natural_person` ("Not assessed: natural-person
+        business"), or when the run is `partial` or has used its cost budget ("The run reached
+        its cost budget; no further AI call is made for it.").
       security:
         - sessionCookie: []
       parameters:
@@ -818,7 +823,9 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: The assessment is not drafted yet, or the identity is a natural-person business.
+          description: >-
+            The assessment is not drafted yet, the identity is a natural-person business, or the
+            run reached its cost budget.
           content:
             application/json:
               schema:
@@ -1626,6 +1633,8 @@ components:
         - identity_to_verify
         - grounding_failures
         - invalid_items
+        - uncovered_sections
+        - partial_explanation
         - insufficient_sources_explanation
         - created_at
         - started_at
@@ -1697,6 +1706,27 @@ components:
             did not match the schema, dropped after one retry. 0 until those stages have run.
           type: integer
           minimum: 0
+        uncovered_sections:
+          description: >-
+            Set when the status is `partial` (the run reached its per-run cost budget, a setting
+            the operator chooses; it always applies): the ids of the sections of the profile
+            definition that were not covered, in the order of the definition, a section whose
+            facts were only partly extracted included, and the reserved id `recommendations` for
+            the procurement recommendations (they are not a section of the definition). A
+            section listed here was not examined: its fields are absent from
+            `GET /runs/{id}/facts`, never `not_found`, and "No public evidence found" is not
+            said of them. Empty for every other status.
+          type: array
+          items:
+            type: string
+        partial_explanation:
+          description: >-
+            Plain-language explanation, set when the status is `partial`: the run stopped at its
+            cost budget, what was done and what was not (the sections listed in
+            `uncovered_sections`), that the uncovered parts say nothing about the supplier, and
+            that what was produced before the stop is kept. A partial run counts against the
+            organisation's quota and makes no further AI call. Null otherwise.
+          type: [string, "null"]
         insufficient_sources_explanation:
           description: >-
             Plain-language explanation, set when the status is `insufficient_sources`: no usable
@@ -2263,9 +2293,11 @@ components:
         status:
           description: >-
             `pending` before the assessment stage has stored its results, `drafted` after,
-            `not_assessed` for an identity flagged `natural_person`.
+            `not_assessed` for an identity flagged `natural_person`, `partial` when the run
+            reached its cost budget before the assessment was complete (see `uncovered_sections`
+            of the run; the statements already drafted are returned and no more are drafted).
           type: string
-          enum: [pending, drafted, not_assessed]
+          enum: [pending, drafted, partial, not_assessed]
         message:
           description: >-
             "Not assessed: natural-person business" when the status is `not_assessed`; null
