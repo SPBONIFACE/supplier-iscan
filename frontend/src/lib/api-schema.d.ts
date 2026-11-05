@@ -482,6 +482,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{id}/buyer-inputs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read the fit criteria, the buyer context and the buyer fields of a profile
+         * @description What the members saved for this profile, with the version of each part (to send with the next edit) and who saved it and when. Visible to the owning organisation only, like the values themselves. Another organisation's run answers 404, like an unknown id.
+         */
+        get: operations["getRunBuyerInputs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{id}/buyer-inputs/{field}": {
         parameters: {
             query?: never;
@@ -1035,6 +1055,8 @@ export interface components {
             version: number;
             /** Format: uuid */
             updated_by: string | null;
+            /** @description The email of that member, to show who saved (members cannot read other user records). It stays within the organisation. */
+            updated_by_email: string | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1063,6 +1085,8 @@ export interface components {
             version: number;
             /** Format: uuid */
             updated_by: string | null;
+            /** @description The email of that member, to show who saved (members cannot read other user records). It stays within the organisation. */
+            updated_by_email: string | null;
             /** Format: date-time */
             updated_at: string;
         };
@@ -1078,8 +1102,16 @@ export interface components {
             version: number;
             /** Format: uuid */
             updated_by: string | null;
+            /** @description The email of that member, to show who saved (members cannot read other user records). It stays within the organisation. */
+            updated_by_email: string | null;
             /** Format: date-time */
             updated_at: string;
+        };
+        /** @description What the members of the organisation have entered for a profile, to show it and to send the version of each edit: the fit criteria, the buyer context and the free text of each `buyer` field. A part nobody saved is null (or absent from `inputs`). */
+        BuyerInputs: {
+            criteria: components["schemas"]["Criteria"] | null;
+            buyer_context: components["schemas"]["BuyerContext"] | null;
+            inputs: components["schemas"]["BuyerInput"][];
         };
         DraftingAccepted: {
             /** @enum {string} */
@@ -1162,6 +1194,8 @@ export interface components {
              * @description The member who last reviewed the statement; null while `ai_draft`.
              */
             reviewed_by: string | null;
+            /** @description The email of that member, to show who reviewed (members cannot read other user records). Null while `ai_draft`. It stays within the organisation. */
+            reviewed_by_email: string | null;
             /** Format: date-time */
             reviewed_at: string | null;
         };
@@ -2208,6 +2242,32 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getRunBuyerInputs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The saved criteria, buyer context and buyer fields. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuyerInputs"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };

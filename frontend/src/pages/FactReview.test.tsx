@@ -4,7 +4,15 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Fact } from "../lib/api";
-import { CARD_PATH, makeDefinition, makeFact, makeNotFound, makeRun } from "../test/cardFixtures";
+import {
+  CARD_PATH,
+  makeAssessment,
+  makeDefinition,
+  makeFact,
+  makeInputs,
+  makeNotFound,
+  makeRun,
+} from "../test/cardFixtures";
 import { expectNoSeriousIssues, fail, member, ok, renderApp } from "../test/utils";
 
 const mocks = vi.hoisted(() => ({
@@ -14,6 +22,8 @@ const mocks = vi.hoisted(() => ({
   getRun: vi.fn(),
   listRunFacts: vi.fn(),
   getProfileDefinition: vi.fn(),
+  getRunAssessment: vi.fn(),
+  getRunBuyerInputs: vi.fn(),
   reviewFact: vi.fn(),
   listRunFailures: vi.fn(),
   listRunSources: vi.fn(),
@@ -69,6 +79,8 @@ beforeEach(async () => {
   mocks.listRunFailures.mockResolvedValue(fail("not_found", 404));
   mocks.listRunSources.mockResolvedValue(fail("not_found", 404));
   mocks.listRuns.mockResolvedValue(ok({ items: [makeRun()] }));
+  mocks.getRunAssessment.mockResolvedValue(ok(makeAssessment()));
+  mocks.getRunBuyerInputs.mockResolvedValue(ok(makeInputs()));
   mocks.getRun.mockResolvedValue(ok(makeRun()));
   mocks.listRunFacts.mockResolvedValue(ok({ items: facts() }));
   mocks.getProfileDefinition.mockImplementation(async (language: "en" | "fr") =>

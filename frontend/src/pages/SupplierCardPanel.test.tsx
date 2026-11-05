@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Fact, ProfileDefinition, Run } from "../lib/api";
+import { makeAssessment, makeInputs } from "../test/cardFixtures";
 import { expectNoSeriousIssues, fail, member, ok, renderApp } from "../test/utils";
 
 const mocks = vi.hoisted(() => ({
@@ -11,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   getRun: vi.fn(),
   listRunFacts: vi.fn(),
   getProfileDefinition: vi.fn(),
+  getRunAssessment: vi.fn(),
+  getRunBuyerInputs: vi.fn(),
   listRunFailures: vi.fn(),
   listRunSources: vi.fn(),
   getDisclosure: vi.fn(),
@@ -169,6 +172,8 @@ beforeEach(async () => {
   mocks.listRunFailures.mockResolvedValue(fail("not_found", 404));
   mocks.listRunSources.mockResolvedValue(fail("not_found", 404));
   mocks.listRuns.mockResolvedValue(ok({ items: [run()] }));
+  mocks.getRunAssessment.mockResolvedValue(ok(makeAssessment()));
+  mocks.getRunBuyerInputs.mockResolvedValue(ok(makeInputs()));
   mocks.getRun.mockResolvedValue(ok(run()));
   mocks.listRunFacts.mockResolvedValue(ok({ items: facts() }));
   mocks.getProfileDefinition.mockImplementation(async (language: "en" | "fr") =>

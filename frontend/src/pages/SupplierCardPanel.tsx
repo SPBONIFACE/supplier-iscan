@@ -1,7 +1,7 @@
 // The supplier card (spec F5, F3 display rules; mock-ups 05-supplier-card-*): a side panel over the
 // workspace with its own URL. Header, key figures, flags, then one row per fact field of the profile
-// definition; each row can be approved or corrected by a member (#36). The assessment (#37) and the
-// deletion date (#45) are not here.
+// definition; each row can be approved or corrected by a member (#36). Below the facts: the assessment
+// section (#37). The deletion date (#45) is not here.
 import { type RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useMatch, useNavigate, useParams } from "react-router";
@@ -21,8 +21,11 @@ import { LoadingIndicator, MessageBanner } from "../components/ui";
 import { api, type Fact, type ProfileField, type Run } from "../lib/api";
 import { formatDate } from "../lib/format";
 import { hostOf, safeHttpUrl, websiteUrl } from "../lib/safeUrl";
+import { useAssessment } from "../lib/useAssessment";
 import { hasProfile, useRunCard } from "../lib/useRunCard";
 import { useTitle } from "../lib/useTitle";
+import { AssessmentSection } from "./AssessmentSection";
+import { BuyerContextForm } from "./BuyerContextForm";
 import { NotFoundPage } from "./Simple";
 import { WorkspacePage } from "./WorkspacePage";
 
@@ -168,6 +171,16 @@ function CardBody({
   const lockedId = useId();
   const [inProgress, setInProgress] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  const assessment = useAssessment(run.id, hasProfile(run));
+  // The buyer context form takes the place of the card body, as in mock-up 05-buyer-context-form.
+  const [editingContext, setEditingContext] = useState(false);
+  const contextButton = useRef<HTMLButtonElement>(null);
+  const closeContext = useCallback(() => {
+    setEditingContext(false);
+    window.setTimeout(() => {
+      (contextButton.current ?? document.getElementById("ctx"))?.focus();
+    }, 0);
+  }, []);
   const proposedLeft = run.proposed_facts;
   const countText = (count: number): string =>
     count === 0 ? t("card.review.countNone") : t("card.review.count", { count });
@@ -283,84 +296,100 @@ function CardBody({
           {announcement}
         </p>
       </div>
-      <div className="card-body">
-        {inProgress ? (
-          <div id={lockedId}>
-            <MessageBanner kind="error">
-              <p>{t("card.review.locked")}</p>
-            </MessageBanner>
-          </div>
-        ) : null}
-        {run.identity_to_verify || partial ? (
-          <div className="flags">
-            {run.identity_to_verify ? (
-              <FlagBanner label={t("card.identityToVerify")} live="none">
-                <p>
-                  {t("card.identityToVerifyBody", {
-                    name: run.supplier_name ?? t("workspace.nameHidden"),
-                  })}
-                </p>
-              </FlagBanner>
-            ) : null}
-            {partial ? (
-              <FlagBanner label={t("card.partial")} live="none">
-                <p>
-                  {t("card.partialBody", {
-                    sections: run.uncovered_sections.map(sectionLabel).join(", "),
-                  })}
-                </p>
-              </FlagBanner>
-            ) : null}
-          </div>
-        ) : null}
+      {editingContext ? (
+        <BuyerContextForm
+          runId={run.id}
+          stored={assessment.inputs?.buyer_context ?? null}
+          onSaved={(saved) => {
+            void assessment.reloadInputs();
+            void assessment.reload();
+            setAnnouncement(t("context.savedAnnounce", { version: saved.version }));
+            closeContext();
+          }}
+          onCancel={closeContext}
+          onConflict={() => void assessment.reloadInputs()}
+        />
+      ) : (
+        <div className="card-body">
+          {inProgress ? (
+            <div id={lockedId}>
+              <MessageBanner kind="error">
+                <p>{t("card.review.locked")}</p>
+              </MessageBanner>
+            </div>
+          ) : null}
+          {run.identity_to_verify || partial ? (
+            <div className="flags">
+              {run.identity_to_verify ? (
+                <FlagBanner label={t("card.identityToVerify")} live="none">
+                  <p>
+                    {t("card.identityToVerifyBody", {
+                      name: run.supplier_name ?? t("workspace.nameHidden"),
+                    })}
+                  </p>
+                </FlagBanner>
+              ) : null}
+              {partial ? (
+                <FlagBanner label={t("card.partial")} live="none">
+                  <p>
+                    {t("card.partialBody", {
+                      sections: run.uncovered_sections.map(sectionLabel).join(", "),
+                    })}
+                  </p>
+                </FlagBanner>
+              ) : null}
+            </div>
+          ) : null}
 
-        {definition.sections.map((section) => {
-          const fields = section.fields.filter((field) => field.kind === "fact");
-          if (fields.length === 0) return null;
-          const headingId = `section-${section.id}`;
-          const sectionUncovered = uncovered.has(section.id);
-          const none = !fields.some((field) => byField.has(field.id));
-          return (
-            <section className="section" key={section.id} aria-labelledby={headingId}>
-              <h2 className="section-title" id={headingId}>
-                {section.label}
-                {sectionUncovered && none ? null : (
-                  <span className="count">{t("card.fields", { count: fields.length })}</span>
+          {definition.sections.map((section) => {
+            const fields = section.fields.filter((field) => field.kind === "fact");
+            if (fields.length === 0) return null;
+            const headingId = `section-${section.id}`;
+            const sectionUncovered = uncovered.has(section.id);
+            const none = !fields.some((field) => byField.has(field.id));
+            return (
+              <section className="section" key={section.id} aria-labelledby={headingId}>
+                <h2 className="section-title" id={headingId}>
+                  {section.label}
+                  {sectionUncovered && none ? null : (
+                    <span className="count">{t("card.fields", { count: fields.length })}</span>
+                  )}
+                </h2>
+                {sectionUncovered && none ? (
+                  <p className="not-covered">{t("card.notCoveredSection")}</p>
+                ) : (
+                  <FactList label={section.label}>
+                    {(nav) =>
+                      fields.map((field, index) => (
+                        <FactRow
+                          key={field.id}
+                          label={field.label}
+                          fact={byField.get(field.id) ?? null}
+                          notCovered={sectionUncovered && !byField.has(field.id)}
+                          concernsPeople={field.concerns_people}
+                          certification={field.certification}
+                          nav={nav(index)}
+                          review={review}
+                        />
+                      ))
+                    }
+                  </FactList>
                 )}
-              </h2>
-              {sectionUncovered && none ? (
-                <p className="not-covered">{t("card.notCoveredSection")}</p>
-              ) : (
-                <FactList label={section.label}>
-                  {(nav) =>
-                    fields.map((field, index) => (
-                      <FactRow
-                        key={field.id}
-                        label={field.label}
-                        fact={byField.get(field.id) ?? null}
-                        notCovered={sectionUncovered && !byField.has(field.id)}
-                        concernsPeople={field.concerns_people}
-                        certification={field.certification}
-                        nav={nav(index)}
-                        review={review}
-                      />
-                    ))
-                  }
-                </FactList>
-              )}
-            </section>
-          );
-        })}
+              </section>
+            );
+          })}
 
-        {run.natural_person ? (
-          <section className="section" aria-labelledby="assessment-h">
-            <h2 className="section-title" id="assessment-h">
-              {t("card.assessment")}
-            </h2>
-            <p className="not-assessed">{t("card.naturalPerson")}</p>
-          </section>
-        ) : null}
-      </div>
+          <AssessmentSection
+            run={run}
+            facts={facts}
+            definition={definition}
+            state={assessment}
+            onEditContext={() => setEditingContext(true)}
+            contextButton={contextButton}
+            announce={setAnnouncement}
+          />
+        </div>
+      )}
     </>
   );
 }
