@@ -623,7 +623,9 @@
       "registry": "Registry",
       "neverBought": "paid documents are linked, never bought",
       "lastChecked": "Last checked"
-    }
+    },
+    "fitDone": "Fit statements drafted. They are below, pending your validation.",
+    "recoDone": "Recommendations drafted. They are below, pending your validation."
   },
   "context": {
     "title": "Buyer context",

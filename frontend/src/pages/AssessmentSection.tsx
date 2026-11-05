@@ -3,7 +3,7 @@
 // financial evidence guidance, the procurement recommendations, the fit against the member's criteria, and
 // the buyer's own inputs. No aggregate score appears anywhere. For a natural-person business the whole
 // section is replaced by neutral wording (owner decision D-073).
-import { type RefObject, useCallback, useId, useMemo, useRef, useState } from "react";
+import { type RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ExternalLink } from "../components/evidence";
 import { FlagBanner } from "../components/FlagBanner";
@@ -81,6 +81,14 @@ export function AssessmentSection({
   const [asking, setAsking] = useState<DraftingPart | null>(null);
   const criteriaField = useRef<HTMLTextAreaElement>(null);
   const { assessment, inputs, applyStatement, reload } = state;
+
+  // A drafting that ended is announced; the new statements appear in the lists.
+  useEffect(() => {
+    if (state.outcome.fit === "done") announce(t("assessment.fitDone"));
+  }, [state.outcome.fit, announce, t]);
+  useEffect(() => {
+    if (state.outcome.recommendations === "done") announce(t("assessment.recoDone"));
+  }, [state.outcome.recommendations, announce, t]);
 
   const labelOf = useMemo(() => {
     const labels = new Map<string, string>();
@@ -166,7 +174,7 @@ export function AssessmentSection({
     return (
       <>
         <section className="section" aria-labelledby="assessment-h">
-          <h2 className="section-title" id="assessment-h">
+          <h2 className="section-title" id="assessment-h" tabIndex={-1}>
             {t("card.assessment")}
           </h2>
           <p className="not-assessed">{t("card.naturalPerson")}</p>
@@ -253,7 +261,7 @@ export function AssessmentSection({
   return (
     <>
       <section className="section" id="sec-assessment" aria-labelledby="assessment-h">
-        <h2 className="section-title" id="assessment-h">
+        <h2 className="section-title" id="assessment-h" tabIndex={-1}>
           {t("card.assessment")}
           {pendingCount > 0 ? (
             <span className="count">{t("assessment.pendingCount", { count: pendingCount })}</span>
@@ -423,7 +431,7 @@ export function AssessmentSection({
 
       {assessment.status === "pending" ? null : (
         <section className="section" id="sec-fit" aria-labelledby="fit-h">
-          <h2 className="section-title" id="fit-h">
+          <h2 className="section-title" id="fit-h" tabIndex={-1}>
             {t("assessment.fitTitle")}
             {fitItems.length > 0 ? (
               <span className="count">
@@ -524,7 +532,7 @@ function BuyerSection({
   if (fields.length === 0) return null;
   return (
     <section className="section" id="sec-buyer" aria-labelledby="buyer-h">
-      <h2 className="section-title" id="buyer-h">
+      <h2 className="section-title" id="buyer-h" tabIndex={-1}>
         {t("assessment.buyerTitle")}
       </h2>
       <p className="section-lede">{t("assessment.buyerLede")}</p>

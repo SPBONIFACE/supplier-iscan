@@ -623,7 +623,9 @@
       "registry": "Registre",
       "neverBought": "les documents payants sont liés, jamais achetés",
       "lastChecked": "Dernière vérification"
-    }
+    },
+    "fitDone": "Adéquations rédigées. Elles sont plus bas, en attente de votre validation.",
+    "recoDone": "Recommandations rédigées. Elles sont plus bas, en attente de votre validation."
   },
   "context": {
     "title": "Contexte acheteur",

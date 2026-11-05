@@ -141,12 +141,12 @@ export function StatementItem({
         setMode("idle");
         if (deleting) {
           // The statement leaves the section: focus goes to the next one, else to the one before,
-          // else to the heading of the group.
+          // else to the heading of the section (the group heading goes with its last statement).
           const li = row.current;
           const target =
             li?.nextElementSibling ??
             li?.previousElementSibling ??
-            li?.closest("section")?.querySelector("h3") ??
+            li?.closest("section")?.querySelector("h2") ??
             null;
           window.setTimeout(() => (target as HTMLElement | null)?.focus(), 0);
         } else {
