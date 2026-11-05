@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.18.0
+  version: 0.19.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -36,6 +36,12 @@ tags:
     description: The profile definition loaded at startup
   - name: runs
     description: Profile runs. They execute in a worker; no request waits for a stage.
+  - name: demo
+    description: >-
+      The public demo (#50): read-only, no sign-in, no personal data. It serves only the pre-built
+      `DemoProfile` records. Every request to a path under `/demo` other than GET answers 403,
+      before any other check; nothing under `/demo` writes, queues a job, calls a model or
+      crawls. It reads no organisation, member or usage data.
   - name: review
     description: >-
       Review of facts and assessment statements by any member of the organisation. The AI
@@ -1435,6 +1441,177 @@ paths:
           $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /demo/profile-definition:
+    get:
+      operationId: getDemoProfileDefinition
+      tags: [demo]
+      summary: The profile definition, for the demo screens (public)
+      description: >-
+        The same sections and fields as `GET /profile-definition`, without a session, so that the
+        demo screens can label the facts of the demo profiles. It holds no organisation data.
+      security: []
+      parameters:
+        - name: language
+          in: query
+          required: false
+          description: Language of the labels. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The active definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileDefinition"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /demo/profiles:
+    get:
+      operationId: listDemoProfiles
+      tags: [demo]
+      summary: List the demo profiles (public)
+      description: >-
+        The pre-built demo profiles, in the order the administrator command stored them. An empty
+        list is not an error: the demo then shows an empty state. No sign-in. The response holds
+        no user, organisation, member or usage data, and no person name.
+      security: []
+      parameters:
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels and of the disclaimer. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The demo profiles.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoProfileList"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /demo/profiles/{id}:
+    get:
+      operationId: getDemoProfile
+      tags: [demo]
+      summary: One demo profile with its facts and AI assessment draft (public)
+      description: >-
+        The supplier card of a demo profile: its facts with quote, source and date, its sources'
+        metadata, and its assessment statements with provenance and review status. A statement
+        not reviewed is "AI draft, pending your validation". `id` is the id of the `DemoProfile`
+        record; the id of a real run answers 404, as does any unknown or malformed id.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels and of the disclaimer. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The demo profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoProfile"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /demo/profiles/{id}/pdf:
+    get:
+      operationId: getDemoProfilePdf
+      tags: [demo]
+      summary: The supplier card of a demo profile as a PDF (public)
+      description: >-
+        The same PDF as `GET /runs/{id}/pdf`, built from the stored demo profile, with the demo
+        disclaimer on every page. No model is called and nothing is stored. A real run id, an
+        unknown id or a malformed id answers 404.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels and of the disclaimer. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The PDF.
+          headers:
+            Content-Disposition:
+              description: >-
+                `attachment; filename="supplier-card-<name>-<date>.pdf"`, the name reduced to
+                ASCII letters, digits and hyphens.
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /demo/comparison:
+    get:
+      operationId: getDemoComparison
+      tags: [demo]
+      summary: Compare the facts of several demo profiles (public)
+      description: >-
+        As `GET /comparison`, for demo profiles: facts only, no assessment, no score and no
+        ranking, in request order. Fewer than 2 distinct ids, or more than
+        `comparison_max_profiles`, answers 422. If any id is unknown, malformed or a real run id,
+        the whole request answers the one 404, with no partial data. The comparison PDF waits for
+        #40; it is not part of this contract yet.
+      security: []
+      parameters:
+        - name: profile_ids
+          in: query
+          required: true
+          description: >-
+            The demo profiles to compare, repeated (`profile_ids=a&profile_ids=b`). Between 2 and
+            the configured maximum of distinct ids.
+          schema:
+            type: array
+            items:
+              type: string
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels and of the disclaimer. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The demo profiles and their facts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoComparison"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
 components:
   parameters:
     ResourceId:
@@ -1488,6 +1665,17 @@ components:
             errors:
               - field: email
                 message: Email is required.
+    DemoReadOnly:
+      description: >-
+        Any request under `/demo` other than GET (POST, PUT, PATCH, DELETE): the demo is
+        read-only. Answered before any other check, on every such path whether it exists or not,
+        with no sign-in needed. Nothing is written, queued or called.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: The demo is read-only.
     Forbidden:
       description: Signed in, but this operation is for administrators only.
       content:
@@ -2882,6 +3070,139 @@ components:
         organisation_id:
           type: string
           format: uuid
+    DemoRun:
+      description: >-
+        The header of a demo profile, as `Run` shows a finished run but with no usage, cost,
+        user, organisation or run id. `id` is the id of the `DemoProfile` record.
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - supplier_name
+        - supplier_website
+        - supplier_country
+        - supplier_sector
+        - natural_person
+        - status
+        - identity_to_verify
+        - uncovered_sections
+        - partial_explanation
+        - excluded_sources
+        - proposed_facts
+        - finished_at
+        - profile_definition_hash
+      properties:
+        id:
+          type: string
+          format: uuid
+        supplier_name:
+          type: string
+        supplier_website:
+          type: [string, "null"]
+        supplier_country:
+          type: [string, "null"]
+        supplier_sector:
+          type: [string, "null"]
+        natural_person:
+          type: boolean
+        status:
+          type: string
+          enum: [completed, partial]
+        identity_to_verify:
+          type: boolean
+        uncovered_sections:
+          type: array
+          items:
+            type: string
+        partial_explanation:
+          type: [string, "null"]
+        excluded_sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExcludedSource"
+        proposed_facts:
+          description: Facts still `proposed`, that is, not reviewed.
+          type: integer
+        finished_at:
+          type: string
+          format: date-time
+        profile_definition_hash:
+          type: [string, "null"]
+    DemoSource:
+      description: Metadata of a source of a demo profile (the text is not kept).
+      type: object
+      additionalProperties: false
+      required: [url, fetched_at, content_type]
+      properties:
+        url:
+          type: string
+        fetched_at:
+          type: string
+          format: date-time
+        content_type:
+          type: string
+    DemoDisclaimer:
+      description: >-
+        The demo disclaimer, from the owner-supplied content file (a marked placeholder until
+        supplied). It is shown on every demo screen and printed in every demo PDF.
+      type: string
+    DemoProfileList:
+      type: object
+      additionalProperties: false
+      required: [items, disclaimer]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoRun"
+        disclaimer:
+          $ref: "#/components/schemas/DemoDisclaimer"
+    DemoProfile:
+      description: >-
+        A read-only copy of a finished run of the demo organisation, with person names stripped:
+        no fact about a person is kept, no author, no reviewer, no email. Fact and statement ids
+        are those of the copy, not of the run.
+      type: object
+      additionalProperties: false
+      required: [run, facts, assessment, sources, disclaimer]
+      properties:
+        run:
+          $ref: "#/components/schemas/DemoRun"
+        facts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fact"
+        assessment:
+          $ref: "#/components/schemas/Assessment"
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoSource"
+        disclaimer:
+          $ref: "#/components/schemas/DemoDisclaimer"
+    DemoComparisonProfile:
+      type: object
+      additionalProperties: false
+      required: [run, facts]
+      properties:
+        run:
+          $ref: "#/components/schemas/DemoRun"
+        facts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fact"
+    DemoComparison:
+      type: object
+      additionalProperties: false
+      required: [items, disclaimer]
+      properties:
+        items:
+          description: One entry per distinct requested id, in request order.
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoComparisonProfile"
+        disclaimer:
+          $ref: "#/components/schemas/DemoDisclaimer"
     Error:
       type: object
       additionalProperties: false

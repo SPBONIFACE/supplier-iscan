@@ -766,6 +766,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/demo/profile-definition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The profile definition, for the demo screens (public)
+         * @description The same sections and fields as `GET /profile-definition`, without a session, so that the demo screens can label the facts of the demo profiles. It holds no organisation data.
+         */
+        get: operations["getDemoProfileDefinition"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/demo/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the demo profiles (public)
+         * @description The pre-built demo profiles, in the order the administrator command stored them. An empty list is not an error: the demo then shows an empty state. No sign-in. The response holds no user, organisation, member or usage data, and no person name.
+         */
+        get: operations["listDemoProfiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/demo/profiles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One demo profile with its facts and AI assessment draft (public)
+         * @description The supplier card of a demo profile: its facts with quote, source and date, its sources' metadata, and its assessment statements with provenance and review status. A statement not reviewed is "AI draft, pending your validation". `id` is the id of the `DemoProfile` record; the id of a real run answers 404, as does any unknown or malformed id.
+         */
+        get: operations["getDemoProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/demo/profiles/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The supplier card of a demo profile as a PDF (public)
+         * @description The same PDF as `GET /runs/{id}/pdf`, built from the stored demo profile, with the demo disclaimer on every page. No model is called and nothing is stored. A real run id, an unknown id or a malformed id answers 404.
+         */
+        get: operations["getDemoProfilePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/demo/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare the facts of several demo profiles (public)
+         * @description As `GET /comparison`, for demo profiles: facts only, no assessment, no score and no ranking, in request order. Fewer than 2 distinct ids, or more than `comparison_max_profiles`, answers 422. If any id is unknown, malformed or a real run id, the whole request answers the one 404, with no partial data. The comparison PDF waits for #40; it is not part of this contract yet.
+         */
+        get: operations["getDemoComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1331,6 +1431,57 @@ export interface components {
             /** Format: uuid */
             organisation_id: string;
         };
+        /** @description The header of a demo profile, as `Run` shows a finished run but with no usage, cost, user, organisation or run id. `id` is the id of the `DemoProfile` record. */
+        DemoRun: {
+            /** Format: uuid */
+            id: string;
+            supplier_name: string;
+            supplier_website: string | null;
+            supplier_country: string | null;
+            supplier_sector: string | null;
+            natural_person: boolean;
+            /** @enum {string} */
+            status: "completed" | "partial";
+            identity_to_verify: boolean;
+            uncovered_sections: string[];
+            partial_explanation: string | null;
+            excluded_sources: components["schemas"]["ExcludedSource"][];
+            /** @description Facts still `proposed`, that is, not reviewed. */
+            proposed_facts: number;
+            /** Format: date-time */
+            finished_at: string;
+            profile_definition_hash: string | null;
+        };
+        /** @description Metadata of a source of a demo profile (the text is not kept). */
+        DemoSource: {
+            url: string;
+            /** Format: date-time */
+            fetched_at: string;
+            content_type: string;
+        };
+        /** @description The demo disclaimer, from the owner-supplied content file (a marked placeholder until supplied). It is shown on every demo screen and printed in every demo PDF. */
+        DemoDisclaimer: string;
+        DemoProfileList: {
+            items: components["schemas"]["DemoRun"][];
+            disclaimer: components["schemas"]["DemoDisclaimer"];
+        };
+        /** @description A read-only copy of a finished run of the demo organisation, with person names stripped: no fact about a person is kept, no author, no reviewer, no email. Fact and statement ids are those of the copy, not of the run. */
+        DemoProfile: {
+            run: components["schemas"]["DemoRun"];
+            facts: components["schemas"]["Fact"][];
+            assessment: components["schemas"]["Assessment"];
+            sources: components["schemas"]["DemoSource"][];
+            disclaimer: components["schemas"]["DemoDisclaimer"];
+        };
+        DemoComparisonProfile: {
+            run: components["schemas"]["DemoRun"];
+            facts: components["schemas"]["Fact"][];
+        };
+        DemoComparison: {
+            /** @description One entry per distinct requested id, in request order. */
+            items: components["schemas"]["DemoComparisonProfile"][];
+            disclaimer: components["schemas"]["DemoDisclaimer"];
+        };
         Error: {
             /** @description A plain message for the user. Never a stack trace or a submitted value. */
             detail: string;
@@ -1473,6 +1624,20 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["ValidationError"];
+            };
+        };
+        /** @description Any request under `/demo` other than GET (POST, PUT, PATCH, DELETE): the demo is read-only. Answered before any other check, on every such path whether it exists or not, with no sign-in needed. Nothing is written, queued or called. */
+        DemoReadOnly: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "detail": "The demo is read-only."
+                 *     }
+                 */
+                "application/json": components["schemas"]["Error"];
             };
         };
         /** @description Signed in, but this operation is for administrators only. */
@@ -2813,6 +2978,140 @@ export interface operations {
             };
             422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getDemoProfileDefinition: {
+        parameters: {
+            query?: {
+                /** @description Language of the labels. English when absent. */
+                language?: "en" | "fr";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The active definition. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileDefinition"];
+                };
+            };
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listDemoProfiles: {
+        parameters: {
+            query?: {
+                /** @description Language of the labels and of the disclaimer. English when absent. */
+                lang?: "en" | "fr";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The demo profiles. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoProfileList"];
+                };
+            };
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getDemoProfile: {
+        parameters: {
+            query?: {
+                /** @description Language of the labels and of the disclaimer. English when absent. */
+                lang?: "en" | "fr";
+            };
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The demo profile. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoProfile"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getDemoProfilePdf: {
+        parameters: {
+            query?: {
+                /** @description Language of the labels and of the disclaimer. English when absent. */
+                lang?: "en" | "fr";
+            };
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The PDF. */
+            200: {
+                headers: {
+                    /** @description `attachment; filename="supplier-card-<name>-<date>.pdf"`, the name reduced to ASCII letters, digits and hyphens. */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getDemoComparison: {
+        parameters: {
+            query: {
+                /** @description The demo profiles to compare, repeated (`profile_ids=a&profile_ids=b`). Between 2 and the configured maximum of distinct ids. */
+                profile_ids: string[];
+                /** @description Language of the labels and of the disclaimer. English when absent. */
+                lang?: "en" | "fr";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The demo profiles and their facts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoComparison"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
 }
