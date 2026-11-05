@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.15.0
+  version: 0.17.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -906,6 +906,67 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/pdf:
+    get:
+      operationId: getRunPdf
+      tags: [runs]
+      summary: Download the supplier card as a PDF
+      description: >-
+        The supplier card of a run as a PDF generated on the server, in the requested language
+        (labels; quotes stay in their source language): every fact field with its status, quote
+        excerpt, source type, source URL and date, or "No public evidence found"; the assessment
+        with its procurement recommendations, the buyer context and the buyer inputs, deleted
+        statements excluded; for a natural-person identity "Not assessed: natural-person business"
+        in place of the assessment. Each AI-generated section is labelled "AI draft" or "reviewed
+        by …" with its provenance (model, version, generation time, review status); the same
+        provenance is written to the file metadata. The first page carries the disclaimer (a
+        content file; a marked placeholder until the owner supplies the text), the generation date
+        and, when set, the source-content deletion date, the "partial" flag with its uncovered
+        sections and the "identity to verify" flag. The file is generated on request and not
+        stored; no model is called. A missing `lang` is `en`; any other value answers 422. An
+        unknown id, another organisation's run and the administrator answer the one 404; a run
+        that has not finished answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The PDF.
+          headers:
+            Content-Disposition:
+              description: >-
+                `attachment; filename="supplier-card-<name>-<date>.pdf"`, the name reduced to
+                ASCII letters, digits and hyphens.
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The run has not finished, so there is no card to export.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "503":
