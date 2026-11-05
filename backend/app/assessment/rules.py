@@ -12,7 +12,9 @@ quote can change a rule here.
   `gap_evidence`. A level goes with cited facts only.
 - `label` goes with `relationship_level` (required), `timing` with `next_action` (required),
   `level` is required for `procurement_priority`.
-- It does not claim to rest on a buyer context that does not exist.
+- It does not claim to rest on a buyer context that does not exist, and with no buyer context
+  stored its text does not assert an existing relationship with the supplier ("your incumbent",
+  "votre fournisseur actuel": a guard on the wording, #26).
 - An evidence gap on financial stability is never drafted by the model (the financial guidance
   writes that message, #26).
 - A recommendation kind other than `next_action` is kept once.
@@ -54,6 +56,35 @@ _FINANCIAL: Final = re.compile(
 )
 
 
+# Wording that asserts an existing relationship with the supplier (spec F8: no statement asserts
+# a fact about the buyer that was not entered), in English and French. A guard on the text, not a
+# test of truth. The buyer must be the possessor ("your", "votre", "vos", "notre"): "the current
+# supplier of the market" or "your existing quality systems" assert nothing about the buyer.
+# With no context stored, any such wording is rejected; with the relationship `new`, it contradicts
+# what the buyer entered and is rejected too; with `incumbent` it is allowed.
+_BUYER_SITUATION = re.compile(
+    r"\byour\s+(?:current|existing|incumbent|present|ongoing)\s+"
+    r"(?:suppliers?|vendors?|providers?|partners?|contracts?|relationships?|arrangements?)\b|"
+    r"\byour\s+incumbent\b|"
+    r"\bas\s+(?:your\s+|the\s+|an?\s+)?(?:current|existing|incumbent)\s+(?:supplier|vendor|provider)|"
+    r"\bas\s+(?:your\s+|the\s+|an?\s+)?incumbent\b|"
+    r"\byou\s+(?:already|currently)\s+(?:buy|source|purchase|use|work|trade|contract)|"
+    r"\b(?:we|you)\s+(?:already\s+)?(?:buy|source|purchase)\s+from\b|"
+    r"\b(?:votre|notre)\s+(?:fournisseur\s+)?(?:actuel|historique|en\s+place|titulaire)\b|"
+    r"\b(?:votre|notre)\s+(?:contrat|relation|part|volume)\s+(?:actuel|actuelle|en\s+cours|existant)|"
+    r"\ben\s+tant\s+que\s+(?:votre\s+|notre\s+)?fournisseur\s+(?:actuel|historique|en\s+place|titulaire)|"
+    r"\bvous\s+(?:achetez|travaillez|vous\s+approvisionnez)\s+(?:déjà|actuellement)|"
+    r"\bvous\s+(?:achetez|vous\s+approvisionnez)\s+déjà|"
+    r"\bvos\s+achats\s+actuels",
+    re.IGNORECASE,
+)
+
+
+def asserts_buyer_situation(text: str) -> bool:
+    """The text asserts an existing relationship with the supplier (a guard, not a truth test)."""
+    return bool(_BUYER_SITUATION.search(text))
+
+
 @dataclass(frozen=True)
 class FactView:
     """A fact of the run, as the assessment sees it."""
@@ -77,6 +108,7 @@ class BuyerContext:
 
     version: int
     text: str
+    relationship: str | None = None  # "incumbent" or "new", as entered
 
 
 @dataclass
@@ -127,6 +159,12 @@ def check(
         return None
     if statement.cites_buyer_context and context is None:
         return None  # the buyer's situation was not entered: nothing may rest on it
+    if (context is None or context.relationship == "new") and asserts_buyer_situation(
+        statement.text
+    ):
+        # "your incumbent...": a fact about the buyer that was not entered, or that contradicts
+        # the relationship `new` the buyer entered.
+        return None
     cited = _cited_ok(statement, facts)
     if cited is None:
         return None
@@ -201,6 +239,7 @@ __all__ = [
     "FactView",
     "Kept",
     "Tally",
+    "asserts_buyer_situation",
     "check",
     "to_statement",
     "validate",

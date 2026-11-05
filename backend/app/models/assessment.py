@@ -22,6 +22,7 @@ STATEMENT_KINDS = (
     "threat",
     "risk_indicator",
     "evidence_gap",
+    "fit",
     "procurement_implication",
     "relationship_level",
     "contract_approach",
@@ -64,6 +65,8 @@ class AssessmentItem(OrganisationOwned, Base):
     )
     gap_evidence: Mapped[str | None] = mapped_column(Text)
     buyer_context_version: Mapped[int | None] = mapped_column(Integer)
+    # The financial guidance (#26) of a statement written by rules in code; null for the others.
+    guidance: Mapped[dict[str, Any] | None] = mapped_column(JSON)
     # Provenance.
     provider: Mapped[str] = mapped_column(String(50))
     model_id: Mapped[str] = mapped_column(String(200))

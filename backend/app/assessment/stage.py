@@ -16,7 +16,15 @@ Boundaries that hold here:
 - Facts of a field flagged `concerns_people` are not sent to the model, and a statement citing
   one is rejected anyway (the rule is in code, `rules.check`).
 - Without buyer context the prompt carries no buyer-situation data, and code puts the
-  first-evaluation assumption in front of every recommendation.
+  first-evaluation assumption in front of every recommendation. With one (#26), the context the
+  member entered reaches only the `recommendations` prompt, as redacted data inside fences, and
+  states only what was entered.
+- The financial evidence guidance (#26) is written by rules in code from the country table
+  (`app.financial`), stored as an evidence-gap statement whose provider is `rules`; no model is
+  called for it.
+- Fit statements and the redrafting of the recommendations run later, in the worker, from a
+  member's request (`app.assessment.drafting`); they use `ask` and `draft_part` below, so the
+  gate, the validation, the provenance and the metering are the same.
 - Prompt and completion text are never logged: counts and ids only.
 - The stage can run again after a pause or a crash. The statements are written in one transaction
   together with the counts and the time of the draft, and a run with that time is skipped, so the
@@ -27,7 +35,7 @@ Boundaries that hold here:
 import logging
 import re
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Final
 
@@ -41,10 +49,23 @@ from app.assessment.rules import (
     to_statement,
     validate,
 )
+from app.buyer.values import run_buyer_context, run_criteria
 from app.collection.source_store import IdentityRedaction, identity_redaction
 from app.db import Database, utc_now
+from app.financial.guidance import (
+    FINANCIAL_FIELDS,
+    GUIDANCE_PROMPT_ID,
+    GUIDANCE_PROVIDER,
+    GUIDANCE_VERSION,
+    Guidance,
+    Observations,
+    build_guidance,
+    financial_year,
+)
+from app.financial.table import CountryTable
 from app.llm_schemas import (
     ASSESSMENT_KINDS,
+    FIT_KINDS,
     RECOMMENDATION_KINDS,
     AssessmentAnswer,
     AssessmentStatement,
@@ -66,8 +87,10 @@ logger = logging.getLogger(__name__)
 
 ASSESSMENT_PROMPT: Final = "assessment"
 RECOMMENDATIONS_PROMPT: Final = "recommendations"
+FIT_PROMPT: Final = "fit"
 ALLOWED_KINDS: Final = {
     ASSESSMENT_PROMPT: ASSESSMENT_KINDS,
+    FIT_PROMPT: FIT_KINDS,
     RECOMMENDATIONS_PROMPT: RECOMMENDATION_KINDS,
 }
 ATTEMPTS: Final = 2  # one retry when an item does not match the schema
@@ -98,6 +121,10 @@ class RunData:
     language: str
     facts: list[FactView]
     redaction: IdentityRedaction
+    organisation_id: uuid.UUID
+    country: str | None = None
+    buyer_context: BuyerContext | None = None
+    criteria: list[str] = field(default_factory=list)
 
 
 def _line(value: str | None) -> str:
@@ -194,12 +221,14 @@ def prompt_values(
     facts: str,
     buyer_context: BuyerContext | None,
     assessed: str,
+    criteria: str | None = None,
 ) -> dict[str, str]:
-    """The values the prompt uses. Without buyer context, nothing about the buyer is sent."""
+    """The values the prompt uses. Without buyer context, nothing about the buyer is sent; the
+    criteria are sent to the `fit` prompt only (the caller passes none to the others)."""
     available = {
         "language": language,
         "facts": facts,
-        "buyer_criteria": NONE_ENTERED,
+        "buyer_criteria": criteria or NONE_ENTERED,
         "buyer_context": buyer_context.text if buyer_context else NONE_ENTERED,
         "assessment": assessed,
     }
@@ -219,8 +248,9 @@ def draft_part(
     buyer_context: BuyerContext | None,
     assessed: list[Draft],
     tally: Tally,
+    criteria: str | None = None,
 ) -> list[Draft]:
-    """One call (`assessment` or `recommendations`), its answer validated by the rules."""
+    """One call (`assessment`, `fit` or `recommendations`), its answer validated by the rules."""
     values = prompt_values(
         prompts,
         prompt_id,
@@ -228,6 +258,7 @@ def draft_part(
         facts_text(facts, labels),
         buyer_context,
         assessed_text(assessed),
+        criteria,
     )
     statements, invalid = _ask_safely(context, client, gate, redaction, prompts, prompt_id, values)
     generated_at = utc_now()
@@ -245,19 +276,28 @@ def draft_part(
     return [Draft(item, provenance) for item in kept]
 
 
-def make_assessment_stage(definition: ProfileDefinition, prompts: PromptSet) -> Stage:
+def fit_requested(natural_person: bool, facts: list[FactView], criteria: str | None) -> bool:
+    """Whether a fit call is made: criteria were entered, the identity is not a natural person and
+    there is a fact to cite. With no criteria the section reads "Enter your criteria to assess
+    fit" and no model is called."""
+    return bool(criteria) and not natural_person and any(fact.usable for fact in facts)
+
+
+def make_assessment_stage(
+    definition: ProfileDefinition, prompts: PromptSet, table: CountryTable | None = None
+) -> Stage:
     people = {item.id for item in definition.fields() if item.concerns_people}
 
     def stage(context: StageContext) -> StageOutcome | None:
         database = context.database
-        data = _load(database, context.run_id, people)
+        data = load_run(database, context.run_id, people)
         if data is None or data.drafted:
             return None
         requested = prompts_to_request(data.natural_person, data.facts)
         tally = Tally()
         drafts: list[Draft] = []
         if requested:
-            client = _client(context.providers)
+            client = structuring_client(context.providers)
             gate = gate_for(database)
             labels = {
                 item.id: item.labels.get(data.language, item.id) for item in definition.fields()
@@ -273,19 +313,39 @@ def make_assessment_stage(definition: ProfileDefinition, prompts: PromptSet) -> 
                     data.facts,
                     labels,
                     data.language,
-                    None,  # the buyer context arrives with #27
+                    # SWOT is about the supplier; only the recommendations take the buyer context.
+                    data.buyer_context if prompt_id == RECOMMENDATIONS_PROMPT else None,
                     drafts,
                     tally,
                 )
         elif data.natural_person:
             return None  # not assessed: nothing requested, nothing stored
-        _store(context, drafts, tally)
+        guidance = None
+        if table is not None:
+            guidance = build_guidance(
+                table,
+                data.country,
+                data.language,
+                financial_year(utc_now().date()),
+                data.natural_person,
+                Observations(collected=collected_documents(data.facts)),
+            )
+        _store(context, drafts, tally, guidance, table)
         return None
 
     return stage
 
 
-def _client(providers: Providers | None) -> StructuringClient:
+def collected_documents(facts: list[FactView]) -> frozenset[str]:
+    """The document types backed by a kept financial fact of the run."""
+    return frozenset(
+        FINANCIAL_FIELDS[fact.field]
+        for fact in facts
+        if fact.usable and fact.field in FINANCIAL_FIELDS
+    )
+
+
+def structuring_client(providers: Providers | None) -> StructuringClient:
     if providers is None:
         raise DependencyUnavailable("structuring_provider")
     try:
@@ -312,7 +372,7 @@ def _ask_safely(
         raise DependencyUnavailable("structuring_provider") from None
 
 
-def _load(database: Database, run_id: uuid.UUID, people: set[str]) -> RunData | None:
+def load_run(database: Database, run_id: uuid.UUID, people: set[str]) -> RunData | None:
     with database.session() as db:
         run = db.get(ProfileRun, run_id)
         if run is None:
@@ -344,10 +404,20 @@ def _load(database: Database, run_id: uuid.UUID, people: set[str]) -> RunData | 
             language=language or "en",
             facts=facts,
             redaction=identity_redaction(db, run_id),
+            organisation_id=run.organisation_id,
+            country=identity.country if identity else None,
+            buyer_context=run_buyer_context(db, run_id),
+            criteria=run_criteria(db, run_id),
         )
 
 
-def _store(context: StageContext, drafts: list[Draft], tally: Tally) -> None:
+def _store(
+    context: StageContext,
+    drafts: list[Draft],
+    tally: Tally,
+    guidance: Guidance | None = None,
+    table: CountryTable | None = None,
+) -> None:
     """One transaction: the statements, the counts and the time of the draft, or nothing."""
     with context.database.session() as db:
         run = db.scalar(select(ProfileRun).where(ProfileRun.id == context.run_id).with_for_update())
@@ -375,6 +445,29 @@ def _store(context: StageContext, drafts: list[Draft], tally: Tally) -> None:
                     prompt_id=provenance.prompt_id,
                     prompt_version=provenance.prompt_version,
                     generated_at=provenance.generated_at,
+                    status="ai_draft",
+                )
+            )
+        if guidance is not None and table is not None:
+            # Written by rules in code: no provider, no model, no prompt (provenance "rules").
+            db.add(
+                AssessmentItem(
+                    run_id=context.run_id,
+                    organisation_id=context.organisation_id,
+                    position=len(drafts),
+                    kind="evidence_gap",
+                    text=guidance.message,
+                    cited_fact_ids=[],
+                    cites_buyer_context=False,
+                    gap_evidence=guidance.gap_evidence,
+                    buyer_context_version=None,
+                    guidance=guidance.to_json(),
+                    provider=GUIDANCE_PROVIDER,
+                    model_id=GUIDANCE_PROVIDER,
+                    model_version=table.content_hash,
+                    prompt_id=GUIDANCE_PROMPT_ID,
+                    prompt_version=GUIDANCE_VERSION,
+                    generated_at=utc_now(),
                     status="ai_draft",
                 )
             )

@@ -148,6 +148,22 @@ def assessment_metrics(results: list[CaseResult]) -> list[Metric]:
         ),
         _ratio_metric(
             area,
+            "no kept statement contains wording that asserts an unentered buyer situation",
+            "100%",
+            _sum(results, "kept") - _sum(results, "kept_with_forbidden_phrase"),
+            _sum(results, "kept"),
+            1.0,
+        ),
+        _ratio_metric(
+            area,
+            "fit is drafted only when criteria were entered",
+            "100%",
+            _sum(results, "fit_cases") - _sum(results, "fit_calls_without_criteria"),
+            _sum(results, "fit_cases"),
+            1.0,
+        ),
+        _ratio_metric(
+            area,
             "no recommendation for a natural_person identity",
             "100%",
             _sum(results, "natural_person_clean"),

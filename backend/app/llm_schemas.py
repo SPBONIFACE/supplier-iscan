@@ -83,6 +83,7 @@ class FieldExtractionAnswer(BaseModel):
 
 SWOT_KINDS = ("strength", "weakness", "opportunity", "threat")
 ASSESSMENT_KINDS = (*SWOT_KINDS, "risk_indicator", "evidence_gap")
+FIT_KINDS = ("fit", "evidence_gap")  # the `fit` prompt (#26): against the member's criteria only
 RECOMMENDATION_KINDS = (
     "procurement_implication",
     "relationship_level",
@@ -91,7 +92,7 @@ RECOMMENDATION_KINDS = (
     "next_action",
     "procurement_priority",
 )
-ALL_KINDS = (*ASSESSMENT_KINDS, *RECOMMENDATION_KINDS)
+ALL_KINDS = (*ASSESSMENT_KINDS, "fit", *RECOMMENDATION_KINDS)
 
 StatementKind = Literal[
     "strength",
@@ -100,6 +101,7 @@ StatementKind = Literal[
     "threat",
     "risk_indicator",
     "evidence_gap",
+    "fit",
     "procurement_implication",
     "relationship_level",
     "contract_approach",

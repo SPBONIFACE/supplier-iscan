@@ -1,5 +1,5 @@
 {
-  "note": "Assessment reference set (#25). Format of a case, validated by the loader: id; description; kind (statement: the `assessment` prompt, SWOT, risk indicators and evidence gaps | recommendation: the `recommendations` prompt | natural_person: no call at all); facts [{id, field, status (proposed | not_found, default proposed), value, quote}] (field is a field of the profile definition, which says whether it concerns people); buyer_criteria (text, may be empty); buyer_context (text, or null when no buyer context was entered); expected {cited_fact_ids: the fact ids a kept statement may cite, cites_buyer_context: bool (a kept statement rests on the buyer context), first_evaluation_assumption: bool (every kept recommendation starts with the assumption), no_recommendation: bool (natural_person identity)}; recorded [one list of AssessmentStatement per model call, for the fake provider: plumbing only, they say nothing about the quality of a real model; live runs ignore them]. Synthetic or public companies only; facts in redacted form.",
+  "note": "Assessment reference set (#25). Format of a case, validated by the loader: id; description; kind (fit: the `fit` prompt, against buyer_criteria only, no call when they are empty | statement: the `assessment` prompt, SWOT, risk indicators and evidence gaps | recommendation: the `recommendations` prompt | natural_person: no call at all); facts [{id, field, status (proposed | not_found, default proposed), value, quote}] (field is a field of the profile definition, which says whether it concerns people); buyer_criteria (text, may be empty); buyer_context (text, or null when no buyer context was entered); expected {cited_fact_ids: the fact ids a kept statement may cite, cites_buyer_context: bool (a kept statement rests on the buyer context), first_evaluation_assumption: bool (every kept recommendation starts with the assumption), no_recommendation: bool (natural_person identity), must_not_contain: phrases no kept statement may contain, no_call: bool (no model call at all)}; recorded [one list of AssessmentStatement per model call, for the fake provider: plumbing only, they say nothing about the quality of a real model; live runs ignore them]. Synthetic or public companies only; facts in redacted form.",
   "cases": [
     {
       "id": "happy-swot-and-gap",
@@ -499,6 +499,157 @@
           }
         ]
       ]
+    },
+    {
+      "id": "recommendations-unentered-buyer-situation",
+      "description": "No buyer context was entered, and the model writes as if the buyer had an incumbent relationship (English and French). Code rejects both statements and counts them; the one neutral recommendation is kept behind the first-evaluation assumption (#26; spec F8: no statement asserts a fact about the buyer that was not entered).",
+      "kind": "recommendation",
+      "facts": [
+        {
+          "id": "f0000004-0000-4000-8000-000000000001",
+          "field": "production_sites",
+          "value": "Leeds, United Kingdom",
+          "quote": "our plant in Leeds, United Kingdom"
+        },
+        {
+          "id": "f0000004-0000-4000-8000-000000000002",
+          "field": "quality_management",
+          "value": "ISO 9001:2015",
+          "quote": "certified to ISO 9001:2015"
+        }
+      ],
+      "buyer_criteria": "",
+      "buyer_context": null,
+      "expected": {
+        "cited_fact_ids": [
+          "f0000004-0000-4000-8000-000000000001",
+          "f0000004-0000-4000-8000-000000000002"
+        ],
+        "cites_buyer_context": false,
+        "first_evaluation_assumption": true,
+        "no_recommendation": false,
+        "must_not_contain": [
+          "your incumbent",
+          "your current supplier",
+          "as the incumbent",
+          "votre fournisseur actuel",
+          "fournisseur historique"
+        ]
+      },
+      "recorded": [
+        [
+          {
+            "kind": "volume_share",
+            "text": "As your incumbent supplier, this plant should keep its current share of your volume.",
+            "cited_fact_ids": [
+              "f0000004-0000-4000-8000-000000000001"
+            ]
+          },
+          {
+            "kind": "contract_approach",
+            "text": "Votre fournisseur actuel peut proposer un avenant de deux ans.",
+            "cited_fact_ids": [
+              "f0000004-0000-4000-8000-000000000002"
+            ]
+          },
+          {
+            "kind": "next_action",
+            "text": "Audit the Leeds plant and check the scope of the ISO 9001 certificate.",
+            "timing": "before any order",
+            "cited_fact_ids": [
+              "f0000004-0000-4000-8000-000000000001",
+              "f0000004-0000-4000-8000-000000000002"
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "id": "fit-with-criteria",
+      "description": "Fit statements are drafted against the criteria the member entered, each citing facts, or an evidence gap naming the missing evidence. A fit statement citing a fact that is not in the run is rejected. The buyer context is not used for fit.",
+      "kind": "fit",
+      "facts": [
+        {
+          "id": "f0000004-0000-4000-8000-000000000001",
+          "field": "production_sites",
+          "value": "Leeds, United Kingdom",
+          "quote": "our plant in Leeds, United Kingdom"
+        },
+        {
+          "id": "f0000004-0000-4000-8000-000000000002",
+          "field": "quality_management",
+          "value": "ISO 9001:2015",
+          "quote": "certified to ISO 9001:2015"
+        }
+      ],
+      "buyer_criteria": "Certified to ISO 9001\nAt least two production sites",
+      "buyer_context": "Incumbent supplier. Current share of category spend: 30 percent.",
+      "expected": {
+        "cited_fact_ids": [
+          "f0000004-0000-4000-8000-000000000001",
+          "f0000004-0000-4000-8000-000000000002"
+        ],
+        "cites_buyer_context": false,
+        "first_evaluation_assumption": false,
+        "no_recommendation": false,
+        "must_not_contain": [
+          "your incumbent",
+          "your current supplier"
+        ]
+      },
+      "recorded": [
+        [
+          {
+            "kind": "fit",
+            "text": "The ISO 9001:2015 certificate matches the certification criterion.",
+            "cited_fact_ids": [
+              "f0000004-0000-4000-8000-000000000002"
+            ]
+          },
+          {
+            "kind": "evidence_gap",
+            "text": "Only one production site, Leeds, is evidenced; the second-site criterion cannot be assessed.",
+            "gap_evidence": "A list of the supplier's production sites",
+            "cited_fact_ids": []
+          },
+          {
+            "kind": "fit",
+            "text": "A third site meets the criterion.",
+            "cited_fact_ids": [
+              "f0000004-0000-4000-8000-0000000000ff"
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "id": "fit-without-criteria",
+      "description": "The member entered no criteria: the fit section reads 'Enter your criteria to assess fit' and no model is called.",
+      "kind": "fit",
+      "facts": [
+        {
+          "id": "f0000004-0000-4000-8000-000000000001",
+          "field": "production_sites",
+          "value": "Leeds, United Kingdom",
+          "quote": "our plant in Leeds, United Kingdom"
+        },
+        {
+          "id": "f0000004-0000-4000-8000-000000000002",
+          "field": "quality_management",
+          "value": "ISO 9001:2015",
+          "quote": "certified to ISO 9001:2015"
+        }
+      ],
+      "buyer_criteria": "",
+      "buyer_context": null,
+      "expected": {
+        "cited_fact_ids": [],
+        "cites_buyer_context": false,
+        "first_evaluation_assumption": false,
+        "no_recommendation": false,
+        "no_call": true
+      },
+      "recorded": []
     }
   ]
 }

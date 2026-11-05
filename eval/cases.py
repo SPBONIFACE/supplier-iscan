@@ -68,12 +68,17 @@ class AssessmentExpected(_Model):
     cites_buyer_context: bool = False
     first_evaluation_assumption: bool = False
     no_recommendation: bool = False
+    # Phrases no kept statement may contain: wording that asserts a buyer situation that was not
+    # entered ("your incumbent", "votre fournisseur actuel"; #26).
+    must_not_contain: list[str] = Field(default_factory=list)
+    # A fit case with no criteria: no call at all.
+    no_call: bool = False
 
 
 class AssessmentCase(_Model):
     id: str = Field(min_length=1)
     description: str
-    kind: Literal["statement", "recommendation", "natural_person"]
+    kind: Literal["statement", "recommendation", "fit", "natural_person"]
     facts: list[FactCase]
     buyer_criteria: str = ""
     buyer_context: str | None = None

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.12.0
+  version: 0.13.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -666,6 +666,210 @@ paths:
           $ref: "#/components/responses/NotFound"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/criteria:
+    put:
+      operationId: putRunCriteria
+      tags: [runs]
+      summary: Store the fit criteria of a profile
+      description: >-
+        Stores the member's fit criteria for this profile (a `BuyerInput` with the reserved field
+        `fit_criteria`), recording who and when. The list replaces the stored one; an empty list
+        is accepted and means "no criteria" (the fit section then reads "Enter your criteria to
+        assess fit" and no model call is made for fit). `version` is the version the edit is
+        based on (0 when nothing is stored yet). When another edit was saved since, nothing is
+        written and the answer is 409 with the current value. The total length of the criteria is
+        limited by configuration (422 beyond it). Criteria are visible to the owning organisation
+        only. Another organisation's run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriteriaUpdate"
+      responses:
+        "200":
+          description: The stored criteria, with the new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Criteria"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/fit:
+    post:
+      operationId: draftRunFit
+      tags: [runs]
+      summary: Draft the fit statements against the stored criteria
+      description: >-
+        Queues the drafting of fit statements (kind `fit`, or an `evidence_gap`) against the
+        criteria stored for this profile, and only against them. The worker drafts them with the
+        same validation, provenance and metering as the rest of the assessment; redrafting
+        replaces the earlier `ai_draft` fit statements and never a reviewed one. Read the result
+        with `GET /runs/{id}/assessment` (`pending` lists `fit` while the job is queued or
+        running). 409 when no criteria are stored ("Enter your criteria to assess fit"), when
+        the assessment has not been drafted yet, or for an identity flagged `natural_person`
+        ("Not assessed: natural-person business").
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "202":
+          description: The drafting is queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftingAccepted"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >-
+            No criteria are stored, the assessment is not drafted yet, or the identity is a
+            natural-person business.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/buyer-context:
+    put:
+      operationId: putRunBuyerContext
+      tags: [runs]
+      summary: Store the buyer context of a profile
+      description: >-
+        Stores the buyer context (a `BuyerInput` with the reserved field `buyer_context`): the
+        relationship (`incumbent` or `new`, required), the current share of category spend
+        (0 to 100), the contract end date, the strategic intent (zero or more of the listed
+        values) and notes (length limited by configuration). Everything but the relationship is
+        optional. The put replaces the stored context and increases its version. `version` is
+        the version the edit is based on (0 when nothing is stored yet); an outdated version
+        answers 409 with the current value. An out-of-range share, an invalid date, an unknown
+        intent or notes that are too long answer 422. The buyer context is commercially
+        sensitive: visible to the owning organisation only. Recommendations drafted earlier are
+        flagged in the assessment (`buyer_context_outdated`) until they are redrafted.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyerContextUpdate"
+      responses:
+        "200":
+          description: The stored buyer context, with the new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerContext"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/recommendations:
+    post:
+      operationId: draftRunRecommendations
+      tags: [runs]
+      summary: Redraft the procurement recommendations with the buyer context
+      description: >-
+        Queues the redrafting of the six recommendation kinds with the current buyer context, or
+        on the first-evaluation assumption when none is stored. The worker applies the same
+        validation as the assessment stage. Each recommendation drafted with a context stores the
+        `buyer_context_version` it used. Redrafting replaces the earlier `ai_draft`
+        recommendations and never a reviewed one. 409 when the assessment has not been drafted
+        yet, or for an identity flagged `natural_person` ("Not assessed: natural-person
+        business").
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "202":
+          description: The redrafting is queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftingAccepted"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The assessment is not drafted yet, or the identity is a natural-person business.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/buyer-inputs/{field}:
+    put:
+      operationId: putRunBuyerInput
+      tags: [runs]
+      summary: Store the free text of a buyer field
+      description: >-
+        Stores the member's free text for a field of kind `buyer` of the profile definition
+        (a `BuyerInput`), recording who and when. A field that is not of kind `buyer` (an unknown
+        field, a `fact` or `assessment` field, or the reserved `fit_criteria` and `buyer_context`)
+        answers 422. A buyer input is never drafted by the AI and never sent to a model.
+        `version` is the version the edit is based on (0 when nothing is stored yet); an outdated
+        version answers 409 with the current value.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: field
+          in: path
+          required: true
+          description: The id of a field of kind `buyer` in the profile definition.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyerInputUpdate"
+      responses:
+        "200":
+          description: The stored text, with the new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /runs/{id}/stop:
     post:
       operationId: stopRun
@@ -1052,6 +1256,28 @@ components:
             $ref: "#/components/schemas/Error"
           example:
             detail: This identity is already confirmed.
+    VersionConflict:
+      description: >-
+        The edit was based on an outdated version: nothing was written. `current` is the value
+        stored now, so that no edit is silently lost (null when nothing is stored).
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [detail, current]
+            properties:
+              detail:
+                type: string
+              current:
+                oneOf:
+                  - $ref: "#/components/schemas/Criteria"
+                  - $ref: "#/components/schemas/BuyerContext"
+                  - $ref: "#/components/schemas/BuyerInput"
+                  - type: "null"
+          example:
+            detail: Someone saved a newer version. Review it before saving again.
+            current: null
     ServiceUnavailable:
       description: The database is unavailable. Plain message, no technical details.
       content:
@@ -1645,10 +1871,252 @@ components:
             For a certification field with a kept value: the IAF CertSearch address where the
             buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise.
           type: [string, "null"]
+    CriteriaUpdate:
+      type: object
+      additionalProperties: false
+      required: [criteria, version]
+      properties:
+        criteria:
+          description: The fit criteria, one per entry; an empty list means none. Each entry is not empty.
+          type: array
+          items:
+            type: string
+            minLength: 1
+        version:
+          description: The version this edit is based on (0 when nothing is stored yet).
+          type: integer
+          minimum: 0
+    Criteria:
+      type: object
+      additionalProperties: false
+      required: [criteria, version, updated_by, updated_at]
+      properties:
+        criteria:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+          minimum: 1
+        updated_by:
+          type: [string, "null"]
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time
+    BuyerRelationship:
+      type: string
+      enum: [incumbent, new]
+    StrategicIntent:
+      type: string
+      enum: [dual_sourcing, cost_reduction, capacity_security, risk_reduction]
+    BuyerContextUpdate:
+      type: object
+      additionalProperties: false
+      required: [relationship, version]
+      properties:
+        relationship:
+          $ref: "#/components/schemas/BuyerRelationship"
+        current_share_pct:
+          description: Current share of category spend, 0 to 100.
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 100
+            - type: "null"
+        contract_end_date:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        strategic_intent:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/StrategicIntent"
+        notes:
+          description: Free text; its length is limited by configuration.
+          type: [string, "null"]
+        version:
+          description: The version this edit is based on (0 when nothing is stored yet).
+          type: integer
+          minimum: 0
+    BuyerContext:
+      type: object
+      additionalProperties: false
+      required:
+        - relationship
+        - current_share_pct
+        - contract_end_date
+        - strategic_intent
+        - notes
+        - version
+        - updated_by
+        - updated_at
+      properties:
+        relationship:
+          $ref: "#/components/schemas/BuyerRelationship"
+        current_share_pct:
+          type: [number, "null"]
+        contract_end_date:
+          type: [string, "null"]
+          format: date
+        strategic_intent:
+          type: array
+          items:
+            $ref: "#/components/schemas/StrategicIntent"
+        notes:
+          type: [string, "null"]
+        version:
+          type: integer
+          minimum: 1
+        updated_by:
+          type: [string, "null"]
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time
+    BuyerInputUpdate:
+      type: object
+      additionalProperties: false
+      required: [text, version]
+      properties:
+        text:
+          description: Free text written by the member; its length is limited by configuration. May be empty.
+          type: string
+        version:
+          description: The version this edit is based on (0 when nothing is stored yet).
+          type: integer
+          minimum: 0
+    BuyerInput:
+      type: object
+      additionalProperties: false
+      required: [field, text, version, updated_by, updated_at]
+      properties:
+        field:
+          type: string
+        text:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+        updated_by:
+          type: [string, "null"]
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time
+    DraftingAccepted:
+      type: object
+      additionalProperties: false
+      required: [part, status]
+      properties:
+        part:
+          type: string
+          enum: [fit, recommendations]
+        status:
+          type: string
+          enum: [queued]
+    FinancialAccess:
+      description: >-
+        The access status of one document. `paid`, `reduced_disclosure` and `registry_unavailable`
+        are never reported as "unavailable"; a failed registry request is `registry_unavailable`,
+        never `no_filing_identified`.
+      type: string
+      enum:
+        - public_download
+        - free_registration
+        - paid
+        - reduced_disclosure
+        - confidentiality_declared
+        - no_filing_identified
+        - registry_unavailable
+    FinancialDocumentType:
+      type: string
+      enum: [income_statement, balance_sheet, notes, audit_report]
+    FinancialDocument:
+      type: object
+      additionalProperties: false
+      required: [type, scope, access, registry_link]
+      properties:
+        type:
+          $ref: "#/components/schemas/FinancialDocumentType"
+        scope:
+          description: >-
+            `supplier_entity` for the confirmed legal entity's own accounts; `group` for
+            parent-company or consolidated accounts, kept apart.
+          type: string
+          enum: [supplier_entity, group]
+        access:
+          $ref: "#/components/schemas/FinancialAccess"
+        registry_link:
+          description: The registry address where the document is looked up (the app never buys it); null when no registry guidance is configured.
+          type: [string, "null"]
+          format: uri
+    FinancialGuidance:
+      description: >-
+        Built by rules in code from the country table; no model writes it, no document is bought,
+        and no credit score, estimate or commercial report replaces filed financial statements.
+        The same text is stored as an `evidence_gap` statement whose provider is `rules`.
+      type: object
+      additionalProperties: false
+      required:
+        - country
+        - financial_year
+        - configured
+        - example_table
+        - registry_name
+        - registry_url
+        - last_checked
+        - documents
+        - missing_evidence
+        - documents_to_request
+        - message
+      properties:
+        country:
+          type: [string, "null"]
+        financial_year:
+          type: integer
+        configured:
+          description: False when the country is not in the table (no registry guidance is configured for it).
+          type: boolean
+        example_table:
+          description: True when the table in use is the example shipped with the repository (rows not verified).
+          type: boolean
+        registry_name:
+          type: [string, "null"]
+        registry_url:
+          type: [string, "null"]
+          format: uri
+        last_checked:
+          description: When the country row was last checked.
+          type: [string, "null"]
+          format: date
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialDocument"
+        missing_evidence:
+          type: array
+          items:
+            type: string
+            enum:
+              - income_statement
+              - full_notes
+              - audit_report
+              - more_recent_period
+              - supplier_entity_accounts
+        documents_to_request:
+          type: array
+          items:
+            type: string
+            enum: [statutory_accounts, audited_statements, tax_schedules, management_accounts]
+        message:
+          type: string
     AssessmentKind:
       description: >-
         SWOT (`strength`, `weakness`, `opportunity`, `threat`), `risk_indicator`,
-        `evidence_gap`, and the six recommendation kinds. Each recommendation kind other than
+        `evidence_gap`, `fit` (against the member's criteria), and the six recommendation kinds. Each recommendation kind other than
         `next_action` appears at most once per draft.
       type: string
       enum:
@@ -1658,6 +2126,7 @@ components:
         - threat
         - risk_indicator
         - evidence_gap
+        - fit
         - procurement_implication
         - relationship_level
         - contract_approach
@@ -1690,6 +2159,9 @@ components:
         - status
       properties:
         provider:
+          description: >-
+            The provider, or `rules` for a statement written by rules in code (the financial
+            evidence guidance), which no model wrote.
           type: string
         model_id:
           type: string
@@ -1719,6 +2191,7 @@ components:
         - cites_buyer_context
         - gap_evidence
         - buyer_context_version
+        - buyer_context_outdated
         - provenance
       properties:
         id:
@@ -1764,6 +2237,13 @@ components:
         buyer_context_version:
           description: The buyer-context version the statement used; null without buyer context.
           type: [integer, "null"]
+        buyer_context_outdated:
+          description: >-
+            True for a recommendation drafted with a buyer context older than the current one
+            (the context was changed after the draft), or drafted on the first-evaluation
+            assumption while a context is stored now: redraft it to take the context into
+            account. False otherwise, and always false for the other kinds.
+          type: boolean
         provenance:
           $ref: "#/components/schemas/AssessmentProvenance"
     Assessment:
@@ -1774,6 +2254,10 @@ components:
         - message
         - buyer_context_version
         - rejected_statements
+        - current_buyer_context_version
+        - fit_message
+        - pending
+        - financial_guidance
         - items
       properties:
         status:
@@ -1789,6 +2273,28 @@ components:
           type: [string, "null"]
         buyer_context_version:
           type: [integer, "null"]
+        current_buyer_context_version:
+          description: The version of the buyer context stored now; null when none is stored.
+          type: [integer, "null"]
+        fit_message:
+          description: >-
+            "Enter your criteria to assess fit" while no criteria are stored for the profile
+            (for a `not_assessed` identity, "Not assessed: natural-person business"); null
+            otherwise.
+          type: [string, "null"]
+        pending:
+          description: Drafting jobs queued or running for this run (`POST .../fit`, `POST .../recommendations`).
+          type: array
+          items:
+            type: string
+            enum: [fit, recommendations]
+        financial_guidance:
+          description: >-
+            The financial evidence guidance, built by rules in code from the country table; null
+            while the assessment is pending and for a `not_assessed` identity.
+          oneOf:
+            - $ref: "#/components/schemas/FinancialGuidance"
+            - type: "null"
         rejected_statements:
           description: >-
             The number of drafted items rejected by the validation rules (no cited fact, a fact

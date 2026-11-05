@@ -16,7 +16,7 @@ from typing import Any, cast
 
 from app.assessment.rules import ASSUMPTION, BuyerContext, FactView
 from app.assessment.rules import Tally as AssessmentTally
-from app.assessment.stage import Draft, draft_part, prompts_to_request
+from app.assessment.stage import Draft, draft_part, fit_requested, prompts_to_request
 from app.collection.retrieval import IdentityRecord, make_retriever
 from app.collection.source_store import IdentityRedaction
 from app.db import Database
@@ -279,7 +279,15 @@ def run_assessment(case: AssessmentCase, context: Context) -> CaseResult:
     natural_person = case.kind == "natural_person"
     wanted = {"statement": "assessment", "recommendation": "recommendations"}.get(case.kind)
     requested = [name for name in prompts_to_request(natural_person, facts) if name == wanted]
-    buyer = BuyerContext(1, case.buyer_context) if case.buyer_context is not None else None
+    criteria = case.buyer_criteria.strip() or None
+    if case.kind == "fit" and fit_requested(natural_person, facts, criteria):
+        requested = ["fit"]  # no criteria: no call, as in production
+    # Fit is drafted against the criteria only: the buyer context is never sent to it.
+    buyer = (
+        BuyerContext(1, case.buyer_context)
+        if case.buyer_context is not None and case.kind != "fit"
+        else None
+    )
     tally = AssessmentTally()
     drafts: list[Draft] = []
     if requested:
@@ -298,6 +306,7 @@ def run_assessment(case: AssessmentCase, context: Context) -> CaseResult:
             buyer,
             [],
             tally,
+            criteria if requested[0] == "fit" else None,
         )
     return _assessment_counts(case, facts, drafts, buyer, tally, requested)
 
@@ -322,6 +331,9 @@ def _assessment_counts(
         "claims_unentered_context": 0,
         "natural_person_cases": int(case.kind == "natural_person"),
         "natural_person_clean": 0,
+        "kept_with_forbidden_phrase": 0,
+        "fit_cases": int(case.kind == "fit"),
+        "fit_calls_without_criteria": 0,
     }
     for draft in drafts:
         statement, cited = draft.kept.statement, set(draft.kept.cited)
@@ -340,6 +352,14 @@ def _assessment_counts(
                     counts["with_assumption"] += 1
                 if statement.cites_buyer_context:
                     counts["claims_unentered_context"] += 1
+    forbidden = [phrase.casefold() for phrase in case.expected.must_not_contain]
+    counts["kept_with_forbidden_phrase"] = sum(
+        any(phrase in draft.kept.text.casefold() for phrase in forbidden) for draft in drafts
+    )
+    if case.kind == "fit" and requested and not case.buyer_criteria.strip():
+        counts["fit_calls_without_criteria"] = 1
+    if case.expected.no_call and (requested or drafts):
+        notes.append("a call was made although no criteria were entered")
     if case.kind == "natural_person":
         counts["natural_person_clean"] = int(not requested and not drafts)
     if tally.rejected:
