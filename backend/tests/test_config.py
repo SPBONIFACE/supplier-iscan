@@ -113,3 +113,14 @@ def test_worker_settings_have_defaults_and_are_validated() -> None:
     assert (custom.run_lease.total_seconds(), custom.worker_poll_seconds) == (45, 1)
     with pytest.raises(ConfigurationError, match="RUN_LEASE_SECONDS"):
         load_settings({"RUN_LEASE_SECONDS": "0"})
+
+
+def test_the_comparison_maximum_is_a_setting_with_a_local_default() -> None:
+    default = load_settings({})
+    custom = load_settings({"COMPARISON_MAX_PROFILES": "4"})
+
+    assert default.comparison_max_profiles == 10
+    assert custom.comparison_max_profiles == 4
+    for value in ("1", "0", "many", "-3"):
+        with pytest.raises(ConfigurationError, match="COMPARISON_MAX_PROFILES"):
+            load_settings({"COMPARISON_MAX_PROFILES": value})
