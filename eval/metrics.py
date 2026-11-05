@@ -8,7 +8,6 @@ from pathlib import Path
 
 from eval.areas import CaseResult
 
-ASSESSMENT_NOT_IMPLEMENTED = "not implemented (assessment drafting is #25; its cases wait for it)"
 REVIEWER_TARGET = 0.8
 
 
@@ -119,16 +118,42 @@ def retrieval_metrics(results: list[CaseResult]) -> list[Metric]:
     ]
 
 
-def assessment_metrics() -> list[Metric]:
-    names = [
-        ("statements cite valid facts or name the missing evidence", "100%"),
-        ("recommendations without buyer context state the first-evaluation assumption", "100%"),
-        ("no recommendation asserts a buyer situation that was not entered", "100%"),
-        ("no recommendation for a natural_person identity", "100%"),
-    ]
+def assessment_metrics(results: list[CaseResult]) -> list[Metric]:
+    area = "assessment"
+    without_context = _sum(results, "recommendations_without_context")
     return [
-        Metric("assessment", name, target, "not implemented", detail=ASSESSMENT_NOT_IMPLEMENTED)
-        for name, target in names
+        _ratio_metric(
+            area,
+            "statements cite valid facts or name the missing evidence",
+            "100%",
+            _sum(results, "cite_valid"),
+            _sum(results, "kept"),
+            1.0,
+        ),
+        _ratio_metric(
+            area,
+            "recommendations without buyer context state the first-evaluation assumption",
+            "100%",
+            _sum(results, "with_assumption"),
+            without_context,
+            1.0,
+        ),
+        _ratio_metric(
+            area,
+            "no recommendation asserts a buyer situation that was not entered",
+            "100%",
+            without_context - _sum(results, "claims_unentered_context"),
+            without_context,
+            1.0,
+        ),
+        _ratio_metric(
+            area,
+            "no recommendation for a natural_person identity",
+            "100%",
+            _sum(results, "natural_person_clean"),
+            _sum(results, "natural_person_cases"),
+            1.0,
+        ),
     ]
 
 

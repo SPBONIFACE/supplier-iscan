@@ -1,8 +1,9 @@
 """The four areas: how a case is run, and what is measured. No database, no network.
 
 Every model call goes through the production code path: identity through `IdentityAgent` (#16),
-extraction through `ask` and `judge` of the extraction stage (#23), retrieval through
-`make_retriever` (#20), all with the #11 clients, the #55 prompt set and the #19 redaction gate.
+extraction through `ask` and `judge` of the extraction stage (#23), assessment through
+`draft_part` of the assessment stage (#25), retrieval through `make_retriever` (#20), all with
+the #11 clients, the #55 prompt set and the #19 redaction gate.
 A case that hits a provider error is marked "error" and the others continue.
 """
 
@@ -13,6 +14,9 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, cast
 
+from app.assessment.rules import ASSUMPTION, BuyerContext, FactView
+from app.assessment.rules import Tally as AssessmentTally
+from app.assessment.stage import Draft, draft_part, prompts_to_request
 from app.collection.retrieval import IdentityRecord, make_retriever
 from app.collection.source_store import IdentityRedaction
 from app.db import Database
@@ -30,6 +34,7 @@ from app.extraction.stage import (
 from app.http_client import GuardedClient
 from app.identity.agent import IdentityAgent
 from app.identity.services import AsyncRunner, IdentityServices
+from app.llm_schemas import RECOMMENDATION_KINDS
 from app.models import IdentitySession
 from app.profile_definition import FieldDefinition, ProfileDefinition
 from app.prompts import PromptSet
@@ -40,7 +45,7 @@ from app.registries import RegistryCandidate, RegistrySearchQuery, RegistrySearc
 from app.registries.ranking import rank_candidates
 from app.runs.stages import StageContext
 from eval.backends import Backend
-from eval.cases import CaseSet, ExtractionCase
+from eval.cases import AssessmentCase, CaseSet, ExtractionCase
 
 ORGANISATION = uuid.UUID("00000000-0000-4000-8000-0000000000e1")
 FETCHED = datetime(2026, 11, 5, tzinfo=UTC)
@@ -247,6 +252,106 @@ def run_extraction(case: ExtractionCase, context: Context) -> CaseResult:
             counts["correct"] += 1
         else:
             notes.append(f"{name}: wrong value")
+    return CaseResult(case.id, "ok", counts, notes)
+
+
+# --- assessment ------------------------------------------------------------------------------
+
+
+def run_assessment(case: AssessmentCase, context: Context) -> CaseResult:
+    """One case through the production path of the assessment stage, without the database: the
+    prompts the stage would send (none for a natural-person business), the call, the rules."""
+    by_id = {item.id: item for item in context.definition.fields()}
+    unknown = [item.field for item in case.facts if item.field not in by_id]
+    if unknown:
+        raise ValueError(f"case {case.id!r}: not a field of the profile definition: {unknown}")
+    facts = [
+        FactView(
+            id=item.id,
+            field=item.field,
+            status=item.status,
+            value=item.value or None,
+            quote=item.quote or None,
+            concerns_people=by_id[item.field].concerns_people,
+        )
+        for item in case.facts
+    ]
+    natural_person = case.kind == "natural_person"
+    wanted = {"statement": "assessment", "recommendation": "recommendations"}.get(case.kind)
+    requested = [name for name in prompts_to_request(natural_person, facts) if name == wanted]
+    buyer = BuyerContext(1, case.buyer_context) if case.buyer_context is not None else None
+    tally = AssessmentTally()
+    drafts: list[Draft] = []
+    if requested:
+        recorded = [json.dumps({"statements": call}) for call in case.recorded]
+        providers = context.backend.providers(structuring=recorded)
+        drafts = draft_part(
+            _stage_context(lambda: providers),
+            providers.structuring(),
+            context.gate,
+            IdentityRedaction(),
+            context.prompts,
+            requested[0],
+            facts,
+            {item.id: item.labels["en"] for item in context.definition.fields()},
+            "en",
+            buyer,
+            [],
+            tally,
+        )
+    return _assessment_counts(case, facts, drafts, buyer, tally, requested)
+
+
+def _assessment_counts(
+    case: AssessmentCase,
+    facts: list[FactView],
+    drafts: list[Draft],
+    buyer: BuyerContext | None,
+    tally: AssessmentTally,
+    requested: list[str],
+) -> CaseResult:
+    usable = {item.id.lower() for item in facts if item.usable}
+    allowed = {value.lower() for value in case.expected.cited_fact_ids} or usable
+    notes = []
+    counts = {
+        "kept": 0,
+        "cite_valid": 0,
+        "recommendations": 0,
+        "recommendations_without_context": 0,
+        "with_assumption": 0,
+        "claims_unentered_context": 0,
+        "natural_person_cases": int(case.kind == "natural_person"),
+        "natural_person_clean": 0,
+    }
+    for draft in drafts:
+        statement, cited = draft.kept.statement, set(draft.kept.cited)
+        counts["kept"] += 1
+        # Measured here again, not taken from the rules' own check.
+        gap_ok = statement.kind == "evidence_gap" and bool((statement.gap_evidence or "").strip())
+        if cited <= (allowed & usable) and (cited or gap_ok):
+            counts["cite_valid"] += 1
+        else:
+            notes.append(f"{statement.kind}: cites {sorted(cited - allowed) or 'no fact'}")
+        if statement.kind in RECOMMENDATION_KINDS:
+            counts["recommendations"] += 1
+            if buyer is None:
+                counts["recommendations_without_context"] += 1
+                if draft.kept.text.startswith(tuple(ASSUMPTION.values())):
+                    counts["with_assumption"] += 1
+                if statement.cites_buyer_context:
+                    counts["claims_unentered_context"] += 1
+    if case.kind == "natural_person":
+        counts["natural_person_clean"] = int(not requested and not drafts)
+    if tally.rejected:
+        notes.append(f"{tally.rejected} statement(s) rejected by the rules")
+    if tally.invalid:
+        notes.append(f"{tally.invalid} invalid item(s) dropped")
+    if case.expected.no_recommendation and counts["recommendations"]:
+        notes.append("a recommendation was kept for a natural-person business")
+    if case.expected.cites_buyer_context and not any(
+        draft.kept.statement.cites_buyer_context for draft in drafts
+    ):
+        notes.append("no kept statement rests on the buyer context")
     return CaseResult(case.id, "ok", counts, notes)
 
 

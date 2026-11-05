@@ -3,6 +3,7 @@ which Alembic compares against the migrations. A new model module is imported he
 """
 
 from app.models.accounts import Organisation, User, UserSession
+from app.models.assessment import AssessmentItem
 from app.models.crawl import CrawlPermission, SuppressionEntry
 from app.models.facts import Fact
 from app.models.failures import RunFailure
@@ -16,6 +17,7 @@ from app.models.sources import Source
 from app.models.usage import UsageEvent
 
 __all__ = [
+    "AssessmentItem",
     "CrawlPermission",
     "Fact",
     "IdentitySession",

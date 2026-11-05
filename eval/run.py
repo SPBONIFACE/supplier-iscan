@@ -16,6 +16,7 @@ from eval import metrics as metrics_module
 from eval.areas import (
     CaseResult,
     Context,
+    run_assessment,
     run_extraction,
     run_identity,
     run_retrieval,
@@ -122,12 +123,13 @@ def run_evaluation(
     start = len(backend.sink.entries)
     extraction = _run_cases(cases.extraction, lambda c: c.id, lambda c: run_extraction(c, context))
     measured("extraction", extraction, metrics_module.extraction_metrics(extraction), start)
-    areas.append(
-        AreaReport(
-            "assessment",
-            False,
-            [*metrics_module.assessment_metrics(), metrics_module.reviewer_metric(ratings)],
-        )
+    start = len(backend.sink.entries)
+    assessment = _run_cases(cases.assessment, lambda c: c.id, lambda c: run_assessment(c, context))
+    measured(
+        "assessment",
+        assessment,
+        [*metrics_module.assessment_metrics(assessment), metrics_module.reviewer_metric(ratings)],
+        start,
     )
     start = len(backend.sink.entries)
     retrieval = _run_cases(cases.retrieval, lambda c: c["id"], lambda c: run_retrieval(c, context))
@@ -185,8 +187,6 @@ def to_markdown(report: Report) -> str:
         ]
     for area in report.areas:
         lines += ["", f"## {area.area.capitalize()}", ""]
-        if not area.implemented:
-            lines += [metrics_module.ASSESSMENT_NOT_IMPLEMENTED, ""]
         lines += ["| Metric | Target | Result | Status |", "| --- | --- | --- | --- |"]
         for metric in area.metrics:
             result = metric.value or metric.detail

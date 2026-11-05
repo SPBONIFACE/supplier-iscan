@@ -77,3 +77,80 @@ class FieldExtractionAnswer(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     extractions: list[RawFieldExtraction]
+
+
+# --- assessment drafting (spec § LLM features, F8; #25) ---------------------------------------
+
+SWOT_KINDS = ("strength", "weakness", "opportunity", "threat")
+ASSESSMENT_KINDS = (*SWOT_KINDS, "risk_indicator", "evidence_gap")
+RECOMMENDATION_KINDS = (
+    "procurement_implication",
+    "relationship_level",
+    "contract_approach",
+    "volume_share",
+    "next_action",
+    "procurement_priority",
+)
+ALL_KINDS = (*ASSESSMENT_KINDS, *RECOMMENDATION_KINDS)
+
+StatementKind = Literal[
+    "strength",
+    "weakness",
+    "opportunity",
+    "threat",
+    "risk_indicator",
+    "evidence_gap",
+    "procurement_implication",
+    "relationship_level",
+    "contract_approach",
+    "volume_share",
+    "next_action",
+    "procurement_priority",
+]
+Level = Literal["low", "medium", "high"]
+RelationshipLabel = Literal["strategic", "preferred", "transactional"]
+
+
+class AssessmentStatement(BaseModel):
+    """One drafted statement. The shape only: the rules that need the run's facts (every cited id
+    is a found fact of this run, a level only with facts, one recommendation per kind) are applied
+    by `app.assessment.rules`. There is no numeric score."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    kind: StatementKind
+    text: str = Field(min_length=1, max_length=2000)
+    level: Level | None = None
+    label: RelationshipLabel | None = None
+    timing: str | None = Field(default=None, max_length=200)
+    cited_fact_ids: list[str] = Field(default_factory=list, max_length=50)
+    cites_buyer_context: bool = False
+    gap_evidence: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def _text(self) -> Self:
+        if not self.text.strip():
+            raise ValueError("a statement has a text")
+        return self
+
+
+class RawAssessmentStatement(BaseModel):
+    """One item of the provider's answer before it is validated as an `AssessmentStatement`: one
+    invalid item is dropped and counted instead of the whole answer being refused."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: str | None = None
+    text: str | None = None
+    level: str | None = None
+    label: str | None = None
+    timing: str | None = None
+    cited_fact_ids: list[str] | None = None
+    cites_buyer_context: bool | None = None
+    gap_evidence: str | None = None
+
+
+class AssessmentAnswer(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    statements: list[RawAssessmentStatement]
