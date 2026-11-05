@@ -835,7 +835,7 @@ export interface paths {
         };
         /**
          * The supplier card of a demo profile as a PDF (public)
-         * @description The same PDF as `GET /runs/{id}/pdf`, built from the stored demo profile, with the demo disclaimer on every page. No model is called and nothing is stored. A real run id, an unknown id or a malformed id answers 404.
+         * @description The same PDF as `GET /runs/{id}/pdf`, built from the stored demo profile, with the demo disclaimer on every page. No model is called. The rendered file is kept in memory per profile and language and reused (a new demo set uses new ids, so nothing stale is served); at most a few files are rendered at once. A real run id, an unknown id or a malformed id answers 404.
          */
         get: operations["getDemoProfilePdf"];
         put?: never;
@@ -3093,7 +3093,17 @@ export interface operations {
             };
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
-            503: components["responses"]["ServiceUnavailable"];
+            /** @description The PDF cannot be made now, or too many PDFs are being made at once (the wait is short). `Retry-After` says when to try again. Nothing else in the demo is affected. */
+            503: {
+                headers: {
+                    /** @description Seconds to wait before trying again. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     getDemoComparison: {

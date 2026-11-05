@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.19.0
+  version: 0.19.1
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -1545,7 +1545,9 @@ paths:
       summary: The supplier card of a demo profile as a PDF (public)
       description: >-
         The same PDF as `GET /runs/{id}/pdf`, built from the stored demo profile, with the demo
-        disclaimer on every page. No model is called and nothing is stored. A real run id, an
+        disclaimer on every page. No model is called. The rendered file is kept in memory per
+        profile and language and reused (a new demo set uses new ids, so nothing stale is served);
+        at most a few files are rendered at once. A real run id, an
         unknown id or a malformed id answers 404.
       security: []
       parameters:
@@ -1578,7 +1580,18 @@ paths:
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "503":
-          $ref: "#/components/responses/ServiceUnavailable"
+          description: >-
+            The PDF cannot be made now, or too many PDFs are being made at once (the wait is
+            short). `Retry-After` says when to try again. Nothing else in the demo is affected.
+          headers:
+            Retry-After:
+              description: Seconds to wait before trying again.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /demo/comparison:
     get:
       operationId: getDemoComparison
