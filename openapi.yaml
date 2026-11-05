@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.15.0
+  version: 0.16.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -639,6 +639,54 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /comparison:
+    get:
+      operationId: getComparison
+      tags: [runs]
+      summary: Compare the facts of several of the organisation's runs, field by field
+      description: >-
+        For each run in `run_ids` (request order), the run and its facts: one entry per `fact`
+        field of the profile definition that extraction stored, as in `GET /runs/{id}/facts`
+        (value, status, source type, verbatim quote, attribution, or `not_found`, which is shown
+        as "No public evidence found"). The field and section labels come from `GET
+        /profile-definition`. The comparison covers facts only: it carries no assessment, no
+        score and no ranking, and a natural-person supplier's "Not assessed" is not part of it
+        (owner decision D-073). A run that has not finished (`queued`, `running`, `paused`) has an
+        empty `facts` list: the screen shows "run in progress". A run that ended `partial` omits
+        the fields of its `uncovered_sections` that were not extracted: they were not examined,
+        which is not "No public evidence found". Duplicate ids count once. Fewer than 2 distinct
+        ids, or more than `comparison_max_profiles` of `GET /organisation`, answers 422. If any
+        id is unknown, malformed or belongs to another organisation, the whole request answers
+        the one 404, identical to an unknown id, with no partial data. An administrator, scoped
+        to their own organisation, gets 404 for another organisation's runs.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: run_ids
+          in: query
+          required: true
+          description: >-
+            The runs to compare, repeated (`run_ids=a&run_ids=b`). Between 2 and the configured
+            maximum of distinct ids.
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: The runs and their facts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comparison"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /runs/{id}/assessment:
@@ -2666,6 +2714,28 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Fact"
+    ComparisonRun:
+      description: One compared run with its facts (empty while the run has not finished).
+      type: object
+      additionalProperties: false
+      required: [run, facts]
+      properties:
+        run:
+          $ref: "#/components/schemas/Run"
+        facts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fact"
+    Comparison:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          description: One entry per distinct requested id, in request order.
+          type: array
+          items:
+            $ref: "#/components/schemas/ComparisonRun"
     RunList:
       type: object
       additionalProperties: false
@@ -2857,12 +2927,19 @@ components:
         - profiles_remaining
         - run_refusal_reason
         - access_ends_at
+        - comparison_max_profiles
       properties:
         name:
           type: string
         status:
           type: string
           enum: [pending_activation, active, acceptance_renewal_required]
+        comparison_max_profiles:
+          description: >-
+            The most profiles one comparison accepts (instance configuration). `GET /comparison`
+            answers 422 above it.
+          type: integer
+          minimum: 2
         seat_limit:
           description: Maximum number of users. Null means unlimited.
           type: [integer, "null"]
