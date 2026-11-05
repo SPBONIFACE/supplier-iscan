@@ -45,3 +45,17 @@ export async function expectNoCriticalIssues(container: HTMLElement) {
   const critical = results.violations.filter((violation) => violation.impact === "critical");
   expect(critical.map((violation) => violation.id)).toEqual([]);
 }
+
+/**
+ * Stricter check: no serious or critical issue. The listitem rule is left out because of the known
+ * issue in the shell's navigation list (Layout), which a screen cannot fix.
+ */
+export async function expectNoSeriousIssues(container: HTMLElement) {
+  const results = await axe.run(container, { rules: { "color-contrast": { enabled: false } } });
+  const found = results.violations.filter(
+    (violation) =>
+      (violation.impact === "critical" || violation.impact === "serious") &&
+      violation.id !== "listitem",
+  );
+  expect(found.map((violation) => violation.id)).toEqual([]);
+}

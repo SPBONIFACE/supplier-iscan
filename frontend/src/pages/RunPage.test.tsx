@@ -2,7 +2,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MemberOrganisation, Run, RunFailure } from "../lib/api";
-import { expectNoCriticalIssues, fail, member, ok, renderApp } from "../test/utils";
+import { expectNoSeriousIssues, fail, member, ok, renderApp } from "../test/utils";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
@@ -147,7 +147,7 @@ describe("run progress, running", () => {
     expect(within(table).getByText("Website crawl")).toBeTruthy();
     expect(within(table).getByText("The server answered with an error")).toBeTruthy();
     expect(within(table).getByText("Sitemap discovery")).toBeTruthy();
-    await expectNoCriticalIssues(view.container);
+    await expectNoSeriousIssues(view.container);
   });
 
   it("says unlimited when no quota is set, and says so when there is no failure", async () => {
@@ -332,7 +332,7 @@ describe("run progress, paused", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toMatch(/The structuring provider .* is unavailable/);
     expect(screen.getByText(/Stage 3 of 4: extraction paused/)).toBeTruthy();
-    await expectNoCriticalIssues(view.container);
+    await expectNoSeriousIssues(view.container);
 
     const resume = screen.getByRole("button", { name: "Resume the run" });
     await user.dblClick(resume);
@@ -392,7 +392,7 @@ describe("run progress, end states", () => {
     expect(screen.getByText("None left")).toBeTruthy();
     expect(screen.getByText("No usable source after every strategy was tried")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Stop the run" })).toBeNull();
-    await expectNoCriticalIssues(view.container);
+    await expectNoSeriousIssues(view.container);
   });
 
   it("failed: shows the reason in plain language", async () => {
@@ -441,6 +441,6 @@ describe("run progress, end states", () => {
     const stages = screen.getAllByRole("listitem").filter((li) => li.className === "stage");
     expect(stages[2]?.textContent).toMatch(/Extraction.*Partial/);
     expect(stages[3]?.textContent).toMatch(/Assessment.*Not started/);
-    await expectNoCriticalIssues(view.container);
+    await expectNoSeriousIssues(view.container);
   });
 });
