@@ -74,13 +74,13 @@ def _is_stopped(database: Database, run_id: uuid.UUID) -> bool:
         return run is None or run.stop_requested or run.status == "stopped"
 
 
-def fail_run(database: Database, run_id: uuid.UUID, reason: str) -> None:
+def fail_run(database: Database, run_id: uuid.UUID, reason: str, counts: bool = True) -> None:
     """End the run `failed`, whatever its status while it is not final: a run still `queued`
     (workers died between claiming the job and starting it, #13 follow-up) or `paused` ends too."""
     with database.session() as db:
         run = db.scalar(select(ProfileRun).where(ProfileRun.id == run_id).with_for_update())
         if run is not None and run.status not in FINISHED_STATUSES:
-            _finish(run, "failed")
+            _finish(run, "failed", counts=counts)
             run.error = reason
             db.commit()
 
@@ -193,7 +193,7 @@ def execute_run(env: RunEnvironment, run_id: uuid.UUID) -> None:
         logger.error(
             "Run %s failed in stage %s: the service is not configured", run_id, stage, exc_info=True
         )
-        fail_run(env.database, run_id, NOT_CONFIGURED)
+        fail_run(env.database, run_id, NOT_CONFIGURED, counts=False)  # a service fault (#103)
     except Exception as error:
         dependency = classify(error)
         if dependency is None:

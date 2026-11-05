@@ -38,6 +38,7 @@ from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.profile_definition import ProfileDefinition
 from app.providers.usage import run_usage_totals
 from app.runs.executor import RUN_JOB
+from app.runs.refusal import reserve_run_slot
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -484,6 +485,8 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request:
     if identity.confirmed_at is None:
         # Same answer as an unknown identity: only a confirmed identity starts a run.
         raise not_found()
+    # Limits are checked, and the slot taken, under the organisation's row lock (#29).
+    reserve_run_slot(db, scope.organisation_id, request.app.state.settings)
     run = scope.new(
         ProfileRun,
         identity_id=identity.id,
