@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.18.0
+  version: 0.18.1
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -1081,7 +1081,11 @@ paths:
       summary: Resume a paused run
       description: >-
         Continues a `paused` run from the stage where it paused, without repeating stored
-        results. The run is queued again (202). A run that is not paused answers 409.
+        results. The run is queued again (202). A run that is not paused answers 409. It is
+        refused with 403 `RunRefused` when the organisation is not activated, its access has
+        ended, or the instance's monthly spend cap is reached (`not_activated`, `access_ended`,
+        `spend_cap_reached`), since resuming spends again. The quota is not checked: the run
+        continues, it is not a new one.
       security:
         - sessionCookie: []
       parameters:
@@ -1095,6 +1099,12 @@ paths:
                 $ref: "#/components/schemas/Run"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Access ended, not activated, or the monthly spend cap is reached.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRefused"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":

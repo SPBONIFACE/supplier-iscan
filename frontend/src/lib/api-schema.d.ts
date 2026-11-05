@@ -593,7 +593,7 @@ export interface paths {
         put?: never;
         /**
          * Resume a paused run
-         * @description Continues a `paused` run from the stage where it paused, without repeating stored results. The run is queued again (202). A run that is not paused answers 409.
+         * @description Continues a `paused` run from the stage where it paused, without repeating stored results. The run is queued again (202). A run that is not paused answers 409. It is refused with 403 `RunRefused` when the organisation is not activated, its access has ended, or the instance's monthly spend cap is reached (`not_activated`, `access_ended`, `spend_cap_reached`), since resuming spends again. The quota is not checked: the run continues, it is not a new one.
          */
         post: operations["resumeRun"];
         delete?: never;
@@ -2499,6 +2499,15 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            /** @description Access ended, not activated, or the monthly spend cap is reached. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunRefused"];
+                };
+            };
             404: components["responses"]["NotFound"];
             /** @description The run is not paused. */
             409: {
