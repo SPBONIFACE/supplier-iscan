@@ -280,7 +280,6 @@ def test_supplier_and_ai_text_is_escaped_and_nothing_remote_is_fetched(
 
 
 def test_the_renderer_reads_only_the_files_of_its_own_folder() -> None:
-    pytest.importorskip("weasyprint")
     try:
         fetcher = _fetcher()
     except OSError:
