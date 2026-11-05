@@ -569,7 +569,12 @@ def test_if_redaction_fails_nothing_is_sent_and_nothing_is_stored(
 
 
 def run_through_the_worker(engine: Engine, run_id: uuid.UUID, providers: Providers | None) -> None:
-    stages = {**DEFAULT_STAGES, "extraction": stage(), "collection": no_op}
+    stages = {
+        **DEFAULT_STAGES,
+        "extraction": stage(),
+        "collection": no_op,
+        "assessment": no_op,  # has its own tests
+    }
     execute_run(RunEnvironment(Database(None, engine), stages, providers, lambda: None), run_id)
 
 
