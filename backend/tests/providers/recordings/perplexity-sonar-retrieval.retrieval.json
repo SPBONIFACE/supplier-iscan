@@ -1,56 +1,72 @@
 {
   "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
   "recorded_at": null,
-  "origin": "hand-written in the provider's documented response shape (not yet recorded from the live API)",
+  "origin": "hand-built in the documented Agent API response shape (docs.perplexity.ai migrate-from-sonar, web-search and output-control pages, read 5 Nov 2026) and checked against the installed perplexityai 0.43.8 types; not recorded from the live API",
   "config_id": "perplexity-sonar-retrieval",
   "role": "retrieval",
   "status": 200,
   "body": {
-    "id": "pplx_2",
-    "model": "sonar",
-    "created": 1,
-    "object": "chat.completion",
-    "choices": [
+    "id": "resp_2",
+    "created_at": 1,
+    "model": "perplexity/sonar",
+    "object": "response",
+    "status": "completed",
+    "output": [
       {
-        "index": 0,
-        "finish_reason": "stop",
-        "message": {
-          "role": "assistant",
-          "content": "Acme SA publishes an annual report."
-        },
-        "delta": {
-          "role": "assistant",
-          "content": ""
-        }
-      }
-    ],
-    "citations": [
-      "https://acme.example/about",
-      "https://acme.example/report"
-    ],
-    "search_results": [
-      {
-        "title": "About Acme",
-        "url": "https://acme.example/about",
-        "snippet": "Acme SA, a French company"
+        "type": "search_results",
+        "queries": [
+          "Acme SA annual report"
+        ],
+        "results": [
+          {
+            "id": 1,
+            "url": "https://acme.example/about",
+            "title": "About Acme",
+            "snippet": "Acme SA, a French company",
+            "date": "2026-01-01",
+            "last_updated": "2026-01-02",
+            "source": "web"
+          },
+          {
+            "id": 2,
+            "url": "https://acme.example/report",
+            "title": "Annual report",
+            "snippet": "Acme SA annual report 2025",
+            "date": "2026-01-01",
+            "last_updated": "2026-01-02",
+            "source": "web"
+          }
+        ]
       },
       {
-        "title": "Annual report",
-        "url": "https://acme.example/report",
-        "snippet": "Acme SA annual report 2025"
+        "id": "msg_1",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Acme SA publishes an annual report.[1][2]",
+            "annotations": []
+          }
+        ]
       }
     ],
     "usage": {
-      "prompt_tokens": 20,
-      "completion_tokens": 150,
+      "input_tokens": 20,
+      "output_tokens": 150,
       "total_tokens": 170,
-      "num_search_queries": 1,
       "cost": {
-        "input_tokens_cost": 2e-05,
-        "output_tokens_cost": 0.00015,
-        "request_cost": 0.005,
-        "search_queries_cost": 0.005,
-        "total_cost": 0.01017
+        "currency": "USD",
+        "input_cost": 5e-06,
+        "output_cost": 0.000375,
+        "tool_calls_cost": 0.0025,
+        "total_cost": 0.00288
+      },
+      "tool_calls_details": {
+        "search_web": {
+          "invocation": 1
+        }
       }
     }
   },
@@ -59,7 +75,7 @@
     "output_tokens": 150,
     "reasoning_tokens": 0,
     "tool_calls": 1,
-    "billed_amount": "0.01017",
+    "billed_amount": "0.00288",
     "billed_currency": "USD"
   },
   "expected_urls": [

@@ -59,7 +59,7 @@ PROVIDER_APIS: dict[tuple[ProviderName, str], frozenset[Role]] = {
     ("openai", "responses"): frozenset({"structuring", "retrieval"}),
     ("mistral", "chat_completions"): frozenset({"structuring"}),
     ("mistral", "conversations"): frozenset({"retrieval"}),
-    ("perplexity", "chat_completions"): frozenset({"structuring", "retrieval"}),
+    ("perplexity", "agent"): frozenset({"structuring", "retrieval"}),
 }
 
 EXAMPLE_FILE = Path(__file__).resolve().parent / "provider_configs.example.json"

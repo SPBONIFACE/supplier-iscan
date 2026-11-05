@@ -1,68 +1,88 @@
 {
-  "$comment": "Answers in the shape of the perplexity API, for the adapter tests. Synthetic company; no key, no personal data.",
+  "$comment": "Answers in the shape of the Perplexity Agent API (responses), for the adapter tests. Synthetic company; no key, no personal data. Origin: hand-built in the documented Agent API response shape (docs.perplexity.ai migrate-from-sonar, web-search and output-control pages, read 5 Nov 2026) and checked against the installed perplexityai 0.43.8 types; not recorded from the live API.",
   "structuring": {
-    "id": "pplx_1",
-    "model": "model-1",
-    "created": 1,
-    "object": "chat.completion",
-    "choices": [
+    "id": "resp_1",
+    "created_at": 1,
+    "model": "perplexity/sonar",
+    "object": "response",
+    "status": "completed",
+    "output": [
       {
-        "index": 0,
-        "finish_reason": "stop",
-        "message": {
-          "role": "assistant",
-          "content": "{\"legal_name\": \"Acme SA\", \"country\": \"FR\"}"
-        },
-        "delta": {
-          "role": "assistant",
-          "content": ""
-        }
+        "id": "msg_1",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"legal_name\": \"Acme SA\", \"country\": \"FR\"}",
+            "annotations": []
+          }
+        ]
       }
     ],
     "usage": {
-      "prompt_tokens": 10,
-      "completion_tokens": 5,
+      "input_tokens": 10,
+      "output_tokens": 5,
       "total_tokens": 15
     }
   },
   "retrieval": {
-    "id": "pplx_2",
-    "model": "model-1",
-    "created": 1,
-    "object": "chat.completion",
-    "choices": [
+    "id": "resp_2",
+    "created_at": 1,
+    "model": "perplexity/sonar",
+    "object": "response",
+    "status": "completed",
+    "output": [
       {
-        "index": 0,
-        "finish_reason": "stop",
-        "message": {
-          "role": "assistant",
-          "content": "Acme SA publishes an annual report."
-        },
-        "delta": {
-          "role": "assistant",
-          "content": ""
-        }
-      }
-    ],
-    "citations": [
-      "https://acme.example/about",
-      "https://acme.example/report"
-    ],
-    "search_results": [
-      {
-        "title": "About Acme",
-        "url": "https://acme.example/about",
-        "snippet": "Acme SA, a French company"
+        "type": "search_results",
+        "queries": [
+          "Acme SA annual report"
+        ],
+        "results": [
+          {
+            "id": 1,
+            "url": "https://acme.example/about",
+            "title": "About Acme",
+            "snippet": "Acme SA, a French company",
+            "date": "2026-01-01",
+            "last_updated": "2026-01-02",
+            "source": "web"
+          },
+          {
+            "id": 2,
+            "url": "https://acme.example/report",
+            "title": "Annual report",
+            "snippet": "Acme SA annual report 2025",
+            "date": "2026-01-01",
+            "last_updated": "2026-01-02",
+            "source": "web"
+          }
+        ]
       },
       {
-        "title": "Annual report",
-        "url": "https://acme.example/report",
-        "snippet": "Acme SA annual report 2025"
+        "id": "msg_1",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Acme SA publishes an annual report.[1][2]",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://acme.example/other",
+                "title": "Other"
+              }
+            ]
+          }
+        ]
       }
     ],
     "usage": {
-      "prompt_tokens": 10,
-      "completion_tokens": 5,
+      "input_tokens": 10,
+      "output_tokens": 5,
       "total_tokens": 15
     }
   },
@@ -71,6 +91,44 @@
       "message": "Invalid API key",
       "type": "invalid_api_key",
       "code": 401
+    }
+  },
+  "retrieval_annotations_only": {
+    "id": "resp_3",
+    "created_at": 1,
+    "model": "perplexity/sonar",
+    "object": "response",
+    "status": "completed",
+    "output": [
+      {
+        "id": "msg_1",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Acme SA publishes an annual report.",
+            "annotations": [
+              {
+                "type": "url_citation",
+                "url": "https://acme.example/about",
+                "title": "About Acme"
+              },
+              {
+                "type": "url_citation",
+                "url": "https://acme.example/report",
+                "title": "Annual report"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 5,
+      "total_tokens": 15
     }
   }
 }

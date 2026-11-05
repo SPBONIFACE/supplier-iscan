@@ -17,8 +17,8 @@
     {
       "id": "perplexity-sonar-retrieval",
       "provider": "perplexity",
-      "api": "chat_completions",
-      "model_id": "sonar",
+      "api": "agent",
+      "model_id": "perplexity/sonar",
       "endpoint": "https://api.perplexity.ai",
       "training_setting": "to be verified",
       "retention": "to be verified",

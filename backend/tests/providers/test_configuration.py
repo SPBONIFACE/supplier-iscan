@@ -124,7 +124,7 @@ def test_a_missing_file_stops_startup(tmp_path: Path) -> None:
 def test_health_names_the_missing_key_settings_and_matches_the_contract() -> None:
     cat = catalogue(
         config("structurer"),
-        config("searcher", "perplexity", "chat_completions"),
+        config("searcher", "perplexity", "agent"),
         retrieval="searcher",
         structuring="structurer",
     )
