@@ -38,7 +38,7 @@ from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.profile_definition import ProfileDefinition
 from app.providers.usage import run_usage_totals
 from app.runs.executor import RUN_JOB
-from app.runs.refusal import reserve_run_slot
+from app.runs.refusal import check_resume, reserve_run_slot
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -673,6 +673,7 @@ def resume_run(id: str, scope: OrganisationScoped, db: DbSession, request: Reque
     run = scope.get(db, ProfileRun, id, for_update=True)
     if run.status != "paused":
         raise HTTPException(status.HTTP_409_CONFLICT, detail=NOT_PAUSED)
+    check_resume(db, scope.organisation_id, request.app.state.settings)
     run.status = "queued"
     run.pause_dependency = None
     run.pause_reason = None

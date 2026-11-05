@@ -5,6 +5,7 @@ The numbers below are test values: the real ones are configuration and are the o
 
 import threading
 import time
+import uuid
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -471,3 +472,107 @@ def test_drafting_is_not_blocked_by_the_quota_or_the_access_period(
         db.commit()
 
     assert drafted.call("POST", "recommendations").status_code == 202
+
+
+# --- resume (#29, QA) -------------------------------------------------------------------------
+
+
+def paused_run(engine: Engine, user: Any) -> str:
+    return str(create_run(engine, user.organisation_id, status="paused", enqueue=False))
+
+
+def resume(client: TestClient, token: str, run_id: str) -> httpx2.Response:
+    return send_with_session(client, "POST", f"/runs/{run_id}/resume", token)
+
+
+def test_resume_is_refused_once_access_has_ended(client: TestClient, engine: Engine) -> None:
+    user, token = member(engine, access_ends_at=utc_now() - timedelta(seconds=1))
+    run_id = paused_run(engine, user)
+
+    response = resume(client, token, run_id)
+
+    assert (response.status_code, response.json()["reason"]) == (403, "access_ended")
+    assert response.json()["detail"] == REFUSAL_MESSAGES["access_ended"]
+    assert_matches_contract(response, "/runs/{id}/resume", "post")
+    assert get_run(engine, uuid.UUID(run_id)).status == "paused"
+    assert jobs_of(engine) == []
+
+
+def test_resume_is_refused_when_not_activated(client: TestClient, engine: Engine) -> None:
+    user, token = member(engine, status="pending_activation")
+
+    response = resume(client, token, paused_run(engine, user))
+
+    assert (response.status_code, response.json()["reason"]) == (403, "not_activated")
+
+
+def test_resume_is_refused_on_the_spend_cap_and_allowed_below_it(
+    engine: Engine, settings: Settings
+) -> None:
+    user, token = member(engine)
+    run_id = paused_run(engine, user)
+    spend(engine)  # 1.0
+
+    refused = resume(capped(settings, "1", engine), token, run_id)
+    allowed = resume(capped(settings, "1.5", engine), token, run_id)
+
+    assert (refused.status_code, refused.json()["reason"]) == (403, "spend_cap_reached")
+    assert allowed.status_code == 202 and allowed.json()["status"] == "queued"
+    assert len(jobs_of(engine)) == 1
+
+
+def test_resume_does_not_take_the_quota_again(client: TestClient, engine: Engine) -> None:
+    user, token = member(engine, profile_quota=1)
+    run_id = paused_run(engine, user)  # a paused run does not count: the slot looks free
+
+    response = resume(client, token, run_id)
+
+    assert response.status_code == 202  # the run continues; the quota is not checked
+    assert get_run(engine, uuid.UUID(run_id)).status == "queued"
+
+
+def test_simultaneous_resumes_of_one_run_queue_it_once(engine: Engine, settings: Settings) -> None:
+    user, token = member(engine)
+    run_id = paused_run(engine, user)
+    first = make_client(settings=settings, engine=engine)
+    assert send_with_session(first, "GET", "/runs", token).status_code == 200
+    clients = [
+        TestClient(first.app, base_url=str(first.base_url), raise_server_exceptions=False)
+        for _ in range(CONCURRENT)
+    ]
+    barrier = threading.Barrier(CONCURRENT)
+
+    def go(index: int) -> httpx2.Response:
+        barrier.wait()
+        return resume(clients[index], token, run_id)
+
+    with ThreadPoolExecutor(max_workers=CONCURRENT) as pool:
+        responses = list(pool.map(go, range(CONCURRENT)))
+
+    assert Counter(r.status_code for r in responses) == {202: 1, 409: CONCURRENT - 1}
+    assert len(jobs_of(engine)) == 1
+
+
+def test_simultaneous_resumes_all_refused_when_the_cap_is_reached(
+    engine: Engine, settings: Settings
+) -> None:
+    user, token = member(engine)
+    run_ids = [paused_run(engine, user) for _ in range(CONCURRENT)]
+    spend(engine)
+    first = capped(settings, "1", engine)
+    assert send_with_session(first, "GET", "/runs", token).status_code == 200
+    clients = [
+        TestClient(first.app, base_url=str(first.base_url), raise_server_exceptions=False)
+        for _ in run_ids
+    ]
+    barrier = threading.Barrier(CONCURRENT)
+
+    def go(index: int) -> httpx2.Response:
+        barrier.wait()
+        return resume(clients[index], token, run_ids[index])
+
+    with ThreadPoolExecutor(max_workers=CONCURRENT) as pool:
+        responses = list(pool.map(go, range(CONCURRENT)))
+
+    assert {r.status_code for r in responses} == {403}
+    assert jobs_of(engine) == []
