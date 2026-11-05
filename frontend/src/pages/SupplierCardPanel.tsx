@@ -1,11 +1,13 @@
 // The supplier card (spec F5, F3 display rules; mock-ups 05-supplier-card-*): a side panel over the
 // workspace with its own URL. Header, key figures, flags, then one row per fact field of the profile
-// definition. Approving and correcting (#36), the assessment (#37) and the deletion date (#45) are not here.
-import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
+// definition; each row can be approved or corrected by a member (#36). The assessment (#37) and the
+// deletion date (#45) are not here.
+import { type RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useMatch, useNavigate, useParams } from "react-router";
 import {
   ExternalLink,
+  FactList,
   FactRow,
   IAF_CERTSEARCH_URL,
   QuoteBlock,
@@ -13,9 +15,10 @@ import {
   SourceChip,
   StatusBadge,
 } from "../components/evidence";
+import type { ReviewBody, ReviewControls, ReviewOutcome } from "../components/FactReview";
 import { FlagBanner } from "../components/FlagBanner";
 import { LoadingIndicator, MessageBanner } from "../components/ui";
-import type { Fact, ProfileField, Run } from "../lib/api";
+import { api, type Fact, type ProfileField, type Run } from "../lib/api";
 import { formatDate } from "../lib/format";
 import { hostOf, safeHttpUrl, websiteUrl } from "../lib/safeUrl";
 import { hasProfile, useRunCard } from "../lib/useRunCard";
@@ -36,6 +39,9 @@ export function WorkspaceShell() {
   );
 }
 
+/** The one 409 the server answers with this message only: a review while the run has not finished. */
+const IN_PROGRESS = "The run is still in progress.";
+
 const lastRefresh = (run: Run): string => run.finished_at ?? run.started_at ?? run.created_at;
 
 export function SupplierCardPanel() {
@@ -43,7 +49,7 @@ export function SupplierCardPanel() {
   const { profileId = "" } = useParams();
   const navigate = useNavigate();
   const language = i18n.language === "fr" ? "fr" : "en";
-  const { load, run, data, retry } = useRunCard(profileId, language);
+  const { load, run, data, retry, applyFact, refreshRun } = useRunCard(profileId, language);
   const heading = useRef<HTMLHeadingElement>(null);
   const focused = useRef(false);
   // The element that opened the card, to give the focus back to it when the card closes.
@@ -125,7 +131,15 @@ export function SupplierCardPanel() {
         </div>
       ) : null}
       {load === "ready" && run && data ? (
-        <CardBody run={run} facts={data.facts} definition={data.definition} heading={heading} />
+        <CardBody
+          run={run}
+          facts={data.facts}
+          definition={data.definition}
+          heading={heading}
+          applyFact={applyFact}
+          refreshRun={refreshRun}
+          reload={retry}
+        />
       ) : null}
     </aside>
   );
@@ -138,13 +152,74 @@ function CardBody({
   facts,
   definition,
   heading,
+  applyFact,
+  refreshRun,
+  reload,
 }: {
   run: Run;
   facts: Fact[];
   definition: Definition;
   heading: RefObject<HTMLHeadingElement | null>;
+  applyFact: (fact: Fact) => void;
+  refreshRun: () => Promise<void>;
+  reload: () => void;
 }) {
   const { t, i18n } = useTranslation();
+  const lockedId = useId();
+  const [inProgress, setInProgress] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
+  const proposedLeft = run.proposed_facts;
+  const countText = (count: number): string =>
+    count === 0 ? t("card.review.countNone") : t("card.review.count", { count });
+
+  const submit = useCallback(
+    async (fact: Fact, label: string, body: ReviewBody): Promise<ReviewOutcome> => {
+      const result = await api.reviewFact(fact.id, { ...body, version: fact.version });
+      if (result.ok) {
+        applyFact(result.data);
+        const left = facts.filter(
+          (item) => item.status === "proposed" && item.id !== fact.id,
+        ).length;
+        const said = t(
+          body.status === "approved"
+            ? "card.review.announceApproved"
+            : "card.review.announceCorrected",
+          { field: label },
+        );
+        setAnnouncement(`${said} ${countText(left)}`);
+        void refreshRun();
+        return { kind: "saved", fact: result.data };
+      }
+      if (result.kind === "conflict") {
+        const current = result.current as Fact | undefined;
+        if (current && typeof current === "object" && "version" in current) {
+          applyFact(current);
+          void refreshRun();
+          return { kind: "conflict", current };
+        }
+        if (result.detail === IN_PROGRESS) {
+          setInProgress(true);
+          return { kind: "in_progress" };
+        }
+        return { kind: "rejected" };
+      }
+      if (result.kind === "unauthorized") return { kind: "signed_out" };
+      if (result.kind === "not_found") return { kind: "gone" };
+      if (result.kind === "validation") return { kind: "invalid" };
+      return { kind: "error" };
+    },
+    [applyFact, refreshRun, facts, t],
+  );
+  const review: ReviewControls = useMemo(
+    () => ({
+      lockedReason: inProgress ? t("card.review.locked") : null,
+      lockedId,
+      submit,
+      reload,
+    }),
+    [inProgress, lockedId, reload, submit, t],
+  );
+  const nextProposed = facts.find((item) => item.status === "proposed");
   const byField = new Map(facts.map((fact) => [fact.field, fact]));
   const uncovered = new Set(run.uncovered_sections);
   const partial = run.status === "partial";
@@ -192,8 +267,30 @@ function CardBody({
           {/* The place of "Source content deletion" (mock-up 05-supplier-card-flags): #45 fills it. */}
         </dl>
         {figures.length > 0 ? <KeyFigures figures={figures} byField={byField} /> : null}
+        <div className="card-count">
+          <strong>{countText(proposedLeft)}</strong>
+          {nextProposed ? (
+            <button
+              type="button"
+              className="btn btn-text"
+              onClick={() => document.getElementById(`fact-${nextProposed.id}`)?.focus()}
+            >
+              {t("card.review.nextProposed")}
+            </button>
+          ) : null}
+        </div>
+        <p className="vh" role="status">
+          {announcement}
+        </p>
       </div>
       <div className="card-body">
+        {inProgress ? (
+          <div id={lockedId}>
+            <MessageBanner kind="error">
+              <p>{t("card.review.locked")}</p>
+            </MessageBanner>
+          </div>
+        ) : null}
         {run.identity_to_verify || partial ? (
           <div className="flags">
             {run.identity_to_verify ? (
@@ -234,18 +331,22 @@ function CardBody({
               {sectionUncovered && none ? (
                 <p className="not-covered">{t("card.notCoveredSection")}</p>
               ) : (
-                <ul className="facts" aria-label={section.label}>
-                  {fields.map((field) => (
-                    <FactRow
-                      key={field.id}
-                      label={field.label}
-                      fact={byField.get(field.id) ?? null}
-                      notCovered={sectionUncovered && !byField.has(field.id)}
-                      concernsPeople={field.concerns_people}
-                      certification={field.certification}
-                    />
-                  ))}
-                </ul>
+                <FactList label={section.label}>
+                  {(nav) =>
+                    fields.map((field, index) => (
+                      <FactRow
+                        key={field.id}
+                        label={field.label}
+                        fact={byField.get(field.id) ?? null}
+                        notCovered={sectionUncovered && !byField.has(field.id)}
+                        concernsPeople={field.concerns_people}
+                        certification={field.certification}
+                        nav={nav(index)}
+                        review={review}
+                      />
+                    ))
+                  }
+                </FactList>
               )}
             </section>
           );

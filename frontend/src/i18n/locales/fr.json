@@ -391,6 +391,41 @@
     "partialBody": "Cette analyse s’est arrêtée en atteignant son budget de coût. Sections non couvertes : {{sections}}. Elles n’ont pas été examinées, ce qui ne dit rien du fournisseur.",
     "recommendations": "Recommandations d’achat",
     "assessment": "Évaluation",
-    "naturalPerson": "L’évaluation n’est pas préparée pour ce fournisseur en raison de sa forme juridique. Cela ne dit rien du fournisseur."
+    "naturalPerson": "L’évaluation n’est pas préparée pour ce fournisseur en raison de sa forme juridique. Cela ne dit rien du fournisseur.",
+    "quoteTitleOriginal": "Citation de la valeur d’origine de l’IA · {{field}}",
+    "review": {
+      "approve": "Approuver",
+      "correct": "Corriger",
+      "by": {
+        "approved": "Approuvé par {{who}} le {{date}}",
+        "corrected": "Corrigé par {{who}} le {{date}}"
+      },
+      "aMember": "un autre membre",
+      "formLabel": "Corriger {{field}}",
+      "correctedValue": "Valeur corrigée",
+      "yourValue": "Votre valeur corrigée (non enregistrée)",
+      "help": "La valeur d’origine de l’IA et sa citation restent sur la fiche à côté de votre correction.",
+      "save": "Enregistrer la correction",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "apply": "Appliquer ma correction",
+      "discard": "Abandonner mon texte",
+      "keys": "Entrée enregistre · Échap annule",
+      "emptyValue": "Erreur : saisissez la valeur corrigée.",
+      "invalid": "Erreur : cette valeur ne peut pas être enregistrée. Vérifiez qu’elle n’est pas trop longue et réessayez.",
+      "conflict": "{{who}} a modifié ce fait le {{date}}. Rien n’a été écrasé. Son état actuel est affiché ci-dessus.",
+      "conflictTyped": "{{who}} a modifié ce fait le {{date}}, pendant que vous le modifiiez. Rien n’a été écrasé. Son état actuel est affiché ci-dessus ; votre texte est conservé ci-dessous.",
+      "error": "Erreur : la révision n’a pas pu être enregistrée. La ligne est inchangée. Réessayez dans quelques minutes.",
+      "gone": "Ce fait n’existe plus. Rechargez la fiche pour voir son état actuel.",
+      "rejected": "Ce fait ne peut plus être révisé de cette manière. Rechargez la fiche pour voir son état actuel.",
+      "reload": "Recharger la fiche",
+      "locked": "L’analyse est encore en cours : les faits ne peuvent pas encore être révisés. Réessayez quand elle sera terminée.",
+      "count_one": "{{count}} fait encore proposé",
+      "count_other": "{{count}} faits encore proposés",
+      "countNone": "Aucun fait n’attend de révision.",
+      "nextProposed": "Aller au prochain fait proposé",
+      "announceApproved": "{{field}} approuvé.",
+      "announceCorrected": "{{field}} corrigé."
+    }
   }
 }

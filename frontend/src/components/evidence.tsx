@@ -15,6 +15,7 @@ import { Trans, useTranslation } from "react-i18next";
 import type { Fact } from "../lib/api";
 import { formatDate } from "../lib/format";
 import { hostOf, safeHttpUrl } from "../lib/safeUrl";
+import { FactReviewBar, type ReviewControls } from "./FactReview";
 
 /** Where the buyer can check a certificate when the API gives no more precise address. */
 export const IAF_CERTSEARCH_URL = "https://www.iafcertsearch.org/";
@@ -178,7 +179,9 @@ export function QuoteBlock({
     >
       <div className="note-head">
         <h4 className="note-title" id={headingId} ref={headingRef} tabIndex={-1}>
-          {t("card.quoteTitle", { field: fieldLabel })}
+          {t(fact.status === "corrected" ? "card.quoteTitleOriginal" : "card.quoteTitle", {
+            field: fieldLabel,
+          })}
         </h4>
         <button type="button" className="btn-text disclosure btn-close-note" onClick={onClose}>
           {t("card.closeQuote")}
@@ -264,7 +267,56 @@ type FactRowProps = {
   notCovered?: boolean;
   concernsPeople?: boolean;
   certification?: boolean;
+  /** Roving tab stop of the list the row belongs to (see FactList). */
+  nav?: RowNav;
+  /** Review actions (#36); without them the row is read-only. */
+  review?: ReviewControls;
 };
+
+/** The roving tab stop of one row of a FactList. */
+export type RowNav = { tabIndex: 0 | -1; onFocus: () => void };
+
+/**
+ * The facts of one section: one Tab stop for the list, Up and Down arrows (and Home, End) move from row
+ * to row (mock-up 05-review-default). `children` receives a function giving each row its tab stop.
+ */
+export function FactList({
+  label,
+  children,
+}: {
+  label: string;
+  children: (nav: (index: number) => RowNav) => ReactNode;
+}) {
+  const [active, setActive] = useState(0);
+  const list = useRef<HTMLUListElement>(null);
+  const nav = (index: number): RowNav => ({
+    tabIndex: index === active ? 0 : -1,
+    onFocus: () => setActive(index),
+  });
+  const onKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
+    const rows = Array.from(list.current?.children ?? []) as HTMLElement[];
+    const at = rows.indexOf(event.target as HTMLElement); // only when a row itself has the focus
+    if (at < 0 || rows.length === 0) return;
+    const to =
+      event.key === "ArrowDown"
+        ? Math.min(at + 1, rows.length - 1)
+        : event.key === "ArrowUp"
+          ? Math.max(at - 1, 0)
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? rows.length - 1
+              : -1;
+    if (to < 0) return;
+    event.preventDefault();
+    rows[to]?.focus();
+  };
+  return (
+    <ul className="facts" aria-label={label} ref={list} onKeyDown={onKeyDown}>
+      {children(nav)}
+    </ul>
+  );
+}
 
 /** One field of the profile: its value, status and source chip, or "No public evidence found". */
 export function FactRow({
@@ -273,18 +325,28 @@ export function FactRow({
   notCovered = false,
   concernsPeople = false,
   certification = false,
+  nav,
+  review,
 }: FactRowProps) {
   const { t } = useTranslation();
   const base = useId();
   const labelId = `${base}-label`;
   const noteId = `${base}-note`;
   const quote = useQuoteToggle();
+  const row = useRef<HTMLLIElement>(null);
   const evidence = fact && fact.status !== "not_found" ? fact : null;
   const verify = certification
     ? (safeHttpUrl(fact?.verification_url ?? null) ?? IAF_CERTSEARCH_URL)
     : null;
   return (
-    <li className="fact" aria-labelledby={labelId}>
+    <li
+      className="fact"
+      id={fact ? `fact-${fact.id}` : undefined}
+      aria-labelledby={labelId}
+      ref={row}
+      tabIndex={nav?.tabIndex}
+      onFocus={nav?.onFocus}
+    >
       <span className="f-label" id={labelId}>
         {label}
         {concernsPeople ? <span className="f-hint">{t("card.aboutPeople")}</span> : null}
@@ -321,6 +383,14 @@ export function FactRow({
           <p className="f-cert">
             <ExternalLink href={verify}>{t("card.verifyIaf")}</ExternalLink>
           </p>
+        ) : null}
+        {review && evidence ? (
+          <FactReviewBar
+            fact={evidence}
+            label={label}
+            review={review}
+            focusRow={() => row.current?.focus()}
+          />
         ) : null}
       </div>
       {evidence && quote.open && evidence.quote ? (

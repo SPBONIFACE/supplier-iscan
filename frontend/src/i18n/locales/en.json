@@ -391,6 +391,41 @@
     "partialBody": "This run stopped when it reached its cost budget. Sections not covered: {{sections}}. They were not examined, which says nothing about the supplier.",
     "recommendations": "Procurement recommendations",
     "assessment": "Assessment",
-    "naturalPerson": "The assessment is not prepared for this supplier because of its legal form. This says nothing about the supplier."
+    "naturalPerson": "The assessment is not prepared for this supplier because of its legal form. This says nothing about the supplier.",
+    "quoteTitleOriginal": "Quote for the original AI value · {{field}}",
+    "review": {
+      "approve": "Approve",
+      "correct": "Correct",
+      "by": {
+        "approved": "Approved by {{who}} on {{date}}",
+        "corrected": "Corrected by {{who}} on {{date}}"
+      },
+      "aMember": "another member",
+      "formLabel": "Correct {{field}}",
+      "correctedValue": "Corrected value",
+      "yourValue": "Your corrected value (not saved)",
+      "help": "The original AI value and its Quote stay on the card next to your correction.",
+      "save": "Save correction",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "apply": "Apply my correction",
+      "discard": "Discard my text",
+      "keys": "Enter saves · Esc cancels",
+      "emptyValue": "Error: enter the corrected value.",
+      "invalid": "Error: this value cannot be saved. Check that it is not too long and try again.",
+      "conflict": "{{who}} changed this fact on {{date}}. Nothing was overwritten. Its current state is shown above.",
+      "conflictTyped": "{{who}} changed this fact on {{date}}, while you were editing. Nothing was overwritten. Its current state is shown above; your text is kept below.",
+      "error": "Error: the review could not be saved. The row is unchanged. Try again in a few minutes.",
+      "gone": "This fact no longer exists. Reload the card to see its current state.",
+      "rejected": "This fact can no longer be reviewed in this way. Reload the card to see its current state.",
+      "reload": "Reload the card",
+      "locked": "The profile run is still in progress, so facts cannot be reviewed yet. Try again when it has finished.",
+      "count_one": "{{count}} fact still proposed",
+      "count_other": "{{count}} facts still proposed",
+      "countNone": "No fact is waiting for review.",
+      "nextProposed": "Go to the next proposed fact",
+      "announceApproved": "{{field}} approved.",
+      "announceCorrected": "{{field}} corrected."
+    }
   }
 }

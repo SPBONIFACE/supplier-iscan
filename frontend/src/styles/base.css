@@ -1213,3 +1213,98 @@ dl.dl dt {
     margin-bottom: var(--isc-space-1);
   }
 }
+
+/* Review of facts (#36; mock-ups 05-review-*): who reviewed, Approve and Correct, the inline form */
+.fact:focus-visible {
+  outline-offset: calc(-1 * var(--isc-focus-width));
+}
+.f-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--isc-space-2) var(--isc-space-3);
+  margin-top: var(--isc-space-2);
+}
+.f-actions {
+  display: flex;
+  gap: var(--isc-space-2);
+  margin-left: auto;
+}
+.byline {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-tertiary);
+}
+.f-form {
+  margin: var(--isc-space-2) 0 var(--isc-space-1);
+  padding: var(--isc-space-3) 0 var(--isc-space-1);
+  border-top: var(--isc-border-hairline) solid var(--isc-color-rule);
+}
+.message {
+  margin: var(--isc-space-2) 0;
+  padding: var(--isc-space-2) 0 var(--isc-space-2) var(--isc-space-4);
+  border-left: var(--isc-border-section-rule) solid var(--isc-color-ink);
+  line-height: var(--isc-font-line-height-body);
+}
+.message:focus-visible {
+  outline-offset: var(--isc-focus-offset);
+}
+.field {
+  display: grid;
+  gap: var(--isc-space-1);
+}
+.field label,
+.field .label {
+  font-size: var(--isc-font-size-sm);
+  font-weight: var(--isc-font-weight-semibold);
+  color: var(--isc-color-ink);
+}
+.input,
+.textarea {
+  width: 100%;
+  min-height: var(--isc-size-control);
+  padding: var(--isc-space-2) var(--isc-space-3);
+  background: var(--isc-color-field);
+  border: var(--isc-border-control) solid var(--isc-color-border-control);
+  border-radius: var(--isc-radius-control);
+  color: var(--isc-color-ink);
+  font: inherit;
+}
+.input--short {
+  max-width: 160px;
+}
+.field .help {
+  line-height: var(--isc-font-line-height-body);
+}
+.field.has-error .input,
+.field.has-error .textarea {
+  border: var(--isc-border-error) solid var(--isc-status-error-border);
+}
+.err {
+  padding-left: var(--isc-space-3);
+  border-left: var(--isc-border-error) solid var(--isc-status-error-border);
+  font-weight: var(--isc-font-weight-medium);
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--isc-space-3);
+  margin-top: var(--isc-space-3);
+}
+.kbd-hint {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-tertiary);
+}
+.card-count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--isc-space-2) var(--isc-space-4);
+  margin-top: var(--isc-space-4);
+  padding-top: var(--isc-space-3);
+  border-top: var(--isc-border-hairline) solid var(--isc-color-rule);
+}
+.card-count strong {
+  font-weight: var(--isc-font-weight-semibold);
+}

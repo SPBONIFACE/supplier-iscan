@@ -117,6 +117,7 @@ const fact = (fieldId: string, section: string, changes: Partial<Fact> = {}): Fa
   original_value: null,
   version: 1,
   reviewed_by: null,
+  reviewed_by_email: null,
   reviewed_at: null,
   ...changes,
 });
