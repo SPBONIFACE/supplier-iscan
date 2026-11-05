@@ -384,21 +384,21 @@ describe("keyboard", () => {
   it("moves from fact to fact with the arrows, one tab stop per section", async () => {
     const user = userEvent.setup();
     await openCard();
-    const legal = row("Legal form");
-    const year = row("Founding year");
-    expect(legal.getAttribute("tabindex")).toBe("0");
-    expect(year.getAttribute("tabindex")).toBe("-1");
-    legal.focus();
+    // The card puts the focus on the supplier name when it has loaded.
+    await waitFor(() => expect(document.activeElement?.id).toBe("card-name"));
+    expect(row("Legal form").getAttribute("tabindex")).toBe("0");
+    expect(row("Founding year").getAttribute("tabindex")).toBe("-1");
+    row("Legal form").focus();
     await user.keyboard("{ArrowDown}");
-    expect(document.activeElement).toBe(year);
-    expect(year.getAttribute("tabindex")).toBe("0");
-    expect(legal.getAttribute("tabindex")).toBe("-1");
+    expect(document.activeElement).toBe(row("Founding year"));
+    expect(row("Founding year").getAttribute("tabindex")).toBe("0");
+    expect(row("Legal form").getAttribute("tabindex")).toBe("-1");
     await user.keyboard("{End}");
     expect(document.activeElement).toBe(row("Number of employees"));
     await user.keyboard("{Home}");
-    expect(document.activeElement).toBe(legal);
+    expect(document.activeElement).toBe(row("Legal form"));
     await user.keyboard("{ArrowUp}");
-    expect(document.activeElement).toBe(legal);
+    expect(document.activeElement).toBe(row("Legal form"));
   });
 
   it("approves from the keyboard alone and goes to the next proposed fact", async () => {
