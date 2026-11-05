@@ -19,6 +19,7 @@ from app.db import DbSession
 from app.limits.budget import used_up
 from app.models import Job, ProfileRun, SupplierIdentity
 from app.organisations.scope import OrganisationScope, OrganisationScoped
+from app.runs.refusal import refuse, spend_cap_reached
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -60,6 +61,8 @@ def _queue(
         raise HTTPException(status.HTTP_409_CONFLICT, detail=BUDGET_REACHED)
     if run.assessment_drafted_at is None:
         raise HTTPException(status.HTTP_409_CONFLICT, detail=NOT_DRAFTED)
+    if spend_cap_reached(db, settings):  # an AI call would follow (#29, #37); reading is unaffected
+        raise refuse("spend_cap_reached")
     if part not in pending_parts(db, run.id):  # a second request while one is waiting adds none
         queue.enqueue(db, ASSESSMENT_JOB, {"run_id": str(run.id), "part": part})
         db.commit()
