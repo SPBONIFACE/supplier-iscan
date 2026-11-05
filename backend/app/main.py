@@ -34,6 +34,7 @@ from app.providers.metering import UsageMeter
 from app.providers.pricing import check_prices, load_price_table
 from app.providers.store import sync_provider_configs
 from app.providers.usage import DbUsageSink
+from app.review.routes import router as review_router
 from app.runs.routes import router as runs_router
 from app.users.routes import router as users_router
 
@@ -188,6 +189,7 @@ def create_app(
     app.include_router(runs_router)
     app.include_router(buyer_router)
     app.include_router(assessment_router)
+    app.include_router(review_router)
     app.include_router(admin_organisations_router)
     app.include_router(admin_invitations_router)
     app.include_router(invitations_router)

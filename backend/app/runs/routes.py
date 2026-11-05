@@ -10,7 +10,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app import queue
 from app.assessment.routes import ENTER_CRITERIA, pending_parts
@@ -104,6 +104,7 @@ class RunOut(BaseModel):
     identity_to_verify: bool
     grounding_failures: int
     invalid_items: int
+    proposed_facts: int
     insufficient_sources_explanation: str | None
     created_at: datetime
     started_at: datetime | None
@@ -155,7 +156,7 @@ class FactOut(BaseModel):
     id: uuid.UUID
     section: str
     field: str
-    status: Literal["proposed", "not_found"]
+    status: Literal["proposed", "approved", "corrected", "not_found"]
     value: str | None
     quote: str | None
     quote_redacted: bool
@@ -166,6 +167,10 @@ class FactOut(BaseModel):
     author: str | None
     fetched_at: datetime | None
     verification_url: str | None
+    original_value: str | None
+    version: int
+    reviewed_by: uuid.UUID | None
+    reviewed_at: datetime | None
 
 
 class AssessmentProvenanceOut(BaseModel):
@@ -180,6 +185,8 @@ class AssessmentProvenanceOut(BaseModel):
     prompt_version: str
     generated_at: datetime
     status: Literal["ai_draft", "approved", "corrected", "deleted"]
+    reviewed_by: uuid.UUID | None
+    reviewed_at: datetime | None
 
 
 class AssessmentStatementOut(BaseModel):
@@ -213,6 +220,8 @@ class AssessmentStatementOut(BaseModel):
     buyer_context_version: int | None
     buyer_context_outdated: bool
     provenance: AssessmentProvenanceOut
+    version: int
+    original_text: str | None
 
 
 class FinancialDocumentOut(BaseModel):
@@ -297,6 +306,7 @@ def _run_out(
     supplier_name: str | None,
     hide_names: bool,
     excluded: list[dict[str, str]],
+    proposed_facts: int,
 ) -> RunOut:
     totals = run_usage_totals(db, scope.organisation_id, run.id)
     roles = [
@@ -332,6 +342,7 @@ def _run_out(
             "identity_to_verify": run.identity_to_verify,
             "grounding_failures": run.grounding_failures,
             "invalid_items": run.invalid_items,
+            "proposed_facts": proposed_facts,
             "insufficient_sources_explanation": (
                 INSUFFICIENT_SOURCES if run.status == "insufficient_sources" else None
             ),
@@ -342,10 +353,86 @@ def _run_out(
     )
 
 
+def proposed_counts(
+    db: DbSession, organisation_id: uuid.UUID, run_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, int]:
+    """Per run, the number of facts still `proposed` (runs without one are absent)."""
+    rows = db.execute(
+        select(Fact.run_id, func.count())
+        .where(
+            Fact.organisation_id == organisation_id,
+            Fact.run_id.in_(run_ids),
+            Fact.status == "proposed",
+        )
+        .group_by(Fact.run_id)
+    )
+    return {run_id: count for run_id, count in rows}
+
+
+def fact_out(fact: Fact, certification: bool, certsearch: str) -> FactOut:
+    """A fact as the API shows it; `certification` is the field's flag in the profile definition."""
+    return FactOut(
+        id=fact.id,
+        section=fact.section,
+        field=fact.field,
+        status=fact.status,  # type: ignore[arg-type]  # constrained by the table
+        value=fact.value,
+        quote=fact.quote,
+        quote_redacted=fact.quote_redacted,
+        source_id=fact.source_id,
+        source_url=fact.source_url,
+        source_type=fact.source_type,  # type: ignore[arg-type]
+        publisher=fact.publisher,
+        author=fact.author,
+        fetched_at=fact.fetched_at,
+        verification_url=certsearch if certification and fact.status != "not_found" else None,
+        original_value=fact.original_value,
+        version=fact.version,
+        reviewed_by=fact.reviewed_by,
+        reviewed_at=fact.reviewed_at,
+    )
+
+
+def statement_out(row: AssessmentItem, current_context: int | None) -> AssessmentStatementOut:
+    """A statement as the API shows it; `current_context` is the stored buyer-context version."""
+    return AssessmentStatementOut(
+        id=row.id,
+        kind=row.kind,  # type: ignore[arg-type]  # constrained by the table
+        text=row.text,
+        level=row.level,  # type: ignore[arg-type]
+        label=row.label,  # type: ignore[arg-type]
+        timing=row.timing,
+        cited_fact_ids=[uuid.UUID(value) for value in row.cited_fact_ids],
+        cites_buyer_context=row.cites_buyer_context,
+        gap_evidence=row.gap_evidence,
+        buyer_context_version=row.buyer_context_version,
+        # A recommendation drafted before the current context (or without any) is flagged.
+        buyer_context_outdated=(
+            current_context is not None
+            and row.kind in RECOMMENDATION_KINDS
+            and (row.buyer_context_version is None or row.buyer_context_version < current_context)
+        ),
+        provenance=AssessmentProvenanceOut(
+            provider=row.provider,
+            model_id=row.model_id,
+            model_version=row.model_version,
+            prompt_id=row.prompt_id,
+            prompt_version=row.prompt_version,
+            generated_at=row.generated_at,
+            status=row.status,  # type: ignore[arg-type]
+            reviewed_by=row.reviewed_by,
+            reviewed_at=row.reviewed_at,
+        ),
+        version=row.version,
+        original_text=row.original_text,
+    )
+
+
 def _one(db: DbSession, scope: OrganisationScope, run: ProfileRun, hide: bool) -> RunOut:
     name = db.scalar(scope.select(SupplierIdentity).where(SupplierIdentity.id == run.identity_id))
     excluded = excluded_sources(db, scope.organisation_id, [run.id]).get(run.id, [])
-    return _run_out(db, scope, run, name.legal_name if name else None, hide, excluded)
+    proposed = proposed_counts(db, scope.organisation_id, [run.id]).get(run.id, 0)
+    return _run_out(db, scope, run, name.legal_name if name else None, hide, excluded, proposed)
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
@@ -372,7 +459,7 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request:
     )
     db.commit()
     db.refresh(run)
-    return _run_out(db, scope, run, identity.legal_name, hide_names(request, scope), [])
+    return _run_out(db, scope, run, identity.legal_name, hide_names(request, scope), [], 0)
 
 
 @router.get("", response_model=RunListOut)
@@ -388,10 +475,20 @@ def list_runs(scope: OrganisationScoped, db: DbSession, request: Request) -> Run
         )
     )
     names = {identity_id: name for identity_id, name in rows}
-    excluded = excluded_sources(db, scope.organisation_id, [run.id for run in runs])
+    ids = [run.id for run in runs]
+    excluded = excluded_sources(db, scope.organisation_id, ids)
+    proposed = proposed_counts(db, scope.organisation_id, ids)
     return RunListOut(
         items=[
-            _run_out(db, scope, run, names.get(run.identity_id), hidden, excluded.get(run.id, []))
+            _run_out(
+                db,
+                scope,
+                run,
+                names.get(run.identity_id),
+                hidden,
+                excluded.get(run.id, []),
+                proposed.get(run.id, 0),
+            )
             for run in runs
         ]
     )
@@ -439,26 +536,7 @@ def list_facts(id: str, scope: OrganisationScoped, db: DbSession, request: Reque
             fact = stored.get(item.id)
             if item.kind != "fact" or fact is None:
                 continue
-            items.append(
-                FactOut(
-                    id=fact.id,
-                    section=section.id,
-                    field=fact.field,
-                    status=fact.status,  # type: ignore[arg-type]  # proposed or not_found (#28 adds more)
-                    value=fact.value,
-                    quote=fact.quote,
-                    quote_redacted=fact.quote_redacted,
-                    source_id=fact.source_id,
-                    source_url=fact.source_url,
-                    source_type=fact.source_type,  # type: ignore[arg-type]
-                    publisher=fact.publisher,
-                    author=fact.author,
-                    fetched_at=fact.fetched_at,
-                    verification_url=(
-                        certsearch if item.certification and fact.status != "not_found" else None
-                    ),
-                )
-            )
+            items.append(fact_out(fact, item.certification, certsearch))
     return FactListOut(items=items)
 
 
@@ -484,41 +562,12 @@ def get_assessment(id: str, scope: OrganisationScoped, db: DbSession) -> Assessm
         )
     rows = db.scalars(
         scope.select(AssessmentItem)
-        .where(AssessmentItem.run_id == run.id)
+        .where(AssessmentItem.run_id == run.id, AssessmentItem.status != "deleted")
         .order_by(AssessmentItem.position)
     ).all()
     context_row = stored(db, run.id, BUYER_CONTEXT)
     current = context_row.version if context_row is not None else None
-    items = [
-        AssessmentStatementOut(
-            id=row.id,
-            kind=row.kind,  # type: ignore[arg-type]  # constrained by the table
-            text=row.text,
-            level=row.level,  # type: ignore[arg-type]
-            label=row.label,  # type: ignore[arg-type]
-            timing=row.timing,
-            cited_fact_ids=[uuid.UUID(value) for value in row.cited_fact_ids],
-            cites_buyer_context=row.cites_buyer_context,
-            gap_evidence=row.gap_evidence,
-            buyer_context_version=row.buyer_context_version,
-            # A recommendation drafted before the current context (or without any) is flagged.
-            buyer_context_outdated=(
-                current is not None
-                and row.kind in RECOMMENDATION_KINDS
-                and (row.buyer_context_version is None or row.buyer_context_version < current)
-            ),
-            provenance=AssessmentProvenanceOut(
-                provider=row.provider,
-                model_id=row.model_id,
-                model_version=row.model_version,
-                prompt_id=row.prompt_id,
-                prompt_version=row.prompt_version,
-                generated_at=row.generated_at,
-                status=row.status,  # type: ignore[arg-type]
-            ),
-        )
-        for row in rows
-    ]
+    items = [statement_out(row, current) for row in rows]
     versions = [item.buyer_context_version for item in items if item.buyer_context_version]
     guidance: dict[str, Any] | None = next(
         (row.guidance for row in rows if row.provider == "rules" and row.guidance), None

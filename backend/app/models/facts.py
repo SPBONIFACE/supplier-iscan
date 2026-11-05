@@ -14,6 +14,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -60,4 +61,13 @@ class Fact(OrganisationOwned, Base):
     publisher: Mapped[str | None] = mapped_column(String(300))
     author: Mapped[str | None] = mapped_column(String(300))
     fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Review (#28). `value` is the member's value once corrected; `original_value` then holds the
+    # AI value, set by the first correction and never overwritten. The quote and the source are
+    # never changed. `version` increases with every review (concurrent edits, 409).
+    original_value: Mapped[str | None] = mapped_column(Text)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
