@@ -108,3 +108,17 @@ def reserve_run_slot(db: Session, organisation_id: uuid.UUID, settings: Settings
     reason = run_refusal_reason(db, organisation, settings)
     if reason is not None:
         raise refuse(reason)
+
+
+def check_resume(db: Session, organisation_id: uuid.UUID, settings: Settings) -> None:
+    """Refuse to resume a paused run when resuming would spend where new work is not allowed (#29):
+    the organisation is not activated, its access has ended, or the instance's monthly spend cap is
+    reached. The quota is not checked: the run continues, it is not a new one."""
+    organisation = db.scalar(select(Organisation).where(Organisation.id == organisation_id))
+    if organisation is None or organisation.status == "pending_activation":
+        raise refuse("not_activated")
+    now = utc_now()
+    if organisation.access_ends_at is not None and organisation.access_ends_at <= now:
+        raise refuse("access_ended")
+    if spend_cap_reached(db, settings, now):
+        raise refuse("spend_cap_reached")
