@@ -8,6 +8,7 @@ from app.assessment.rules import (
     BuyerContext,
     FactView,
     Tally,
+    asserts_buyer_situation,
     to_statement,
     validate,
     with_assumption,
@@ -191,6 +192,10 @@ ASSERTIONS = [
     "Vous achetez déjà auprès de ce fournisseur.",
 ]
 NEUTRAL = [
+    "Le fournisseur actuel du marché est un acteur régional.",
+    "Fournisseur historique du secteur, ce site date de 1950.",
+    "The plant supports your existing quality systems.",
+    "Consider your current needs before any order.",
     "Qualify the plant with an audit before any order.",
     "ISO 9001 is cited for the Leeds plant.",
     "Compare at least two incumbent suppliers of the category.",  # not asserted of the buyer
@@ -221,3 +226,37 @@ def test_with_a_stored_buyer_context_the_wording_guard_does_not_apply() -> None:
         context=context,
     )
     assert texts == [ASSERTIONS[1]] and tally.rejected == 0
+
+
+def test_wording_that_contradicts_a_relationship_new_is_rejected() -> None:
+    new = BuyerContext(2, "Relationship with the supplier: new supplier", relationship="new")
+    for text in ("Your incumbent should be asked for a quote.", "Votre fournisseur actuel reste."):
+        assert rejected(
+            statement("procurement_implication", text=text), kinds=RECOMMENDATION_KINDS, context=new
+        )
+    texts, tally = run(
+        [statement("procurement_implication", text="Qualify the plant with an audit.")],
+        RECOMMENDATION_KINDS,
+        context=new,
+    )
+    assert len(texts) == 1 and tally.rejected == 0
+
+
+def test_with_the_relationship_incumbent_the_assertions_are_allowed() -> None:
+    incumbent = BuyerContext(
+        2, "Relationship with the supplier: incumbent supplier", relationship="incumbent"
+    )
+    for text in ASSERTIONS:
+        texts, tally = run(
+            [statement("procurement_implication", text=text)],
+            RECOMMENDATION_KINDS,
+            context=incumbent,
+        )
+        assert texts == [text] and tally.rejected == 0, text
+
+
+def test_the_buyer_must_be_the_possessor() -> None:
+    assert asserts_buyer_situation("Your current supplier is late.")
+    assert asserts_buyer_situation("Votre fournisseur actuel est en retard.")
+    assert not asserts_buyer_situation("Le fournisseur actuel du marché est en retard.")
+    assert not asserts_buyer_situation("The current supplier of the market is late.")

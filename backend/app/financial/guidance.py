@@ -51,6 +51,24 @@ EVIDENCE_OF: Final = {
     "audit_report": "audit_report",
 }
 
+# The profile fields that hold financial evidence, by the document type each is read from. A kept
+# fact of one of these fields is "a financial fact kept": the guidance then never says "No public
+# evidence found" for the financial evidence as a whole, and does not list its document as missing.
+FINANCIAL_FIELDS: Final = {
+    "revenue": "income_statement",
+    "turnover": "income_statement",
+    "net_income": "income_statement",
+    "net_profit": "income_statement",
+    "income_statement": "income_statement",
+    "total_assets": "balance_sheet",
+    "equity": "balance_sheet",
+    "balance_sheet": "balance_sheet",
+    "financial_notes": "notes",
+    "accounting_notes": "notes",
+    "audit_opinion": "audit_report",
+    "audit_report": "audit_report",
+}
+
 GUIDANCE_PROVIDER: Final = "rules"
 GUIDANCE_PROMPT_ID: Final = "financial_guidance"
 GUIDANCE_VERSION: Final = "rules-1"
@@ -89,12 +107,14 @@ _TEXT: Final[dict[str, dict[str, Any]]] = {
         },
         "head": "Financial evidence, financial year {year}. No public evidence found "
         "among the collected sources.",
+        "head_partial": "Financial evidence, financial year {year}. Collected: {items}.",
         "registry_line": "Registry: {name} ({url}), last checked {checked}{example}.",
         "example": "; example table, not verified",
         "unconfigured": "No registry guidance is configured for this country.",
         "group": "Only group or consolidated accounts were identified: they are kept apart "
         "from the supplier entity's own accounts.",
         "missing_line": "Evidence missing: {items}.",
+        "missing_partial": "Evidence still missing: {items}.",
         "request_line": "Documents to request from the supplier: {items}.",
         "scope_group": "group accounts",
         "closing": "No credit score, estimate or commercial report replaces filed financial "
@@ -138,12 +158,14 @@ _TEXT: Final[dict[str, dict[str, Any]]] = {
         },
         "head": "Éléments financiers, exercice {year}. Aucune preuve publique trouvée "
         "dans les sources collectées.",
+        "head_partial": "Éléments financiers, exercice {year}. Déjà collecté : {items}.",
         "registry_line": "Registre : {name} ({url}), dernière vérification le {checked}{example}.",
         "example": " ; table d'exemple, non vérifiée",
         "unconfigured": "Aucune indication de registre n'est configurée pour ce pays.",
         "group": "Seuls des comptes de groupe ou consolidés ont été identifiés : ils sont "
         "distingués des comptes propres de l'entité fournisseur.",
         "missing_line": "Éléments manquants : {items}.",
+        "missing_partial": "Éléments encore manquants : {items}.",
         "request_line": "Documents à demander au fournisseur : {items}.",
         "scope_group": "comptes de groupe",
         "closing": "Aucune note de crédit, estimation ou rapport commercial ne remplace les "
@@ -279,7 +301,14 @@ def _message(
     observations: Observations,
 ) -> tuple[str, str]:
     text = _TEXT[language]
-    parts = [text["head"].format(year=year)]
+    if observations.collected:
+        # Some financial evidence was kept: no "No public evidence found" for the whole.
+        names_collected = [
+            text["document"][item] for item in DOCUMENT_TYPES if item in observations.collected
+        ]
+        parts = [text["head_partial"].format(year=year, items=_join(names_collected, language))]
+    else:
+        parts = [text["head"].format(year=year)]
     if row is None:
         parts.append(text["unconfigured"])
     else:
@@ -301,7 +330,8 @@ def _message(
     if observations.group_accounts_only:
         parts.append(text["group"])
     names = [text["evidence"][item] for item in missing]
-    parts.append(text["missing_line"].format(items=_join(names, language)))
+    line = "missing_partial" if observations.collected else "missing_line"
+    parts.append(text[line].format(items=_join(names, language)))
     requests = [text["request"][item] for item in DOCUMENTS_TO_REQUEST]
     parts.append(text["request_line"].format(items=_join(requests, language)))
     parts.append(text["closing"])

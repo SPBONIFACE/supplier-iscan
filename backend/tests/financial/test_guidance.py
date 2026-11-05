@@ -40,7 +40,7 @@ def write(tmp_path: Path, document: Any) -> Path:
     return path
 
 
-def guidance(country: str | None = "GB", language: str = "en", **observations: Any) -> Any:
+def guidance(country: str | None = "XX", language: str = "en", **observations: Any) -> Any:
     found = build_guidance(
         TABLE,
         country,
@@ -62,8 +62,8 @@ def test_the_schema_is_published_and_the_example_validates_and_is_marked_as_an_e
     Draft202012Validator(load_schema(SCHEMA)).validate(example())
 
     assert TABLE.example is True and "example" in example()["$comment"].lower()
-    assert set(TABLE.countries) == {"GB", "FR"}
-    row = TABLE.countries["GB"]
+    assert set(TABLE.countries) == {"XX"}
+    row = TABLE.countries["XX"]
     assert row.registry_name and row.registry_url.startswith("https://") and row.last_checked
 
 
@@ -111,8 +111,8 @@ def test_an_invalid_table_is_refused_with_the_file_and_the_failing_path(
 
 def test_a_duplicate_country_and_a_missing_document_type_are_refused(tmp_path: Path) -> None:
     duplicate = copy.deepcopy(example())
-    duplicate["countries"][1]["country"] = "GB"
-    with pytest.raises(ConfigurationError, match="duplicate country 'GB'"):
+    duplicate["countries"].append(copy.deepcopy(duplicate["countries"][0]))
+    with pytest.raises(ConfigurationError, match="duplicate country 'XX'"):
         load_country_table(write(tmp_path, duplicate))
 
     repeated = copy.deepcopy(example())
@@ -161,7 +161,7 @@ def test_a_failed_registry_request_is_registry_unavailable_never_no_filing_ident
 
 
 def test_every_document_has_exactly_one_status_of_the_list() -> None:
-    for country in ("GB", "FR"):
+    for country in ("XX",):
         found = guidance(country)
         assert [item.type for item in found.documents] == [
             "income_statement",
@@ -177,13 +177,13 @@ def test_paid_reduced_and_unreachable_documents_are_never_called_unavailable(
     language: str,
 ) -> None:
     found = guidance(
-        "FR",
+        "XX",
         language,
         outcomes={"income_statement": "request_failed", "balance_sheet": "no_filing"},
     )
     statuses = {item.access for item in found.documents}
     assert {"paid", "registry_unavailable", "no_filing_identified"} <= statuses
-    reduced = guidance("GB", language)
+    reduced = guidance("XX", language)
     assert "reduced_disclosure" in {item.access for item in reduced.documents}
 
     for text in (found.message.casefold(), reduced.message.casefold()):
@@ -192,11 +192,11 @@ def test_paid_reduced_and_unreachable_documents_are_never_called_unavailable(
 
 
 def test_where_access_is_paid_the_message_links_to_the_registry_and_buys_nothing() -> None:
-    found = guidance("FR")
+    found = guidance("XX")
     paid = [item for item in found.documents if item.access == "paid"]
 
-    assert paid and all(item.registry_link == "https://data.inpi.fr/" for item in paid)
-    assert "https://data.inpi.fr/" in found.message
+    assert paid and all(item.registry_link == "https://registry.example/" for item in paid)
+    assert "https://registry.example/" in found.message
     assert "buys no document" in found.message
     assert "No credit score, estimate or commercial report" in found.message
 
@@ -226,7 +226,7 @@ def test_the_guidance_code_makes_no_network_call_no_provider_call_and_no_purchas
 
 def test_the_suppliers_own_accounts_are_kept_apart_from_group_accounts() -> None:
     found = guidance(
-        "GB",
+        "XX",
         group_accounts_only=True,
         outcomes={"balance_sheet": "found"},
         latest_period=2023,
@@ -241,7 +241,7 @@ def test_the_suppliers_own_accounts_are_kept_apart_from_group_accounts() -> None
 
 
 def test_the_message_names_the_missing_evidence_and_the_documents_to_request() -> None:
-    found = guidance("GB")
+    found = guidance("XX")
 
     assert found.missing_evidence == ("income_statement", "full_notes", "audit_report")
     assert found.documents_to_request == DOCUMENTS_TO_REQUEST
@@ -264,6 +264,32 @@ def test_the_message_names_the_missing_evidence_and_the_documents_to_request() -
         assert negative not in found.message
 
 
+@pytest.mark.parametrize("language", ["en", "fr"])
+def test_a_collected_financial_fact_removes_the_absence_phrase_and_its_document_from_the_gaps(
+    language: str,
+) -> None:
+    none_kept = guidance("XX", language)
+    some = guidance("XX", language, collected=frozenset({"income_statement"}))
+
+    phrase = "No public evidence found" if language == "en" else "Aucune preuve publique trouvée"
+    assert phrase in none_kept.message and phrase not in some.message
+    assert some.missing_evidence == ("full_notes", "audit_report")
+    assert "income_statement" not in some.missing_evidence
+    still = "Evidence still missing: " if language == "en" else "Éléments encore manquants : "
+    assert still in some.message
+    # What to request is still named, and the gap text names only what is missing.
+    assert ("statutory accounts" if language == "en" else "comptes annuels") in some.message
+    assert some.gap_evidence.startswith("full notes" if language == "en" else "annexe")
+    assert "income statement" not in some.gap_evidence
+
+
+def test_a_balance_sheet_fact_alone_also_removes_the_absence_phrase() -> None:
+    some = guidance("XX", collected=frozenset({"balance_sheet"}))
+
+    assert "No public evidence found" not in some.message
+    assert some.missing_evidence == ("income_statement", "full_notes", "audit_report")
+
+
 def test_a_country_missing_from_the_table_still_names_the_documents_to_request() -> None:
     found = guidance("ZZ")
 
@@ -277,19 +303,19 @@ def test_a_country_missing_from_the_table_still_names_the_documents_to_request()
 
 
 def test_a_natural_person_business_gets_no_financial_guidance() -> None:
-    assert build_guidance(TABLE, "GB", "en", 2025, natural_person=True) is None
+    assert build_guidance(TABLE, "XX", "en", 2025, natural_person=True) is None
 
 
 def test_nothing_is_missing_when_everything_is_collected() -> None:
     collected = frozenset({"income_statement", "notes", "audit_report"})
-    assert build_guidance(TABLE, "GB", "en", 2025, False, Observations(collected=collected)) is None
+    assert build_guidance(TABLE, "XX", "en", 2025, False, Observations(collected=collected)) is None
 
 
 def test_the_guidance_is_the_documented_json_and_the_year_is_the_last_one_over() -> None:
     from datetime import date
 
     assert financial_year(date(2026, 11, 5)) == 2025
-    payload = guidance("GB").to_json()
+    payload = guidance("XX").to_json()
     assert set(payload) == {
         "country",
         "financial_year",

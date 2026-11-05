@@ -137,7 +137,7 @@ class Drafted:
 def test_the_stage_stores_the_guidance_from_rules_without_any_provider_call(
     client: TestClient, engine: Engine
 ) -> None:
-    organisation_id, run_id, facts = setup(engine, country="GB")
+    organisation_id, run_id, facts = setup(engine, country="XX")
     adapter = FakeStructuringAdapter(
         [answer(strength(facts["quality_management"])), answer(priority(facts["production_sites"]))]
     )
@@ -152,16 +152,18 @@ def test_the_stage_stores_the_guidance_from_rules_without_any_provider_call(
     assert gap.kind == "evidence_gap" and gap.cited_fact_ids == [] and gap.gap_evidence
     assert gap.model_id == "rules" and gap.prompt_id == "financial_guidance"
     assert gap.model_version == TABLE.content_hash and gap.status == "ai_draft"
-    assert "Companies House" in gap.text and "income statement" in gap.text
+    assert "Exampleland Company Register" in gap.text and "income statement" in gap.text
     token = create_session(engine, user.id)
     response = send_with_session(client, "GET", f"/runs/{run_id}/assessment", token)
     assert_matches_contract(response, "/runs/{id}/assessment", "get")
     guidance = response.json()["financial_guidance"]
-    assert guidance["country"] == "GB" and guidance["configured"] is True
+    assert guidance["country"] == "XX" and guidance["configured"] is True
     assert guidance["example_table"] is True and guidance["last_checked"] == "2000-01-01"
     assert {item["access"] for item in guidance["documents"]} == {
         "reduced_disclosure",
         "public_download",
+        "free_registration",
+        "paid",
     }
     assert all(item["registry_link"].startswith("https://") for item in guidance["documents"])
     assert guidance["message"] == gap.text
@@ -170,7 +172,7 @@ def test_the_stage_stores_the_guidance_from_rules_without_any_provider_call(
 def test_a_failed_guidance_lookup_input_is_never_stored_as_no_filing(engine: Engine) -> None:
     # The stage passes no lookup result (no automated registry lookup in the MVP): every status
     # comes from the table, and none is no_filing_identified or registry_unavailable.
-    organisation_id, run_id, _ = setup(engine, country="FR")
+    organisation_id, run_id, _ = setup(engine, country="XX")
     stage_with_table(engine, organisation_id, run_id, FakeStructuringAdapter([answer(), answer()]))
 
     with Session(engine) as db:
@@ -178,7 +180,7 @@ def test_a_failed_guidance_lookup_input_is_never_stored_as_no_filing(engine: Eng
             select(AssessmentItem.guidance).where(AssessmentItem.provider == "rules")
         )
         statuses = {item["access"] for guidance in stored for item in guidance["documents"]}
-    assert statuses == {"confidentiality_declared", "free_registration", "paid"}
+    assert statuses == {"reduced_disclosure", "public_download", "free_registration", "paid"}
 
 
 def test_a_country_that_is_not_in_the_table_names_the_documents_to_request(
@@ -196,7 +198,7 @@ def test_a_country_that_is_not_in_the_table_names_the_documents_to_request(
 def test_a_natural_person_business_gets_no_guidance_no_fit_and_no_recommendation(
     client: TestClient, engine: Engine
 ) -> None:
-    organisation_id, run_id, _ = setup(engine, natural_person=True, country="GB")
+    organisation_id, run_id, _ = setup(engine, natural_person=True, country="XX")
     adapter = FakeStructuringAdapter([])
     user = create_user(engine, organisation_id=organisation_id)
     token = create_session(engine, user.id)

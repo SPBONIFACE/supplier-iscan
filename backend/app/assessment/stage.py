@@ -53,10 +53,12 @@ from app.buyer.values import run_buyer_context, run_criteria
 from app.collection.source_store import IdentityRedaction, identity_redaction
 from app.db import Database, utc_now
 from app.financial.guidance import (
+    FINANCIAL_FIELDS,
     GUIDANCE_PROMPT_ID,
     GUIDANCE_PROVIDER,
     GUIDANCE_VERSION,
     Guidance,
+    Observations,
     build_guidance,
     financial_year,
 )
@@ -326,11 +328,21 @@ def make_assessment_stage(
                 data.language,
                 financial_year(utc_now().date()),
                 data.natural_person,
+                Observations(collected=collected_documents(data.facts)),
             )
         _store(context, drafts, tally, guidance, table)
         return None
 
     return stage
+
+
+def collected_documents(facts: list[FactView]) -> frozenset[str]:
+    """The document types backed by a kept financial fact of the run."""
+    return frozenset(
+        FINANCIAL_FIELDS[fact.field]
+        for fact in facts
+        if fact.usable and fact.field in FINANCIAL_FIELDS
+    )
 
 
 def structuring_client(providers: Providers | None) -> StructuringClient:

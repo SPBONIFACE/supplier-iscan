@@ -103,4 +103,9 @@ def run_buyer_context(db: Session, run_id: Any) -> BuyerContext | None:
     row = stored(db, run_id, BUYER_CONTEXT)
     if row is None:
         return None
-    return BuyerContext(version=row.version, text=context_prompt_text(load_context_text(row.text)))
+    entered = load_context_text(row.text)
+    return BuyerContext(
+        version=row.version,
+        text=context_prompt_text(entered),
+        relationship=entered.relationship,
+    )

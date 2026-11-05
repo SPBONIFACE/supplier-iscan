@@ -11,7 +11,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine, func, select
 from sqlalchemy.orm import Session
 
-from app.assessment.stage import make_assessment_stage
+from app.assessment.rules import FactView
+from app.assessment.stage import collected_documents, make_assessment_stage
 from app.db import Database
 from app.models import AssessmentItem, Fact, ProfileRun
 from app.providers.errors import ProviderCallError
@@ -272,3 +273,19 @@ def test_the_assessment_endpoint_isolates_organisations(client: TestClient, engi
         )
 
     assert_organisation_isolation(client, engine, "GET", make)
+
+
+def test_only_kept_financial_facts_count_as_collected_documents() -> None:
+    def fact(field: str, status: str = "proposed", people: bool = False) -> FactView:
+        return FactView("f", field, status, "v", "q", people)
+
+    collected = collected_documents(
+        [
+            fact("revenue"),
+            fact("audit_opinion", "not_found"),  # nothing kept
+            fact("quality_management"),  # not a financial field
+            fact("equity", people=True),  # about a person: not usable
+        ]
+    )
+
+    assert collected == frozenset({"income_statement"})
