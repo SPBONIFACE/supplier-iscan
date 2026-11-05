@@ -5,6 +5,7 @@ file is read here, and no value is ever logged or shown in an error message.
 """
 
 import os
+import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -64,6 +65,10 @@ WORKER_POLL_SECONDS = "WORKER_POLL_SECONDS"
 CRAWLER_CONTACT_URL = "CRAWLER_CONTACT_URL"
 # Monthly LLM spend cap of the instance, in EUR (spec F7). Unset: no cap.
 MONTHLY_SPEND_CAP_EUR = "MONTHLY_SPEND_CAP_EUR"
+# The organisation whose finished runs the demo command may copy into the public demo (#50). No
+# default: the operator creates a demo organisation of synthetic or public-company runs and names
+# it. Unset: the command refuses to run.
+DEMO_ORGANISATION_ID = "DEMO_ORGANISATION_ID"
 # Hard cost budget of one profile run, in EUR (spec F7, #30). Always on, on a self-hosted
 # instance too, and with no default: the operator chooses it (a missing, zero or negative value
 # stops startup). The most retries of one provider call after a schema failure.
@@ -126,6 +131,7 @@ class Settings:
     worker_poll_seconds: int = DEFAULT_WORKER_POLL_SECONDS
     crawler_contact_url: str | None = None
     monthly_spend_cap_eur: Decimal | None = None
+    demo_organisation_id: uuid.UUID | None = None
     # None when unset: `load_providers` then stops startup (see `require_run_budget`).
     run_budget_eur: Decimal | None = None
     provider_max_retries: int = DEFAULT_PROVIDER_MAX_RETRIES
@@ -219,6 +225,16 @@ def _parse_spend_cap(raw: str) -> Decimal | None:
     return cap
 
 
+def _parse_demo_organisation(raw: str) -> uuid.UUID | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        return uuid.UUID(value)
+    except ValueError:
+        raise ConfigurationError(f"{DEMO_ORGANISATION_ID} must be an organisation id") from None
+
+
 def _parse_run_budget(raw: str) -> Decimal | None:
     value = raw.strip()
     if not value:
@@ -296,6 +312,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         ),
         crawler_contact_url=_parse_contact_url(env.get(CRAWLER_CONTACT_URL, "")),
         monthly_spend_cap_eur=_parse_spend_cap(env.get(MONTHLY_SPEND_CAP_EUR, "")),
+        demo_organisation_id=_parse_demo_organisation(env.get(DEMO_ORGANISATION_ID, "")),
         run_budget_eur=_parse_run_budget(env.get(RUN_BUDGET_EUR, "")),
         provider_max_retries=_parse_max_retries(env.get(PROVIDER_MAX_RETRIES, "")),
     )
