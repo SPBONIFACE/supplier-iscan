@@ -100,6 +100,11 @@ class ProfileRun(OrganisationOwned, Base):
     # did not match the schema after one retry.
     grounding_failures: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     invalid_items: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Set by the assessment stage (#25): items rejected by the validation rules, and the time the
+    # draft was stored (null until then: a resumed stage does not draft twice). Items that did not
+    # match the schema are counted in `invalid_items`.
+    rejected_statements: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    assessment_drafted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Set by the stages that load the profile definition and the prompt set (#21, #26).
     profile_definition_hash: Mapped[str | None] = mapped_column(String(100))
     prompt_set_hash: Mapped[str | None] = mapped_column(String(100))

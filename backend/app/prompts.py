@@ -95,6 +95,11 @@ class PromptSet:
     # "sha256:<hex>" of the canonical JSON of the validated content: recorded on each run.
     content_hash: str
 
+    def placeholders(self, prompt_id: str) -> frozenset[str]:
+        """The placeholders the prompt uses (a configured set may use fewer than the example)."""
+        prompt = self.prompts[prompt_id]
+        return frozenset(_used(prompt.instructions)) | frozenset(_used(prompt.data_template))
+
     def render(self, prompt_id: str, values: dict[str, str]) -> RenderedPrompt:
         """The only way feature code obtains a prompt. `values` holds exactly the placeholders the
         prompt uses; `language` must be "en" or "fr"."""

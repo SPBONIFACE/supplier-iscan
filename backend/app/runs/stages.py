@@ -1,7 +1,7 @@
 """The stages of a run, and how a failure is told apart.
 
-A stage is a function of a `StageContext`. Collection (#103) and extraction (#23) are real; the
-others are still no-ops: #25 and #26 (assessment) replace them in `DEFAULT_STAGES`.
+A stage is a function of a `StageContext`. Collection (#103), extraction (#23) and assessment
+drafting (#25) are real; identity is still a no-op (#26 extends the assessment stage).
 Rules for a stage:
 
 - It may be executed again after a crash or a resume, so it must not duplicate stored results
@@ -127,9 +127,19 @@ def extraction_stage(context: StageContext) -> StageOutcome | None:
     return make_extraction_stage(load_definition(settings), load_prompts(settings))(context)
 
 
+def assessment_stage(context: StageContext) -> StageOutcome | None:
+    """The real assessment stage (#25), built when the stage runs in the worker."""
+    from app.assessment.stage import make_assessment_stage
+    from app.config import load_settings
+    from app.main import load_definition, load_prompts
+
+    settings = load_settings()
+    return make_assessment_stage(load_definition(settings), load_prompts(settings))(context)
+
+
 DEFAULT_STAGES: Mapping[str, Stage] = {
     "identity": no_op,
     "collection": collection_stage,
     "extraction": extraction_stage,
-    "assessment": no_op,
+    "assessment": assessment_stage,
 }

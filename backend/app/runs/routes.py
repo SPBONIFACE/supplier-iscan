@@ -13,12 +13,21 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
 from app import queue
+from app.assessment.rules import NOT_ASSESSED
 from app.config import Settings
 from app.crawl.store import excluded_sources
 from app.db import DbSession, utc_now
 from app.errors import not_found
 from app.extraction.settings import load_extraction_settings
-from app.models import Fact, ProfileRun, RunFailure, Source, SupplierIdentity, UsageEvent
+from app.models import (
+    AssessmentItem,
+    Fact,
+    ProfileRun,
+    RunFailure,
+    Source,
+    SupplierIdentity,
+    UsageEvent,
+)
 from app.models.runs import FINISHED_STATUSES
 from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.profile_definition import ProfileDefinition
@@ -154,6 +163,63 @@ class FactOut(BaseModel):
     author: str | None
     fetched_at: datetime | None
     verification_url: str | None
+
+
+class AssessmentProvenanceOut(BaseModel):
+    """Mirrors components/schemas/AssessmentProvenance."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider: str
+    model_id: str
+    model_version: str
+    prompt_id: str
+    prompt_version: str
+    generated_at: datetime
+    status: Literal["ai_draft", "approved", "corrected", "deleted"]
+
+
+class AssessmentStatementOut(BaseModel):
+    """Mirrors components/schemas/AssessmentStatement."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: uuid.UUID
+    kind: Literal[
+        "strength",
+        "weakness",
+        "opportunity",
+        "threat",
+        "risk_indicator",
+        "evidence_gap",
+        "procurement_implication",
+        "relationship_level",
+        "contract_approach",
+        "volume_share",
+        "next_action",
+        "procurement_priority",
+    ]
+    text: str
+    level: Literal["low", "medium", "high"] | None
+    label: Literal["strategic", "preferred", "transactional"] | None
+    timing: str | None
+    cited_fact_ids: list[uuid.UUID]
+    cites_buyer_context: bool
+    gap_evidence: str | None
+    buyer_context_version: int | None
+    provenance: AssessmentProvenanceOut
+
+
+class AssessmentOut(BaseModel):
+    """Mirrors components/schemas/Assessment."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["pending", "drafted", "not_assessed"]
+    message: str | None
+    buyer_context_version: int | None
+    rejected_statements: int
+    items: list[AssessmentStatementOut]
 
 
 class FactListOut(BaseModel):
@@ -348,6 +414,61 @@ def list_facts(id: str, scope: OrganisationScoped, db: DbSession, request: Reque
                 )
             )
     return FactListOut(items=items)
+
+
+@router.get("/{id}/assessment", response_model=AssessmentOut)
+def get_assessment(id: str, scope: OrganisationScoped, db: DbSession) -> AssessmentOut:
+    """The AI-drafted statements of the run, with their cited facts and provenance. A
+    natural-person business is not assessed: no statement exists and the message says so."""
+    run = scope.get(db, ProfileRun, id)  # the one 404 for an unknown or another organisation's run
+    identity = db.scalar(
+        scope.select(SupplierIdentity).where(SupplierIdentity.id == run.identity_id)
+    )
+    if identity is not None and identity.natural_person:
+        return AssessmentOut(
+            status="not_assessed",
+            message=NOT_ASSESSED,
+            buyer_context_version=None,
+            rejected_statements=0,
+            items=[],
+        )
+    rows = db.scalars(
+        scope.select(AssessmentItem)
+        .where(AssessmentItem.run_id == run.id)
+        .order_by(AssessmentItem.position)
+    ).all()
+    items = [
+        AssessmentStatementOut(
+            id=row.id,
+            kind=row.kind,  # type: ignore[arg-type]  # constrained by the table
+            text=row.text,
+            level=row.level,  # type: ignore[arg-type]
+            label=row.label,  # type: ignore[arg-type]
+            timing=row.timing,
+            cited_fact_ids=[uuid.UUID(value) for value in row.cited_fact_ids],
+            cites_buyer_context=row.cites_buyer_context,
+            gap_evidence=row.gap_evidence,
+            buyer_context_version=row.buyer_context_version,
+            provenance=AssessmentProvenanceOut(
+                provider=row.provider,
+                model_id=row.model_id,
+                model_version=row.model_version,
+                prompt_id=row.prompt_id,
+                prompt_version=row.prompt_version,
+                generated_at=row.generated_at,
+                status=row.status,  # type: ignore[arg-type]
+            ),
+        )
+        for row in rows
+    ]
+    versions = [item.buyer_context_version for item in items if item.buyer_context_version]
+    return AssessmentOut(
+        status="drafted" if run.assessment_drafted_at is not None else "pending",
+        message=None,
+        buyer_context_version=max(versions) if versions else None,
+        rejected_statements=run.rejected_statements,
+        items=items,
+    )
 
 
 @router.post("/{id}/stop", response_model=RunOut)

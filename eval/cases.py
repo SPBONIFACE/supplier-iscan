@@ -11,9 +11,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-CASE_SET_VERSION = "2026-11-05.1"
+CASE_SET_VERSION = "2026-11-05.2"
 
 ROOT = Path(__file__).resolve().parent.parent
 EXTRACTION_FILE = ROOT / "eval" / "cases" / "extraction.json"
@@ -49,8 +49,18 @@ class ExtractionCase(_Model):
 class FactCase(_Model):
     id: str
     field: str
-    value: str
-    quote: str
+    status: Literal["proposed", "not_found"] = "proposed"
+    value: str = ""
+    quote: str = ""
+
+    @model_validator(mode="after")
+    def _evidence(self) -> "FactCase":
+        has_evidence = bool(self.value.strip() and self.quote.strip())
+        if self.status == "proposed" and not has_evidence:
+            raise ValueError("a proposed fact needs a value and a quote")
+        if self.status == "not_found" and (self.value or self.quote):
+            raise ValueError("a not_found fact has no value and no quote")
+        return self
 
 
 class AssessmentExpected(_Model):

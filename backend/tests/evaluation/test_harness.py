@@ -57,13 +57,16 @@ def test_the_smoke_run_measures_every_implemented_area() -> None:
     assert status["returned URLs that can be verified"] == "fail"
 
 
-def test_assessment_is_not_implemented_and_the_reviewer_metric_is_not_rated() -> None:
-    status = _status(_run())
+def test_the_assessment_area_is_measured_and_the_reviewer_metric_is_not_rated() -> None:
+    report = _run()
+    status = _status(report)
     assessment = [
         value for name, value in status.items() if "recommend" in name or "statements cite" in name
     ]
-    assert assessment and set(assessment) == {"not implemented"}
+    assert len(assessment) == 4 and set(assessment) == {"pass"}
     assert status["judged useful by a domain reviewer"] == "not rated"
+    area = next(item for item in report.areas if item.area == "assessment")
+    assert area.implemented and len(area.cases) == 7 and area.errors == 0
 
 
 def test_the_report_names_what_it_was_run_with(tmp_path: Path) -> None:
@@ -99,7 +102,15 @@ def test_the_three_extraction_cases_and_the_shipped_cases_are_loaded() -> None:
         "edge-accents-cjk-injection",
     ]
     assert len(cases.identity) == 3 and len(cases.retrieval) == 2
-    assert cases.assessment == []
+    assert [case.id for case in cases.assessment] == [
+        "happy-swot-and-gap",
+        "happy-recommendations-first-evaluation",
+        "recommendations-with-buyer-context",
+        "negative-all-not-found",
+        "edge-management-facts",
+        "edge-natural-person",
+        "edge-injected-quote",
+    ]
 
 
 def _fake_with(adapter: FakeStructuringAdapter, backend: Backend) -> None:
@@ -129,7 +140,10 @@ def test_a_provider_error_marks_the_case_and_the_others_continue() -> None:
     assert [case.status for case in identity.cases] == ["error"] * 3
     assert [case.status for case in extraction.cases] == ["error"] * 3
     # Retrieval uses no structuring answer: it still ran.
-    assert retrieval.errors == 0 and report.errors == 6
+    # Assessment: the six cases that call the model fail, the natural-person case calls none.
+    assessment = next(area for area in report.areas if area.area == "assessment")
+    assert assessment.errors == 6
+    assert retrieval.errors == 0 and report.errors == 12
     assert "ERROR" in to_markdown(report)
 
 

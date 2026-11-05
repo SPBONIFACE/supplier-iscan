@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.11.0
+  version: 0.12.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -626,6 +626,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FactList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/assessment:
+    get:
+      operationId: getRunAssessment
+      tags: [runs]
+      summary: Read the assessment draft of a run
+      description: >-
+        The AI-drafted assessment statements of the run: SWOT points, risk indicators, evidence
+        gaps and the procurement recommendations. Every statement cites facts of this run (or is
+        an evidence gap naming the missing evidence), carries its provenance and is an `ai_draft`
+        until reviewed. There is no aggregate score. `pending` until the assessment stage has
+        stored its results. For an identity flagged `natural_person` the status is
+        `not_assessed`, the message reads "Not assessed: natural-person business" and no
+        statement exists: nothing is requested from or stored by the provider for it.
+        `buyer_context_version` is null while the run has no buyer context; every recommendation
+        text then starts with "Assuming a first evaluation of this supplier:" (French:
+        "En supposant une première évaluation de ce fournisseur :"). Another organisation's run
+        answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The assessment of the run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assessment"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -1433,8 +1467,8 @@ components:
           minimum: 0
         invalid_items:
           description: >-
-            Extraction: the number of items the structuring provider returned that did not match
-            the schema, dropped after one retry. 0 until the extraction stage has run.
+            Extraction and assessment: the number of items the structuring provider returned that
+            did not match the schema, dropped after one retry. 0 until those stages have run.
           type: integer
           minimum: 0
         insufficient_sources_explanation:
@@ -1611,6 +1645,163 @@ components:
             For a certification field with a kept value: the IAF CertSearch address where the
             buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise.
           type: [string, "null"]
+    AssessmentKind:
+      description: >-
+        SWOT (`strength`, `weakness`, `opportunity`, `threat`), `risk_indicator`,
+        `evidence_gap`, and the six recommendation kinds. Each recommendation kind other than
+        `next_action` appears at most once per draft.
+      type: string
+      enum:
+        - strength
+        - weakness
+        - opportunity
+        - threat
+        - risk_indicator
+        - evidence_gap
+        - procurement_implication
+        - relationship_level
+        - contract_approach
+        - volume_share
+        - next_action
+        - procurement_priority
+    AssessmentLevel:
+      description: A qualitative level. There is no numeric score anywhere in the assessment.
+      type: string
+      enum: [low, medium, high]
+    RelationshipLabel:
+      type: string
+      enum: [strategic, preferred, transactional]
+    AssessmentStatus:
+      description: >-
+        Review status of a statement. Review itself (`approved`, `corrected`, `deleted`) is
+        added with the review endpoints.
+      type: string
+      enum: [ai_draft, approved, corrected, deleted]
+    AssessmentProvenance:
+      type: object
+      additionalProperties: false
+      required:
+        - provider
+        - model_id
+        - model_version
+        - prompt_id
+        - prompt_version
+        - generated_at
+        - status
+      properties:
+        provider:
+          type: string
+        model_id:
+          type: string
+        model_version:
+          description: The id of the approved provider configuration that pins the exact model version.
+          type: string
+        prompt_id:
+          type: string
+        prompt_version:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/AssessmentStatus"
+    AssessmentStatement:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - kind
+        - text
+        - level
+        - label
+        - timing
+        - cited_fact_ids
+        - cites_buyer_context
+        - gap_evidence
+        - buyer_context_version
+        - provenance
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/AssessmentKind"
+        text:
+          description: >-
+            The statement, in the profile language. A recommendation starts with the
+            first-evaluation assumption when the run has no buyer context. Never a negative claim
+            about the supplier.
+          type: string
+        level:
+          description: Required for `procurement_priority`; only ever together with cited facts.
+          oneOf:
+            - $ref: "#/components/schemas/AssessmentLevel"
+            - type: "null"
+        label:
+          description: Required for `relationship_level`; null for every other kind.
+          oneOf:
+            - $ref: "#/components/schemas/RelationshipLabel"
+            - type: "null"
+        timing:
+          description: Required for `next_action` (for example "within 2 weeks"); null otherwise.
+          type: [string, "null"]
+        cited_fact_ids:
+          description: >-
+            Ids of facts of this run (see `GET /runs/{id}/facts`), never a `not_found` fact.
+            Empty only for an `evidence_gap`.
+          type: array
+          items:
+            type: string
+            format: uuid
+        cites_buyer_context:
+          description: >-
+            True when the statement rests on the buyer context (always false until buyer context
+            exists).
+          type: boolean
+        gap_evidence:
+          description: For an `evidence_gap`, the evidence that would close it; null otherwise.
+          type: [string, "null"]
+        buyer_context_version:
+          description: The buyer-context version the statement used; null without buyer context.
+          type: [integer, "null"]
+        provenance:
+          $ref: "#/components/schemas/AssessmentProvenance"
+    Assessment:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - message
+        - buyer_context_version
+        - rejected_statements
+        - items
+      properties:
+        status:
+          description: >-
+            `pending` before the assessment stage has stored its results, `drafted` after,
+            `not_assessed` for an identity flagged `natural_person`.
+          type: string
+          enum: [pending, drafted, not_assessed]
+        message:
+          description: >-
+            "Not assessed: natural-person business" when the status is `not_assessed`; null
+            otherwise.
+          type: [string, "null"]
+        buyer_context_version:
+          type: [integer, "null"]
+        rejected_statements:
+          description: >-
+            The number of drafted items rejected by the validation rules (no cited fact, a fact
+            that is not in this run or is `not_found`, a level without facts, a missing label,
+            timing or gap evidence, a duplicate recommendation, a claim on buyer context, a
+            statement citing a field about people, a financial-stability gap). Items that did not
+            match the schema are counted in `invalid_items` of the run.
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssessmentStatement"
     FactList:
       type: object
       additionalProperties: false
