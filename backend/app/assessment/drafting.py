@@ -10,8 +10,8 @@ the data through the redaction gate in `ask`, metering through the call context)
 - `recommendations` take the current buyer context, or the first-evaluation assumption when none
   is stored; each kept recommendation stores the version of the context it used.
 - A redraft replaces the earlier `ai_draft` statements of its prompt and never a reviewed one: a
-  recommendation kind that a member has approved or corrected is not drafted again. When the model
-  returns nothing usable, the earlier drafts stay.
+  recommendation kind that a member has approved, corrected or deleted is not drafted again. When
+  the model returns nothing usable, the earlier drafts stay.
 - A natural-person business, or a run whose assessment is not drafted yet, is not touched.
 - Nothing is logged but counts and ids.
 """
@@ -48,7 +48,8 @@ logger = logging.getLogger(__name__)
 
 ASSESSMENT_JOB: Final = "assessment_part"  # the kind of the queue job that drafts one part
 PARTS: Final = (FIT_PROMPT, RECOMMENDATIONS_PROMPT)
-REVIEWED: Final = ("approved", "corrected")
+# A deleted statement is a member's decision too (#28): its kind is not drafted again.
+REVIEWED: Final = ("approved", "corrected", "deleted")
 
 
 def _assessed(database: Database, run_id: uuid.UUID) -> list[Draft]:

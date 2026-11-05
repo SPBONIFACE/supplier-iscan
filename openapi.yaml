@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.13.0
+  version: 0.14.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -36,6 +36,10 @@ tags:
     description: The profile definition loaded at startup
   - name: runs
     description: Profile runs. They execute in a worker; no request waits for a stage.
+  - name: review
+    description: >-
+      Review of facts and assessment statements by any member of the organisation. The AI
+      proposes; the member decides.
   - name: admin
     description: Administrator operations. A signed-in member gets 403 on every one of them.
   - name: invitations
@@ -531,7 +535,8 @@ paths:
       summary: Read a run
       description: >-
         Status, stage, provider and model ID per role, tokens and cost (totals of every attempt,
-        failed and retried ones included). On a hosted instance an administrator gets
+        failed and retried ones included), and `proposed_facts`, the number of facts still
+        `proposed` (it falls after each review). On a hosted instance an administrator gets
         run metadata only: `supplier_name` is null for them.
       security:
         - sessionCookie: []
@@ -609,7 +614,7 @@ paths:
       summary: List the facts extracted for a run
       description: >-
         One entry per `fact` field of the profile definition the run uses, in the order of the
-        definition: a proposed fact (value, verbatim quote in its source language, source,
+        definition: a proposed (or reviewed: approved, corrected) fact (value, verbatim quote in its source language, source,
         attribution) or `not_found`, which is shown as "No public evidence found". It is never a
         negative statement about the supplier: an entry without a kept value carries no value and
         no quote, and a certification field without a kept value is `not_found`, never "not
@@ -641,7 +646,8 @@ paths:
         The AI-drafted assessment statements of the run: SWOT points, risk indicators, evidence
         gaps and the procurement recommendations. Every statement cites facts of this run (or is
         an evidence gap naming the missing evidence), carries its provenance and is an `ai_draft`
-        until reviewed. There is no aggregate score. `pending` until the assessment stage has
+        until reviewed (a statement a member deleted is not returned). There is no aggregate
+        score. `pending` until the assessment stage has
         stored its results. For an identity flagged `natural_person` the status is
         `not_assessed`, the message reads "Not assessed: natural-person business" and no
         statement exists: nothing is requested from or stored by the provider for it.
@@ -931,6 +937,105 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /facts/{id}:
+    patch:
+      operationId: reviewFact
+      tags: [review]
+      summary: Approve or correct a fact
+      description: >-
+        Any member of the owning organisation sets the status of a fact to `approved`, or to
+        `corrected` with a corrected value, recording `reviewed_by` and `reviewed_at`. The
+        original AI value (`original_value`) and the verbatim quote with its source are never
+        overwritten: a first correction stores the AI value in `original_value`, a second
+        correction replaces the corrected `value` and keeps `original_value`. A corrected value is
+        the member's own: it carries no quote of its own, and the quote stays the evidence for
+        `original_value`. A `not_found` fact has nothing to approve or correct (409; "No public
+        evidence found" stays as it is), and a `corrected` fact is not approved (correct it again
+        instead). `version` is the version the member read: when the fact changed since, nothing
+        is written and the answer is 409 with the current fact. A review of a run that has not
+        finished (queued, running or paused) answers 409 "The run is still in progress."
+        An empty or blank corrected value, a value on an approval, a missing value on a
+        correction, or a value longer than the configured limit answers 422; the submitted value
+        is never echoed back. The corrected value may identify a person: it is content of the
+        organisation, visible to its members only (never to the administrator), and is redacted
+        like any other text before it reaches a model. Another organisation's fact answers 404,
+        like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FactReview"
+      responses:
+        "200":
+          description: The fact after the review, with its new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fact"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ReviewConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /assessment-statements/{id}:
+    patch:
+      operationId: reviewAssessmentStatement
+      tags: [review]
+      summary: Approve, correct or delete an assessment statement
+      description: >-
+        Any member of the owning organisation sets the status of a statement to `approved`, to
+        `corrected` with a corrected text, or to `deleted`, recording `reviewed_by` and
+        `reviewed_at` in the provenance. A first correction keeps the AI text in
+        `original_text`; a second correction replaces the text and keeps it. The cited facts, the
+        level, label and timing, and the provenance of the AI draft (provider, model, prompt,
+        generation time) are never changed. A deleted statement keeps its status `deleted` and its
+        provenance but is no longer returned by `GET /runs/{id}/assessment`; it cannot be
+        reviewed again (409 with the statement as stored). A statement is labelled "AI draft,
+        pending your validation" exactly while its status is `ai_draft`. A redraft never replaces
+        or removes a reviewed statement (approved, corrected or deleted). `version` is the
+        version the member read: when the statement changed since, nothing is written and the
+        answer is 409 with the current statement. A review of a run that has not finished
+        (queued, running or paused) answers 409 "The run is still in progress." An empty or blank
+        corrected text, a text on an approval or a deletion, a missing text on a correction, or a
+        text longer than the configured limit answers 422; the submitted text is never echoed
+        back. Another organisation's statement answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementReview"
+      responses:
+        "200":
+          description: The statement after the review, with its new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentStatement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ReviewConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /admin/organisations:
@@ -1278,6 +1383,34 @@ components:
           example:
             detail: Someone saved a newer version. Review it before saving again.
             current: null
+    ReviewConflict:
+      description: >-
+        Nothing was written. Either the review was based on an outdated version (or the statement
+        was deleted): `current` is the fact or statement as stored now, so that no review is
+        silently lost; or the run is still in progress, the fact is `not_found`, or a `corrected`
+        fact was to be approved (`detail` only).
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/Error"
+              - type: object
+                additionalProperties: false
+                required: [detail, current]
+                properties:
+                  detail:
+                    type: string
+                  current:
+                    oneOf:
+                      - $ref: "#/components/schemas/Fact"
+                      - $ref: "#/components/schemas/AssessmentStatement"
+          examples:
+            outdated:
+              value:
+                detail: Someone reviewed this since you read it. Check the current version before reviewing again.
+            inProgress:
+              value:
+                detail: The run is still in progress.
     ServiceUnavailable:
       description: The database is unavailable. Plain message, no technical details.
       content:
@@ -1626,6 +1759,7 @@ components:
         - identity_to_verify
         - grounding_failures
         - invalid_items
+        - proposed_facts
         - insufficient_sources_explanation
         - created_at
         - started_at
@@ -1695,6 +1829,12 @@ components:
           description: >-
             Extraction and assessment: the number of items the structuring provider returned that
             did not match the schema, dropped after one retry. 0 until those stages have run.
+          type: integer
+          minimum: 0
+        proposed_facts:
+          description: >-
+            The number of facts of the run still `proposed` (extracted and not yet approved or
+            corrected by a member). 0 until the extraction stage has stored its results.
           type: integer
           minimum: 0
         insufficient_sources_explanation:
@@ -1790,11 +1930,11 @@ components:
             $ref: "#/components/schemas/RunFailure"
     FactStatus:
       description: >-
-        `proposed` for a value kept by extraction; `not_found` for a field with no kept value
-        ("No public evidence found"). Review (`approved`, `corrected`) is added with the review
-        endpoints.
+        `proposed` for a value kept by extraction and not yet reviewed; `approved` and `corrected`
+        after a member's review (`PATCH /facts/{id}`); `not_found` for a field with no kept value
+        ("No public evidence found"), which is never reviewed.
       type: string
-      enum: [proposed, not_found]
+      enum: [proposed, approved, corrected, not_found]
     SourceType:
       description: >-
         `supplier_claim` ("Supplier's own claim"): the source is on the confirmed website's domain
@@ -1824,6 +1964,10 @@ components:
         - author
         - fetched_at
         - verification_url
+        - original_value
+        - version
+        - reviewed_by
+        - reviewed_at
       properties:
         id:
           type: string
@@ -1837,11 +1981,15 @@ components:
         status:
           $ref: "#/components/schemas/FactStatus"
         value:
+          description: >-
+            The value shown. For a `corrected` fact it is the member's corrected value, not
+            evidence: the quote supports `original_value`.
           type: [string, "null"]
         quote:
           description: >-
             At most 300 characters, verbatim from the source in its source language (never
             translated), found in the stored redacted text of the source. May be identifiable.
+            Never changed by a review.
           type: [string, "null"]
         quote_redacted:
           description: True when the quote contains a redaction mark `[…]` ("Redacted extract").
@@ -1871,6 +2019,55 @@ components:
             For a certification field with a kept value: the IAF CertSearch address where the
             buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise.
           type: [string, "null"]
+        original_value:
+          description: >-
+            The AI value, kept once the fact is `corrected`; null otherwise. Never overwritten.
+          type: [string, "null"]
+        version:
+          description: The version to send with the next review; it increases with each review.
+          type: integer
+          minimum: 1
+        reviewed_by:
+          description: The member who last approved or corrected the fact; null while `proposed` or `not_found`.
+          type: [string, "null"]
+          format: uuid
+        reviewed_at:
+          type: [string, "null"]
+          format: date-time
+    FactReview:
+      type: object
+      additionalProperties: false
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [approved, corrected]
+        value:
+          description: >-
+            The corrected value, required (not blank) when the status is `corrected`, and absent
+            or null for `approved`.
+          type: [string, "null"]
+        version:
+          description: The version of the fact the member read.
+          type: integer
+          minimum: 1
+    StatementReview:
+      type: object
+      additionalProperties: false
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [approved, corrected, deleted]
+        text:
+          description: >-
+            The corrected text, required (not blank) when the status is `corrected`, and absent
+            or null otherwise.
+          type: [string, "null"]
+        version:
+          description: The version of the statement the member read.
+          type: integer
+          minimum: 1
     CriteriaUpdate:
       type: object
       additionalProperties: false
@@ -2142,8 +2339,9 @@ components:
       enum: [strategic, preferred, transactional]
     AssessmentStatus:
       description: >-
-        Review status of a statement. Review itself (`approved`, `corrected`, `deleted`) is
-        added with the review endpoints.
+        Review status of a statement: `ai_draft` until a member approves, corrects or deletes it
+        (`PATCH /assessment-statements/{id}`). A `deleted` statement is not returned by the
+        assessment.
       type: string
       enum: [ai_draft, approved, corrected, deleted]
     AssessmentProvenance:
@@ -2157,6 +2355,8 @@ components:
         - prompt_version
         - generated_at
         - status
+        - reviewed_by
+        - reviewed_at
       properties:
         provider:
           description: >-
@@ -2177,6 +2377,13 @@ components:
           format: date-time
         status:
           $ref: "#/components/schemas/AssessmentStatus"
+        reviewed_by:
+          description: The member who last reviewed the statement; null while `ai_draft`.
+          type: [string, "null"]
+          format: uuid
+        reviewed_at:
+          type: [string, "null"]
+          format: date-time
     AssessmentStatement:
       type: object
       additionalProperties: false
@@ -2193,15 +2400,25 @@ components:
         - buyer_context_version
         - buyer_context_outdated
         - provenance
+        - version
+        - original_text
       properties:
         id:
           type: string
           format: uuid
+        version:
+          description: The version to send with the next review; it increases with each review.
+          type: integer
+          minimum: 1
+        original_text:
+          description: >-
+            The AI text, kept once the statement is `corrected`; null otherwise. Never overwritten.
+          type: [string, "null"]
         kind:
           $ref: "#/components/schemas/AssessmentKind"
         text:
           description: >-
-            The statement, in the profile language. A recommendation starts with the
+            The statement, in the profile language. After a correction it is the member's text. A recommendation starts with the
             first-evaluation assumption when the run has no buyer context. Never a negative claim
             about the supplier.
           type: string

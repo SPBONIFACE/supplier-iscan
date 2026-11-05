@@ -16,7 +16,7 @@ from app.assessment.stage import make_assessment_stage
 from app.config import Settings
 from app.db import Database
 from app.financial.table import load_country_table
-from app.models import AssessmentItem, Job, LlmUsage
+from app.models import AssessmentItem, Job, LlmUsage, ProfileRun
 from app.providers import Providers
 from app.providers.errors import ProviderCallError
 from app.providers.fake import FakeStructuringAdapter, fake_adapters
@@ -474,6 +474,93 @@ def test_a_reviewed_recommendation_is_never_replaced_or_drafted_again(
     assert recs["procurement_priority"] == ("corrected", "My own priority.")
     assert recs["volume_share"][0] == "ai_draft"
     assert len(recs) == 2
+
+
+def test_a_statement_reviewed_through_the_api_is_never_replaced_by_a_redraft(
+    client: TestClient, engine: Engine
+) -> None:
+    """#28: approve, correct and delete all survive a redraft of the same part, and a deleted
+    recommendation kind is not drafted again."""
+    drafted = Drafted(client, engine)
+    quality = drafted.facts["quality_management"]
+    with Session(engine) as db:
+        db.execute(
+            update(ProfileRun).where(ProfileRun.id == drafted.run_id).values(status="completed")
+        )
+        db.commit()
+    priority_id = next(
+        i.id for i in items_of(engine, drafted.run_id) if i.kind == "procurement_priority"
+    )
+    strength_id = next(i.id for i in items_of(engine, drafted.run_id) if i.kind == "strength")
+    patch = send_with_session(
+        client,
+        "PATCH",
+        f"/assessment-statements/{priority_id}",
+        drafted.token,
+        json={"status": "deleted", "version": 1},
+    )
+    assert patch.status_code == 200
+    patch = send_with_session(
+        client,
+        "PATCH",
+        f"/assessment-statements/{strength_id}",
+        drafted.token,
+        json={"status": "corrected", "text": "My own strength.", "version": 1},
+    )
+    assert patch.status_code == 200
+
+    draft(
+        engine,
+        drafted.run_id,
+        "recommendations",
+        FakeStructuringAdapter(
+            [
+                answer(
+                    recommendation(quality, "procurement_priority", level="low", text="Low."),
+                    recommendation(quality, "volume_share", text="Trial."),
+                )
+            ]
+        ),
+    )
+
+    rows = items_of(engine, drafted.run_id)
+    priorities = [(i.status, i.text) for i in rows if i.kind == "procurement_priority"]
+    assert len(priorities) == 1 and priorities[0][0] == "deleted"  # kept, and not drafted again
+    assert [i.status for i in rows if i.text == "My own strength."] == ["corrected"]
+    shown = [i["kind"] for i in drafted.assessment()["items"]]
+    assert "procurement_priority" not in shown and "volume_share" in shown
+
+
+def test_a_corrected_fact_value_passes_the_redaction_gate_before_any_prompt(
+    client: TestClient, engine: Engine
+) -> None:
+    """#28: a member's correction may hold personal data; it is redacted like any other text."""
+    drafted = Drafted(client, engine)
+    quality = drafted.facts["quality_management"]
+    with Session(engine) as db:
+        db.execute(
+            update(ProfileRun).where(ProfileRun.id == drafted.run_id).values(status="completed")
+        )
+        db.commit()
+    corrected = send_with_session(
+        client,
+        "PATCH",
+        f"/facts/{quality}",
+        drafted.token,
+        json={
+            "status": "corrected",
+            "value": "ISO 9001, audited by Anna Keller-Brandt (anna.keller@example.test)",
+            "version": 1,
+        },
+    )
+    assert corrected.status_code == 200
+    adapter = FakeStructuringAdapter([answer(recommendation(quality))])
+
+    draft(engine, drafted.run_id, "recommendations", adapter)
+
+    sent = adapter.calls[0].data.text
+    assert "ISO 9001" in sent  # the corrected fact is what the model is shown
+    assert "Anna Keller-Brandt" not in sent and "anna.keller@example.test" not in sent
 
 
 def test_recommendations_are_refused_before_the_assessment_is_drafted(

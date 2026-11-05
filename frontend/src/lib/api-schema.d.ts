@@ -311,7 +311,7 @@ export interface paths {
         };
         /**
          * Read a run
-         * @description Status, stage, provider and model ID per role, tokens and cost (totals of every attempt, failed and retried ones included). On a hosted instance an administrator gets run metadata only: `supplier_name` is null for them.
+         * @description Status, stage, provider and model ID per role, tokens and cost (totals of every attempt, failed and retried ones included), and `proposed_facts`, the number of facts still `proposed` (it falls after each review). On a hosted instance an administrator gets run metadata only: `supplier_name` is null for them.
          */
         get: operations["getRun"];
         put?: never;
@@ -371,7 +371,7 @@ export interface paths {
         };
         /**
          * List the facts extracted for a run
-         * @description One entry per `fact` field of the profile definition the run uses, in the order of the definition: a proposed fact (value, verbatim quote in its source language, source, attribution) or `not_found`, which is shown as "No public evidence found". It is never a negative statement about the supplier: an entry without a kept value carries no value and no quote, and a certification field without a kept value is `not_found`, never "not certified". Empty until the extraction stage has stored its results. Another organisation's run answers 404, like an unknown id.
+         * @description One entry per `fact` field of the profile definition the run uses, in the order of the definition: a proposed (or reviewed: approved, corrected) fact (value, verbatim quote in its source language, source, attribution) or `not_found`, which is shown as "No public evidence found". It is never a negative statement about the supplier: an entry without a kept value carries no value and no quote, and a certification field without a kept value is `not_found`, never "not certified". Empty until the extraction stage has stored its results. Another organisation's run answers 404, like an unknown id.
          */
         get: operations["listRunFacts"];
         put?: never;
@@ -391,7 +391,7 @@ export interface paths {
         };
         /**
          * Read the assessment draft of a run
-         * @description The AI-drafted assessment statements of the run: SWOT points, risk indicators, evidence gaps and the procurement recommendations. Every statement cites facts of this run (or is an evidence gap naming the missing evidence), carries its provenance and is an `ai_draft` until reviewed. There is no aggregate score. `pending` until the assessment stage has stored its results. For an identity flagged `natural_person` the status is `not_assessed`, the message reads "Not assessed: natural-person business" and no statement exists: nothing is requested from or stored by the provider for it. `buyer_context_version` is null while the run has no buyer context; every recommendation text then starts with "Assuming a first evaluation of this supplier:" (French: "En supposant une première évaluation de ce fournisseur :"). Another organisation's run answers 404, like an unknown id.
+         * @description The AI-drafted assessment statements of the run: SWOT points, risk indicators, evidence gaps and the procurement recommendations. Every statement cites facts of this run (or is an evidence gap naming the missing evidence), carries its provenance and is an `ai_draft` until reviewed (a statement a member deleted is not returned). There is no aggregate score. `pending` until the assessment stage has stored its results. For an identity flagged `natural_person` the status is `not_assessed`, the message reads "Not assessed: natural-person business" and no statement exists: nothing is requested from or stored by the provider for it. `buyer_context_version` is null while the run has no buyer context; every recommendation text then starts with "Assuming a first evaluation of this supplier:" (French: "En supposant une première évaluation de ce fournisseur :"). Another organisation's run answers 404, like an unknown id.
          */
         get: operations["getRunAssessment"];
         put?: never;
@@ -540,6 +540,46 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/facts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Approve or correct a fact
+         * @description Any member of the owning organisation sets the status of a fact to `approved`, or to `corrected` with a corrected value, recording `reviewed_by` and `reviewed_at`. The original AI value (`original_value`) and the verbatim quote with its source are never overwritten: a first correction stores the AI value in `original_value`, a second correction replaces the corrected `value` and keeps `original_value`. A corrected value is the member's own: it carries no quote of its own, and the quote stays the evidence for `original_value`. A `not_found` fact has nothing to approve or correct (409; "No public evidence found" stays as it is), and a `corrected` fact is not approved (correct it again instead). `version` is the version the member read: when the fact changed since, nothing is written and the answer is 409 with the current fact. A review of a run that has not finished (queued, running or paused) answers 409 "The run is still in progress." An empty or blank corrected value, a value on an approval, a missing value on a correction, or a value longer than the configured limit answers 422; the submitted value is never echoed back. The corrected value may identify a person: it is content of the organisation, visible to its members only (never to the administrator), and is redacted like any other text before it reaches a model. Another organisation's fact answers 404, like an unknown id.
+         */
+        patch: operations["reviewFact"];
+        trace?: never;
+    };
+    "/assessment-statements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Approve, correct or delete an assessment statement
+         * @description Any member of the owning organisation sets the status of a statement to `approved`, to `corrected` with a corrected text, or to `deleted`, recording `reviewed_by` and `reviewed_at` in the provenance. A first correction keeps the AI text in `original_text`; a second correction replaces the text and keeps it. The cited facts, the level, label and timing, and the provenance of the AI draft (provider, model, prompt, generation time) are never changed. A deleted statement keeps its status `deleted` and its provenance but is no longer returned by `GET /runs/{id}/assessment`; it cannot be reviewed again (409 with the statement as stored). A statement is labelled "AI draft, pending your validation" exactly while its status is `ai_draft`. A redraft never replaces or removes a reviewed statement (approved, corrected or deleted). `version` is the version the member read: when the statement changed since, nothing is written and the answer is 409 with the current statement. A review of a run that has not finished (queued, running or paused) answers 409 "The run is still in progress." An empty or blank corrected text, a text on an approval or a deletion, a missing text on a correction, or a text longer than the configured limit answers 422; the submitted text is never echoed back. Another organisation's statement answers 404, like an unknown id.
+         */
+        patch: operations["reviewAssessmentStatement"];
         trace?: never;
     };
     "/admin/organisations": {
@@ -853,6 +893,8 @@ export interface components {
             grounding_failures: number;
             /** @description Extraction and assessment: the number of items the structuring provider returned that did not match the schema, dropped after one retry. 0 until those stages have run. */
             invalid_items: number;
+            /** @description The number of facts of the run still `proposed` (extracted and not yet approved or corrected by a member). 0 until the extraction stage has stored its results. */
+            proposed_facts: number;
             /** @description Plain-language explanation, set when the status is `insufficient_sources`: no usable public source was collected, the failure log is available at `GET /runs/{id}/failures`, and the run does not count against the quota. Null otherwise. */
             insufficient_sources_explanation: string | null;
             /** Format: date-time */
@@ -896,10 +938,10 @@ export interface components {
             items: components["schemas"]["RunFailure"][];
         };
         /**
-         * @description `proposed` for a value kept by extraction; `not_found` for a field with no kept value ("No public evidence found"). Review (`approved`, `corrected`) is added with the review endpoints.
+         * @description `proposed` for a value kept by extraction and not yet reviewed; `approved` and `corrected` after a member's review (`PATCH /facts/{id}`); `not_found` for a field with no kept value ("No public evidence found"), which is never reviewed.
          * @enum {string}
          */
-        FactStatus: "proposed" | "not_found";
+        FactStatus: "proposed" | "approved" | "corrected" | "not_found";
         /**
          * @description `supplier_claim` ("Supplier's own claim"): the source is on the confirmed website's domain or one of its subdomains (with or without `www`), on a domain listed in the identity's registry identifiers, or is a PDF linked from a page of the confirmed website, wherever it is hosted. `third_party` ("Third-party source") otherwise.
          * @enum {string}
@@ -914,8 +956,9 @@ export interface components {
             /** @description Id of the field of the profile definition. */
             field: string;
             status: components["schemas"]["FactStatus"];
+            /** @description The value shown. For a `corrected` fact it is the member's corrected value, not evidence: the quote supports `original_value`. */
             value: string | null;
-            /** @description At most 300 characters, verbatim from the source in its source language (never translated), found in the stored redacted text of the source. May be identifiable. */
+            /** @description At most 300 characters, verbatim from the source in its source language (never translated), found in the stored redacted text of the source. May be identifiable. Never changed by a review. */
             quote: string | null;
             /** @description True when the quote contains a redaction mark `[…]` ("Redacted extract"). */
             quote_redacted: boolean;
@@ -937,6 +980,33 @@ export interface components {
             fetched_at: string | null;
             /** @description For a certification field with a kept value: the IAF CertSearch address where the buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise. */
             verification_url: string | null;
+            /** @description The AI value, kept once the fact is `corrected`; null otherwise. Never overwritten. */
+            original_value: string | null;
+            /** @description The version to send with the next review; it increases with each review. */
+            version: number;
+            /**
+             * Format: uuid
+             * @description The member who last approved or corrected the fact; null while `proposed` or `not_found`.
+             */
+            reviewed_by: string | null;
+            /** Format: date-time */
+            reviewed_at: string | null;
+        };
+        FactReview: {
+            /** @enum {string} */
+            status: "approved" | "corrected";
+            /** @description The corrected value, required (not blank) when the status is `corrected`, and absent or null for `approved`. */
+            value?: string | null;
+            /** @description The version of the fact the member read. */
+            version: number;
+        };
+        StatementReview: {
+            /** @enum {string} */
+            status: "approved" | "corrected" | "deleted";
+            /** @description The corrected text, required (not blank) when the status is `corrected`, and absent or null otherwise. */
+            text?: string | null;
+            /** @description The version of the statement the member read. */
+            version: number;
         };
         CriteriaUpdate: {
             /** @description The fit criteria, one per entry; an empty list means none. Each entry is not empty. */
@@ -1056,7 +1126,7 @@ export interface components {
         /** @enum {string} */
         RelationshipLabel: "strategic" | "preferred" | "transactional";
         /**
-         * @description Review status of a statement. Review itself (`approved`, `corrected`, `deleted`) is added with the review endpoints.
+         * @description Review status of a statement: `ai_draft` until a member approves, corrects or deletes it (`PATCH /assessment-statements/{id}`). A `deleted` statement is not returned by the assessment.
          * @enum {string}
          */
         AssessmentStatus: "ai_draft" | "approved" | "corrected" | "deleted";
@@ -1071,12 +1141,23 @@ export interface components {
             /** Format: date-time */
             generated_at: string;
             status: components["schemas"]["AssessmentStatus"];
+            /**
+             * Format: uuid
+             * @description The member who last reviewed the statement; null while `ai_draft`.
+             */
+            reviewed_by: string | null;
+            /** Format: date-time */
+            reviewed_at: string | null;
         };
         AssessmentStatement: {
             /** Format: uuid */
             id: string;
+            /** @description The version to send with the next review; it increases with each review. */
+            version: number;
+            /** @description The AI text, kept once the statement is `corrected`; null otherwise. Never overwritten. */
+            original_text: string | null;
             kind: components["schemas"]["AssessmentKind"];
-            /** @description The statement, in the profile language. A recommendation starts with the first-evaluation assumption when the run has no buyer context. Never a negative claim about the supplier. */
+            /** @description The statement, in the profile language. After a correction it is the member's text. A recommendation starts with the first-evaluation assumption when the run has no buyer context. Never a negative claim about the supplier. */
             text: string;
             /** @description Required for `procurement_priority`; only ever together with cited facts. */
             level: components["schemas"]["AssessmentLevel"] | null;
@@ -1364,6 +1445,18 @@ export interface components {
                 "application/json": {
                     detail: string;
                     current: components["schemas"]["Criteria"] | components["schemas"]["BuyerContext"] | components["schemas"]["BuyerInput"] | null;
+                };
+            };
+        };
+        /** @description Nothing was written. Either the review was based on an outdated version (or the statement was deleted): `current` is the fact or statement as stored now, so that no review is silently lost; or the run is still in progress, the fact is `not_found`, or a `corrected` fact was to be approved (`detail` only). */
+        ReviewConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"] | {
+                    detail: string;
+                    current: components["schemas"]["Fact"] | components["schemas"]["AssessmentStatement"];
                 };
             };
         };
@@ -2203,6 +2296,70 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    reviewFact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FactReview"];
+            };
+        };
+        responses: {
+            /** @description The fact after the review, with its new version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Fact"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ReviewConflict"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    reviewAssessmentStatement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementReview"];
+            };
+        };
+        responses: {
+            /** @description The statement after the review, with its new version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentStatement"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["ReviewConflict"];
+            422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };

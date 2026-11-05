@@ -75,3 +75,12 @@ class AssessmentItem(OrganisationOwned, Base):
     prompt_version: Mapped[str] = mapped_column(String(100))
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(20), default="ai_draft")
+    # Review (#28). `text` is the member's text once corrected; `original_text` then holds the AI
+    # text, set by the first correction and never overwritten. A deleted statement keeps its row
+    # and its provenance. `version` increases with every review (concurrent edits, 409).
+    original_text: Mapped[str | None] = mapped_column(Text)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    reviewed_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

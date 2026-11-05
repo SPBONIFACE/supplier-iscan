@@ -45,6 +45,8 @@ COUNTRY_TABLE_FILE = "COUNTRY_TABLE_FILE"
 CRITERIA_MAX_CHARS = "CRITERIA_MAX_CHARS"
 BUYER_NOTES_MAX_CHARS = "BUYER_NOTES_MAX_CHARS"
 BUYER_TEXT_MAX_CHARS = "BUYER_TEXT_MAX_CHARS"
+# The longest corrected value of a fact or corrected text of a statement (#28).
+REVIEW_TEXT_MAX_CHARS = "REVIEW_TEXT_MAX_CHARS"
 EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
@@ -67,6 +69,7 @@ DEFAULT_WORKER_POLL_SECONDS = 2
 DEFAULT_CRITERIA_MAX_CHARS = 2000
 DEFAULT_BUYER_NOTES_MAX_CHARS = 1000
 DEFAULT_BUYER_TEXT_MAX_CHARS = 5000
+DEFAULT_REVIEW_TEXT_MAX_CHARS = 2000
 MAX_SETTING_NUMBER = 100_000
 
 
@@ -97,6 +100,7 @@ class Settings:
     criteria_max_chars: int = DEFAULT_CRITERIA_MAX_CHARS
     buyer_notes_max_chars: int = DEFAULT_BUYER_NOTES_MAX_CHARS
     buyer_text_max_chars: int = DEFAULT_BUYER_TEXT_MAX_CHARS
+    review_text_max_chars: int = DEFAULT_REVIEW_TEXT_MAX_CHARS
     eur_per_usd: Decimal | None = None
     # How long an invitation link stays valid, and the shortest accepted password (#9).
     invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
@@ -202,6 +206,9 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         ),
         buyer_text_max_chars=_parse_positive_int(
             env, BUYER_TEXT_MAX_CHARS, DEFAULT_BUYER_TEXT_MAX_CHARS
+        ),
+        review_text_max_chars=_parse_positive_int(
+            env, REVIEW_TEXT_MAX_CHARS, DEFAULT_REVIEW_TEXT_MAX_CHARS
         ),
         eur_per_usd=_parse_rate(env.get(EUR_PER_USD, "")),
         invitation_validity=timedelta(
