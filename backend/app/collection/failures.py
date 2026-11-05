@@ -85,6 +85,7 @@ def make_failure(
 class RetrievalFailed(Exception):
     """The retrieval step could not get addresses; the run goes on with its other sources."""
 
-    def __init__(self, kind: Kind) -> None:
+    def __init__(self, kind: Kind, message: str | None = None) -> None:
         super().__init__(kind)
         self.kind = kind
+        self.message = message  # plain language, when it is not the kind's usual one

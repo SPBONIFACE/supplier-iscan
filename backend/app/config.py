@@ -57,6 +57,11 @@ WORKER_POLL_SECONDS = "WORKER_POLL_SECONDS"
 CRAWLER_CONTACT_URL = "CRAWLER_CONTACT_URL"
 # Monthly LLM spend cap of the instance, in EUR (spec F7). Unset: no cap.
 MONTHLY_SPEND_CAP_EUR = "MONTHLY_SPEND_CAP_EUR"
+# Hard cost budget of one profile run, in EUR (spec F7, #30). Always on, on a self-hosted
+# instance too, and with no default: the operator chooses it (a missing, zero or negative value
+# stops startup). The most retries of one provider call after a schema failure.
+RUN_BUDGET_EUR = "RUN_BUDGET_EUR"
+PROVIDER_MAX_RETRIES = "PROVIDER_MAX_RETRIES"
 
 # Local defaults when the setting is empty, so that a self-hosted instance starts without them.
 # They are configuration, not product terms: every operator sets their own.
@@ -67,7 +72,10 @@ DEFAULT_WORKER_POLL_SECONDS = 2
 DEFAULT_CRITERIA_MAX_CHARS = 2000
 DEFAULT_BUYER_NOTES_MAX_CHARS = 1000
 DEFAULT_BUYER_TEXT_MAX_CHARS = 5000
+DEFAULT_PROVIDER_MAX_RETRIES = 1
+MAX_PROVIDER_RETRIES = 5
 MAX_SETTING_NUMBER = 100_000
+MAX_RUN_BUDGET_EUR = Decimal(100_000)
 
 
 class ConfigurationError(ValueError):
@@ -105,6 +113,9 @@ class Settings:
     worker_poll_seconds: int = DEFAULT_WORKER_POLL_SECONDS
     crawler_contact_url: str | None = None
     monthly_spend_cap_eur: Decimal | None = None
+    # None when unset: `load_providers` then stops startup (see `require_run_budget`).
+    run_budget_eur: Decimal | None = None
+    provider_max_retries: int = DEFAULT_PROVIDER_MAX_RETRIES
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -180,6 +191,38 @@ def _parse_spend_cap(raw: str) -> Decimal | None:
     return cap
 
 
+def _parse_run_budget(raw: str) -> Decimal | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        budget = Decimal(value)
+    except InvalidOperation:
+        budget = Decimal(0)
+    if not budget.is_finite() or not 0 < budget <= MAX_RUN_BUDGET_EUR:
+        raise ConfigurationError(f"{RUN_BUDGET_EUR} must be a number above 0 and at most 100000")
+    return budget
+
+
+def _parse_max_retries(raw: str) -> int:
+    value = raw.strip()
+    if not value:
+        return DEFAULT_PROVIDER_MAX_RETRIES
+    if not value.isascii() or not value.isdigit() or int(value) > MAX_PROVIDER_RETRIES:
+        raise ConfigurationError(
+            f"{PROVIDER_MAX_RETRIES} must be a whole number between 0 and {MAX_PROVIDER_RETRIES}"
+        )
+    return int(value)
+
+
+def require_run_budget(settings: "Settings") -> Decimal:
+    """The per-run budget in EUR; a missing one stops startup (owner decision, 27 Oct 2026: the
+    budget always applies, on a self-hosted instance too)."""
+    if settings.run_budget_eur is None:
+        raise ConfigurationError(f"{RUN_BUDGET_EUR} must be set to a number above 0")
+    return settings.run_budget_eur
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
     raw_origins = env.get(CORS_ALLOWED_ORIGINS, "").strip() or DEFAULT_ALLOWED_ORIGINS
@@ -220,4 +263,6 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         ),
         crawler_contact_url=_parse_contact_url(env.get(CRAWLER_CONTACT_URL, "")),
         monthly_spend_cap_eur=_parse_spend_cap(env.get(MONTHLY_SPEND_CAP_EUR, "")),
+        run_budget_eur=_parse_run_budget(env.get(RUN_BUDGET_EUR, "")),
+        provider_max_retries=_parse_max_retries(env.get(PROVIDER_MAX_RETRIES, "")),
     )

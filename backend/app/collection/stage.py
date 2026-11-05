@@ -17,17 +17,22 @@ from sqlalchemy import delete, select
 from app.collection import source_store
 from app.collection.budget import RequestBudget
 from app.collection.collector import Collector
+from app.collection.failures import RetrievalFailed
 from app.collection.retrieval import IdentityRecord, make_retriever
 from app.collection.settings import CollectionSettings, load_collection_settings
 from app.collection.source_store import SourceRecord, identity_redaction, store_source
 from app.crawl import DatabaseSuppressionList, PermittedFetcher, build_client, record_permission
 from app.http_client import GuardedClient
+from app.limits.budget import RunBudgetExhausted
 from app.models import ProfileRun, RunFailure, SupplierIdentity
 from app.prompts import PromptSet, load_prompt_set
 from app.redaction import gate_for
 from app.runs.stages import Stage, StageContext, StageOutcome
 
 logger = logging.getLogger(__name__)
+
+
+BUDGET_MESSAGE = "The run reached its cost budget, so the search for further sources was not made."
 
 
 class RedactionNotWired(RuntimeError):
@@ -73,7 +78,8 @@ def make_collection_stage(
             # Owner decision (3 Nov 2026): a natural person's name and address are hidden from the
             # provider, so with no website to anchor it the query would identify nobody.
             skip_retrieval = identity.natural_person and not identity.website
-        retriever = None
+        retriever: Callable[[list[str]], list[str]] | None = None
+        budget_reached = False
         if skip_retrieval:
             logger.info(
                 "Run %s: the search for further sources was skipped, because the supplier is a "
@@ -81,7 +87,7 @@ def make_collection_stage(
                 context.run_id,
             )
         elif context.providers is not None:
-            retriever = make_retriever(
+            search = make_retriever(
                 context.providers,
                 prompt_set or load_prompt_set(),
                 gate_for(database),
@@ -89,6 +95,19 @@ def make_collection_stage(
                 record,
                 context.call_context,
             )
+
+            def budgeted(lacking: list[str]) -> list[str]:
+                nonlocal budget_reached
+                try:
+                    return search(lacking)
+                except RunBudgetExhausted:
+                    # The call was not made (#30). The failure log says so, the collected
+                    # sources are kept, and the run ends `partial` once they are stored.
+                    budget_reached = True
+                    raise RetrievalFailed("attempt_cap", BUDGET_MESSAGE) from None
+
+            retriever = budgeted
+
         # Every outbound request of the run, permission checks included, passes this budget.
         budget = RequestBudget(limits.max_requests, limits.max_domains)
         client = (
@@ -135,6 +154,10 @@ def make_collection_stage(
             len(result.skipped),
             result.attempts,
         )
+        if budget_reached:
+            # Not "insufficient sources": the search for further sources was not made, so
+            # nothing is known about what exists (and the run counts against the quota).
+            raise RunBudgetExhausted
         # Every strategy failed and nothing usable exists: not counted against the quota.
         return None if result.sources else "insufficient_sources"
 

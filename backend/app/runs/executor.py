@@ -14,8 +14,11 @@ from sqlalchemy import select
 
 from app.config import ConfigurationError
 from app.db import Database, utc_now
+from app.limits.budget import RunBudgetExhausted
+from app.limits.partial import explanation, uncovered_sections
 from app.models import ProfileRun
-from app.models.runs import RUN_STAGES
+from app.models.runs import FINISHED_STATUSES, RUN_STAGES
+from app.profile_definition import ProfileDefinition
 from app.providers import Providers
 from app.runs.stages import (
     LeaseLost,
@@ -45,6 +48,9 @@ class RunEnvironment:
     providers: Providers | None
     # Extends the job's lease; raises LeaseLost when the job is no longer this worker's.
     beat: Callable[[], None]
+    # The profile definition, to name the sections a partial run did not cover; the one of the
+    # settings when not given.
+    definition: ProfileDefinition | None = None
 
 
 def _update(database: Database, run_id: uuid.UUID, change: Callable[[ProfileRun], None]) -> None:
@@ -69,11 +75,14 @@ def _is_stopped(database: Database, run_id: uuid.UUID) -> bool:
 
 
 def fail_run(database: Database, run_id: uuid.UUID, reason: str) -> None:
-    def change(run: ProfileRun) -> None:
-        _finish(run, "failed")
-        run.error = reason
-
-    _update(database, run_id, change)
+    """End the run `failed`, whatever its status while it is not final: a run still `queued`
+    (workers died between claiming the job and starting it, #13 follow-up) or `paused` ends too."""
+    with database.session() as db:
+        run = db.scalar(select(ProfileRun).where(ProfileRun.id == run_id).with_for_update())
+        if run is not None and run.status not in FINISHED_STATUSES:
+            _finish(run, "failed")
+            run.error = reason
+            db.commit()
 
 
 def _pause(database: Database, run_id: uuid.UUID, dependency: str, reason: str) -> None:
@@ -87,6 +96,35 @@ def _pause(database: Database, run_id: uuid.UUID, dependency: str, reason: str) 
         run.counts_against_quota = False
 
     _update(database, run_id, change)
+
+
+def _default_definition() -> ProfileDefinition:
+    from app.config import load_settings
+    from app.main import load_definition
+
+    return load_definition(load_settings())
+
+
+def _end_partial(
+    env: "RunEnvironment", run_id: uuid.UUID, stage: str, done: frozenset[str]
+) -> None:
+    """The run reached its cost budget (#30): it ends `partial`, which counts against the quota,
+    with the sections it did not cover and a plain explanation. What it produced is kept."""
+    definition = env.definition or _default_definition()
+    with env.database.session() as db:
+        run = db.scalar(select(ProfileRun).where(ProfileRun.id == run_id).with_for_update())
+        if run is None or run.status != "running":
+            return
+        if run.stop_requested:
+            _finish(run, "stopped")
+            db.commit()
+            return
+        uncovered = uncovered_sections(db, run, definition, done)
+        _finish(run, "partial")
+        run.uncovered_sections = uncovered
+        run.partial_explanation = explanation(stage, uncovered, definition)
+        db.commit()
+    logger.info("Run %s ended partial at its cost budget, in stage %s", run_id, stage)
 
 
 def _advance(database: Database, run_id: uuid.UUID, stage: str) -> None:
@@ -147,6 +185,8 @@ def execute_run(env: RunEnvironment, run_id: uuid.UUID) -> None:
         raise
     except RunStopped:
         _update(env.database, run_id, lambda run: _finish(run, "stopped"))
+    except RunBudgetExhausted as exhausted:
+        _end_partial(env, run_id, stage, exhausted.done)
     except ConfigurationError:
         # The operator named the setting in the log; the member gets a plain message, and the run
         # ends as failed (no request was sent).

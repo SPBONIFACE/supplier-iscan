@@ -12,6 +12,7 @@ import os
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
+from app.limits.budget import BudgetGate
 from app.providers.catalogue import (
     ROLES,
     ProviderCatalogue,
@@ -69,9 +70,13 @@ class Providers:
         adapters: AdapterTable | None = None,
         *,
         meter: UsageMeter,
+        budget: BudgetGate | None = None,
     ) -> None:
         self.catalogue = catalogue
         self._meter = meter
+        # The per-run cost budget (#30): checked before every attempt of a run. Always given in
+        # production (`app.main.load_providers`); the tests of other features may leave it out.
+        self.budget = budget
         self._environ = os.environ if environ is None else environ
         self._adapters = adapters
 
@@ -126,14 +131,16 @@ class Providers:
         factory = self._factories(config).structuring
         if factory is None:
             raise self._refused(config, "structuring")
-        return StructuringClient(config, factory(config, self._key(config)), self._meter)
+        return StructuringClient(
+            config, factory(config, self._key(config)), self._meter, self.budget
+        )
 
     def retrieval(self, config_id: str | None = None) -> RetrievalClient:
         config = self.resolve("retrieval", config_id)
         factory = self._factories(config).retrieval
         if factory is None:
             raise self._refused(config, "retrieval")
-        return RetrievalClient(config, factory(config, self._key(config)), self._meter)
+        return RetrievalClient(config, factory(config, self._key(config)), self._meter, self.budget)
 
     def missing_settings(self) -> list[str]:
         """Names (never values) of the key settings the selected configurations need and lack."""

@@ -63,6 +63,7 @@ from app.financial.guidance import (
     financial_year,
 )
 from app.financial.table import CountryTable
+from app.limits.budget import RunBudgetExhausted
 from app.llm_schemas import (
     ASSESSMENT_KINDS,
     FIT_KINDS,
@@ -93,7 +94,6 @@ ALLOWED_KINDS: Final = {
     FIT_PROMPT: FIT_KINDS,
     RECOMMENDATIONS_PROMPT: RECOMMENDATION_KINDS,
 }
-ATTEMPTS: Final = 2  # one retry when an item does not match the schema
 NONE_ENTERED: Final = "None entered."
 MAX_VALUE_CHARS: Final = 600
 
@@ -196,7 +196,7 @@ def ask(
     request = StructuringRequest(instructions=rendered.instructions, data=data)
     valid: list[AssessmentStatement] = []
     invalid = 0
-    for _ in range(ATTEMPTS):
+    for _ in range(1 + client.max_retries):  # a retry is a call: it counts against the budget
         context.check_stop()
         try:
             answer = client.structure(request, AssessmentAnswer, context.call_context)
@@ -296,6 +296,7 @@ def make_assessment_stage(
         requested = prompts_to_request(data.natural_person, data.facts)
         tally = Tally()
         drafts: list[Draft] = []
+        unfinished: list[str] = []  # the parts the run budget (#30) did not allow
         if requested:
             client = structuring_client(context.providers)
             gate = gate_for(database)
@@ -303,23 +304,31 @@ def make_assessment_stage(
                 item.id: item.labels.get(data.language, item.id) for item in definition.fields()
             }
             for prompt_id in requested:
-                drafts += draft_part(
-                    context,
-                    client,
-                    gate,
-                    data.redaction,
-                    prompts,
-                    prompt_id,
-                    data.facts,
-                    labels,
-                    data.language,
-                    # SWOT is about the supplier; only the recommendations take the buyer context.
-                    data.buyer_context if prompt_id == RECOMMENDATIONS_PROMPT else None,
-                    drafts,
-                    tally,
-                )
+                try:
+                    drafts += draft_part(
+                        context,
+                        client,
+                        gate,
+                        data.redaction,
+                        prompts,
+                        prompt_id,
+                        data.facts,
+                        labels,
+                        data.language,
+                        # SWOT is about the supplier; only the recommendations take the context.
+                        data.buyer_context if prompt_id == RECOMMENDATIONS_PROMPT else None,
+                        drafts,
+                        tally,
+                    )
+                except RunBudgetExhausted:
+                    unfinished = requested[requested.index(prompt_id) :]
+                    break
         elif data.natural_person:
             return None  # not assessed: nothing requested, nothing stored
+        # The parts that need no more work: drafted, or not requested at all.
+        done = frozenset({ASSESSMENT_PROMPT, RECOMMENDATIONS_PROMPT} - set(unfinished))
+        if unfinished and not drafts:
+            raise RunBudgetExhausted(done)  # nothing drafted: nothing to keep
         guidance = None
         if table is not None:
             guidance = build_guidance(
@@ -331,6 +340,8 @@ def make_assessment_stage(
                 Observations(collected=collected_documents(data.facts)),
             )
         _store(context, drafts, tally, guidance, table)
+        if unfinished:
+            raise RunBudgetExhausted(done)  # what was drafted is stored; the run ends `partial`
         return None
 
     return stage
