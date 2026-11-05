@@ -1,0 +1,137 @@
+/* Comparison (mock-ups 06-comparison-*). Tokens only. */
+.cmp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--isc-space-2) var(--isc-space-5);
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-secondary);
+  padding: var(--isc-space-3) 0;
+}
+.cmp-wrap {
+  overflow: auto;
+  max-width: 100%;
+  position: relative;
+  border-top: 1px solid var(--isc-color-ink);
+}
+table.cmp {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  width: 100%;
+}
+.cmp th,
+.cmp td {
+  vertical-align: top;
+  text-align: left;
+  padding: var(--isc-space-3) var(--isc-space-3) var(--isc-space-3) var(--isc-space-4);
+  border-bottom: 1px solid var(--isc-color-rule);
+  border-left: 1px solid var(--isc-color-rule);
+}
+.cmp th.lab {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--isc-color-paper);
+  border-left: 0;
+  font-size: var(--isc-font-size-sm);
+  font-weight: var(--isc-font-weight-semibold);
+  color: var(--isc-color-ink-secondary);
+  padding-left: 0;
+}
+.cmp thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--isc-color-paper);
+  border-bottom: 1px solid var(--isc-color-ink);
+}
+.cmp thead th.lab {
+  z-index: 4;
+  vertical-align: bottom;
+}
+.cmp .colhead {
+  display: grid;
+  gap: var(--isc-space-1);
+}
+.cmp .colhead h2 {
+  font-size: var(--isc-font-size-h3);
+  font-weight: var(--isc-font-weight-semibold);
+}
+.cmp .colhead .acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--isc-space-4);
+  margin-top: var(--isc-space-2);
+}
+.cmp .colhead .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--isc-space-1) var(--isc-space-3);
+}
+.flagtag {
+  font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold);
+  letter-spacing: var(--isc-font-letter-spacing-micro);
+  text-transform: uppercase;
+  color: var(--isc-status-flag-fg);
+}
+.cmp tr.secrow th {
+  border-left: 0;
+  border-bottom: 0;
+  padding: var(--isc-space-5) 0 var(--isc-space-2);
+  background: var(--isc-color-paper);
+}
+.cmp tr.secrow th .stick {
+  position: sticky;
+  left: 0;
+  display: inline-block;
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink);
+  padding-top: var(--isc-space-3);
+  min-width: min(100%, calc(100vw - 48px));
+}
+.cmp tr.secrow h3 {
+  font-size: var(--isc-font-size-h2);
+}
+.cmp td .val {
+  margin-bottom: var(--isc-space-2);
+}
+.cmp td .cm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--isc-space-2) var(--isc-space-3);
+}
+.cmp td .orig {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-tertiary);
+  margin-bottom: var(--isc-space-2);
+}
+.cmp td .byline {
+  display: block;
+  margin-top: var(--isc-space-1);
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-tertiary);
+}
+.cmp td[role="gridcell"]:focus {
+  outline: var(--isc-focus-width) solid var(--isc-focus-color);
+  outline-offset: -2px;
+}
+.cmp tr.row-active > td,
+.cmp tr.row-active > th.lab {
+  background: var(--isc-color-cobalt-tint);
+}
+.cmp td .note {
+  margin-top: var(--isc-space-3);
+}
+.cmp.matrix th,
+.cmp.matrix td {
+  padding: var(--isc-space-2) var(--isc-space-3);
+}
+.cmp.matrix .colhead h2 {
+  font-size: var(--isc-font-size-base);
+}
+@media (max-width: 720px) {
+  .cmp th.lab {
+    width: 128px;
+  }
+}

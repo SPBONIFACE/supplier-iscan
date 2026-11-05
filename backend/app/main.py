@@ -15,6 +15,7 @@ from app.auth.access import PUBLIC
 from app.auth.bootstrap import prepare_database
 from app.auth.routes import router as auth_router
 from app.buyer.routes import router as buyer_router
+from app.comparison.routes import router as comparison_router
 from app.config import ConfigurationError, Settings, load_settings, require_run_budget
 from app.db import Database
 from app.errors import install_error_handlers
@@ -193,6 +194,7 @@ def create_app(
     app.include_router(identity_router)
     app.include_router(runs_router)
     app.include_router(pdf_router)
+    app.include_router(comparison_router)
     app.include_router(buyer_router)
     app.include_router(assessment_router)
     app.include_router(review_router)

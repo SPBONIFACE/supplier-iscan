@@ -32,6 +32,7 @@ class MemberOrganisationOut(BaseModel):
     profiles_remaining: int | None
     run_refusal_reason: RefusalReason | None
     access_ends_at: datetime | None
+    comparison_max_profiles: int
 
 
 @router.get("", response_model=MemberOrganisationOut)
@@ -50,5 +51,6 @@ def get_own_organisation(
             "profiles_remaining": profiles_remaining(db, organisation),
             "run_refusal_reason": run_refusal_reason(db, organisation, request.app.state.settings),
             "access_ends_at": organisation.access_ends_at,
+            "comparison_max_profiles": request.app.state.settings.comparison_max_profiles,
         }
     )

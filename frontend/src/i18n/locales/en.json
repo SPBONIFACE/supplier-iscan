@@ -119,7 +119,6 @@
     }
   },
   "placeholder": {
-    "compare": "The side-by-side comparison will appear here.",
     "admin": "The administrator area will appear here."
   },
   "titles": {
@@ -683,5 +682,38 @@
     "error": "Error: the PDF could not be generated. Nothing was changed. Try again in a few minutes.",
     "inProgress": "The profile run is still in progress, so there is no card to export yet.",
     "unavailableInProgress": "Available when the run has finished."
+  },
+  "compare": {
+    "title": "Comparison",
+    "eyebrow": "Comparison · {{organisation}}",
+    "heading_one": "{{count}} supplier profile",
+    "heading_other": "{{count}} supplier profiles",
+    "intro": "Profiles side by side, aligned field by field.",
+    "introMatrix": "Compact matrix for 5 or more profiles. The table scrolls sideways inside its own frame; the field column stays in place.",
+    "changeSelection": "Change selection",
+    "legend": "Legend",
+    "legendProposed": "awaiting review",
+    "legendApproved": "decided by a member, not an independent verification",
+    "legendChip": "Source chip: opens the Quote under the value",
+    "scrollRegion": "Comparison table, scrolls horizontally",
+    "tableLabel_one": "Comparison of {{count}} profile",
+    "tableLabel_other": "Comparison of {{count}} profiles",
+    "field": "Field",
+    "runInProgress": "Run in progress",
+    "noProfile": "No profile: run {{status}}",
+    "noProfileCell": "No profile for this run.",
+    "notExamined": "Not examined by this run.",
+    "stillProposed_one": "{{count}} still proposed",
+    "stillProposed_other": "{{count}} still proposed",
+    "refreshAndProposed_one": "Last refresh {{date}} · {{count}} fact still proposed",
+    "refreshAndProposed_other": "Last refresh {{date}} · {{count}} facts still proposed",
+    "openCard": "Open card",
+    "openProgress": "See the run",
+    "remove": "Remove",
+    "tooFew": "Choose at least two profiles to compare.",
+    "range": "A comparison takes between 2 and {{maximum}} profiles. Go back to the workspace to change the selection.",
+    "backToWorkspace": "Back to the profiles",
+    "maximumReached": "Configured maximum for one comparison reached ({{maximum}}). Untick a profile to choose another.",
+    "loadError": "Error: the comparison could not be loaded. Try again; if the problem continues, tell your administrator."
   }
 }

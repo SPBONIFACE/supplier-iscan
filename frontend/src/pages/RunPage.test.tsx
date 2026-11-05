@@ -82,6 +82,7 @@ const organisation = (changes: Partial<MemberOrganisation> = {}): MemberOrganisa
   profiles_remaining: 4,
   run_refusal_reason: null,
   access_ends_at: null,
+  comparison_max_profiles: 10,
   ...changes,
 });
 

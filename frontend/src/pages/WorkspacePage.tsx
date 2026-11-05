@@ -10,7 +10,7 @@ import { useTitle } from "../lib/useTitle";
 
 // Only a run that produced a profile has a supplier card and can be compared.
 const HAS_PROFILE = ["partial", "completed"];
-const MAX_COMPARED = 20; // technical bound on the URL; the comparison (#38) applies the product maximum
+const MAX_COMPARED = 20; // technical bound on the URL when the organisation does not state the maximum
 
 const lastUpdated = (run: Run): string => run.finished_at ?? run.started_at ?? run.created_at;
 
@@ -73,6 +73,8 @@ export function WorkspacePage() {
   const refusal = organisation?.run_refusal_reason ?? null;
   const refused = refusal !== null;
   const canCompare = selected.length >= 2;
+  const maxCompared = organisation?.comparison_max_profiles ?? MAX_COMPARED;
+  const atMaximum = selected.length >= maxCompared;
   const accessEnd = organisation?.access_ends_at
     ? formatDate(organisation.access_ends_at, i18n.language)
     : null;
@@ -81,7 +83,7 @@ export function WorkspacePage() {
     setSelected((current) =>
       current.includes(id)
         ? current.filter((other) => other !== id)
-        : current.length >= MAX_COMPARED
+        : current.length >= maxCompared
           ? current
           : [...current, id],
     );
@@ -182,6 +184,11 @@ export function WorkspacePage() {
                 {t("workspace.compareWhy")}
               </span>
             )}
+            {atMaximum ? (
+              <span className="meta" role="status">
+                {t("compare.maximumReached", { maximum: maxCompared })}
+              </span>
+            ) : null}
           </div>
           <table className="tbl">
             <caption className="vh">{t("workspace.caption")}</caption>
@@ -203,6 +210,7 @@ export function WorkspacePage() {
                   run={run}
                   checked={selected.includes(run.id)}
                   open={run.id === openRun}
+                  blocked={atMaximum}
                   onToggle={() => toggle(run.id)}
                 />
               ))}
@@ -218,11 +226,14 @@ function RunRow({
   run,
   checked,
   open,
+  blocked,
   onToggle,
 }: {
   run: Run;
   checked: boolean;
   open: boolean;
+  /** The configured maximum is reached: an unticked row cannot be ticked. */
+  blocked: boolean;
   onToggle: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -238,7 +249,7 @@ function RunRow({
           <input
             type="checkbox"
             checked={checked}
-            disabled={!comparable}
+            disabled={!comparable || (blocked && !checked)}
             aria-describedby={comparable ? undefined : whyId}
             onChange={onToggle}
           />

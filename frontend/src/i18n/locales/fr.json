@@ -119,7 +119,6 @@
     }
   },
   "placeholder": {
-    "compare": "La comparaison côte à côte apparaîtra ici.",
     "admin": "L'espace administrateur apparaîtra ici."
   },
   "titles": {
@@ -683,5 +682,38 @@
     "error": "Erreur : le PDF n’a pas pu être généré. Rien n’a été modifié. Réessayez dans quelques minutes.",
     "inProgress": "L’analyse est encore en cours : il n’y a pas encore de fiche à exporter.",
     "unavailableInProgress": "Disponible lorsque l’analyse sera terminée."
+  },
+  "compare": {
+    "title": "Comparaison",
+    "eyebrow": "Comparaison · {{organisation}}",
+    "heading_one": "{{count}} profil fournisseur",
+    "heading_other": "{{count}} profils fournisseurs",
+    "intro": "Profils côte à côte, alignés champ par champ.",
+    "introMatrix": "Matrice compacte à partir de 5 profils. Le tableau défile latéralement dans son cadre ; la colonne des champs reste en place.",
+    "changeSelection": "Modifier la sélection",
+    "legend": "Légende",
+    "legendProposed": "en attente de relecture",
+    "legendApproved": "décidé par un membre, sans vérification indépendante",
+    "legendChip": "Pastille de source : ouvre la citation sous la valeur",
+    "scrollRegion": "Tableau de comparaison, défilement horizontal",
+    "tableLabel_one": "Comparaison de {{count}} profil",
+    "tableLabel_other": "Comparaison de {{count}} profils",
+    "field": "Champ",
+    "runInProgress": "Analyse en cours",
+    "noProfile": "Pas de profil : analyse {{status}}",
+    "noProfileCell": "Pas de profil pour cette analyse.",
+    "notExamined": "Non examiné par cette analyse.",
+    "stillProposed_one": "{{count}} encore proposé",
+    "stillProposed_other": "{{count}} encore proposés",
+    "refreshAndProposed_one": "Dernière actualisation {{date}} · {{count}} fait encore proposé",
+    "refreshAndProposed_other": "Dernière actualisation {{date}} · {{count}} faits encore proposés",
+    "openCard": "Ouvrir la fiche",
+    "openProgress": "Voir l’analyse",
+    "remove": "Retirer",
+    "tooFew": "Choisissez au moins deux profils à comparer.",
+    "range": "Une comparaison porte sur 2 à {{maximum}} profils. Retournez à l’espace de travail pour modifier la sélection.",
+    "backToWorkspace": "Retour aux profils",
+    "maximumReached": "Maximum configuré pour une comparaison atteint ({{maximum}}). Décochez un profil pour en choisir un autre.",
+    "loadError": "Erreur : la comparaison n’a pas pu être chargée. Réessayez ; si le problème persiste, prévenez votre administrateur."
   }
 }

@@ -44,7 +44,14 @@ const css = render(JSON.parse(readFileSync(source, "utf8")));
 const pdfTokens = resolve(here, "../../backend/app/pdf/tokens.css");
 const pdfFonts = resolve(here, "../../backend/app/pdf/fonts.css");
 const fontsSource = resolve(here, "../src/styles/fonts.css");
-const fontsCss = readFileSync(fontsSource, "utf8").replaceAll('url("/fonts/', 'url("fonts/');
+// The PDF sets CJK text in the regular weight only (backend/app/pdf/render.py), so the SemiBold files of
+// Sans JP, KR and SC (about 10 MB) are left out of its copy.
+const dropForPdf = (block) => /IBM Plex Sans (JP|KR|SC)"/.test(block) && /font-weight: 600/.test(block);
+const fontsCss = readFileSync(fontsSource, "utf8")
+  .replaceAll('url("/fonts/', 'url("fonts/')
+  .split(/\n\n+/)
+  .filter((block) => !dropForPdf(block))
+  .join("\n\n");
 const copies = [
   [target, css, "src/styles/tokens.css"],
   [pdfTokens, css, "backend/app/pdf/tokens.css"],

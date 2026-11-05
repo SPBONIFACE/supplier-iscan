@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   listRuns: vi.fn(),
   getOrganisation: vi.fn(),
+  getComparison: vi.fn(),
   getDisclosure: vi.fn(),
   getRun: vi.fn(),
   listRunFailures: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock("../lib/api", () => ({
     listRunSources: mocks.listRunSources,
     listRunFacts: mocks.listRunFacts,
     getProfileDefinition: mocks.getProfileDefinition,
+    getComparison: mocks.getComparison,
   },
   setUnauthorizedHandler: vi.fn(),
 }));
@@ -42,6 +44,7 @@ const organisation = (changes: Partial<MemberOrganisation> = {}): MemberOrganisa
   profiles_remaining: 4,
   run_refusal_reason: null,
   access_ends_at: "2026-12-31T00:00:00Z",
+  comparison_max_profiles: 10,
   ...changes,
 });
 
@@ -202,8 +205,31 @@ describe("workspace comparison", () => {
     await user.click(screen.getByRole("checkbox", { name: "Select Supplier 6 for comparison" }));
     expect(screen.getByText("2 profiles selected")).toBeTruthy();
     expect(compare.getAttribute("aria-disabled")).toBeNull();
+    mocks.getComparison.mockResolvedValue({
+      ok: false,
+      kind: "unavailable",
+      status: 503,
+      errors: [],
+    });
     await user.click(compare);
     expect(where()).toBe("/compare?runs=run-completed,run-partial");
+  });
+
+  it("stops ticking at the configured maximum and says so", async () => {
+    mocks.listRuns.mockResolvedValue(ok({ items: rows }));
+    mocks.getOrganisation.mockResolvedValue(ok(organisation({ comparison_max_profiles: 2 })));
+    const user = userEvent.setup();
+    renderApp("/workspace");
+    await screen.findByRole("table");
+
+    await user.click(screen.getByRole("checkbox", { name: "Select Supplier 7 for comparison" }));
+    await user.click(screen.getByRole("checkbox", { name: "Select Supplier 6 for comparison" }));
+
+    expect(screen.getByText(/maximum for one comparison reached \(2\)/)).toBeTruthy();
+    const others = screen
+      .getAllByRole("checkbox")
+      .filter((box) => !(box as HTMLInputElement).checked);
+    expect(others.every((box) => (box as HTMLInputElement).disabled)).toBe(true);
   });
 
   it("cannot tick a run that has no profile, and works by keyboard alone", async () => {
