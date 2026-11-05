@@ -1,7 +1,7 @@
 """uncovered sections and explanation of a partial run
 
 Revision ID: f7a1c4e92b05
-Revises: d5e8a2c37b91
+Revises: e6f9b3d48c02
 Create Date: 2026-11-05 19:00:00.000000
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 
 revision: str = "f7a1c4e92b05"
 # When the review migration of #28 (e6f9b3d48c02) is merged first, this becomes "e6f9b3d48c02".
-down_revision: str | None = "d5e8a2c37b91"
+down_revision: str | None = "e6f9b3d48c02"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

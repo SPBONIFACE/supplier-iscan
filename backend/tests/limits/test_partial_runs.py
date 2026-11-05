@@ -291,6 +291,40 @@ def test_a_budget_reached_during_assessment_keeps_the_statements_drafted_and_lis
     assert "procurement recommendations" in explanation
 
 
+def test_a_reviewed_statement_of_a_partial_run_stays_and_the_run_stays_partial(
+    client: TestClient, engine: Engine
+) -> None:
+    organisation_id, run_id, facts = assessed_run(engine)
+    quality = facts["quality_management"]
+    adapter = BilledText([answer(strength(quality)), answer(priority(quality))])
+    providers = providers_for(engine, structuring=adapter, budget=allow(1))
+    execute_run(environment(engine, pipeline(assessment=assessment_stage()), providers), run_id)
+    token = member(client, engine, organisation_id)
+    path = f"/runs/{run_id}/assessment"
+    item = read(client, token, path).json()["items"][0]
+
+    reviewed = send_with_session(
+        client,
+        "PATCH",
+        f"/assessment-statements/{item['id']}",
+        token,
+        json={"status": "corrected", "text": "My wording.", "version": item["version"]},
+        headers={"Origin": LOCAL_ORIGIN},
+    )
+    assert reviewed.status_code == 200, reviewed.text
+    execute_run(environment(engine, pipeline(assessment=assessment_stage()), providers), run_id)
+
+    run = get_run(engine, run_id)
+    body = read(client, token, path).json()
+    assert run.status == "partial" and len(adapter.calls) == 1  # no new call, nothing replaced
+    assert body["status"] == "partial"
+    assert [(i["text"], i["provenance"]["status"]) for i in body["items"]] == [
+        ("My wording.", "corrected")
+    ]
+    explanation = read(client, token, f"/runs/{run_id}").json()["partial_explanation"]
+    assert "procurement recommendations" in explanation
+
+
 def test_a_budget_reached_before_any_statement_lists_the_assessment_and_keeps_the_facts(
     client: TestClient, engine: Engine
 ) -> None:
