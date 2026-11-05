@@ -293,7 +293,7 @@ export interface paths {
         put?: never;
         /**
          * Start a profile run for a confirmed supplier identity
-         * @description Queues the run and answers 202 at once; no stage executes in the request. The identity must be confirmed and belong to the member's organisation; an identity that is unconfirmed, unknown or another organisation's answers 404. Each start is recorded in the usage log (kind `run`).
+         * @description Queues the run and answers 202 at once; no stage executes in the request. The identity must be confirmed and belong to the member's organisation; an identity that is unconfirmed, unknown or another organisation's answers 404. Each start is recorded in the usage log (kind `run`). The limits are checked, and the quota slot taken, in the same transaction as the start, so that two simultaneous starts cannot both take the last slot. A run that ends `insufficient_sources`, or fails because the service is not fully configured, releases its slot; so does a run paused on a dependency while it waits.
          */
         post: operations["startRun"];
         delete?: never;
@@ -453,7 +453,7 @@ export interface paths {
         put?: never;
         /**
          * Draft the fit statements against the stored criteria
-         * @description Queues the drafting of fit statements (kind `fit`, or an `evidence_gap`) against the criteria stored for this profile, and only against them. The worker drafts them with the same validation, provenance and metering as the rest of the assessment; redrafting replaces the earlier `ai_draft` fit statements and never a reviewed one. Read the result with `GET /runs/{id}/assessment` (`pending` lists `fit` while the job is queued or running). 409 when no criteria are stored ("Enter your criteria to assess fit"), when the assessment has not been drafted yet, for an identity flagged `natural_person` ("Not assessed: natural-person business"), or when the run is `partial` or has used its cost budget ("The run reached its cost budget; no further AI call is made for it.").
+         * @description Queues the drafting of fit statements (kind `fit`, or an `evidence_gap`) against the criteria stored for this profile, and only against them. The worker drafts them with the same validation, provenance and metering as the rest of the assessment; redrafting replaces the earlier `ai_draft` fit statements and never a reviewed one. Read the result with `GET /runs/{id}/assessment` (`pending` lists `fit` while the job is queued or running). 409 when no criteria are stored ("Enter your criteria to assess fit"), when the assessment has not been drafted yet, for an identity flagged `natural_person` ("Not assessed: natural-person business"), or when the run is `partial` or has used its cost budget ("The run reached its cost budget; no further AI call is made for it."). 403 with reason `spend_cap_reached` when the instance's LLM spend for the current UTC month has reached the configured cap (#29, #37); nothing is queued and the statements already stored stay readable. The profile quota and the access period do not apply to drafting on an existing profile.
          */
         post: operations["draftRunFit"];
         delete?: never;
@@ -493,7 +493,7 @@ export interface paths {
         put?: never;
         /**
          * Redraft the procurement recommendations with the buyer context
-         * @description Queues the redrafting of the six recommendation kinds with the current buyer context, or on the first-evaluation assumption when none is stored. The worker applies the same validation as the assessment stage. Each recommendation drafted with a context stores the `buyer_context_version` it used. Redrafting replaces the earlier `ai_draft` recommendations and never a reviewed one. 409 when the assessment has not been drafted yet, for an identity flagged `natural_person` ("Not assessed: natural-person business"), or when the run is `partial` or has used its cost budget ("The run reached its cost budget; no further AI call is made for it.").
+         * @description Queues the redrafting of the six recommendation kinds with the current buyer context, or on the first-evaluation assumption when none is stored. The worker applies the same validation as the assessment stage. Each recommendation drafted with a context stores the `buyer_context_version` it used. Redrafting replaces the earlier `ai_draft` recommendations and never a reviewed one. 409 when the assessment has not been drafted yet, for an identity flagged `natural_person` ("Not assessed: natural-person business"), or when the run is `partial` or has used its cost budget ("The run reached its cost budget; no further AI call is made for it."). 403 with reason `spend_cap_reached` when the instance's LLM spend for the current UTC month has reached the configured cap (#29, #37); nothing is queued.
          */
         post: operations["draftRunRecommendations"];
         delete?: never;
@@ -2243,6 +2243,15 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            /** @description The monthly spend cap of the instance is reached (reason `spend_cap_reached`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunRefused"];
+                };
+            };
             404: components["responses"]["NotFound"];
             /** @description No criteria are stored, the assessment is not drafted yet, the identity is a natural-person business, or the run reached its cost budget. */
             409: {
@@ -2310,6 +2319,15 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            /** @description The monthly spend cap of the instance is reached (reason `spend_cap_reached`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunRefused"];
+                };
+            };
             404: components["responses"]["NotFound"];
             /** @description The assessment is not drafted yet, the identity is a natural-person business, or the run reached its cost budget. */
             409: {

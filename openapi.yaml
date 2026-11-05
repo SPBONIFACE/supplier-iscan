@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.17.0
+  version: 0.18.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -474,7 +474,10 @@ paths:
         Queues the run and answers 202 at once; no stage executes in the request. The identity
         must be confirmed and belong to the member's organisation; an identity that is
         unconfirmed, unknown or another organisation's answers 404. Each start is recorded in the
-        usage log (kind `run`).
+        usage log (kind `run`). The limits are checked, and the quota slot taken, in the same
+        transaction as the start, so that two simultaneous starts cannot both take the last slot.
+        A run that ends `insufficient_sources`, or fails because the service is not fully
+        configured, releases its slot; so does a run paused on a dependency while it waits.
       security:
         - sessionCookie: []
       requestBody:
@@ -780,6 +783,10 @@ paths:
         the assessment has not been drafted yet, for an identity flagged `natural_person`
         ("Not assessed: natural-person business"), or when the run is `partial` or has used its
         cost budget ("The run reached its cost budget; no further AI call is made for it.").
+        403 with reason `spend_cap_reached` when the instance's LLM spend for the current UTC
+        month has reached the configured cap (#29, #37); nothing is queued and the statements
+        already stored stay readable. The profile quota and the access period do not apply to
+        drafting on an existing profile.
       security:
         - sessionCookie: []
       parameters:
@@ -793,6 +800,12 @@ paths:
                 $ref: "#/components/schemas/DraftingAccepted"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: The monthly spend cap of the instance is reached (reason `spend_cap_reached`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRefused"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -862,6 +875,8 @@ paths:
         yet, for an identity flagged `natural_person` ("Not assessed: natural-person
         business"), or when the run is `partial` or has used its cost budget ("The run reached
         its cost budget; no further AI call is made for it.").
+        403 with reason `spend_cap_reached` when the instance's LLM spend for the current UTC
+        month has reached the configured cap (#29, #37); nothing is queued.
       security:
         - sessionCookie: []
       parameters:
@@ -875,6 +890,12 @@ paths:
                 $ref: "#/components/schemas/DraftingAccepted"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: The monthly spend cap of the instance is reached (reason `spend_cap_reached`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRefused"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
