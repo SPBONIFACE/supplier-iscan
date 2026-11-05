@@ -38,14 +38,31 @@ if (!existsSync(source)) {
   process.exit(0);
 }
 const css = render(JSON.parse(readFileSync(source, "utf8")));
+
+// The PDF (#39) has its own copies, because the backend Docker build context cannot read `_docs/` or
+// `frontend/`: the same tokens, and the same @font-face rules with URLs relative to backend/app/pdf/.
+const pdfTokens = resolve(here, "../../backend/app/pdf/tokens.css");
+const pdfFonts = resolve(here, "../../backend/app/pdf/fonts.css");
+const fontsSource = resolve(here, "../src/styles/fonts.css");
+const fontsCss = readFileSync(fontsSource, "utf8").replaceAll('url("/fonts/', 'url("fonts/');
+const copies = [
+  [target, css, "src/styles/tokens.css"],
+  [pdfTokens, css, "backend/app/pdf/tokens.css"],
+  [pdfFonts, fontsCss, "backend/app/pdf/fonts.css"],
+];
+
 if (process.argv.includes("--check")) {
-  const current = existsSync(target) ? readFileSync(target, "utf8") : "";
-  if (current !== css) {
-    console.error("tokens: src/styles/tokens.css differs from tokens.json; run `pnpm tokens`");
-    process.exit(1);
+  let stale = false;
+  for (const [file, expected, name] of copies) {
+    const current = existsSync(file) ? readFileSync(file, "utf8") : "";
+    if (current !== expected) {
+      console.error(`tokens: ${name} differs from its source; run \`pnpm tokens\``);
+      stale = true;
+    }
   }
+  if (stale) process.exit(1);
   console.log("tokens: up to date");
 } else {
-  writeFileSync(target, css);
+  for (const [file, expected] of copies) writeFileSync(file, expected);
   console.log("tokens: written");
 }

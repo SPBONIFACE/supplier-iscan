@@ -27,6 +27,7 @@ from app.invitations.routes import public_router as invitations_router
 from app.limits.budget import RunBudget
 from app.organisations.member_routes import router as organisation_router
 from app.organisations.routes import router as admin_organisations_router
+from app.pdf.routes import router as pdf_router
 from app.profile_definition import ProfileDefinition, load_profile_definition
 from app.profile_routes import router as profile_router
 from app.prompts import PromptSet, load_prompt_set
@@ -191,6 +192,7 @@ def create_app(
     app.include_router(profile_router)
     app.include_router(identity_router)
     app.include_router(runs_router)
+    app.include_router(pdf_router)
     app.include_router(buyer_router)
     app.include_router(assessment_router)
     app.include_router(review_router)

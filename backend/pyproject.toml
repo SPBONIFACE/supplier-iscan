@@ -10,6 +10,7 @@ dependencies = [
     "fastapi==0.143.0",
     "google-genai==2.30.1",
     "httpx2==2.13.1",
+    "jinja2==3.1.6",
     "jsonschema==4.26.0",
     "mistralai==3.2.0",
     "openai==3.29.0",
@@ -23,6 +24,8 @@ dependencies = [
     "spacy-pkuseg==1.0.1",
     "sqlalchemy==2.0.54",
     "uvicorn==0.54.0",
+    # Server-side PDF (#39), approved-dependencies.md.
+    "weasyprint==70.0",
     # Name-detection models (#19): not on PyPI; pinned release wheels, sha256 in uv.lock.
     "zh-core-web-sm",
     # Name detection (#19, owner decisions D-066 and D-068): GLiNER on CPU PyTorch. The model files
@@ -49,7 +52,9 @@ required-version = "==0.12.24"
 # Wheels only: no source distribution is ever built.
 exclude-newer = "2026-10-13T20:00:00Z"
 # SEC exception (approved-dependencies.md): pypdf 6.21.2 fixes the advisories of 6.20.1 (#18).
-exclude-newer-package = { pypdf = "2026-10-22T00:00:00Z" }
+# SEC exception: pillow 13.0.0 (transitive of WeasyPrint) fixes the critical advisories of 12.3.0 (#39).
+exclude-newer-package = { pypdf = "2026-10-22T00:00:00Z", pillow = "2026-10-17T00:00:00Z" }
+constraint-dependencies = ["pillow==13.0.0"]
 no-build = true
 
 [[tool.uv.index]]
@@ -88,5 +93,5 @@ files = ["app", "tests", "../eval"]
 mypy_path = [".."]
 
 [[tool.mypy.overrides]]
-module = ["yaml", "jsonschema", "jsonschema.*"]
+module = ["yaml", "jsonschema", "jsonschema.*", "weasyprint", "weasyprint.*"]
 ignore_missing_imports = true

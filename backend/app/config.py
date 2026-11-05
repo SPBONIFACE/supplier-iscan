@@ -47,6 +47,9 @@ BUYER_NOTES_MAX_CHARS = "BUYER_NOTES_MAX_CHARS"
 BUYER_TEXT_MAX_CHARS = "BUYER_TEXT_MAX_CHARS"
 # The longest corrected value of a fact or corrected text of a statement (#28).
 REVIEW_TEXT_MAX_CHARS = "REVIEW_TEXT_MAX_CHARS"
+# Disclaimer printed on the supplier card PDF (#39): owner-supplied text, EN and FR; a marked
+# placeholder (the shipped example) when unset.
+PDF_DISCLAIMER_FILE = "PDF_DISCLAIMER_FILE"
 EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
@@ -105,6 +108,7 @@ class Settings:
     profile_definition_file: str | None = None
     prompt_set_file: str | None = None
     country_table_file: str | None = None
+    pdf_disclaimer_file: str | None = None
     criteria_max_chars: int = DEFAULT_CRITERIA_MAX_CHARS
     buyer_notes_max_chars: int = DEFAULT_BUYER_NOTES_MAX_CHARS
     buyer_text_max_chars: int = DEFAULT_BUYER_TEXT_MAX_CHARS
@@ -243,6 +247,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         profile_definition_file=env.get(PROFILE_DEFINITION_FILE, "").strip() or None,
         prompt_set_file=env.get(PROMPT_SET_FILE, "").strip() or None,
         country_table_file=env.get(COUNTRY_TABLE_FILE, "").strip() or None,
+        pdf_disclaimer_file=env.get(PDF_DISCLAIMER_FILE, "").strip() or None,
         criteria_max_chars=_parse_positive_int(env, CRITERIA_MAX_CHARS, DEFAULT_CRITERIA_MAX_CHARS),
         buyer_notes_max_chars=_parse_positive_int(
             env, BUYER_NOTES_MAX_CHARS, DEFAULT_BUYER_NOTES_MAX_CHARS
