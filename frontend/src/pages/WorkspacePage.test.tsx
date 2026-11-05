@@ -10,6 +10,9 @@ const mocks = vi.hoisted(() => ({
   listRuns: vi.fn(),
   getOrganisation: vi.fn(),
   getDisclosure: vi.fn(),
+  getRun: vi.fn(),
+  listRunFailures: vi.fn(),
+  listRunSources: vi.fn(),
 }));
 
 vi.mock("../lib/api", () => ({
@@ -18,6 +21,9 @@ vi.mock("../lib/api", () => ({
     listRuns: mocks.listRuns,
     getOrganisation: mocks.getOrganisation,
     getDisclosure: mocks.getDisclosure,
+    getRun: mocks.getRun,
+    listRunFailures: mocks.listRunFailures,
+    listRunSources: mocks.listRunSources,
   },
   setUnauthorizedHandler: vi.fn(),
 }));
@@ -73,6 +79,10 @@ beforeEach(async () => {
   for (const mock of Object.values(mocks)) mock.mockReset();
   mocks.getCurrentUser.mockResolvedValue(ok(member));
   mocks.getDisclosure.mockResolvedValue(ok({ language: "en", text: "disclosure" }));
+  // The run screen is opened by some tests; it only has to find nothing.
+  mocks.getRun.mockResolvedValue(fail("not_found", 404));
+  mocks.listRunFailures.mockResolvedValue(fail("not_found", 404));
+  mocks.listRunSources.mockResolvedValue(fail("not_found", 404));
   const { initI18n } = await import("../i18n");
   await initI18n("en");
 });

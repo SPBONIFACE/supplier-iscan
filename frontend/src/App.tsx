@@ -8,6 +8,7 @@ import { IdentityChatPage } from "./pages/IdentityChatPage";
 import { InvitationPage } from "./pages/InvitationPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NewProfilePage } from "./pages/NewProfilePage";
+import { RunPage } from "./pages/RunPage";
 import { NotFoundPage, Placeholder } from "./pages/Simple";
 import { WorkspacePage } from "./pages/WorkspacePage";
 
@@ -49,10 +50,7 @@ export function App() {
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/profiles/new" element={<NewProfilePage />} />
           <Route path="/profiles/new/:sessionId" element={<IdentityChatPage />} />
-          <Route
-            path="/profiles/:profileId/run"
-            element={<Placeholder titleKey="titles.run" bodyKey="placeholder.run" />}
-          />
+          <Route path="/profiles/:profileId/run" element={<RunPage />} />
           <Route
             path="/profiles/:profileId"
             element={<Placeholder titleKey="titles.card" bodyKey="placeholder.card" />}

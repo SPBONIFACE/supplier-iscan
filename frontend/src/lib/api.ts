@@ -15,6 +15,10 @@ export type IdentitySessionCreate = components["schemas"]["IdentitySessionCreate
 export type MemberOrganisation = components["schemas"]["MemberOrganisation"];
 export type Run = components["schemas"]["Run"];
 export type RunStatus = components["schemas"]["RunStatus"];
+export type RunStage = components["schemas"]["RunStage"];
+export type RunDependency = components["schemas"]["RunDependency"];
+export type RunFailure = components["schemas"]["RunFailure"];
+export type ProfileDefinition = components["schemas"]["ProfileDefinition"];
 export type RunRefusalReason = NonNullable<MemberOrganisation["run_refusal_reason"]>;
 export type FieldError = components["schemas"]["ValidationError"]["errors"][number];
 
@@ -157,6 +161,22 @@ export const api = {
         body: { candidate_id: candidateId },
       }),
     ),
+
+  getRun: (id: string) => call(() => client.GET("/runs/{id}", { params: { path: { id } } })),
+
+  listRunSources: (id: string) =>
+    call(() => client.GET("/runs/{id}/sources", { params: { path: { id } } })),
+
+  listRunFailures: (id: string) =>
+    call(() => client.GET("/runs/{id}/failures", { params: { path: { id } } })),
+
+  stopRun: (id: string) => call(() => client.POST("/runs/{id}/stop", { params: { path: { id } } })),
+
+  resumeRun: (id: string) =>
+    call(() => client.POST("/runs/{id}/resume", { params: { path: { id } } })),
+
+  getProfileDefinition: (language: Language) =>
+    call(() => client.GET("/profile-definition", { params: { query: { language } } })),
 
   startRun: (identityId: string) =>
     call(() => client.POST("/runs", { body: { identity_id: identityId } })),
