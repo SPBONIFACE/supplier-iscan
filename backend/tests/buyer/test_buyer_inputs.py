@@ -11,6 +11,7 @@ from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
 from app.config import Settings
+from app.db import utc_now
 from app.models import BuyerInput
 from tests.auth_support import assert_requires_session, send_with_session
 from tests.contract.test_auth_contract import assert_matches_contract
@@ -246,6 +247,56 @@ def test_buyer_text_that_is_too_long_answers_422(engine: Engine) -> None:
     fits = put(client, token, run_id, "buyer-inputs/buyer_notes", {"text": "x" * 15, "version": 0})
 
     assert long.status_code == 422 and fits.status_code == 200
+
+
+def test_buyer_inputs_go_with_the_profile_and_with_the_organisation(
+    client: TestClient, engine: Engine
+) -> None:
+    from sqlalchemy import delete, func
+
+    from app.models import Organisation, ProfileRun
+
+    token, run_id, user_id = setup(engine)
+    assert (
+        put(client, token, run_id, "criteria", {"criteria": ["x"], "version": 0}).status_code == 200
+    )
+    assert put(client, token, run_id, "buyer-context", CONTEXT).status_code == 200
+    other_token, other_run, _ = setup(engine)
+    assert (
+        put(
+            client, other_token, other_run, "criteria", {"criteria": ["y"], "version": 0}
+        ).status_code
+        == 200
+    )
+
+    def count() -> int:
+        with Session(engine) as db:
+            return int(db.scalar(select(func.count()).select_from(BuyerInput)) or 0)
+
+    assert count() == 3
+    with Session(engine) as db:  # the profile is deleted
+        db.execute(delete(ProfileRun).where(ProfileRun.id == run_id))
+        db.commit()
+    assert count() == 1
+    organisation_id = create_organisation(engine)
+    run_id = create_run(engine, organisation_id, enqueue=False)
+    with Session(engine) as db:
+        db.add(
+            BuyerInput(
+                organisation_id=organisation_id,
+                run_id=run_id,
+                field="buyer_notes",
+                text="x",
+                updated_at=utc_now(),
+            )
+        )
+        db.commit()
+    assert count() == 2
+    with Session(engine) as db:  # the organisation is deleted
+        db.execute(delete(Organisation).where(Organisation.id == organisation_id))
+        db.commit()
+    assert count() == 1
+    assert user_id
 
 
 # --- session and isolation -------------------------------------------------------------------

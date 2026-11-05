@@ -42,7 +42,17 @@ def test_run_responses_match_the_contract(client: TestClient, engine: Engine) ->
 
 def test_every_run_operation_requires_the_session_cookie() -> None:
     paths = load_contract()["paths"]
-    for template in ("/runs", "/runs/{id}", "/runs/{id}/stop", "/runs/{id}/resume"):
+    for template in (
+        "/runs",
+        "/runs/{id}",
+        "/runs/{id}/stop",
+        "/runs/{id}/resume",
+        "/runs/{id}/criteria",
+        "/runs/{id}/fit",
+        "/runs/{id}/buyer-context",
+        "/runs/{id}/recommendations",
+        "/runs/{id}/buyer-inputs/{field}",
+    ):
         for operation in paths[template].values():
             assert operation["security"] == [{"sessionCookie": []}]
             assert "401" in operation["responses"]

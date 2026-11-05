@@ -290,6 +290,38 @@ def test_assessment_redacts_the_facts_again_before_it_builds_the_request() -> No
     assert structure_callers == ["ask"]
 
 
+def test_fit_and_recommendation_drafting_reach_the_model_only_through_the_assessment_call_site() -> (
+    None
+):
+    """Fit and the recommendations redraft (#26) add no call site: the worker job builds no
+    request and calls no provider itself; the criteria and the buyer context are values of the
+    prompt that `draft_part` hands to `ask`, which redacts them before the request is built."""
+    source = (APP / "assessment" / "drafting.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    called = {
+        node.func.attr if isinstance(node.func, ast.Attribute) else node.func.id  # type: ignore[attr-defined]
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+    }
+    assert "draft_part" in called
+    assert not called & {"StructuringRequest", "RetrievalRequest", "structure", "retrieve"}
+    for path in (APP / "buyer").glob("*.py"):
+        text = path.read_text(encoding="utf-8")
+        assert "StructuringRequest" not in text and ".structure(" not in text, path.name
+    stage = ast.parse((APP / "assessment" / "stage.py").read_text(encoding="utf-8"))
+    draft_part = next(
+        node
+        for node in ast.walk(stage)
+        if isinstance(node, ast.FunctionDef) and node.name == "draft_part"
+    )
+    inside = [
+        node.func.id  # type: ignore[attr-defined]
+        for node in ast.walk(draft_part)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    ]
+    assert "_ask_safely" in inside  # the one route from `draft_part` to `ask`
+
+
 # --- the identity chat ---
 
 

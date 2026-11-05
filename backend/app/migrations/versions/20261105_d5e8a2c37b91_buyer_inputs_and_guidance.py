@@ -51,7 +51,10 @@ def upgrade() -> None:
             ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["updated_by"], ["users.id"], name=op.f("fk_buyer_inputs_updated_by_users")
+            ["updated_by"],
+            ["users.id"],
+            name=op.f("fk_buyer_inputs_updated_by_users"),
+            ondelete="SET NULL",
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_buyer_inputs")),
         sa.UniqueConstraint("run_id", "field", name=op.f("uq_buyer_inputs_run_field")),

@@ -66,7 +66,27 @@ def test_the_assessment_area_is_measured_and_the_reviewer_metric_is_not_rated() 
     assert len(assessment) == 4 and set(assessment) == {"pass"}
     assert status["judged useful by a domain reviewer"] == "not rated"
     area = next(item for item in report.areas if item.area == "assessment")
-    assert area.implemented and len(area.cases) == 7 and area.errors == 0
+    assert area.implemented and len(area.cases) == 10 and area.errors == 0
+
+
+def test_the_buyer_situation_guard_and_fit_cases_are_measured() -> None:
+    report = _run()
+    status = _status(report)
+    assert (
+        status["no kept statement contains wording that asserts an unentered buyer situation"]
+        == "pass"
+    )
+    assert status["fit is drafted only when criteria were entered"] == "pass"
+    area = next(item for item in report.areas if item.area == "assessment")
+    cases = {case.case_id: case for case in area.cases}
+    guard = cases["recommendations-unentered-buyer-situation"]
+    assert guard.counts["kept"] == 1 and guard.counts["kept_with_forbidden_phrase"] == 0
+    assert any("2 statement(s) rejected" in note for note in guard.notes)
+    assert cases["fit-with-criteria"].counts["kept"] == 2
+    assert (
+        cases["fit-without-criteria"].counts["kept"] == 0
+        and not cases["fit-without-criteria"].notes
+    )
 
 
 def test_the_report_names_what_it_was_run_with(tmp_path: Path) -> None:
@@ -110,6 +130,9 @@ def test_the_three_extraction_cases_and_the_shipped_cases_are_loaded() -> None:
         "edge-management-facts",
         "edge-natural-person",
         "edge-injected-quote",
+        "recommendations-unentered-buyer-situation",
+        "fit-with-criteria",
+        "fit-without-criteria",
     ]
 
 
@@ -140,10 +163,11 @@ def test_a_provider_error_marks_the_case_and_the_others_continue() -> None:
     assert [case.status for case in identity.cases] == ["error"] * 3
     assert [case.status for case in extraction.cases] == ["error"] * 3
     # Retrieval uses no structuring answer: it still ran.
-    # Assessment: the six cases that call the model fail, the natural-person case calls none.
+    # Assessment: the eight cases that call the model fail; the natural-person case and the fit
+    # case with no criteria call none.
     assessment = next(area for area in report.areas if area.area == "assessment")
-    assert assessment.errors == 6
-    assert retrieval.errors == 0 and report.errors == 12
+    assert assessment.errors == 8
+    assert retrieval.errors == 0 and report.errors == 14
     assert "ERROR" in to_markdown(report)
 
 

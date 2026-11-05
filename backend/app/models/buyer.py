@@ -32,5 +32,7 @@ class BuyerInput(OrganisationOwned, Base):
     field: Mapped[str] = mapped_column(String(100))
     text: Mapped[str] = mapped_column(Text)
     version: Mapped[int] = mapped_column(Integer, default=1)
-    updated_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
