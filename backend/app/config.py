@@ -37,6 +37,14 @@ PRICE_TABLE_FILE = "PRICE_TABLE_FILE"
 PROFILE_DEFINITION_FILE = "PROFILE_DEFINITION_FILE"
 # Prompt set (#55): the instructions of the LLM features; the shipped example when unset.
 PROMPT_SET_FILE = "PROMPT_SET_FILE"
+# Financial country table (#26): registries and document access per country; the shipped example
+# (clearly marked, rows not verified) when unset. The real table is the owner's.
+COUNTRY_TABLE_FILE = "COUNTRY_TABLE_FILE"
+# Longest texts a member may enter for a profile (#26): the fit criteria (all together), the notes
+# of the buyer context, and a buyer field.
+CRITERIA_MAX_CHARS = "CRITERIA_MAX_CHARS"
+BUYER_NOTES_MAX_CHARS = "BUYER_NOTES_MAX_CHARS"
+BUYER_TEXT_MAX_CHARS = "BUYER_TEXT_MAX_CHARS"
 EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
@@ -56,6 +64,9 @@ DEFAULT_INVITATION_VALIDITY_HOURS = 72
 DEFAULT_PASSWORD_MIN_LENGTH = 12
 DEFAULT_RUN_LEASE_SECONDS = 300
 DEFAULT_WORKER_POLL_SECONDS = 2
+DEFAULT_CRITERIA_MAX_CHARS = 2000
+DEFAULT_BUYER_NOTES_MAX_CHARS = 1000
+DEFAULT_BUYER_TEXT_MAX_CHARS = 5000
 MAX_SETTING_NUMBER = 100_000
 
 
@@ -82,6 +93,10 @@ class Settings:
     price_table_file: str | None = None
     profile_definition_file: str | None = None
     prompt_set_file: str | None = None
+    country_table_file: str | None = None
+    criteria_max_chars: int = DEFAULT_CRITERIA_MAX_CHARS
+    buyer_notes_max_chars: int = DEFAULT_BUYER_NOTES_MAX_CHARS
+    buyer_text_max_chars: int = DEFAULT_BUYER_TEXT_MAX_CHARS
     eur_per_usd: Decimal | None = None
     # How long an invitation link stays valid, and the shortest accepted password (#9).
     invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
@@ -180,6 +195,14 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         price_table_file=env.get(PRICE_TABLE_FILE, "").strip() or None,
         profile_definition_file=env.get(PROFILE_DEFINITION_FILE, "").strip() or None,
         prompt_set_file=env.get(PROMPT_SET_FILE, "").strip() or None,
+        country_table_file=env.get(COUNTRY_TABLE_FILE, "").strip() or None,
+        criteria_max_chars=_parse_positive_int(env, CRITERIA_MAX_CHARS, DEFAULT_CRITERIA_MAX_CHARS),
+        buyer_notes_max_chars=_parse_positive_int(
+            env, BUYER_NOTES_MAX_CHARS, DEFAULT_BUYER_NOTES_MAX_CHARS
+        ),
+        buyer_text_max_chars=_parse_positive_int(
+            env, BUYER_TEXT_MAX_CHARS, DEFAULT_BUYER_TEXT_MAX_CHARS
+        ),
         eur_per_usd=_parse_rate(env.get(EUR_PER_USD, "")),
         invitation_validity=timedelta(
             hours=_parse_positive_int(

@@ -1,0 +1,30 @@
+{
+  "$comment": "EXAMPLE country table, for tests and a first start. The registries are the public company registers of two countries; every access status and every date below is a placeholder written without checking the registry, and last_checked is set to 2000-01-01 on purpose so that it reads as not checked. The owner replaces this file with a verified table, named by COUNTRY_TABLE_FILE; nothing is merged.",
+  "example": true,
+  "countries": [
+    {
+      "country": "GB",
+      "registry_name": "Companies House (example row)",
+      "registry_url": "https://find-and-update.company-information.service.gov.uk/",
+      "last_checked": "2000-01-01",
+      "documents": [
+        { "type": "income_statement", "access": "reduced_disclosure" },
+        { "type": "balance_sheet", "access": "public_download" },
+        { "type": "notes", "access": "reduced_disclosure" },
+        { "type": "audit_report", "access": "reduced_disclosure" }
+      ]
+    },
+    {
+      "country": "FR",
+      "registry_name": "Registre national des entreprises, INPI (example row)",
+      "registry_url": "https://data.inpi.fr/",
+      "last_checked": "2000-01-01",
+      "documents": [
+        { "type": "income_statement", "access": "confidentiality_declared" },
+        { "type": "balance_sheet", "access": "free_registration" },
+        { "type": "notes", "access": "free_registration" },
+        { "type": "audit_report", "access": "paid" }
+      ]
+    }
+  ]
+}

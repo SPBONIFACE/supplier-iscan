@@ -6,14 +6,16 @@ An administrator is scoped like any member (their own organisation) but gets run
 
 import uuid
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
 from app import queue
-from app.assessment.rules import NOT_ASSESSED
+from app.assessment.routes import ENTER_CRITERIA, pending_parts
+from app.assessment.rules import NOT_ASSESSED, RECOMMENDATION_KINDS
+from app.buyer.values import run_criteria, stored
 from app.config import Settings
 from app.crawl.store import excluded_sources
 from app.db import DbSession, utc_now
@@ -28,6 +30,7 @@ from app.models import (
     SupplierIdentity,
     UsageEvent,
 )
+from app.models.buyer import BUYER_CONTEXT
 from app.models.runs import FINISHED_STATUSES
 from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.profile_definition import ProfileDefinition
@@ -192,6 +195,7 @@ class AssessmentStatementOut(BaseModel):
         "threat",
         "risk_indicator",
         "evidence_gap",
+        "fit",
         "procurement_implication",
         "relationship_level",
         "contract_approach",
@@ -207,7 +211,45 @@ class AssessmentStatementOut(BaseModel):
     cites_buyer_context: bool
     gap_evidence: str | None
     buyer_context_version: int | None
+    buyer_context_outdated: bool
     provenance: AssessmentProvenanceOut
+
+
+class FinancialDocumentOut(BaseModel):
+    """Mirrors components/schemas/FinancialDocument."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["income_statement", "balance_sheet", "notes", "audit_report"]
+    scope: Literal["supplier_entity", "group"]
+    access: Literal[
+        "public_download",
+        "free_registration",
+        "paid",
+        "reduced_disclosure",
+        "confidentiality_declared",
+        "no_filing_identified",
+        "registry_unavailable",
+    ]
+    registry_link: str | None
+
+
+class FinancialGuidanceOut(BaseModel):
+    """Mirrors components/schemas/FinancialGuidance."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    country: str | None
+    financial_year: int
+    configured: bool
+    example_table: bool
+    registry_name: str | None
+    registry_url: str | None
+    last_checked: str | None
+    documents: list[FinancialDocumentOut]
+    missing_evidence: list[str]
+    documents_to_request: list[str]
+    message: str
 
 
 class AssessmentOut(BaseModel):
@@ -218,6 +260,10 @@ class AssessmentOut(BaseModel):
     status: Literal["pending", "drafted", "not_assessed"]
     message: str | None
     buyer_context_version: int | None
+    current_buyer_context_version: int | None
+    fit_message: str | None
+    pending: list[Literal["fit", "recommendations"]]
+    financial_guidance: FinancialGuidanceOut | None
     rejected_statements: int
     items: list[AssessmentStatementOut]
 
@@ -429,6 +475,10 @@ def get_assessment(id: str, scope: OrganisationScoped, db: DbSession) -> Assessm
             status="not_assessed",
             message=NOT_ASSESSED,
             buyer_context_version=None,
+            current_buyer_context_version=None,
+            fit_message=NOT_ASSESSED,
+            pending=[],
+            financial_guidance=None,
             rejected_statements=0,
             items=[],
         )
@@ -437,6 +487,8 @@ def get_assessment(id: str, scope: OrganisationScoped, db: DbSession) -> Assessm
         .where(AssessmentItem.run_id == run.id)
         .order_by(AssessmentItem.position)
     ).all()
+    context_row = stored(db, run.id, BUYER_CONTEXT)
+    current = context_row.version if context_row is not None else None
     items = [
         AssessmentStatementOut(
             id=row.id,
@@ -449,6 +501,12 @@ def get_assessment(id: str, scope: OrganisationScoped, db: DbSession) -> Assessm
             cites_buyer_context=row.cites_buyer_context,
             gap_evidence=row.gap_evidence,
             buyer_context_version=row.buyer_context_version,
+            # A recommendation drafted before the current context (or without any) is flagged.
+            buyer_context_outdated=(
+                current is not None
+                and row.kind in RECOMMENDATION_KINDS
+                and (row.buyer_context_version is None or row.buyer_context_version < current)
+            ),
             provenance=AssessmentProvenanceOut(
                 provider=row.provider,
                 model_id=row.model_id,
@@ -462,10 +520,19 @@ def get_assessment(id: str, scope: OrganisationScoped, db: DbSession) -> Assessm
         for row in rows
     ]
     versions = [item.buyer_context_version for item in items if item.buyer_context_version]
+    guidance: dict[str, Any] | None = next(
+        (row.guidance for row in rows if row.provider == "rules" and row.guidance), None
+    )
     return AssessmentOut(
         status="drafted" if run.assessment_drafted_at is not None else "pending",
         message=None,
         buyer_context_version=max(versions) if versions else None,
+        current_buyer_context_version=current,
+        fit_message=None if run_criteria(db, run.id) else ENTER_CRITERIA,
+        pending=pending_parts(db, run.id),  # type: ignore[arg-type]
+        financial_guidance=(
+            FinancialGuidanceOut.model_validate(guidance) if guidance is not None else None
+        ),
         rejected_statements=run.rejected_statements,
         items=items,
     )

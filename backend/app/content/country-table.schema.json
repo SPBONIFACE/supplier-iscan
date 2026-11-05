@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Supplier iScan financial country table",
+  "description": "Per country: the company registry, and how each financial document is accessed there (spec, Financial evidence guidance). Statuses `no_filing_identified` and `registry_unavailable` are outcomes of a lookup, never table values. Identifiers are in English.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["countries"],
+  "properties": {
+    "$comment": { "type": "string" },
+    "example": {
+      "description": "True for a table that ships as an example: its rows are not verified and the guidance says so.",
+      "type": "boolean",
+      "default": false
+    },
+    "countries": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 300,
+      "items": { "$ref": "#/$defs/country" }
+    }
+  },
+  "$defs": {
+    "access": {
+      "enum": [
+        "public_download",
+        "free_registration",
+        "paid",
+        "reduced_disclosure",
+        "confidentiality_declared"
+      ]
+    },
+    "country": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["country", "registry_name", "registry_url", "last_checked", "documents"],
+      "properties": {
+        "country": {
+          "description": "ISO 3166-1 alpha-2 code, upper case.",
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "registry_name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "registry_url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$",
+          "maxLength": 500
+        },
+        "last_checked": {
+          "description": "The day the row was last checked against the registry (YYYY-MM-DD).",
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+        },
+        "documents": {
+          "description": "One entry for each of the four document types: income_statement, balance_sheet, notes, audit_report.",
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/document" }
+        }
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "access"],
+      "properties": {
+        "type": { "enum": ["income_statement", "balance_sheet", "notes", "audit_report"] },
+        "access": { "$ref": "#/$defs/access" }
+      }
+    }
+  }
+}

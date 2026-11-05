@@ -10,12 +10,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine
 from sqlalchemy.exc import OperationalError
 
+from app.assessment.routes import router as assessment_router
 from app.auth.access import PUBLIC
 from app.auth.bootstrap import prepare_database
 from app.auth.routes import router as auth_router
+from app.buyer.routes import router as buyer_router
 from app.config import ConfigurationError, Settings, load_settings
 from app.db import Database
 from app.errors import install_error_handlers
+from app.financial.table import CountryTable, load_country_table
 from app.health import DatabaseCheck, HealthStatus, make_database_check
 from app.identity.routes import router as identity_router
 from app.invitations.log_redaction import install_access_log_redaction
@@ -75,6 +78,16 @@ def load_prompts(settings: Settings) -> PromptSet:
         raise
 
 
+def load_countries(settings: Settings) -> CountryTable:
+    """The financial country table. An invalid or missing file stops startup, naming it."""
+    path = Path(settings.country_table_file) if settings.country_table_file else None
+    try:
+        return load_country_table(path)
+    except ConfigurationError as error:
+        logger.error("Startup stopped: %s", error)
+        raise
+
+
 def create_app(
     settings: Settings | None = None,
     database_check: DatabaseCheck | None = None,
@@ -82,6 +95,7 @@ def create_app(
     providers: Providers | None = None,
     profile_definition: ProfileDefinition | None = None,
     prompt_set: PromptSet | None = None,
+    country_table: CountryTable | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     check_database = database_check or make_database_check(settings.database_url)
@@ -89,6 +103,7 @@ def create_app(
     providers = providers or load_providers(settings, database)
     profile_definition = profile_definition or load_definition(settings)
     prompt_set = prompt_set or load_prompts(settings)
+    country_table = country_table or load_countries(settings)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
@@ -131,6 +146,7 @@ def create_app(
     app.state.providers = providers
     app.state.profile_definition = profile_definition
     app.state.prompt_set = prompt_set
+    app.state.country_table = country_table
     app.state.settings = settings
     # Registries, outbound HTTP and their event loop, built on first use (app.identity.routes).
     app.state.identity_services = None
@@ -141,7 +157,7 @@ def create_app(
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
-        allow_methods=["GET", "POST", "PATCH", "DELETE"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Content-Type"],
         allow_credentials=True,
     )
@@ -170,6 +186,8 @@ def create_app(
     app.include_router(profile_router)
     app.include_router(identity_router)
     app.include_router(runs_router)
+    app.include_router(buyer_router)
+    app.include_router(assessment_router)
     app.include_router(admin_organisations_router)
     app.include_router(admin_invitations_router)
     app.include_router(invitations_router)
