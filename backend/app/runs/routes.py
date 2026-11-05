@@ -195,6 +195,7 @@ class AssessmentProvenanceOut(BaseModel):
     generated_at: datetime
     status: Literal["ai_draft", "approved", "corrected", "deleted"]
     reviewed_by: uuid.UUID | None
+    reviewed_by_email: str | None
     reviewed_at: datetime | None
 
 
@@ -427,8 +428,13 @@ def fact_out(
     )
 
 
-def statement_out(row: AssessmentItem, current_context: int | None) -> AssessmentStatementOut:
-    """A statement as the API shows it; `current_context` is the stored buyer-context version."""
+def statement_out(
+    row: AssessmentItem,
+    current_context: int | None,
+    emails: dict[uuid.UUID, str] | None = None,
+) -> AssessmentStatementOut:
+    """A statement as the API shows it; `current_context` is the stored buyer-context version and
+    `emails` maps member ids to emails (see `user_emails`)."""
     return AssessmentStatementOut(
         id=row.id,
         kind=row.kind,  # type: ignore[arg-type]  # constrained by the table
@@ -455,6 +461,7 @@ def statement_out(row: AssessmentItem, current_context: int | None) -> Assessmen
             generated_at=row.generated_at,
             status=row.status,  # type: ignore[arg-type]
             reviewed_by=row.reviewed_by,
+            reviewed_by_email=(emails or {}).get(row.reviewed_by) if row.reviewed_by else None,
             reviewed_at=row.reviewed_at,
         ),
         version=row.version,
@@ -608,7 +615,8 @@ def get_assessment(
     ).all()
     context_row = stored(db, run.id, BUYER_CONTEXT)
     current = context_row.version if context_row is not None else None
-    items = [statement_out(row, current) for row in rows]
+    emails = user_emails(db, scope, {row.reviewed_by for row in rows})
+    items = [statement_out(row, current, emails) for row in rows]
     versions = [item.buyer_context_version for item in items if item.buyer_context_version]
     guidance: dict[str, Any] | None = next(
         (row.guidance for row in rows if row.provider == "rules" and row.guidance), None

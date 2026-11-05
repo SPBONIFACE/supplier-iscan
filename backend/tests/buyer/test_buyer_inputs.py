@@ -299,6 +299,66 @@ def test_buyer_inputs_go_with_the_profile_and_with_the_organisation(
     assert user_id
 
 
+# --- reading what was saved ------------------------------------------------------------------
+
+
+def get_inputs(client: TestClient, token: str, run_id: uuid.UUID) -> Any:
+    return send_with_session(client, "GET", f"/runs/{run_id}/buyer-inputs", token)
+
+
+def test_the_saved_inputs_are_read_with_versions_and_who_saved_them(
+    client: TestClient, engine: Engine
+) -> None:
+    user = create_user(engine)
+    token = create_session(engine, user.id)
+    run_id = create_run(engine, user.organisation_id, enqueue=False)
+
+    empty = get_inputs(client, token, run_id)
+    assert empty.status_code == 200
+    assert_matches_contract(empty, "/runs/{id}/buyer-inputs", "get")
+    assert empty.json() == {"criteria": None, "buyer_context": None, "inputs": []}
+
+    saved = put(client, token, run_id, "criteria", {"criteria": ["ISO 14001"], "version": 0})
+    assert saved.json()["updated_by_email"] == user.email  # the answer of a save names who saved
+    put(client, token, run_id, "buyer-context", CONTEXT)
+    put(client, token, run_id, "buyer-inputs/buyer_notes", {"text": "Call Pat.", "version": 0})
+    put(
+        client, token, run_id, "buyer-inputs/buyer_notes", {"text": "Call Pat today.", "version": 1}
+    )
+
+    response = get_inputs(client, token, run_id)
+    assert response.status_code == 200
+    assert_matches_contract(response, "/runs/{id}/buyer-inputs", "get")
+    body = response.json()
+    assert body["criteria"]["criteria"] == ["ISO 14001"] and body["criteria"]["version"] == 1
+    assert body["criteria"]["updated_by_email"] == user.email
+    assert body["buyer_context"]["relationship"] == "incumbent"
+    assert body["buyer_context"]["updated_by"] == str(user.id)
+    assert body["buyer_context"]["updated_by_email"] == user.email
+    assert [item["field"] for item in body["inputs"]] == [
+        "buyer_notes"
+    ]  # reserved fields are apart
+    assert body["inputs"][0]["text"] == "Call Pat today." and body["inputs"][0]["version"] == 2
+    assert body["inputs"][0]["updated_by_email"] == user.email
+
+
+def test_a_colleagues_email_is_shown_in_a_conflict(client: TestClient, engine: Engine) -> None:
+    user = create_user(engine)
+    token = create_session(engine, user.id)
+    run_id = create_run(engine, user.organisation_id, enqueue=False)
+    colleague = create_user(engine, organisation_id=user.organisation_id)
+    other = create_session(engine, colleague.id)
+    assert (
+        put(client, other, run_id, "criteria", {"criteria": ["A"], "version": 0}).status_code == 200
+    )
+
+    stale = put(client, token, run_id, "criteria", {"criteria": ["B"], "version": 0})
+
+    assert stale.status_code == 409
+    assert stale.json()["current"]["updated_by_email"] == colleague.email
+    assert_matches_contract(stale, "/runs/{id}/criteria", "put")
+
+
 # --- session and isolation -------------------------------------------------------------------
 
 
@@ -323,6 +383,33 @@ def test_the_writes_need_a_session_and_are_isolated_between_organisations(
 
     assert_requires_session(client, engine, "PUT", f"/runs/{uuid.uuid4()}/{tail}", json=body)
     assert_organisation_isolation(client, engine, "PUT", make, json=body)
+
+
+def test_reading_the_inputs_needs_a_session_and_is_isolated_between_organisations(
+    client: TestClient, engine: Engine
+) -> None:
+    def make(engine: Engine, owner: OwnerOrganisation) -> OwnedResource:
+        run_id = create_run(engine, owner.id, enqueue=False)
+        with Session(engine) as db:
+            db.add(
+                BuyerInput(
+                    organisation_id=owner.id,
+                    run_id=run_id,
+                    field="buyer_notes",
+                    text="Distinctive text",
+                    version=1,
+                    updated_at=utc_now(),
+                )
+            )
+            db.commit()
+        return OwnedResource(
+            path=f"/runs/{run_id}/buyer-inputs",
+            missing_path=f"/runs/{uuid.uuid4()}/buyer-inputs",
+            marker="Distinctive",
+        )
+
+    assert_requires_session(client, engine, "GET", f"/runs/{uuid.uuid4()}/buyer-inputs")
+    assert_organisation_isolation(client, engine, "GET", make)
 
 
 def test_another_organisations_write_changes_nothing(client: TestClient, engine: Engine) -> None:

@@ -168,7 +168,11 @@ def review_statement(
 
     def out() -> AssessmentStatementOut:
         context = stored(db, row.run_id, BUYER_CONTEXT)
-        return statement_out(row, context.version if context is not None else None)
+        return statement_out(
+            row,
+            context.version if context is not None else None,
+            user_emails(db, scope, {row.reviewed_by}),
+        )
 
     if not _finished(db, row.run_id):
         return _conflict(IN_PROGRESS)

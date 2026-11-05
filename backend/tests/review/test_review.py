@@ -397,6 +397,10 @@ def test_a_statement_is_an_ai_draft_until_a_member_decides(
     provenance = approved.json()["provenance"]
     assert provenance["status"] == "approved" and provenance["reviewed_by"] == str(reviewed.user.id)
     assert provenance["reviewed_at"] and provenance["provider"] == "google"
+    assert provenance["reviewed_by_email"] == reviewed.user.email
+    listed = {i["id"]: i for i in reviewed.get(client, "/assessment").json()["items"]}
+    assert listed[str(reviewed.statement)]["provenance"]["reviewed_by_email"] == reviewed.user.email
+    assert listed[str(reviewed.other_statement)]["provenance"]["reviewed_by_email"] is None
     statuses = {
         i["id"]: i["provenance"]["status"]
         for i in reviewed.get(client, "/assessment").json()["items"]
