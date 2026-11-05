@@ -402,6 +402,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{id}/criteria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Store the fit criteria of a profile
+         * @description Stores the member's fit criteria for this profile (a `BuyerInput` with the reserved field `fit_criteria`), recording who and when. The list replaces the stored one; an empty list is accepted and means "no criteria" (the fit section then reads "Enter your criteria to assess fit" and no model call is made for fit). `version` is the version the edit is based on (0 when nothing is stored yet). When another edit was saved since, nothing is written and the answer is 409 with the current value. The total length of the criteria is limited by configuration (422 beyond it). Criteria are visible to the owning organisation only. Another organisation's run answers 404, like an unknown id.
+         */
+        put: operations["putRunCriteria"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{id}/fit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft the fit statements against the stored criteria
+         * @description Queues the drafting of fit statements (kind `fit`, or an `evidence_gap`) against the criteria stored for this profile, and only against them. The worker drafts them with the same validation, provenance and metering as the rest of the assessment; redrafting replaces the earlier `ai_draft` fit statements and never a reviewed one. Read the result with `GET /runs/{id}/assessment` (`pending` lists `fit` while the job is queued or running). 409 when no criteria are stored ("Enter your criteria to assess fit"), when the assessment has not been drafted yet, or for an identity flagged `natural_person` ("Not assessed: natural-person business").
+         */
+        post: operations["draftRunFit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{id}/buyer-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Store the buyer context of a profile
+         * @description Stores the buyer context (a `BuyerInput` with the reserved field `buyer_context`): the relationship (`incumbent` or `new`, required), the current share of category spend (0 to 100), the contract end date, the strategic intent (zero or more of the listed values) and notes (length limited by configuration). Everything but the relationship is optional. The put replaces the stored context and increases its version. `version` is the version the edit is based on (0 when nothing is stored yet); an outdated version answers 409 with the current value. An out-of-range share, an invalid date, an unknown intent or notes that are too long answer 422. The buyer context is commercially sensitive: visible to the owning organisation only. Recommendations drafted earlier are flagged in the assessment (`buyer_context_outdated`) until they are redrafted.
+         */
+        put: operations["putRunBuyerContext"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{id}/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Redraft the procurement recommendations with the buyer context
+         * @description Queues the redrafting of the six recommendation kinds with the current buyer context, or on the first-evaluation assumption when none is stored. The worker applies the same validation as the assessment stage. Each recommendation drafted with a context stores the `buyer_context_version` it used. Redrafting replaces the earlier `ai_draft` recommendations and never a reviewed one. 409 when the assessment has not been drafted yet, or for an identity flagged `natural_person` ("Not assessed: natural-person business").
+         */
+        post: operations["draftRunRecommendations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/runs/{id}/buyer-inputs/{field}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Store the free text of a buyer field
+         * @description Stores the member's free text for a field of kind `buyer` of the profile definition (a `BuyerInput`), recording who and when. A field that is not of kind `buyer` (an unknown field, a `fact` or `assessment` field, or the reserved `fit_criteria` and `buyer_context`) answers 422. A buyer input is never drafted by the AI and never sent to a model. `version` is the version the edit is based on (0 when nothing is stored yet); an outdated version answers 409 with the current value.
+         */
+        put: operations["putRunBuyerInput"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{id}/stop": {
         parameters: {
             query?: never;
@@ -838,11 +938,116 @@ export interface components {
             /** @description For a certification field with a kept value: the IAF CertSearch address where the buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise. */
             verification_url: string | null;
         };
+        CriteriaUpdate: {
+            /** @description The fit criteria, one per entry; an empty list means none. Each entry is not empty. */
+            criteria: string[];
+            /** @description The version this edit is based on (0 when nothing is stored yet). */
+            version: number;
+        };
+        Criteria: {
+            criteria: string[];
+            version: number;
+            /** Format: uuid */
+            updated_by: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @enum {string} */
+        BuyerRelationship: "incumbent" | "new";
+        /** @enum {string} */
+        StrategicIntent: "dual_sourcing" | "cost_reduction" | "capacity_security" | "risk_reduction";
+        BuyerContextUpdate: {
+            relationship: components["schemas"]["BuyerRelationship"];
+            /** @description Current share of category spend, 0 to 100. */
+            current_share_pct?: number | null;
+            contract_end_date?: string | null;
+            strategic_intent?: components["schemas"]["StrategicIntent"][];
+            /** @description Free text; its length is limited by configuration. */
+            notes?: string | null;
+            /** @description The version this edit is based on (0 when nothing is stored yet). */
+            version: number;
+        };
+        BuyerContext: {
+            relationship: components["schemas"]["BuyerRelationship"];
+            current_share_pct: number | null;
+            /** Format: date */
+            contract_end_date: string | null;
+            strategic_intent: components["schemas"]["StrategicIntent"][];
+            notes: string | null;
+            version: number;
+            /** Format: uuid */
+            updated_by: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        BuyerInputUpdate: {
+            /** @description Free text written by the member; its length is limited by configuration. May be empty. */
+            text: string;
+            /** @description The version this edit is based on (0 when nothing is stored yet). */
+            version: number;
+        };
+        BuyerInput: {
+            field: string;
+            text: string;
+            version: number;
+            /** Format: uuid */
+            updated_by: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        DraftingAccepted: {
+            /** @enum {string} */
+            part: "fit" | "recommendations";
+            /** @enum {string} */
+            status: "queued";
+        };
         /**
-         * @description SWOT (`strength`, `weakness`, `opportunity`, `threat`), `risk_indicator`, `evidence_gap`, and the six recommendation kinds. Each recommendation kind other than `next_action` appears at most once per draft.
+         * @description The access status of one document. `paid`, `reduced_disclosure` and `registry_unavailable` are never reported as "unavailable"; a failed registry request is `registry_unavailable`, never `no_filing_identified`.
          * @enum {string}
          */
-        AssessmentKind: "strength" | "weakness" | "opportunity" | "threat" | "risk_indicator" | "evidence_gap" | "procurement_implication" | "relationship_level" | "contract_approach" | "volume_share" | "next_action" | "procurement_priority";
+        FinancialAccess: "public_download" | "free_registration" | "paid" | "reduced_disclosure" | "confidentiality_declared" | "no_filing_identified" | "registry_unavailable";
+        /** @enum {string} */
+        FinancialDocumentType: "income_statement" | "balance_sheet" | "notes" | "audit_report";
+        FinancialDocument: {
+            type: components["schemas"]["FinancialDocumentType"];
+            /**
+             * @description `supplier_entity` for the confirmed legal entity's own accounts; `group` for parent-company or consolidated accounts, kept apart.
+             * @enum {string}
+             */
+            scope: "supplier_entity" | "group";
+            access: components["schemas"]["FinancialAccess"];
+            /**
+             * Format: uri
+             * @description The registry address where the document is looked up (the app never buys it); null when no registry guidance is configured.
+             */
+            registry_link: string | null;
+        };
+        /** @description Built by rules in code from the country table; no model writes it, no document is bought, and no credit score, estimate or commercial report replaces filed financial statements. The same text is stored as an `evidence_gap` statement whose provider is `rules`. */
+        FinancialGuidance: {
+            country: string | null;
+            financial_year: number;
+            /** @description False when the country is not in the table (no registry guidance is configured for it). */
+            configured: boolean;
+            /** @description True when the table in use is the example shipped with the repository (rows not verified). */
+            example_table: boolean;
+            registry_name: string | null;
+            /** Format: uri */
+            registry_url: string | null;
+            /**
+             * Format: date
+             * @description When the country row was last checked.
+             */
+            last_checked: string | null;
+            documents: components["schemas"]["FinancialDocument"][];
+            missing_evidence: ("income_statement" | "full_notes" | "audit_report" | "more_recent_period" | "supplier_entity_accounts")[];
+            documents_to_request: ("statutory_accounts" | "audited_statements" | "tax_schedules" | "management_accounts")[];
+            message: string;
+        };
+        /**
+         * @description SWOT (`strength`, `weakness`, `opportunity`, `threat`), `risk_indicator`, `evidence_gap`, `fit` (against the member's criteria), and the six recommendation kinds. Each recommendation kind other than `next_action` appears at most once per draft.
+         * @enum {string}
+         */
+        AssessmentKind: "strength" | "weakness" | "opportunity" | "threat" | "risk_indicator" | "evidence_gap" | "fit" | "procurement_implication" | "relationship_level" | "contract_approach" | "volume_share" | "next_action" | "procurement_priority";
         /**
          * @description A qualitative level. There is no numeric score anywhere in the assessment.
          * @enum {string}
@@ -856,6 +1061,7 @@ export interface components {
          */
         AssessmentStatus: "ai_draft" | "approved" | "corrected" | "deleted";
         AssessmentProvenance: {
+            /** @description The provider, or `rules` for a statement written by rules in code (the financial evidence guidance), which no model wrote. */
             provider: string;
             model_id: string;
             /** @description The id of the approved provider configuration that pins the exact model version. */
@@ -886,6 +1092,8 @@ export interface components {
             gap_evidence: string | null;
             /** @description The buyer-context version the statement used; null without buyer context. */
             buyer_context_version: number | null;
+            /** @description True for a recommendation drafted with a buyer context older than the current one (the context was changed after the draft): redraft it to take the change into account. False otherwise. */
+            buyer_context_outdated: boolean;
             provenance: components["schemas"]["AssessmentProvenance"];
         };
         Assessment: {
@@ -897,6 +1105,14 @@ export interface components {
             /** @description "Not assessed: natural-person business" when the status is `not_assessed`; null otherwise. */
             message: string | null;
             buyer_context_version: number | null;
+            /** @description The version of the buyer context stored now; null when none is stored. */
+            current_buyer_context_version: number | null;
+            /** @description "Enter your criteria to assess fit" while no criteria are stored for the profile (for a `not_assessed` identity, "Not assessed: natural-person business"); null otherwise. */
+            fit_message: string | null;
+            /** @description Drafting jobs queued or running for this run (`POST .../fit`, `POST .../recommendations`). */
+            pending: ("fit" | "recommendations")[];
+            /** @description The financial evidence guidance, built by rules in code from the country table; null while the assessment is pending and for a `not_assessed` identity. */
+            financial_guidance: components["schemas"]["FinancialGuidance"] | null;
             /** @description The number of drafted items rejected by the validation rules (no cited fact, a fact that is not in this run or is `not_found`, a level without facts, a missing label, timing or gap evidence, a duplicate recommendation, a claim on buyer context, a statement citing a field about people, a financial-stability gap). Items that did not match the schema are counted in `invalid_items` of the run. */
             rejected_statements: number;
             items: components["schemas"]["AssessmentStatement"][];
@@ -1131,6 +1347,24 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description The edit was based on an outdated version: nothing was written. `current` is the value stored now, so that no edit is silently lost (null when nothing is stored). */
+        VersionConflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "detail": "Someone saved a newer version. Review it before saving again.",
+                 *       "current": null
+                 *     }
+                 */
+                "application/json": {
+                    detail: string;
+                    current: components["schemas"]["Criteria"] | components["schemas"]["BuyerContext"] | components["schemas"]["BuyerInput"] | null;
+                };
             };
         };
         /** @description The database is unavailable. Plain message, no technical details. */
@@ -1731,6 +1965,174 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    putRunCriteria: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriteriaUpdate"];
+            };
+        };
+        responses: {
+            /** @description The stored criteria, with the new version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Criteria"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["VersionConflict"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    draftRunFit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The drafting is queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftingAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            /** @description No criteria are stored, the assessment is not drafted yet, or the identity is a natural-person business. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    putRunBuyerContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuyerContextUpdate"];
+            };
+        };
+        responses: {
+            /** @description The stored buyer context, with the new version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuyerContext"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["VersionConflict"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    draftRunRecommendations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The redrafting is queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftingAccepted"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            /** @description The assessment is not drafted yet, or the identity is a natural-person business. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    putRunBuyerInput: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+                /** @description The id of a field of kind `buyer` in the profile definition. */
+                field: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BuyerInputUpdate"];
+            };
+        };
+        responses: {
+            /** @description The stored text, with the new version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuyerInput"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["VersionConflict"];
+            422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };
