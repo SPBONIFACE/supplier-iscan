@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { safeNext } from "../auth/paths";
@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   getRun: vi.fn(),
   listRunFailures: vi.fn(),
   listRunSources: vi.fn(),
+  listRunFacts: vi.fn(),
+  getProfileDefinition: vi.fn(),
 }));
 
 vi.mock("../lib/api", () => ({
@@ -24,6 +26,8 @@ vi.mock("../lib/api", () => ({
     getRun: mocks.getRun,
     listRunFailures: mocks.listRunFailures,
     listRunSources: mocks.listRunSources,
+    listRunFacts: mocks.listRunFacts,
+    getProfileDefinition: mocks.getProfileDefinition,
   },
   setUnauthorizedHandler: vi.fn(),
 }));
@@ -120,9 +124,9 @@ describe("workspace list", () => {
     renderApp("/workspace");
     await user.click(await screen.findByRole("link", { name: "Supplier 7" }));
     expect(where()).toBe("/profiles/run-completed");
-    await waitFor(() =>
-      expect(screen.getByRole("heading", { name: "Supplier card" })).toBeTruthy(),
-    );
+    // The card opens beside the list, which stays.
+    expect(await screen.findByRole("dialog", { name: "Supplier card" })).toBeTruthy();
+    expect(screen.getByRole("table")).toBeTruthy();
   });
 
   it("opens the run page for a run still going", async () => {

@@ -119,7 +119,6 @@
     }
   },
   "placeholder": {
-    "card": "The supplier card, the review of the facts and the assessment will appear here.",
     "compare": "The side-by-side comparison will appear here.",
     "admin": "The administrator area will appear here."
   },
@@ -344,5 +343,54 @@
     "runStarted": "Started",
     "runEnded": "Ended",
     "leaveNote": "You can leave this page: the run continues in the background and its status appears in the profile list."
+  },
+  "card": {
+    "kicker": "Supplier card",
+    "close": "Close",
+    "closeKey": "(Esc)",
+    "loadError": "Error: the supplier card could not be loaded. Try again; if the problem continues, tell your administrator.",
+    "inProgress": "This profile run is still going, so there is no supplier card yet.",
+    "noProfile": "This profile run ended without a profile (status: {{status}}), so there is no supplier card.",
+    "openProgress": "See the progress of the run",
+    "website": "Website",
+    "country": "Country",
+    "sector": "Sector",
+    "lastRefresh": "Last refresh",
+    "newTab": "(opens in a new tab)",
+    "keyFigures": "Key figures",
+    "keyFiguresHelp": "Key figures, repeating facts of this card",
+    "fields_one": "{{count}} field",
+    "fields_other": "{{count}} fields",
+    "status": {
+      "proposed": "Proposed",
+      "approved": "Approved",
+      "corrected": "Corrected"
+    },
+    "sourceType": {
+      "supplier_claim": "Supplier's own claim",
+      "third_party": "Third-party source"
+    },
+    "redactedExtract": "Redacted extract",
+    "redacted": "redacted",
+    "foundIn": "Found in <cite>{{source}}</cite> on {{date}}",
+    "quoteTitle": "Quote · {{field}}",
+    "closeQuote": "Close quote",
+    "author": "Author",
+    "publisher": "Publisher",
+    "url": "URL",
+    "date": "Date",
+    "noEvidence": "No public evidence found",
+    "notCoveredField": "Not covered by this run: it stopped before this field (partial).",
+    "notCoveredSection": "Not covered by this run: it stopped before this section (partial).",
+    "originalValue": "Original AI value:",
+    "verifyIaf": "Verify on IAF CertSearch",
+    "aboutPeople": "About people: never used in the assessment",
+    "identityToVerify": "identity to verify",
+    "identityToVerifyBody": "Nothing collected confirms the identity: the confirmed name “{{name}}” was not found in the content collected from the supplier's website, or the website gave no content. Check that this website belongs to the company you confirmed before relying on its facts.",
+    "partial": "partial",
+    "partialBody": "This run stopped when it reached its cost budget. Sections not covered: {{sections}}. They were not examined, which says nothing about the supplier.",
+    "recommendations": "Procurement recommendations",
+    "assessment": "Assessment",
+    "naturalPerson": "The assessment is not prepared for this supplier because of its legal form. This says nothing about the supplier."
   }
 }

@@ -2,7 +2,7 @@
 // remaining quota, the entry to a new profile and the selection for comparison.
 import { useCallback, useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router";
+import { Link, useMatch, useNavigate } from "react-router";
 import { LoadingIndicator, MessageBanner } from "../components/ui";
 import { api, type MemberOrganisation, type Run } from "../lib/api";
 import { formatDate, formatNumber } from "../lib/format";
@@ -20,6 +20,8 @@ type State = { kind: "loading" } | { kind: "error" } | ({ kind: "ready" } & Load
 export function WorkspacePage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  // The card open beside the list (route /profiles/:profileId), to mark its row.
+  const openRun = useMatch("/profiles/:profileId")?.params.profileId ?? null;
   const [state, setState] = useState<State>({ kind: "loading" });
   const [selected, setSelected] = useState<string[]>([]);
   const refusalId = useId();
@@ -200,6 +202,7 @@ export function WorkspacePage() {
                   key={run.id}
                   run={run}
                   checked={selected.includes(run.id)}
+                  open={run.id === openRun}
                   onToggle={() => toggle(run.id)}
                 />
               ))}
@@ -211,7 +214,17 @@ export function WorkspacePage() {
   );
 }
 
-function RunRow({ run, checked, onToggle }: { run: Run; checked: boolean; onToggle: () => void }) {
+function RunRow({
+  run,
+  checked,
+  open,
+  onToggle,
+}: {
+  run: Run;
+  checked: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const whyId = useId();
   const name = run.supplier_name ?? t("workspace.nameHidden");
@@ -219,7 +232,7 @@ function RunRow({ run, checked, onToggle }: { run: Run; checked: boolean; onTogg
   // A run still going, or one that ended without a profile, opens its progress page; a profile its card.
   const target = comparable ? `/profiles/${run.id}` : `/profiles/${run.id}/run`;
   return (
-    <tr className={checked ? "sel" : undefined}>
+    <tr className={checked || open ? "sel" : undefined}>
       <td data-label={t("workspace.compareColumn")}>
         <label className="chk">
           <input
@@ -238,7 +251,9 @@ function RunRow({ run, checked, onToggle }: { run: Run; checked: boolean; onTogg
         )}
       </td>
       <td className="name" data-label={t("workspace.supplier")}>
-        <Link to={target}>{name}</Link>
+        <Link to={target} data-run-id={run.id} aria-current={open ? "true" : undefined}>
+          {name}
+        </Link>
       </td>
       <td data-label={t("workspace.status")}>{t(`workspace.statuses.${run.status}`)}</td>
       <td data-label={t("workspace.updated")}>{formatDate(lastUpdated(run), i18n.language)}</td>

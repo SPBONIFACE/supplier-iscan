@@ -119,7 +119,6 @@
     }
   },
   "placeholder": {
-    "card": "La fiche fournisseur, la revue des faits et l'évaluation apparaîtront ici.",
     "compare": "La comparaison côte à côte apparaîtra ici.",
     "admin": "L'espace administrateur apparaîtra ici."
   },
@@ -344,5 +343,54 @@
     "runStarted": "Lancée",
     "runEnded": "Terminée",
     "leaveNote": "Vous pouvez quitter cette page : l’analyse se poursuit en arrière-plan et son état apparaît dans la liste des profils."
+  },
+  "card": {
+    "kicker": "Fiche fournisseur",
+    "close": "Fermer",
+    "closeKey": "(Échap)",
+    "loadError": "Erreur : la fiche fournisseur n’a pas pu être chargée. Réessayez ; si le problème persiste, prévenez votre administrateur.",
+    "inProgress": "Cette analyse est encore en cours : il n’y a pas encore de fiche fournisseur.",
+    "noProfile": "Cette analyse s’est terminée sans profil (état : {{status}}) : il n’y a pas de fiche fournisseur.",
+    "openProgress": "Voir l’avancement de l’analyse",
+    "website": "Site web",
+    "country": "Pays",
+    "sector": "Secteur",
+    "lastRefresh": "Dernière actualisation",
+    "newTab": "(s’ouvre dans un nouvel onglet)",
+    "keyFigures": "Chiffres clés",
+    "keyFiguresHelp": "Chiffres clés, reprise de faits de cette fiche",
+    "fields_one": "{{count}} champ",
+    "fields_other": "{{count}} champs",
+    "status": {
+      "proposed": "Proposé",
+      "approved": "Approuvé",
+      "corrected": "Corrigé"
+    },
+    "sourceType": {
+      "supplier_claim": "Déclaration du fournisseur",
+      "third_party": "Source tierce"
+    },
+    "redactedExtract": "Extrait masqué",
+    "redacted": "masqué",
+    "foundIn": "Trouvé dans <cite>{{source}}</cite> le {{date}}",
+    "quoteTitle": "Citation · {{field}}",
+    "closeQuote": "Fermer la citation",
+    "author": "Auteur",
+    "publisher": "Éditeur",
+    "url": "Adresse",
+    "date": "Date",
+    "noEvidence": "Aucune preuve publique trouvée",
+    "notCoveredField": "Non couvert par cette analyse : elle s’est arrêtée avant ce champ (partielle).",
+    "notCoveredSection": "Non couverte par cette analyse : elle s’est arrêtée avant cette section (partielle).",
+    "originalValue": "Valeur d’origine de l’IA :",
+    "verifyIaf": "Vérifier sur IAF CertSearch",
+    "aboutPeople": "Concerne des personnes : jamais utilisé dans l’évaluation",
+    "identityToVerify": "identité à vérifier",
+    "identityToVerifyBody": "Rien de ce qui a été collecté ne confirme l’identité : le nom confirmé «  {{name}}  » n’apparaît pas dans le contenu collecté sur le site web du fournisseur, ou le site n’a fourni aucun contenu. Vérifiez que ce site appartient bien à l’entreprise confirmée avant de vous fier à ses faits.",
+    "partial": "partielle",
+    "partialBody": "Cette analyse s’est arrêtée en atteignant son budget de coût. Sections non couvertes : {{sections}}. Elles n’ont pas été examinées, ce qui ne dit rien du fournisseur.",
+    "recommendations": "Recommandations d’achat",
+    "assessment": "Évaluation",
+    "naturalPerson": "L’évaluation n’est pas préparée pour ce fournisseur en raison de sa forme juridique. Cela ne dit rien du fournisseur."
   }
 }

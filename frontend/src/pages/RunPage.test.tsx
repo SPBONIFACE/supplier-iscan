@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   stopRun: vi.fn(),
   resumeRun: vi.fn(),
   getProfileDefinition: vi.fn(),
+  listRuns: vi.fn(),
+  listRunFacts: vi.fn(),
   getDisclosure: vi.fn(),
 }));
 
@@ -25,6 +27,10 @@ const run = (changes: Partial<Run> = {}): Run => ({
   id: ID,
   identity_id: "55555555-5555-4555-8555-555555555555",
   supplier_name: "Ardentis France SAS",
+  supplier_website: "https://ardentis-france.example",
+  supplier_country: "France",
+  supplier_sector: "Industrial automation",
+  natural_person: false,
   status: "running",
   stage: "collection",
   stop_requested: false,
@@ -96,6 +102,9 @@ beforeEach(async () => {
   mocks.getCurrentUser.mockResolvedValue(ok(member));
   mocks.getDisclosure.mockResolvedValue(ok({ language: "en", text: "disclosure" }));
   mocks.getOrganisation.mockResolvedValue(ok(organisation()));
+  // The card and the list open from the run screen; they only have to find nothing.
+  mocks.listRuns.mockResolvedValue(fail("unavailable", 503));
+  mocks.listRunFacts.mockResolvedValue(fail("unavailable", 503));
   mocks.listRunFailures.mockResolvedValue(ok({ items: [] }));
   mocks.listRunSources.mockResolvedValue(ok(sources(0)));
   mocks.getProfileDefinition.mockResolvedValue(
@@ -281,8 +290,12 @@ describe("run progress, stop", () => {
     expect(screen.queryByRole("alertdialog")).toBeNull();
 
     const stopped = run({ status: "stopped", finished_at: "2026-10-27T14:09:00Z" });
-    mocks.stopRun.mockResolvedValue(ok(stopped));
-    mocks.getRun.mockResolvedValue(ok(stopped));
+    let isStopped = false;
+    mocks.stopRun.mockImplementation(async () => {
+      isStopped = true;
+      return ok(stopped);
+    });
+    mocks.getRun.mockImplementation(async () => ok(isStopped ? stopped : run()));
     await user.click(stop);
     await user.click(screen.getByRole("button", { name: "Yes, stop the run" }));
     await screen.findByText(/This profile run was stopped on Oct 27, 2026/);
@@ -294,13 +307,20 @@ describe("run progress, stop", () => {
 
   it("tells the member the run had already finished (409) and shows the actual status", async () => {
     mocks.getRun.mockResolvedValue(ok(run()));
-    mocks.stopRun.mockResolvedValue(fail("conflict", 409));
+    let finished = false;
+    mocks.stopRun.mockImplementation(async () => {
+      finished = true;
+      return fail("conflict", 409);
+    });
     const user = userEvent.setup();
     renderApp(PATH);
     await user.click(await screen.findByRole("button", { name: "Stop the run" }));
-    mocks.getRun.mockResolvedValue(
-      ok(run({ status: "completed", stage: "assessment", finished_at: "2026-10-27T14:09:00Z" })),
-    );
+    const done = run({
+      status: "completed",
+      stage: "assessment",
+      finished_at: "2026-10-27T14:09:00Z",
+    });
+    mocks.getRun.mockImplementation(async () => ok(finished ? done : run()));
     await user.click(screen.getByRole("button", { name: "Yes, stop the run" }));
     await screen.findByText(/The run had already finished/);
     await screen.findByText("All 4 stages are done.");
