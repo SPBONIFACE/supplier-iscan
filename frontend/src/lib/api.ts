@@ -37,6 +37,10 @@ export type BuyerInputUpdate = components["schemas"]["BuyerInputUpdate"];
 export type DraftingPart = components["schemas"]["DraftingAccepted"]["part"];
 export type ProfileField = components["schemas"]["ProfileField"];
 export type ProfileDefinition = components["schemas"]["ProfileDefinition"];
+export type DemoRun = components["schemas"]["DemoRun"];
+export type DemoProfile = components["schemas"]["DemoProfile"];
+export type DemoProfileList = components["schemas"]["DemoProfileList"];
+export type DemoComparison = components["schemas"]["DemoComparison"];
 export type RunRefusalReason = NonNullable<MemberOrganisation["run_refusal_reason"]>;
 export type FieldError = components["schemas"]["ValidationError"]["errors"][number];
 
@@ -226,6 +230,42 @@ export const api = {
       return failure(0);
     }
   },
+  /** The public demo (#50): read-only, no session. */
+  getDemoProfiles: (lang: Language) =>
+    call(() => client.GET("/demo/profiles", { params: { query: { lang } } })),
+
+  getDemoProfile: (id: string, lang: Language) =>
+    call(() => client.GET("/demo/profiles/{id}", { params: { path: { id }, query: { lang } } })),
+
+  getDemoComparison: (profileIds: string[], lang: Language) =>
+    call(() =>
+      client.GET("/demo/comparison", { params: { query: { profile_ids: profileIds, lang } } }),
+    ),
+
+  getDemoProfileDefinition: (language: Language) =>
+    call(() => client.GET("/demo/profile-definition", { params: { query: { language } } })),
+
+  async downloadDemoProfilePdf(
+    id: string,
+    lang: Language,
+  ): Promise<ApiResult<{ blob: Blob; filename: string }>> {
+    try {
+      const raw = await client.GET("/demo/profiles/{id}/pdf", {
+        params: { path: { id }, query: { lang } },
+        parseAs: "blob",
+      });
+      if (raw.response.ok && raw.data instanceof Blob) {
+        const named = /filename="([A-Za-z0-9._-]+)"/.exec(
+          raw.response.headers.get("Content-Disposition") ?? "",
+        );
+        return { ok: true, data: { blob: raw.data, filename: named?.[1] ?? "supplier-card.pdf" } };
+      }
+      return settle({ error: raw.error, response: raw.response });
+    } catch {
+      return failure(0);
+    }
+  },
+
   getComparison: (runIds: string[]) =>
     call(() => client.GET("/comparison", { params: { query: { run_ids: runIds } } })),
 
