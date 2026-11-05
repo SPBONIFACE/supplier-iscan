@@ -1,0 +1,7 @@
+/* "Download PDF" on the supplier card (#39). Tokens only. */
+.pdf-action {
+  display: grid;
+  gap: var(--isc-space-2);
+  justify-items: start;
+  margin-top: var(--isc-space-3);
+}

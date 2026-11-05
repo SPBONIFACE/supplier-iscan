@@ -675,5 +675,13 @@
     "none": "No buyer context yet.",
     "noneBody": "These recommendations assume a first evaluation of this supplier. Add your context (incumbent or new, share of spend, contract end, intent) to tailor them to your situation.",
     "savedAnnounce": "Buyer context saved (version {{version}}). Redraft the recommendations to use it."
+  },
+  "pdf": {
+    "download": "Download PDF",
+    "generating": "Generating the PDF…",
+    "ready": "The PDF has been downloaded.",
+    "error": "Error: the PDF could not be generated. Nothing was changed. Try again in a few minutes.",
+    "inProgress": "The profile run is still in progress, so there is no card to export yet.",
+    "unavailableInProgress": "Available when the run has finished."
   }
 }

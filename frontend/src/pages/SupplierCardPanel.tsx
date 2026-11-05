@@ -5,6 +5,7 @@
 import { type RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Outlet, useMatch, useNavigate, useParams } from "react-router";
+import { DownloadPdf } from "../components/DownloadPdf";
 import {
   ExternalLink,
   FactList,
@@ -131,6 +132,9 @@ export function SupplierCardPanel() {
               <Link to={`/profiles/${run.id}/run`}>{t("card.openProgress")}</Link>
             </p>
           </MessageBanner>
+          {run.status === "queued" || run.status === "running" || run.status === "paused" ? (
+            <DownloadPdf runId={run.id} unavailableReason={t("pdf.unavailableInProgress")} />
+          ) : null}
         </div>
       ) : null}
       {load === "ready" && run && data ? (
@@ -292,6 +296,7 @@ function CardBody({
             </button>
           ) : null}
         </div>
+        <DownloadPdf runId={run.id} />
         <p className="vh" role="status">
           {announcement}
         </p>
