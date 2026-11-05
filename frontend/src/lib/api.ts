@@ -19,6 +19,8 @@ export type RunStage = components["schemas"]["RunStage"];
 export type RunDependency = components["schemas"]["RunDependency"];
 export type RunFailure = components["schemas"]["RunFailure"];
 export type Fact = components["schemas"]["Fact"];
+export type Comparison = components["schemas"]["Comparison"];
+export type ComparisonRun = components["schemas"]["ComparisonRun"];
 export type FactReview = components["schemas"]["FactReview"];
 export type Assessment = components["schemas"]["Assessment"];
 export type AssessmentStatement = components["schemas"]["AssessmentStatement"];
@@ -202,6 +204,9 @@ export const api = {
 
   listRunFacts: (id: string) =>
     call(() => client.GET("/runs/{id}/facts", { params: { path: { id } } })),
+
+  getComparison: (runIds: string[]) =>
+    call(() => client.GET("/comparison", { params: { query: { run_ids: runIds } } })),
 
   reviewFact: (id: string, body: FactReview) =>
     call(() => client.PATCH("/facts/{id}", { params: { path: { id } }, body })),
