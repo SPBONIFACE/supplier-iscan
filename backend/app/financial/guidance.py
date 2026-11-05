@@ -87,7 +87,7 @@ _TEXT: Final[dict[str, dict[str, Any]]] = {
                 "the registry could not be reached; this does not show that no filing exists"
             ),
         },
-        "head": "Financial evidence for financial year {year}: no public evidence found "
+        "head": "Financial evidence, financial year {year}. No public evidence found "
         "among the collected sources.",
         "registry_line": "Registry: {name} ({url}), last checked {checked}{example}.",
         "example": "; example table, not verified",
@@ -136,7 +136,7 @@ _TEXT: Final[dict[str, dict[str, Any]]] = {
                 "le registre n'a pas pu être joint ; cela ne montre pas qu'aucun dépôt n'existe"
             ),
         },
-        "head": "Éléments financiers pour l'exercice {year} : aucune preuve publique trouvée "
+        "head": "Éléments financiers, exercice {year}. Aucune preuve publique trouvée "
         "dans les sources collectées.",
         "registry_line": "Registre : {name} ({url}), dernière vérification le {checked}{example}.",
         "example": " ; table d'exemple, non vérifiée",

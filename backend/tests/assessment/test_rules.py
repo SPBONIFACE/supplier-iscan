@@ -173,3 +173,51 @@ def test_an_item_that_does_not_match_the_schema_is_not_a_statement() -> None:
     assert to_statement(RawAssessmentStatement(kind="approve_supplier", text="x")) is None
     assert to_statement(RawAssessmentStatement(kind="strength", text="  ")) is None
     assert to_statement(RawAssessmentStatement(kind="strength", text="x", level="10")) is None
+
+
+# --- the buyer's situation (#26; spec F8: no statement asserts a fact that was not entered) ----
+
+ASSERTIONS = [
+    "As your incumbent supplier, this plant keeps a share of your volume.",
+    "Your incumbent should be asked for a quote.",
+    "Your current supplier relationship allows a short notice period.",
+    "your existing contract can be extended",
+    "As the incumbent, they know your site.",
+    "You currently source from this plant.",
+    "You already buy from this supplier, so a change needs care.",
+    "Votre fournisseur actuel peut proposer un avenant.",
+    "En tant que fournisseur historique, il connaît votre site.",
+    "Votre contrat en cours permet une prolongation.",
+    "Vous achetez déjà auprès de ce fournisseur.",
+]
+NEUTRAL = [
+    "Qualify the plant with an audit before any order.",
+    "ISO 9001 is cited for the Leeds plant.",
+    "Compare at least two incumbent suppliers of the category.",  # not asserted of the buyer
+    "Qualifier d'abord le site de Leeds par un audit.",
+]
+
+
+def test_wording_that_asserts_an_unentered_relationship_is_rejected_and_counted() -> None:
+    for text in ASSERTIONS:
+        for kind in ("procurement_implication", "next_action"):
+            extra: dict[str, Any] = {"timing": "within 2 weeks"} if kind == "next_action" else {}
+            claim = statement(kind, text=text, **extra)
+            assert rejected(claim, kinds=RECOMMENDATION_KINDS), text
+    assert rejected(statement("strength", text=ASSERTIONS[0]))  # whatever the kind
+
+
+def test_neutral_wording_is_kept_without_buyer_context() -> None:
+    for text in NEUTRAL:
+        texts, tally = run([statement("procurement_implication", text=text)], RECOMMENDATION_KINDS)
+        assert len(texts) == 1 and tally.rejected == 0, text
+
+
+def test_with_a_stored_buyer_context_the_wording_guard_does_not_apply() -> None:
+    context = BuyerContext(2, "Relationship with the supplier: incumbent supplier")
+    texts, tally = run(
+        [statement("procurement_implication", text=ASSERTIONS[1])],
+        RECOMMENDATION_KINDS,
+        context=context,
+    )
+    assert texts == [ASSERTIONS[1]] and tally.rejected == 0
