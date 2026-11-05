@@ -1003,6 +1003,8 @@ export interface components {
              * @description The member who last approved or corrected the fact; null while `proposed` or `not_found`.
              */
             reviewed_by: string | null;
+            /** @description The email of that member, to show who reviewed (members cannot read other user records). Null while `proposed` or `not_found`. It stays within the organisation. */
+            reviewed_by_email: string | null;
             /** Format: date-time */
             reviewed_at: string | null;
         };

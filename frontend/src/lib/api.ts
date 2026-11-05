@@ -19,6 +19,7 @@ export type RunStage = components["schemas"]["RunStage"];
 export type RunDependency = components["schemas"]["RunDependency"];
 export type RunFailure = components["schemas"]["RunFailure"];
 export type Fact = components["schemas"]["Fact"];
+export type FactReview = components["schemas"]["FactReview"];
 export type ProfileField = components["schemas"]["ProfileField"];
 export type ProfileDefinition = components["schemas"]["ProfileDefinition"];
 export type RunRefusalReason = NonNullable<MemberOrganisation["run_refusal_reason"]>;
@@ -32,6 +33,10 @@ export type ApiFailure = {
   errors: FieldError[];
   /** Why a run start was refused (403 on POST /runs). */
   reason?: RunRefusalReason;
+  /** The server's plain message on a 409 (matched only for the one case the screens tell apart). */
+  detail?: string;
+  /** The value stored now, on a 409 about an outdated version. The screen narrows its type. */
+  current?: unknown;
 };
 export type ApiResult<T> = { ok: true; data: T } | ApiFailure;
 
@@ -84,9 +89,19 @@ type Raw<T> = { data?: T; error?: unknown; response: Response };
 
 function settle<T>(raw: Raw<T>): ApiResult<T> {
   if (raw.response.ok && raw.data !== undefined) return { ok: true, data: raw.data };
-  const body = raw.error as { errors?: FieldError[]; reason?: RunRefusalReason } | undefined;
+  const body = raw.error as
+    | { errors?: FieldError[]; reason?: RunRefusalReason; detail?: unknown; current?: unknown }
+    | undefined;
   const result = failure(raw.response.status, Array.isArray(body?.errors) ? body.errors : []);
-  return result.kind === "refused" ? { ...result, reason: body?.reason } : result;
+  if (result.kind === "refused") return { ...result, reason: body?.reason };
+  if (result.kind === "conflict") {
+    return {
+      ...result,
+      detail: typeof body?.detail === "string" ? body.detail : undefined,
+      current: body?.current,
+    };
+  }
+  return result;
 }
 
 // A network error (API unreachable) is reported like a 503: the screens show the same plain message.
@@ -174,6 +189,9 @@ export const api = {
 
   listRunFacts: (id: string) =>
     call(() => client.GET("/runs/{id}/facts", { params: { path: { id } } })),
+
+  reviewFact: (id: string, body: FactReview) =>
+    call(() => client.PATCH("/facts/{id}", { params: { path: { id } }, body })),
 
   stopRun: (id: string) => call(() => client.POST("/runs/{id}/stop", { params: { path: { id } } })),
 

@@ -30,6 +30,7 @@ from app.models import (
     Source,
     SupplierIdentity,
     UsageEvent,
+    User,
 )
 from app.models.buyer import BUYER_CONTEXT
 from app.models.runs import FINISHED_STATUSES
@@ -177,6 +178,7 @@ class FactOut(BaseModel):
     original_value: str | None
     version: int
     reviewed_by: uuid.UUID | None
+    reviewed_by_email: str | None
     reviewed_at: datetime | None
 
 
@@ -382,8 +384,26 @@ def proposed_counts(
     return {run_id: count for run_id, count in rows}
 
 
-def fact_out(fact: Fact, certification: bool, certsearch: str) -> FactOut:
-    """A fact as the API shows it; `certification` is the field's flag in the profile definition."""
+def user_emails(
+    db: DbSession, scope: OrganisationScope, ids: set[uuid.UUID | None]
+) -> dict[uuid.UUID, str]:
+    """The emails of members of the caller's organisation, to show who reviewed or saved."""
+    wanted = {value for value in ids if value is not None}
+    if not wanted:
+        return {}
+    rows = db.execute(
+        select(User.id, User.email).where(
+            User.id.in_(wanted), User.organisation_id == scope.organisation_id
+        )
+    )
+    return {user_id: email for user_id, email in rows}
+
+
+def fact_out(
+    fact: Fact, certification: bool, certsearch: str, emails: dict[uuid.UUID, str] | None = None
+) -> FactOut:
+    """A fact as the API shows it; `certification` is the field's flag in the profile definition.
+    `emails` maps member ids to emails (see `user_emails`)."""
     return FactOut(
         id=fact.id,
         section=fact.section,
@@ -402,6 +422,7 @@ def fact_out(fact: Fact, certification: bool, certsearch: str) -> FactOut:
         original_value=fact.original_value,
         version=fact.version,
         reviewed_by=fact.reviewed_by,
+        reviewed_by_email=(emails or {}).get(fact.reviewed_by) if fact.reviewed_by else None,
         reviewed_at=fact.reviewed_at,
     )
 
@@ -546,6 +567,7 @@ def list_facts(id: str, scope: OrganisationScoped, db: DbSession, request: Reque
         fact.field: fact for fact in db.scalars(scope.select(Fact).where(Fact.run_id == run.id))
     }
     certsearch = load_extraction_settings().certsearch_url
+    emails = user_emails(db, scope, {fact.reviewed_by for fact in stored.values()})
     definition: ProfileDefinition = request.app.state.profile_definition
     items = []
     for section in definition.sections:
@@ -553,7 +575,7 @@ def list_facts(id: str, scope: OrganisationScoped, db: DbSession, request: Reque
             fact = stored.get(item.id)
             if item.kind != "fact" or fact is None:
                 continue
-            items.append(fact_out(fact, item.certification, certsearch))
+            items.append(fact_out(fact, item.certification, certsearch, emails))
     return FactListOut(items=items)
 
 

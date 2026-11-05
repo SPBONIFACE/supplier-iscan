@@ -15,6 +15,8 @@ export function useRunCard(id: string, language: Language) {
   const [data, setData] = useState<CardData | null>(null);
   const [run, setRun] = useState<Run | null>(null);
   const sequence = useRef(0);
+  const dataRef = useRef<CardData | null>(null);
+  dataRef.current = data;
 
   const start = useCallback(async () => {
     const mine = ++sequence.current;
@@ -45,6 +47,27 @@ export function useRunCard(id: string, language: Language) {
     setLoad("ready");
   }, [id, language]);
 
+  /** Puts a fact as the server returned it (after a review, or the current state on a conflict) in the
+   * card, with the count of proposed facts that follows from it. */
+  const applyFact = useCallback((fact: Fact) => {
+    const current = dataRef.current;
+    if (!current) return;
+    const facts = current.facts.map((item) => (item.id === fact.id ? fact : item));
+    const proposed = facts.filter((item) => item.status === "proposed").length;
+    const next = { ...current.run, proposed_facts: proposed };
+    dataRef.current = { ...current, facts, run: next };
+    setData(dataRef.current);
+    setRun(next);
+  }, []);
+
+  /** Reads the run again, for the count of facts still proposed. */
+  const refreshRun = useCallback(async () => {
+    const result = await api.getRun(id);
+    if (!result.ok) return;
+    setRun(result.data);
+    setData((current) => (current ? { ...current, run: result.data } : current));
+  }, [id]);
+
   useEffect(() => {
     void start();
     return () => {
@@ -52,5 +75,5 @@ export function useRunCard(id: string, language: Language) {
     };
   }, [start]);
 
-  return { load, run, data, retry: () => void start() };
+  return { load, run, data, retry: () => void start(), applyFact, refreshRun };
 }
