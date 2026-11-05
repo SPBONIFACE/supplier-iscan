@@ -24,7 +24,7 @@ ADAPTERS: dict[tuple[ProviderName, str], AdapterFactories] = {
         structuring=mistral_adapter.build_structuring
     ),
     ("mistral", "conversations"): AdapterFactories(retrieval=mistral_adapter.build_retrieval),
-    ("perplexity", "chat_completions"): AdapterFactories(
+    ("perplexity", "agent"): AdapterFactories(
         structuring=perplexity_adapter.build_structuring,
         retrieval=perplexity_adapter.build_retrieval,
     ),

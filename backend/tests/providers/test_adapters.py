@@ -2,13 +2,15 @@
 
 For each provider: the call goes to the configured endpoint with the key in the SDK's auth header
 only; the structured output is validated against the schema; retrieval URLs come from the typed
-citation fields; HTTP errors, timeouts and connection failures become typed provider errors; the
-SDK does not retry on its own (#12 meters each attempt).
+citation fields (Perplexity: the `search_results` items of the Agent API); HTTP errors, timeouts
+and connection failures become typed provider errors; the SDK does not retry on its own (#12
+meters each attempt).
 """
 
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -26,6 +28,7 @@ from app.providers.adapters import (
 from app.providers.catalogue import PROVIDER_APIS, ProviderConfigSpec
 from app.providers.errors import ProviderCallError, StructuredOutputInvalid
 from app.providers.interface import (
+    RETRIEVAL_MAX_TOOL_CALLS,
     RetrievalClient,
     RetrievalRequest,
     StructuringClient,
@@ -119,11 +122,11 @@ STRUCTURING_CASES = [
     ),
     Case(
         "perplexity",
-        "chat_completions",
+        "agent",
         perplexity_adapter.make_client,
         perplexity_adapter.PerplexityStructuring,
         "httpx",
-        "/chat/completions",
+        "/v1/responses",
         "authorization",
         BEARER,
     ),
@@ -171,11 +174,11 @@ RETRIEVAL_CASES = [
     ),
     Case(
         "perplexity",
-        "chat_completions",
+        "agent",
         perplexity_adapter.make_client,
         perplexity_adapter.PerplexityRetrieval,
         "httpx",
-        "/chat/completions",
+        "/v1/responses",
         "authorization",
         BEARER,
     ),
@@ -369,3 +372,106 @@ def test_the_production_factory_builds_a_client_without_retries(case: Case) -> N
     if hasattr(client, "max_retries"):
         assert client.max_retries == 0
     assert SENTINEL_KEY not in repr(adapter)
+
+
+def _perplexity_case(cases: list[Case]) -> Case:
+    return next(case for case in cases if case.provider == "perplexity")
+
+
+def test_perplexity_structuring_asks_for_the_schema_and_no_search() -> None:
+    case = _perplexity_case(STRUCTURING_CASES)
+    recorder = Recorder([(200, fixture("perplexity.json")["structuring"])])
+
+    call(case, recorder)
+
+    body = json.loads(recorder.requests[0].content)
+    assert body["model"] == "model-1"
+    assert body["instructions"] == "Extract."
+    assert body["response_format"]["type"] == "json_schema"
+    assert body["response_format"]["json_schema"]["name"] == "Company"
+    assert "legal_name" in json.dumps(body["response_format"]["json_schema"]["schema"])
+    assert "tools" not in body  # nothing is searched: only the data given is used
+    assert body["store"] is False
+
+
+def test_perplexity_retrieval_enables_web_search_with_a_bounded_loop() -> None:
+    case = _perplexity_case(RETRIEVAL_CASES)
+    recorder = Recorder([(200, fixture("perplexity.json")["retrieval"])])
+
+    call(case, recorder)
+
+    body = json.loads(recorder.requests[0].content)
+    assert body["tools"] == [{"type": "web_search"}]
+    assert body["max_steps"] == RETRIEVAL_MAX_TOOL_CALLS
+    assert body["store"] is False
+    assert "response_format" not in body
+
+
+def test_perplexity_retrieval_ignores_urls_that_are_only_in_the_answer_annotations() -> None:
+    # The structured search results win: an annotation URL that is not among them is not used.
+    case = _perplexity_case(RETRIEVAL_CASES)
+    recorder = Recorder([(200, fixture("perplexity.json")["retrieval"])])
+
+    result = call(case, recorder)
+
+    assert "https://acme.example/other" not in [item.url for item in result.urls]
+    assert {item.snippet for item in result.urls} == {
+        "Acme SA, a French company",
+        "Acme SA annual report 2025",
+    }
+
+
+def test_perplexity_retrieval_falls_back_to_the_typed_annotations_without_search_results() -> None:
+    case = _perplexity_case(RETRIEVAL_CASES)
+    recorder = Recorder([(200, fixture("perplexity.json")["retrieval_annotations_only"])])
+
+    result = call(case, recorder)
+
+    assert sorted(item.url for item in result.urls) == sorted(EXPECTED_URLS)
+    assert all("publishes an annual report" not in item.snippet for item in result.urls)
+
+
+def test_perplexity_usage_counts_tokens_tool_calls_and_the_billed_amount() -> None:
+    body = json.loads(json.dumps(fixture("perplexity.json")["retrieval"]))
+    body["usage"] = {
+        "input_tokens": 20,
+        "output_tokens": 150,
+        "total_tokens": 170,
+        "cost": {
+            "currency": "USD",
+            "input_cost": 5e-06,
+            "output_cost": 0.000375,
+            "tool_calls_cost": 0.005,
+            "total_cost": 0.00538,
+        },
+        "tool_calls_details": {"search_web": {"invocation": 2}},
+    }
+    case = _perplexity_case(RETRIEVAL_CASES)
+    cfg, client = case.build(Recorder([(200, body)]))
+    adapter = case.adapter(cfg, client)
+
+    output = adapter.search(RetrievalRequest(instructions="Find.", query=redacted("Acme SA")))
+
+    assert output.usage.input_tokens == 20 and output.usage.output_tokens == 150
+    assert output.usage.tool_calls == 2
+    assert output.usage.billed_amount == Decimal("0.00538")
+    assert output.usage.billed_currency == "USD"
+
+
+def test_perplexity_usage_without_a_cost_is_priced_from_the_table() -> None:
+    # No cost object: tokens and tool calls are counted and priced by the price table (tool_call).
+    body = json.loads(json.dumps(fixture("perplexity.json")["retrieval"]))
+    body["usage"] = {
+        "input_tokens": 1000,
+        "output_tokens": 100,
+        "total_tokens": 1100,
+        "tool_calls_details": {"search_web": {"invocation": 1}},
+    }
+    case = _perplexity_case(RETRIEVAL_CASES)
+    cfg, client = case.build(Recorder([(200, body)]))
+    adapter = case.adapter(cfg, client)
+
+    usage = adapter.search(RetrievalRequest(instructions="Find.", query=redacted("Acme SA"))).usage
+
+    assert (usage.input_tokens, usage.output_tokens, usage.tool_calls) == (1000, 100, 1)
+    assert usage.billed_amount is None
