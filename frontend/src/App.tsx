@@ -4,6 +4,7 @@ import { useAuth } from "./auth/AuthContext";
 import { homePath, LOGIN_PATH, loginUrl } from "./auth/paths";
 import { Layout } from "./components/Layout";
 import { LoadingIndicator } from "./components/ui";
+import { ComparisonPage } from "./pages/ComparisonPage";
 import { IdentityChatPage } from "./pages/IdentityChatPage";
 import { InvitationPage } from "./pages/InvitationPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -54,10 +55,7 @@ export function App() {
           <Route path="/profiles/new" element={<NewProfilePage />} />
           <Route path="/profiles/new/:sessionId" element={<IdentityChatPage />} />
           <Route path="/profiles/:profileId/run" element={<RunPage />} />
-          <Route
-            path="/compare"
-            element={<Placeholder titleKey="titles.compare" bodyKey="placeholder.compare" />}
-          />
+          <Route path="/compare" element={<ComparisonPage />} />
           <Route path="/admin" element={<AdminArea />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />

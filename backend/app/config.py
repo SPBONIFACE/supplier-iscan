@@ -47,6 +47,8 @@ BUYER_NOTES_MAX_CHARS = "BUYER_NOTES_MAX_CHARS"
 BUYER_TEXT_MAX_CHARS = "BUYER_TEXT_MAX_CHARS"
 # The longest corrected value of a fact or corrected text of a statement (#28).
 REVIEW_TEXT_MAX_CHARS = "REVIEW_TEXT_MAX_CHARS"
+# The most profiles one side-by-side comparison accepts (#38, owner decision, 27 Oct 2026).
+COMPARISON_MAX_PROFILES = "COMPARISON_MAX_PROFILES"
 EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
@@ -77,6 +79,8 @@ DEFAULT_BUYER_TEXT_MAX_CHARS = 5000
 DEFAULT_PROVIDER_MAX_RETRIES = 1
 MAX_PROVIDER_RETRIES = 5
 DEFAULT_REVIEW_TEXT_MAX_CHARS = 2000
+DEFAULT_COMPARISON_MAX_PROFILES = 10
+MIN_COMPARISON_MAX_PROFILES = 2
 MAX_SETTING_NUMBER = 100_000
 MAX_RUN_BUDGET_EUR = Decimal(100_000)
 
@@ -109,6 +113,7 @@ class Settings:
     buyer_notes_max_chars: int = DEFAULT_BUYER_NOTES_MAX_CHARS
     buyer_text_max_chars: int = DEFAULT_BUYER_TEXT_MAX_CHARS
     review_text_max_chars: int = DEFAULT_REVIEW_TEXT_MAX_CHARS
+    comparison_max_profiles: int = DEFAULT_COMPARISON_MAX_PROFILES
     eur_per_usd: Decimal | None = None
     # How long an invitation link stays valid, and the shortest accepted password (#9).
     invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
@@ -153,6 +158,21 @@ def _parse_positive_int(env: Mapping[str, str], name: str, default: int) -> int:
             f"{name} must be a whole number between 1 and {MAX_SETTING_NUMBER}"
         )
     return int(raw)
+
+
+def _parse_comparison_max(raw: str) -> int:
+    value = raw.strip()
+    if not value:
+        return DEFAULT_COMPARISON_MAX_PROFILES
+    if (
+        not (value.isascii() and value.isdigit())
+        or not MIN_COMPARISON_MAX_PROFILES <= int(value) <= MAX_SETTING_NUMBER
+    ):
+        raise ConfigurationError(
+            f"{COMPARISON_MAX_PROFILES} must be a whole number between "
+            f"{MIN_COMPARISON_MAX_PROFILES} and {MAX_SETTING_NUMBER}"
+        )
+    return int(value)
 
 
 def _parse_contact_url(raw: str) -> str | None:
@@ -253,6 +273,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         review_text_max_chars=_parse_positive_int(
             env, REVIEW_TEXT_MAX_CHARS, DEFAULT_REVIEW_TEXT_MAX_CHARS
         ),
+        comparison_max_profiles=_parse_comparison_max(env.get(COMPARISON_MAX_PROFILES, "")),
         eur_per_usd=_parse_rate(env.get(EUR_PER_USD, "")),
         invitation_validity=timedelta(
             hours=_parse_positive_int(

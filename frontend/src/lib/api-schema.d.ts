@@ -382,6 +382,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare the facts of several of the organisation's runs, field by field
+         * @description For each run in `run_ids` (request order), the run and its facts: one entry per `fact` field of the profile definition that extraction stored, as in `GET /runs/{id}/facts` (value, status, source type, verbatim quote, attribution, or `not_found`, which is shown as "No public evidence found"). The field and section labels come from `GET /profile-definition`. The comparison covers facts only: it carries no assessment, no score and no ranking, and a natural-person supplier's "Not assessed" is not part of it (owner decision D-073). A run that has not finished (`queued`, `running`, `paused`) has an empty `facts` list: the screen shows "run in progress". A run that ended `partial` omits the fields of its `uncovered_sections` that were not extracted: they were not examined, which is not "No public evidence found". Duplicate ids count once. Fewer than 2 distinct ids, or more than `comparison_max_profiles` of `GET /organisation`, answers 422. If any id is unknown, malformed or belongs to another organisation, the whole request answers the one 404, identical to an unknown id, with no partial data. An administrator, scoped to their own organisation, gets 404 for another organisation's runs.
+         */
+        get: operations["getComparison"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{id}/assessment": {
         parameters: {
             query?: never;
@@ -1251,6 +1271,15 @@ export interface components {
         FactList: {
             items: components["schemas"]["Fact"][];
         };
+        /** @description One compared run with its facts (empty while the run has not finished). */
+        ComparisonRun: {
+            run: components["schemas"]["Run"];
+            facts: components["schemas"]["Fact"][];
+        };
+        Comparison: {
+            /** @description One entry per distinct requested id, in request order. */
+            items: components["schemas"]["ComparisonRun"][];
+        };
         RunList: {
             items: components["schemas"]["Run"][];
         };
@@ -1341,6 +1370,8 @@ export interface components {
             name: string;
             /** @enum {string} */
             status: "pending_activation" | "active" | "acceptance_renewal_required";
+            /** @description The most profiles one comparison accepts (instance configuration). `GET /comparison` answers 422 above it. */
+            comparison_max_profiles: number;
             /** @description Maximum number of users. Null means unlimited. */
             seat_limit: number | null;
             /** @description Maximum number of profile runs. Null means unlimited. */
@@ -2082,6 +2113,33 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getComparison: {
+        parameters: {
+            query: {
+                /** @description The runs to compare, repeated (`run_ids=a&run_ids=b`). Between 2 and the configured maximum of distinct ids. */
+                run_ids: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The runs and their facts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comparison"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };

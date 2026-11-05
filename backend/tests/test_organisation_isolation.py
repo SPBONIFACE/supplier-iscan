@@ -337,6 +337,7 @@ def test_get_organisation_returns_the_members_own_organisation(
         "seat_limit",
         "profile_quota",
         "profiles_remaining",
+        "comparison_max_profiles",
         "run_refusal_reason",
         "access_ends_at",
     }
