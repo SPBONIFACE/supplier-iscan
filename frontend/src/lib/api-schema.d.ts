@@ -542,6 +542,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the supplier card as a PDF
+         * @description The supplier card of a run as a PDF generated on the server, in the requested language (labels; quotes stay in their source language): every fact field with its status, quote excerpt, source type, source URL and date, or "No public evidence found"; the assessment with its procurement recommendations, the buyer context and the buyer inputs, deleted statements excluded; for a natural-person identity "Not assessed: natural-person business" in place of the assessment. Each AI-generated section is labelled "AI draft" or "reviewed by …" with its provenance (model, version, generation time, review status); the same provenance is written to the file metadata. The first page carries the disclaimer (a content file; a marked placeholder until the owner supplies the text), the generation date and, when set, the source-content deletion date, the "partial" flag with its uncovered sections and the "identity to verify" flag. The file is generated on request and not stored; no model is called. A missing `lang` is `en`; any other value answers 422. An unknown id, another organisation's run and the administrator answer the one 404; a run that has not finished answers 409.
+         */
+        get: operations["getRunPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{id}/stop": {
         parameters: {
             query?: never;
@@ -2359,6 +2379,47 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["VersionConflict"];
+            422: components["responses"]["ValidationFailed"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    getRunPdf: {
+        parameters: {
+            query?: {
+                /** @description Language of the labels. English when absent. */
+                lang?: "en" | "fr";
+            };
+            header?: never;
+            path: {
+                /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The PDF. */
+            200: {
+                headers: {
+                    /** @description `attachment; filename="supplier-card-<name>-<date>.pdf"`, the name reduced to ASCII letters, digits and hyphens. */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            /** @description The run has not finished ("The run is still in progress."), or it ended without a profile (stopped, failed, insufficient sources), so there is no card to export. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
         };

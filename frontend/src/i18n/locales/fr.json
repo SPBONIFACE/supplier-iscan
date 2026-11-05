@@ -675,6 +675,14 @@
     "noneBody": "Ces recommandations supposent une première évaluation de ce fournisseur. Ajoutez votre contexte (fournisseur en place ou nouveau, part des achats, fin du contrat, intention) pour les adapter à votre situation.",
     "savedAnnounce": "Contexte acheteur enregistré (version {{version}}). Rédigez à nouveau les recommandations pour l’utiliser."
   },
+  "pdf": {
+    "download": "Télécharger le PDF",
+    "generating": "Génération du PDF en cours…",
+    "ready": "Le PDF a été téléchargé.",
+    "error": "Erreur : le PDF n’a pas pu être généré. Rien n’a été modifié. Réessayez dans quelques minutes.",
+    "inProgress": "L’analyse est encore en cours : il n’y a pas encore de fiche à exporter.",
+    "unavailableInProgress": "Disponible lorsque l’analyse sera terminée."
+  },
   "compare": {
     "title": "Comparaison",
     "eyebrow": "Comparaison · {{organisation}}",

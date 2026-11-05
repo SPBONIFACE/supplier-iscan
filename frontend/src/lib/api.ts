@@ -205,6 +205,27 @@ export const api = {
   listRunFacts: (id: string) =>
     call(() => client.GET("/runs/{id}/facts", { params: { path: { id } } })),
 
+  /** The supplier card as a PDF, in the UI language, with the file name the server proposes. */
+  async downloadRunPdf(
+    id: string,
+    lang: Language,
+  ): Promise<ApiResult<{ blob: Blob; filename: string }>> {
+    try {
+      const raw = await client.GET("/runs/{id}/pdf", {
+        params: { path: { id }, query: { lang } },
+        parseAs: "blob",
+      });
+      if (raw.response.ok && raw.data instanceof Blob) {
+        const named = /filename="([A-Za-z0-9._-]+)"/.exec(
+          raw.response.headers.get("Content-Disposition") ?? "",
+        );
+        return { ok: true, data: { blob: raw.data, filename: named?.[1] ?? "supplier-card.pdf" } };
+      }
+      return settle({ error: raw.error, response: raw.response });
+    } catch {
+      return failure(0);
+    }
+  },
   getComparison: (runIds: string[]) =>
     call(() => client.GET("/comparison", { params: { query: { run_ids: runIds } } })),
 

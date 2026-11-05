@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<title>{{ meta.title }}</title>
+<meta name="generator" content="{{ meta.generator }}">
+<meta name="author" content="{{ meta.generator }}">
+<meta name="description" content="{{ s.doc_title }} · {{ name }}">
+<meta name="dcterms.created" content="{{ meta.created }}">
+<meta name="contentlanguage" content="{{ meta.lang }}">
+<meta name="aigeneratedcontent" content="{{ meta.ai_generated_content }}">
+<meta name="aiprovenance" content="{{ meta.ai_provenance }}">
+<meta name="rulesguidance" content="{{ meta.rules_guidance }}">
+<link rel="stylesheet" href="{{ css.tokens }}">
+<style>{{ font_faces }}</style>
+<link rel="stylesheet" href="{{ css.pdf }}">
+{% set pg = s.page.split('{page}') %}
+{% set pg2 = pg[1].split('{pages}') %}
+<style>
+@page { @bottom-right { content: "{{ pg[0] }}" counter(page) "{{ pg2[0] }}" counter(pages) "{{ pg2[1] }}"; } }
+</style>
+</head>
+<body>
+<div class="run-head">{{ s.kicker }} · {{ name }}</div>
+<div class="run-foot">
+  <div>{{ footer }}{% if footer_deleted %} · {{ footer_deleted }}{% endif %}</div>
+  <div class="dis"><span class="micro">{{ s.disclaimer_label }}</span> {{ disclaimer }}</div>
+</div>
+
+<main>
+<p class="micro cover-k">{{ s.kicker }} · {{ s.prepared_for.format(organisation=organisation) }}</p>
+<h1>{{ name }}</h1>
+<p class="deck">{{ [run.supplier_country, run.supplier_sector] | select | join(' · ') }}</p>
+
+<div class="two">
+  <div>
+    <h2 class="ph2">{{ s.identity }}</h2>
+    <dl class="pdl">
+      <dt>{{ s.legal_name }}</dt><dd>{{ name }}</dd>
+      {% if website %}<dt>{{ s.website }}</dt><dd class="mono">{{ website }}</dd>{% endif %}
+      {% if run.supplier_country %}<dt>{{ s.country }}</dt><dd>{{ run.supplier_country }}</dd>{% endif %}
+      {% if run.supplier_sector %}<dt>{{ s.sector }}</dt><dd>{{ run.supplier_sector }}</dd>{% endif %}
+    </dl>
+  </div>
+  <div>
+    <h2 class="ph2">{{ s.profile }}</h2>
+    <dl class="pdl">
+      <dt>{{ s.last_refresh }}</dt><dd>{{ last_refresh }}</dd>
+      <dt>{{ s.facts }}</dt><dd>{{ facts_summary }}</dd>
+      {% if deleted_on %}<dt>{{ s.source_content }}</dt><dd>{{ s.deleted_on.format(date=deleted_on) }}</dd>{% endif %}
+      <dt>{{ s.generated }}</dt><dd>{{ generated }}</dd>
+      <dt>{{ s.language }}</dt><dd>{{ s.language_value }}</dd>
+      <dt>{{ s.run }}</dt><dd class="mono">{{ run_ref }}</dd>
+    </dl>
+  </div>
+</div>
+
+{% if identity_to_verify %}
+<div class="flag"><span class="micro">{{ s.flag_identity }}</span><p>{{ s.flag_identity_body.format(name=name) }}</p></div>
+{% endif %}
+{% if partial %}
+<div class="flag"><span class="micro">{{ s.flag_partial }}</span><p>{{ s.flag_partial_body.format(sections=partial_sections) }}</p></div>
+{% endif %}
+{% if excluded %}
+<div class="flag"><span class="micro">{{ s.flag_excluded }}</span><p>{{ s.flag_excluded_body.format(domains=excluded) }}</p></div>
+{% endif %}
+
+<h2 class="ph2">{{ s.how_to_read }}</h2>
+<div class="legend">
+  <div><span class="badge pending">{{ s.status.proposed }}</span><span>{{ s.legend_proposed }}</span></div>
+  <div><span class="badge decided">{{ s.status.approved }}</span><span>{{ s.legend_approved }}</span></div>
+  <div><span class="badge ev">{{ s.source_type.supplier_claim }}</span><span>{{ s.legend_supplier_claim }}</span></div>
+  <div><span class="badge ev">{{ s.source_type.third_party }}</span><span>{{ s.legend_third_party }}</span></div>
+  <div><span class="missing">{{ s.no_evidence }}</span><span>{{ s.legend_missing }}</span></div>
+  <div><span class="badge pending">{{ s.ai_draft }}</span><span>{{ s.legend_ai_draft }}</span></div>
+</div>
+
+{% for section in sections %}
+<h2 class="ph2"><span class="no">{{ loop.index }}</span>{{ section.label }}</h2>
+{% if section.all_uncovered %}
+<p class="not-covered">{{ s.not_covered_section }}</p>
+{% else %}
+{% for f in section.fields %}
+<div class="pf">
+  <div class="l">{{ f.label }}{% if f.people %}<span class="hint">{{ s.about_people }}</span>{% endif %}</div>
+  <div class="body">
+  {% if f.state == 'fact' %}
+    <div class="v">{{ f.value | redacted }}</div>
+    {% if f.original %}<div class="orig">{{ s.original_value }} {{ f.original | redacted }}</div>{% endif %}
+    {% if f.quote %}<blockquote class="q"{% if f.quote_lang %} lang="{{ f.quote_lang }}"{% endif %} dir="auto">{{ f.quote | redacted }}</blockquote>{% endif %}
+    {% if f.source_line %}<div class="srcline">{{ f.source_line }}</div>{% endif %}
+    <div class="labels">
+      {% if f.source_type %}<span class="ev">{{ f.source_type }}</span>{% endif %}
+      {% if f.redacted %}<span class="ev">{{ s.redacted_extract }}</span>{% endif %}
+    </div>
+    {% if f.url %}<div class="url mono">{{ f.url }}</div>{% endif %}
+    {% if f.verify %}<div class="url">{{ s.verify_iaf }}: <span class="mono">{{ f.verify }}</span></div>{% endif %}
+  {% elif f.state == 'missing' %}
+    <div class="missing">{{ s.no_evidence }}</div>
+    {% if f.verify %}<div class="url">{{ s.verify_iaf }}: <span class="mono">{{ f.verify }}</span></div>{% endif %}
+  {% elif f.state == 'not_covered' %}
+    <div class="not-covered">{{ s.not_covered_field }}</div>
+  {% else %}
+    <div class="not-covered">{{ s.not_examined }}</div>
+  {% endif %}
+  </div>
+  <div class="st">
+    {% if f.state == 'fact' %}
+    <span class="badge {{ 'pending' if f.status == 'proposed' else 'decided' }}">{{ f.status_label }}</span>
+    {% if f.byline %}<span class="byline">{{ f.byline }}</span>{% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+<section class="assessment">
+<h2 class="ph2 newpage"><span class="no">{{ sections | length + 1 }}</span>{{ s.assessment }}</h2>
+{% if natural_person %}
+<div class="flag"><span class="micro">{{ s.not_assessed }}</span><p>{{ s.not_assessed_note }}</p></div>
+{% else %}
+<p class="meta">{{ s.assessment_lede }}</p>
+{% if assessment_status == 'pending' %}<p class="not-covered">{{ s.assessment_pending }}</p>{% endif %}
+{% if assessment_status == 'partial' %}<div class="flag"><span class="micro">{{ s.flag_partial }}</span><p>{{ s.assessment_partial }}</p></div>{% endif %}
+
+{% macro statement(st) %}
+<div class="ps">
+  <div class="h">
+    <span class="micro sec">{{ st.kind_label }}{% if st.level %} · {{ s.level }} {{ st.level }}{% endif %}{% if st.relationship %} · {{ s.relationship }} {{ st.relationship }}{% endif %}</span>
+    {% if st.badge %}<span class="badge {{ 'decided' if st.decided else 'pending' }}">{{ st.badge }}</span>{% endif %}
+    {% if st.byline %}<span class="byline">{{ st.byline }}</span>{% endif %}
+  </div>
+  <p>{{ st.text }}</p>
+  {% if st.timing %}<div class="meta">{{ s.timing }} {{ st.timing }}</div>{% endif %}
+  {% if st.gap_evidence %}<div class="meta">{{ st.gap_evidence }}</div>{% endif %}
+  {% if st.cites %}<div class="meta">{{ s.cites }} {{ st.cites | join(' · ') }}</div>{% endif %}
+  {% if st.rules %}<div class="prov">{{ s.from_rules }}</div>{% endif %}
+  <div class="prov">{{ st.provenance }}</div>
+</div>
+{% endmacro %}
+
+{% for st in groups.swot %}{{ statement(st) }}{% endfor %}
+
+{% if groups.fit or fit_criteria %}
+<h3 class="ph3">{{ s.fit_title }}</h3>
+{% if fit_criteria %}
+<div class="ps"><div class="meta">{{ fit_criteria.title }}</div>
+<ul class="plain">{% for item in fit_criteria.lines %}<li>{{ item }}</li>{% endfor %}</ul></div>
+{% else %}
+<p class="not-covered">{{ s.fit_empty }}</p>
+{% endif %}
+{% for st in groups.fit %}{{ statement(st) }}{% endfor %}
+{% endif %}
+
+{% if groups.reco %}
+<h3 class="ph3">{{ s.recommendations }}</h3>
+{% if context_changed %}<div class="flag"><span class="micro">{{ s.context_changed }}</span><p>{{ context_changed }}</p></div>{% endif %}
+{% for st in groups.reco %}{{ statement(st) }}{% endfor %}
+{% endif %}
+
+{% for st in groups.gaps %}{{ statement(st) }}{% endfor %}
+
+{% if financial %}
+<h3 class="ph3">{{ s.fin_title }}</h3>
+<div class="ps">
+  {% if financial.example %}<div class="flag"><span class="micro">{{ s.fin_example }}</span><p>{{ s.fin_example_body }}</p></div>{% endif %}
+  <p>{{ financial.message }}</p>
+  {% if not financial.configured %}<p class="not-covered">{{ s.fin_not_configured }}</p>{% else %}
+  <table class="pt">
+    <caption>{{ financial.caption }}</caption>
+    <thead><tr><th>{{ s.fin_document }}</th><th>{{ s.fin_entity }}</th><th>{{ s.fin_access }}</th></tr></thead>
+    <tbody>{% for d in financial.documents %}<tr><td>{{ d.type }}</td><td>{{ d.scope }}</td><td>{{ d.access }}</td></tr>{% endfor %}</tbody>
+  </table>
+  {% endif %}
+  {% if financial.missing %}<div class="meta">{{ s.fin_missing }}: {{ financial.missing | join(' · ') }}</div>{% endif %}
+  {% if financial.request %}<div class="meta">{{ s.fin_request }}: {{ financial.request | join(' · ') }}</div>{% endif %}
+  {% if financial.registry %}<div class="meta">{{ s.fin_registry }}: {{ financial.registry }}{% if financial.registry_url %} <span class="mono">{{ financial.registry_url }}</span>{% endif %}{% if financial.last_checked %} · {{ s.fin_last_checked }}: {{ financial.last_checked }}{% endif %}</div>{% endif %}
+  <div class="prov">{{ s.from_rules }}</div>
+</div>
+{% endif %}
+{% endif %}
+
+{% if buyer_context %}
+<h3 class="ph3">{{ s.context_title }}</h3>
+<div class="ps">
+  <div class="meta">{{ buyer_context.note }}</div>
+  <dl class="pdl">
+    <dt>{{ s.context_status }}</dt><dd>{{ buyer_context.status }}</dd>
+    {% if buyer_context.share %}<dt>{{ s.context_share }}</dt><dd>{{ buyer_context.share }}</dd>{% endif %}
+    {% if buyer_context.end %}<dt>{{ s.context_end }}</dt><dd>{{ buyer_context.end }}</dd>{% endif %}
+    {% if buyer_context.intent %}<dt>{{ s.context_intent }}</dt><dd>{{ buyer_context.intent | join(', ') }}</dd>{% endif %}
+    {% if buyer_context.notes %}<dt>{{ s.context_notes }}</dt><dd>{{ buyer_context.notes }}</dd>{% endif %}
+  </dl>
+</div>
+{% endif %}
+
+{% if buyer_inputs %}
+<h3 class="ph3">{{ s.buyer_inputs }}</h3>
+<p class="meta">{{ s.buyer_inputs_note }}</p>
+{% for entry in buyer_inputs %}
+<div class="ps"><span class="micro sec">{{ entry.label }}</span><p>{{ entry.text }}</p><div class="meta">{{ entry.note }}</div></div>
+{% endfor %}
+{% endif %}
+</section>
+
+<section>
+<h2 class="ph2"><span class="no">{{ sections | length + 2 }}</span>{{ s.provenance_title }}</h2>
+{% if ai_rows %}
+<table class="pt">
+  <thead><tr><th>{{ s.statement }}</th><th>{{ s.provider }}</th><th>{{ s.model_id }}</th><th>{{ s.version }}</th><th>{{ s.generated_at }}</th><th>{{ s.review }}</th></tr></thead>
+  <tbody>
+  {% for row in ai_rows %}
+  <tr><td>{{ row.kind }}</td><td>{{ row.provenance.provider }}</td><td>{{ row.provenance.model_id }}</td><td>{{ row.provenance.model_version }}</td><td>{{ row.generated }}</td><td>{{ row.review }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% if urls %}
+<h3 class="ph3">{{ s.provenance_sources }}</h3>
+<ol class="srcs mono">{% for u in urls %}<li>{{ u }}</li>{% endfor %}</ol>
+{% endif %}
+</section>
+</main>
+</body>
+</html>
