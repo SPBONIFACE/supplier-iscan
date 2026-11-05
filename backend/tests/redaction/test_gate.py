@@ -197,6 +197,7 @@ def test_every_request_is_built_from_a_gate_result_never_from_a_literal() -> Non
         "identity/agent.py": ["StructuringRequest"],
         "collection/retrieval.py": ["RetrievalRequest"],
         "extraction/stage.py": ["StructuringRequest"],
+        "assessment/stage.py": ["StructuringRequest"],
     }
 
 
@@ -236,6 +237,35 @@ def test_extraction_redacts_the_stored_source_text_again_before_it_builds_the_re
     extraction call site passes the rendered data through `gate.redact` (no new route into the
     provider interface), and it is the only function there that calls the model."""
     source = (APP / "extraction" / "stage.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    function = next(
+        node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == "ask"
+    )
+    calls = [
+        node.func.attr if isinstance(node.func, ast.Attribute) else node.func.id  # type: ignore[attr-defined]
+        for node in ast.walk(function)
+        if isinstance(node, ast.Call)
+    ]
+    assert calls.index("redact") < calls.index("StructuringRequest") < calls.index("structure")
+    structure_callers = sorted(
+        node.name
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef)
+        and any(
+            isinstance(call, ast.Call)
+            and isinstance(call.func, ast.Attribute)
+            and call.func.attr == "structure"
+            for call in ast.walk(node)
+        )
+    )
+    assert structure_callers == ["ask"]
+
+
+def test_assessment_redacts_the_facts_again_before_it_builds_the_request() -> None:
+    """The assessment call site (#25) is `ask`: the rendered data (facts, buyer context) passes
+    through `gate.redact` before the request is built, and `ask` is the only function there that
+    calls the model."""
+    source = (APP / "assessment" / "stage.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
     function = next(
         node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == "ask"
