@@ -91,6 +91,10 @@ class RunOut(BaseModel):
     id: uuid.UUID
     identity_id: uuid.UUID
     supplier_name: str | None
+    supplier_website: str | None
+    supplier_country: str | None
+    supplier_sector: str | None
+    natural_person: bool
     status: str
     stage: str
     stop_requested: bool
@@ -306,7 +310,7 @@ def _run_out(
     db: DbSession,
     scope: OrganisationScope,
     run: ProfileRun,
-    supplier_name: str | None,
+    identity: SupplierIdentity | None,
     hide_names: bool,
     excluded: list[dict[str, str]],
     proposed_facts: int,
@@ -321,8 +325,12 @@ def _run_out(
         {
             "id": run.id,
             "identity_id": run.identity_id,
-            # Run metadata only for an administrator, never the supplier name.
-            "supplier_name": None if hide_names else supplier_name,
+            # Run metadata only for an administrator: nothing that identifies the supplier.
+            "supplier_name": None if hide_names or identity is None else identity.legal_name,
+            "supplier_website": None if hide_names or identity is None else identity.website,
+            "supplier_country": None if hide_names or identity is None else identity.country,
+            "supplier_sector": None if hide_names or identity is None else identity.sector,
+            "natural_person": bool(identity and identity.natural_person and not hide_names),
             "status": run.status,
             "stage": run.stage,
             "stop_requested": run.stop_requested,
@@ -434,10 +442,12 @@ def statement_out(row: AssessmentItem, current_context: int | None) -> Assessmen
 
 
 def _one(db: DbSession, scope: OrganisationScope, run: ProfileRun, hide: bool) -> RunOut:
-    name = db.scalar(scope.select(SupplierIdentity).where(SupplierIdentity.id == run.identity_id))
+    identity = db.scalar(
+        scope.select(SupplierIdentity).where(SupplierIdentity.id == run.identity_id)
+    )
     excluded = excluded_sources(db, scope.organisation_id, [run.id]).get(run.id, [])
     proposed = proposed_counts(db, scope.organisation_id, [run.id]).get(run.id, 0)
-    return _run_out(db, scope, run, name.legal_name if name else None, hide, excluded, proposed)
+    return _run_out(db, scope, run, identity, hide, excluded, proposed)
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
@@ -464,7 +474,7 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request:
     )
     db.commit()
     db.refresh(run)
-    return _run_out(db, scope, run, identity.legal_name, hide_names(request, scope), [], 0)
+    return _run_out(db, scope, run, identity, hide_names(request, scope), [], 0)
 
 
 @router.get("", response_model=RunListOut)
@@ -473,13 +483,15 @@ def list_runs(scope: OrganisationScoped, db: DbSession, request: Request) -> Run
         scope.select(ProfileRun).order_by(ProfileRun.created_at.desc()).limit(LIST_LIMIT)
     ).all()
     hidden = hide_names(request, scope)
-    rows = db.execute(
-        select(SupplierIdentity.id, SupplierIdentity.legal_name).where(
-            SupplierIdentity.organisation_id == scope.organisation_id,
-            SupplierIdentity.id.in_({run.identity_id for run in runs}),
+    identities = {
+        identity.id: identity
+        for identity in db.scalars(
+            select(SupplierIdentity).where(
+                SupplierIdentity.organisation_id == scope.organisation_id,
+                SupplierIdentity.id.in_({run.identity_id for run in runs}),
+            )
         )
-    )
-    names = {identity_id: name for identity_id, name in rows}
+    }
     ids = [run.id for run in runs]
     excluded = excluded_sources(db, scope.organisation_id, ids)
     proposed = proposed_counts(db, scope.organisation_id, ids)
@@ -489,7 +501,7 @@ def list_runs(scope: OrganisationScoped, db: DbSession, request: Request) -> Run
                 db,
                 scope,
                 run,
-                names.get(run.identity_id),
+                identities.get(run.identity_id),
                 hidden,
                 excluded.get(run.id, []),
                 proposed.get(run.id, 0),

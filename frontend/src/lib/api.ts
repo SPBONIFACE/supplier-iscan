@@ -18,6 +18,8 @@ export type RunStatus = components["schemas"]["RunStatus"];
 export type RunStage = components["schemas"]["RunStage"];
 export type RunDependency = components["schemas"]["RunDependency"];
 export type RunFailure = components["schemas"]["RunFailure"];
+export type Fact = components["schemas"]["Fact"];
+export type ProfileField = components["schemas"]["ProfileField"];
 export type ProfileDefinition = components["schemas"]["ProfileDefinition"];
 export type RunRefusalReason = NonNullable<MemberOrganisation["run_refusal_reason"]>;
 export type FieldError = components["schemas"]["ValidationError"]["errors"][number];
@@ -169,6 +171,9 @@ export const api = {
 
   listRunFailures: (id: string) =>
     call(() => client.GET("/runs/{id}/failures", { params: { path: { id } } })),
+
+  listRunFacts: (id: string) =>
+    call(() => client.GET("/runs/{id}/facts", { params: { path: { id } } })),
 
   stopRun: (id: string) => call(() => client.POST("/runs/{id}/stop", { params: { path: { id } } })),
 

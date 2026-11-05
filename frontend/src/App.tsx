@@ -10,7 +10,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { NewProfilePage } from "./pages/NewProfilePage";
 import { RunPage } from "./pages/RunPage";
 import { NotFoundPage, Placeholder } from "./pages/Simple";
-import { WorkspacePage } from "./pages/WorkspacePage";
+import { SupplierCardPanel, WorkspaceShell } from "./pages/SupplierCardPanel";
 
 /** Protected routes: nothing is rendered for a signed-out user, who is sent to login and back. */
 function RequireAuth() {
@@ -46,15 +46,14 @@ export function App() {
         <Route path="/invitations/:token" element={<InvitationPage />} />
         <Route element={<RequireAuth />}>
           <Route path="/" element={<Home />} />
-          {/* Placeholders: #34 run, #35 to #37 card, #38 comparison, #48 admin. */}
-          <Route path="/workspace" element={<WorkspacePage />} />
+          {/* Placeholders: #38 comparison, #48 admin. */}
+          <Route element={<WorkspaceShell />}>
+            <Route path="/workspace" element={null} />
+            <Route path="/profiles/:profileId" element={<SupplierCardPanel />} />
+          </Route>
           <Route path="/profiles/new" element={<NewProfilePage />} />
           <Route path="/profiles/new/:sessionId" element={<IdentityChatPage />} />
           <Route path="/profiles/:profileId/run" element={<RunPage />} />
-          <Route
-            path="/profiles/:profileId"
-            element={<Placeholder titleKey="titles.card" bodyKey="placeholder.card" />}
-          />
           <Route
             path="/compare"
             element={<Placeholder titleKey="titles.compare" bodyKey="placeholder.compare" />}

@@ -68,6 +68,22 @@ def test_the_example_has_four_sections_and_every_kind_and_validates() -> None:
     assert definition.content_hash.startswith("sha256:")
 
 
+def test_key_figures_are_marked_in_the_definition_and_default_to_false(tmp_path: Path) -> None:
+    shipped = load_profile_definition()
+    assert {f.id for f in shipped.fields() if f.key_figure} == {
+        "founding_year",
+        "employee_count",
+        "quality_management",
+        "environmental_management",
+    }
+    document = example()
+    field = first_field(document)
+    assert load_profile_definition(write(tmp_path, document)).fields()[0].key_figure is False
+    field["key_figure"] = "yes"
+    with pytest.raises(ConfigurationError, match="sections/0/fields/0/key_figure"):
+        load_profile_definition(write(tmp_path, document))
+
+
 def test_flags_default_to_false_and_must_be_booleans(tmp_path: Path) -> None:
     document = example()
     field = first_field(document)
@@ -252,6 +268,8 @@ def test_the_endpoint_returns_labels_in_the_requested_language(
     people = [f for s in french.json()["sections"] for f in s["fields"] if f["concerns_people"]]
     assert [field["id"] for field in people] == ["management_team"]
     assert "extraction_hint" not in json.dumps(french.json())
+    key = [f["id"] for s in english.json()["sections"] for f in s["fields"] if f["key_figure"]]
+    assert key == [f.id for f in expected.fields() if f.key_figure]
 
 
 def test_the_endpoint_refuses_an_unknown_language_and_needs_a_session(

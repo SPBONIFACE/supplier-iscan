@@ -15,13 +15,15 @@
           "id": "founding_year",
           "labels": { "en": "Founding year", "fr": "Année de création" },
           "kind": "fact",
-          "extraction_hint": "The year the company was founded."
+          "extraction_hint": "The year the company was founded.",
+          "key_figure": true
         },
         {
           "id": "employee_count",
           "labels": { "en": "Number of employees", "fr": "Nombre de salariés" },
           "kind": "fact",
-          "extraction_hint": "The number of employees, or a range, with the year it refers to."
+          "extraction_hint": "The number of employees, or a range, with the year it refers to.",
+          "key_figure": true
         },
         {
           "id": "management_team",
@@ -62,7 +64,8 @@
           },
           "kind": "fact",
           "extraction_hint": "A quality management certification the company states it holds, with the standard named.",
-          "certification": true
+          "certification": true,
+          "key_figure": true
         },
         {
           "id": "environmental_management",
@@ -72,7 +75,8 @@
           },
           "kind": "fact",
           "extraction_hint": "An environmental management certification the company states it holds, with the standard named.",
-          "certification": true
+          "certification": true,
+          "key_figure": true
         }
       ]
     },
