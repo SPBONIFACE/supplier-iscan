@@ -19,6 +19,7 @@ from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.limits.budget import BudgetGate
 from app.providers.catalogue import ProviderConfigSpec, Role
 from app.providers.errors import ProviderCallError, ProviderError, StructuredOutputInvalid
 from app.providers.failures import classify_failure
@@ -27,9 +28,15 @@ from app.redaction.text import RedactedText
 
 logger = logging.getLogger(__name__)
 
-# One retry after a schema failure (spec, Integrations: "retry once").
-STRUCTURING_ATTEMPTS = 2
+# One retry after a schema failure (spec, Integrations: "retry once"): the default of the
+# configured maximum (PROVIDER_MAX_RETRIES). Every attempt is metered and counts against the run
+# budget (#30).
+DEFAULT_MAX_RETRIES = 1
 DEFAULT_MAX_OUTPUT_TOKENS = 8192
+# What a retrieval attempt can consume, for the budget check: the largest output allowance and
+# number of search calls of an adapter (the Anthropic one: 2048 tokens, 5 searches).
+RETRIEVAL_MAX_OUTPUT_TOKENS = 2048
+RETRIEVAL_MAX_TOOL_CALLS = 5
 
 
 def _require_redacted(value: object) -> None:
@@ -129,11 +136,30 @@ def _call_failure(config: ProviderConfigSpec, error: Exception) -> ProviderError
 class _BoundClient:
     role: Role
 
-    def __init__(self, config: ProviderConfigSpec, meter: UsageMeter) -> None:
+    def __init__(
+        self, config: ProviderConfigSpec, meter: UsageMeter, budget: BudgetGate | None = None
+    ) -> None:
         self.config = config
         self._meter = meter
+        self._budget = budget
         # Refused before any call when the model has no price: it is never metered as free.
         meter.require_price(config)
+
+    @property
+    def max_retries(self) -> int:
+        """The most retries of one call after a schema failure (configuration, #30)."""
+        return self._budget.max_retries if self._budget is not None else DEFAULT_MAX_RETRIES
+
+    def _check_budget(
+        self, context: CallContext, input_chars: int, output_tokens: int, tool_calls: int
+    ) -> None:
+        """Before every attempt of a run: raises RunBudgetExhausted when the run's billed cost
+        plus the most this attempt can cost is above the run budget. The call is then not made.
+        A call outside a run (the identity chat) has no run budget."""
+        if self._budget is None or context.run_id is None:
+            return
+        estimate = self._meter.max_call_cost(self.config, input_chars, output_tokens, tool_calls)
+        self._budget.check(context.organisation_id, context.run_id, estimate)
 
     @property
     def config_id(self) -> str:
@@ -157,9 +183,13 @@ class StructuringClient(_BoundClient):
     role: Role = "structuring"
 
     def __init__(
-        self, config: ProviderConfigSpec, adapter: StructuringAdapter, meter: UsageMeter
+        self,
+        config: ProviderConfigSpec,
+        adapter: StructuringAdapter,
+        meter: UsageMeter,
+        budget: BudgetGate | None = None,
     ) -> None:
-        super().__init__(config, meter)
+        super().__init__(config, meter, budget)
         self._adapter = adapter
 
     def structure[T: BaseModel](
@@ -168,9 +198,12 @@ class StructuringClient(_BoundClient):
         _require_redacted(request.data)  # a request edited after its creation is refused too
         schema_name = output_type.__name__
         json_schema = output_type.model_json_schema()
-        for attempt in range(1, STRUCTURING_ATTEMPTS + 1):
+        attempts = 1 + self.max_retries
+        input_chars = len(request.instructions) + len(request.data.text)
+        for attempt in range(1, attempts + 1):
             failure: ProviderError | None = None
             output: StructuringOutput | None = None
+            self._check_budget(context, input_chars, request.max_output_tokens, 0)
             try:
                 output = self._adapter.generate_json(request, schema_name, json_schema)
             except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
@@ -205,7 +238,7 @@ class StructuringClient(_BoundClient):
             provider=self.config.provider,
             config_id=self.config.id,
             schema_name=schema_name,
-            attempts=STRUCTURING_ATTEMPTS,
+            attempts=attempts,
         )
 
 
@@ -213,15 +246,25 @@ class RetrievalClient(_BoundClient):
     role: Role = "retrieval"
 
     def __init__(
-        self, config: ProviderConfigSpec, adapter: RetrievalAdapter, meter: UsageMeter
+        self,
+        config: ProviderConfigSpec,
+        adapter: RetrievalAdapter,
+        meter: UsageMeter,
+        budget: BudgetGate | None = None,
     ) -> None:
-        super().__init__(config, meter)
+        super().__init__(config, meter, budget)
         self._adapter = adapter
 
     def retrieve(self, request: RetrievalRequest, context: CallContext) -> RetrievalResult:
         _require_redacted(request.query)
         failure: ProviderError | None = None
         output: RetrievalOutput | None = None
+        self._check_budget(
+            context,
+            len(request.instructions) + len(request.query.text),
+            RETRIEVAL_MAX_OUTPUT_TOKENS,
+            RETRIEVAL_MAX_TOOL_CALLS,
+        )
         try:
             output = self._adapter.search(request)
         except Exception as error:  # noqa: BLE001 - every failure becomes a typed error

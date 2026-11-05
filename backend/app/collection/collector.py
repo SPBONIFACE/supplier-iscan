@@ -289,7 +289,7 @@ class Collector:
         try:
             urls = retrieve(lacking)
         except RetrievalFailed as error:
-            self._fail(None, error.kind)
+            self._fail(None, error.kind, message=error.message)
             return
         stored = {record.url for record in self.result.sources}
         for url in urls[: self._settings.max_retrieval_urls]:

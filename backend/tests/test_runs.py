@@ -383,6 +383,41 @@ def test_a_job_that_kills_its_worker_too_often_ends_the_run(
     assert (run.status, run.error) == ("failed", INTERRUPTED)
 
 
+@pytest.mark.parametrize("status", ["queued", "paused"])
+def test_the_attempt_cap_ends_a_run_that_never_reached_running(
+    engine: Engine, settings: Settings, status: str
+) -> None:
+    """#13 follow-up: workers dying between claiming the job and starting the run leave it
+    `queued`; the cap ends it `failed` whatever its (non-final) status, not for ever queued."""
+    run_id = create_run(engine, create_organisation(engine), status=status)
+    with Session(engine) as db:
+        job = db.scalars(select(Job)).one()
+        job.state, job.attempts = "running", MAX_ATTEMPTS
+        job.lease_expires_at = utc_now() - timedelta(seconds=1)
+        db.commit()
+    counter = Counter()
+
+    work(engine, settings, counter.stages())
+
+    run = get_run(engine, run_id)
+    assert (run.status, run.error) == ("failed", INTERRUPTED)
+    assert run.finished_at is not None and counter.calls == []
+    assert [(j.state, j.attempts) for j in jobs_of(engine)] == [("done", MAX_ATTEMPTS + 1)]
+
+
+def test_the_attempt_cap_leaves_a_finished_run_as_it_is(engine: Engine, settings: Settings) -> None:
+    run_id = create_run(engine, create_organisation(engine), status="completed")
+    with Session(engine) as db:
+        job = db.scalars(select(Job)).one()
+        job.state, job.attempts = "running", MAX_ATTEMPTS
+        job.lease_expires_at = utc_now() - timedelta(seconds=1)
+        db.commit()
+
+    work(engine, settings, Counter().stages())
+
+    assert (get_run(engine, run_id).status, get_run(engine, run_id).error) == ("completed", None)
+
+
 def test_a_worker_that_lost_its_lease_stops_without_finishing_the_job(
     engine: Engine, settings: Settings
 ) -> None:

@@ -9,6 +9,7 @@ Without DATABASE_URL, tests that need a database are skipped locally and fail in
 
 import os
 from collections.abc import Iterator
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -73,7 +74,11 @@ def engine(_shared_engine: Engine) -> Iterator[Engine]:
 
 @pytest.fixture
 def settings(database_url: str) -> Settings:
-    return Settings(database_url=database_url, allowed_origins=(LOCAL_ORIGIN,))
+    return Settings(
+        database_url=database_url,
+        allowed_origins=(LOCAL_ORIGIN,),
+        run_budget_eur=Decimal(5),
+    )
 
 
 @pytest.fixture

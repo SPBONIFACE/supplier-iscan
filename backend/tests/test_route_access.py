@@ -5,6 +5,7 @@ the client.
 """
 
 from collections.abc import Callable, Iterator, Sequence
+from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, FastAPI
@@ -83,7 +84,9 @@ def problems(routes: Sequence[BaseRoute]) -> list[str]:
 
 
 def application() -> FastAPI:
-    return create_app(Settings(database_url=None, allowed_origins=(LOCAL_ORIGIN,)))
+    return create_app(
+        Settings(database_url=None, allowed_origins=(LOCAL_ORIGIN,), run_budget_eur=Decimal(5))
+    )
 
 
 def test_every_route_declares_its_access() -> None:

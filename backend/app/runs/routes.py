@@ -21,6 +21,7 @@ from app.crawl.store import excluded_sources
 from app.db import DbSession, utc_now
 from app.errors import not_found
 from app.extraction.settings import load_extraction_settings
+from app.limits.partial import RECOMMENDATIONS
 from app.models import (
     AssessmentItem,
     Fact,
@@ -104,6 +105,8 @@ class RunOut(BaseModel):
     identity_to_verify: bool
     grounding_failures: int
     invalid_items: int
+    uncovered_sections: list[str]
+    partial_explanation: str | None
     proposed_facts: int
     insufficient_sources_explanation: str | None
     created_at: datetime
@@ -266,7 +269,7 @@ class AssessmentOut(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    status: Literal["pending", "drafted", "not_assessed"]
+    status: Literal["pending", "drafted", "partial", "not_assessed"]
     message: str | None
     buyer_context_version: int | None
     current_buyer_context_version: int | None
@@ -342,6 +345,8 @@ def _run_out(
             "identity_to_verify": run.identity_to_verify,
             "grounding_failures": run.grounding_failures,
             "invalid_items": run.invalid_items,
+            "uncovered_sections": run.uncovered_sections or [],
+            "partial_explanation": run.partial_explanation,
             "proposed_facts": proposed_facts,
             "insufficient_sources_explanation": (
                 INSUFFICIENT_SOURCES if run.status == "insufficient_sources" else None
@@ -541,7 +546,9 @@ def list_facts(id: str, scope: OrganisationScoped, db: DbSession, request: Reque
 
 
 @router.get("/{id}/assessment", response_model=AssessmentOut)
-def get_assessment(id: str, scope: OrganisationScoped, db: DbSession) -> AssessmentOut:
+def get_assessment(
+    id: str, scope: OrganisationScoped, db: DbSession, request: Request
+) -> AssessmentOut:
     """The AI-drafted statements of the run, with their cited facts and provenance. A
     natural-person business is not assessed: no statement exists and the message says so."""
     run = scope.get(db, ProfileRun, id)  # the one 404 for an unknown or another organisation's run
@@ -572,8 +579,23 @@ def get_assessment(id: str, scope: OrganisationScoped, db: DbSession) -> Assessm
     guidance: dict[str, Any] | None = next(
         (row.guidance for row in rows if row.provider == "rules" and row.guidance), None
     )
+    definition: ProfileDefinition = request.app.state.profile_definition
+    assessment_ids = {
+        section.id
+        for section in definition.sections
+        if any(item.kind == "assessment" for item in section.fields)
+    } | {RECOMMENDATIONS}
+    # A run that stopped at its cost budget before the assessment was complete must not look
+    # complete, nor "pending" for ever (#30).
+    cut_short = run.status == "partial" and bool(assessment_ids & set(run.uncovered_sections or []))
     return AssessmentOut(
-        status="drafted" if run.assessment_drafted_at is not None else "pending",
+        status=(
+            "partial"
+            if cut_short
+            else "drafted"
+            if run.assessment_drafted_at is not None
+            else "pending"
+        ),
         message=None,
         buyer_context_version=max(versions) if versions else None,
         current_buyer_context_version=current,

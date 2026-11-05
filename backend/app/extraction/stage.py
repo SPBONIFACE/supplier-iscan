@@ -40,6 +40,7 @@ from app.extraction.grounding import (
 )
 from app.extraction.settings import ExtractionSettings, load_extraction_settings
 from app.extraction.source_type import classify_source, host_of, registry_domains
+from app.limits.budget import RunBudgetExhausted
 from app.llm_schemas import FieldExtraction, FieldExtractionAnswer
 from app.models import Fact, ProfileRun, Source, SupplierIdentity
 from app.profile_definition import FieldDefinition, ProfileDefinition
@@ -57,7 +58,6 @@ from app.runs.stages import DependencyUnavailable, Stage, StageContext, StageOut
 logger = logging.getLogger(__name__)
 
 PROMPT_ID: Final = "extraction"
-ATTEMPTS: Final = 2  # one retry when an item does not match the schema
 
 
 @dataclass(frozen=True)
@@ -180,7 +180,7 @@ def ask(
     request = StructuringRequest(instructions=rendered.instructions, data=data)
     valid: list[FieldExtraction] = []
     invalid = 0
-    for _ in range(ATTEMPTS):
+    for _ in range(1 + client.max_retries):  # a retry is a call: it counts against the budget
         context.check_stop()
         try:
             answer = client.structure(request, FieldExtractionAnswer, context.call_context)
@@ -220,26 +220,33 @@ def make_extraction_stage(
             tally = Tally()
             kept: dict[str, Kept] = {}
             pending = list(items)
-            for source in sources:
-                if not pending:
-                    break
-                for chunk in chunks(source.text, limits.max_input_chars):
+            try:
+                for source in sources:
                     if not pending:
                         break
-                    if client is None:
-                        client = _client(context.providers)
-                    wanted = {item.id: item for item in pending}
-                    answered, dropped = _ask_safely(
-                        context, client, gate, redaction, prompts, source, chunk, pending
-                    )
-                    tally.invalid_items += dropped
-                    for item in answered:
-                        if item.status != "found" or item.field in kept:
-                            continue
-                        result = judge(item, source, tally, wanted, limits)
-                        if result is not None:
-                            kept[item.field] = result
-                    pending = [i for i in pending if i.id not in kept]
+                    for chunk in chunks(source.text, limits.max_input_chars):
+                        if not pending:
+                            break
+                        if client is None:
+                            client = _client(context.providers)
+                        wanted = {item.id: item for item in pending}
+                        answered, dropped = _ask_safely(
+                            context, client, gate, redaction, prompts, source, chunk, pending
+                        )
+                        tally.invalid_items += dropped
+                        for item in answered:
+                            if item.status != "found" or item.field in kept:
+                                continue
+                            result = judge(item, source, tally, wanted, limits)
+                            if result is not None:
+                                kept[item.field] = result
+                        pending = [i for i in pending if i.id not in kept]
+            except RunBudgetExhausted:
+                # The budget ended this section part-way (#30): keep the values already found and
+                # store nothing for the fields not examined (a `not_found` there would say "No
+                # public evidence found" of text that was never read). The run ends `partial`.
+                _store(context, section_id, items, kept, tally, complete=False)
+                raise
             _store(context, section_id, items, kept, tally)
         return None
 
@@ -319,8 +326,10 @@ def _store(
     items: list[FieldDefinition],
     kept: dict[str, Kept],
     tally: Tally,
+    complete: bool = True,
 ) -> None:
-    """One transaction for the section: its facts and its counts, or nothing."""
+    """One transaction for the section: its facts and its counts, or nothing. A section that was
+    not completed (the run budget, #30) stores only the facts that were found."""
     with context.database.session() as db:
         run = db.scalar(select(ProfileRun).where(ProfileRun.id == context.run_id).with_for_update())
         if run is None:
@@ -329,6 +338,8 @@ def _store(
         if any(item.id in stored for item in items):
             return  # another execution stored this section first: counted there, not twice
         for item in items:
+            if not complete and item.id not in kept:
+                continue
             fact = Fact(
                 run_id=context.run_id,
                 organisation_id=context.organisation_id,

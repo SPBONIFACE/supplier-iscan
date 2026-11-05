@@ -32,6 +32,8 @@ services:
       # without both values. Override them with ADMIN_EMAIL and ADMIN_PASSWORD.
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@localhost}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-local-only-admin-change-me}
+      # Per-run cost budget in EUR (always applies; the API refuses to start without it). Local default.
+      RUN_BUDGET_EUR: ${RUN_BUDGET_EUR:-5}
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -47,6 +49,10 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-supplier_iscan}:${POSTGRES_PASSWORD:-supplier_iscan_local}@db:5432/${POSTGRES_DB:-supplier_iscan}}
       RUN_LEASE_SECONDS: ${RUN_LEASE_SECONDS:-300}
       WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
+      RUN_BUDGET_EUR: ${RUN_BUDGET_EUR:-5}
+      # Public page named in the crawler's User-Agent; the worker refuses to start without it.
+      # Local placeholder only: set your own page outside local use.
+      CRAWLER_CONTACT_URL: ${CRAWLER_CONTACT_URL:-http://localhost:5173/crawler}
     depends_on:
       db:
         condition: service_healthy

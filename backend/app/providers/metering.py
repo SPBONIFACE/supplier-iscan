@@ -16,7 +16,7 @@ twice.
 import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_HALF_UP, ROUND_UP, Decimal
 from typing import Literal, Protocol
 
 from app.config import EUR_PER_USD, ConfigurationError
@@ -112,6 +112,20 @@ class UsageMeter:
         if currency == "USD" and self._eur_per_usd is not None:
             return self._eur_per_usd
         raise ConfigurationError(f"{EUR_PER_USD} must be set to convert {currency} costs to EUR")
+
+    def max_call_cost(
+        self, config: ProviderConfigSpec, input_chars: int, output_tokens: int, tool_calls: int
+    ) -> Decimal:
+        """The most one attempt can cost, in EUR, for the run budget check (#30): one token per
+        character of input, every allowed output token at the dearer of the output and reasoning
+        prices, and the most tool calls the adapter allows. A model without a price is refused
+        (never estimated as free), and so is a USD price without a rate."""
+        price = self.require_price(config)
+        output_price = max(price.output_per_million, price.reasoning_per_million or Decimal(0))
+        amount = (
+            input_chars * price.input_per_million + output_tokens * output_price
+        ) / _MILLION + tool_calls * price.tool_call
+        return (amount * self._rate(price.currency)).quantize(_EIGHT_PLACES, ROUND_UP)
 
     def record(
         self,

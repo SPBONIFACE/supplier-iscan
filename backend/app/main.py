@@ -15,7 +15,7 @@ from app.auth.access import PUBLIC
 from app.auth.bootstrap import prepare_database
 from app.auth.routes import router as auth_router
 from app.buyer.routes import router as buyer_router
-from app.config import ConfigurationError, Settings, load_settings
+from app.config import ConfigurationError, Settings, load_settings, require_run_budget
 from app.db import Database
 from app.errors import install_error_handlers
 from app.financial.table import CountryTable, load_country_table
@@ -24,6 +24,7 @@ from app.identity.routes import router as identity_router
 from app.invitations.log_redaction import install_access_log_redaction
 from app.invitations.routes import admin_router as admin_invitations_router
 from app.invitations.routes import public_router as invitations_router
+from app.limits.budget import RunBudget
 from app.organisations.member_routes import router as organisation_router
 from app.organisations.routes import router as admin_organisations_router
 from app.profile_definition import ProfileDefinition, load_profile_definition
@@ -44,16 +45,19 @@ logger = logging.getLogger(__name__)
 def load_providers(settings: Settings, database: Database) -> Providers:
     """The approved provider configurations and their price table.
 
-    An invalid file, or an approved configuration whose model has no price, stops startup.
+    An invalid file, or an approved configuration whose model has no price, stops startup; so does
+    a missing, zero or negative `RUN_BUDGET_EUR` (the per-run budget always applies, #30).
     """
     path = Path(settings.provider_config_file) if settings.provider_config_file else None
     price_path = Path(settings.price_table_file) if settings.price_table_file else None
     try:
+        budget_eur = require_run_budget(settings)
         catalogue = load_catalogue(path)
         prices = load_price_table(price_path)
         check_prices(catalogue, prices, settings.eur_per_usd)
+        budget = RunBudget(database, budget_eur, settings.provider_max_retries)
         meter = UsageMeter(prices, settings.eur_per_usd, DbUsageSink(database))
-        return Providers(catalogue, meter=meter)
+        return Providers(catalogue, meter=meter, budget=budget)
     except ConfigurationError as error:
         logger.error("Startup stopped: %s", error)
         raise

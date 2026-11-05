@@ -18,6 +18,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -105,6 +106,11 @@ class ProfileRun(OrganisationOwned, Base):
     # match the schema are counted in `invalid_items`.
     rejected_statements: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     assessment_drafted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set when the run ends `partial` at its cost budget (#30): the ids of the sections not
+    # covered (a section only partly extracted included; `recommendations` stands for the
+    # recommendations) and the plain explanation. Empty and null for every other status.
+    uncovered_sections: Mapped[list[Any]] = mapped_column(JSON, default=list)
+    partial_explanation: Mapped[str | None] = mapped_column(Text)
     # Set by the stages that load the profile definition and the prompt set (#21, #26).
     profile_definition_hash: Mapped[str | None] = mapped_column(String(100))
     prompt_set_hash: Mapped[str | None] = mapped_column(String(100))
