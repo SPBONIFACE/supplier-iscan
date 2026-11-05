@@ -962,7 +962,9 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: The run has not finished, so there is no card to export.
+          description: >-
+            The run has not finished ("The run is still in progress."), or it ended without a
+            profile (stopped, failed, insufficient sources), so there is no card to export.
           content:
             application/json:
               schema:
