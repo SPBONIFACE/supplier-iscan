@@ -4,6 +4,7 @@ import copy
 import json
 import logging
 import uuid
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -47,7 +48,12 @@ def entry(document: dict[str, Any], prompt_id: str) -> dict[str, Any]:
 
 
 def settings_with(path: Path) -> Settings:
-    return Settings(database_url=None, allowed_origins=(LOCAL_ORIGIN,), prompt_set_file=str(path))
+    return Settings(
+        database_url=None,
+        allowed_origins=(LOCAL_ORIGIN,),
+        prompt_set_file=str(path),
+        run_budget_eur=Decimal(5),
+    )
 
 
 def test_the_example_has_every_prompt_id_and_validates_against_the_schema() -> None:

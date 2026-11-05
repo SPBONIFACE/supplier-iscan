@@ -3,6 +3,7 @@
 import json
 import logging
 import tomllib
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -107,7 +108,10 @@ def test_an_invalid_file_stops_startup_naming_the_file(
     with pytest.raises(ConfigurationError):
         create_app(
             Settings(
-                database_url=None, allowed_origins=(LOCAL_ORIGIN,), provider_config_file=str(path)
+                database_url=None,
+                allowed_origins=(LOCAL_ORIGIN,),
+                provider_config_file=str(path),
+                run_budget_eur=Decimal(5),
             )
         )
 

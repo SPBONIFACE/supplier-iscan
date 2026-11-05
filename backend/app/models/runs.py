@@ -109,7 +109,7 @@ class ProfileRun(OrganisationOwned, Base):
     # Set when the run ends `partial` at its cost budget (#30): the ids of the sections not
     # covered (a section only partly extracted included; `recommendations` stands for the
     # recommendations) and the plain explanation. Empty and null for every other status.
-    uncovered_sections: Mapped[list[Any]] = mapped_column(JSON, default=list, server_default="[]")
+    uncovered_sections: Mapped[list[Any]] = mapped_column(JSON, default=list)
     partial_explanation: Mapped[str | None] = mapped_column(Text)
     # Set by the stages that load the profile definition and the prompt set (#21, #26).
     profile_definition_hash: Mapped[str | None] = mapped_column(String(100))

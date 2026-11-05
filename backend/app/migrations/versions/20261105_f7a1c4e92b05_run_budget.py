@@ -22,6 +22,8 @@ def upgrade() -> None:
         "profile_runs",
         sa.Column("uncovered_sections", sa.JSON(), server_default="[]", nullable=False),
     )
+    # The default only fills the existing rows; the application always writes the column.
+    op.alter_column("profile_runs", "uncovered_sections", server_default=None)
     op.add_column("profile_runs", sa.Column("partial_explanation", sa.Text(), nullable=True))
 
 

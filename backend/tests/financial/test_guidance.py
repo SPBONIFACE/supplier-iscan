@@ -4,6 +4,7 @@ Pure functions and files: no database, no provider, no network."""
 import ast
 import copy
 import json
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -133,7 +134,10 @@ def test_an_invalid_table_stops_startup_naming_the_file(tmp_path: Path) -> None:
     document["countries"][0]["last_checked"] = "soon"
     path = write(tmp_path, document)
     settings = Settings(
-        database_url=None, allowed_origins=(LOCAL_ORIGIN,), country_table_file=str(path)
+        database_url=None,
+        allowed_origins=(LOCAL_ORIGIN,),
+        country_table_file=str(path),
+        run_budget_eur=Decimal(5),
     )
 
     with pytest.raises(ConfigurationError, match="countries/0/last_checked") as error:

@@ -144,6 +144,7 @@ def _write(
         provider_config_file=str(config_file),
         price_table_file=str(price_file) if prices else None,
         eur_per_usd=Decimal("0.9"),
+        run_budget_eur=Decimal(5),
     )
 
 

@@ -1,9 +1,11 @@
 """Profile definition (#21): schema, example, loading, startup failures, endpoint, run hash."""
 
 import copy
+import dataclasses
 import json
 import logging
 import uuid
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -191,7 +193,10 @@ def test_startup_stops_on_a_bad_file_and_loads_nothing(
 ) -> None:
     path = write(tmp_path, "{broken")
     settings = Settings(
-        database_url=None, allowed_origins=(LOCAL_ORIGIN,), profile_definition_file=str(path)
+        database_url=None,
+        allowed_origins=(LOCAL_ORIGIN,),
+        profile_definition_file=str(path),
+        run_budget_eur=Decimal(5),
     )
 
     with caplog.at_level(logging.ERROR), pytest.raises(ConfigurationError) as raised:
@@ -213,11 +218,14 @@ def test_the_configured_file_is_used_and_the_example_when_absent(tmp_path: Path)
 
     app = create_app(
         Settings(
-            database_url=None, allowed_origins=(LOCAL_ORIGIN,), profile_definition_file=str(path)
+            database_url=None,
+            allowed_origins=(LOCAL_ORIGIN,),
+            profile_definition_file=str(path),
+            run_budget_eur=Decimal(5),
         )
     )
     assert app.state.profile_definition.sections[0].fields[0].labels["en"] == "Instance label"
-    other = create_app(default)
+    other = create_app(dataclasses.replace(default, run_budget_eur=Decimal(5)))
     assert other.state.profile_definition.content_hash == load_profile_definition().content_hash
 
 
