@@ -157,6 +157,14 @@ For a local collector, point the endpoint at any OTLP/HTTP receiver, for example
 `otlp` receiver on port 4318. The optional Docker Compose telemetry stack (Collector, Prometheus, Loki, Tempo,
 Grafana) belongs to #52 and #53.
 
+Diagnostic for a provider response that fails validation: `make provider-shape CONFIG=<retrieval configuration id>`
+makes one retrieval call on a synthetic public query and writes the shape of the response (field names, types, string
+and list lengths; no text, no URL, no key) to `diagnostics/` (git-ignored), which is safe to share. Only this command
+writes it; the application never does. Do not type the key on the command line (it stays in the shell history):
+export it first through a hidden prompt (in zsh, `read -s "PERPLEXITY_API_KEY?Key: "; export PERPLEXITY_API_KEY`) or
+load it from your own secret store, then run the command. It uses the same approved configuration file, price table
+and name-detection model as a live `make eval`.
+
 ### Commands
 
 | Command | What it does |
@@ -164,6 +172,7 @@ Grafana) belongs to #52 and #53.
 | `make install` | Installs the backend and frontend dependencies from the lockfiles (`uv.lock`, `pnpm-lock.yaml`), without changing them, and fetches the name-detection model (below) |
 | `make fetch-model` | Fetches the name-detection model used by redaction: about 1.2 GB, pinned revision, sha256-checked, into `~/.cache/supplier-iscan` (outside the repository; override with `REDACTION_MODEL_DIR`). Files already there are kept; nothing is downloaded at run time |
 | `make eval CONFIG=<id> PROMPTS=<path>` | Evaluates the LLM features against the reference sets in `eval/` and writes a Markdown and JSON report to `eval/reports/` (not committed). `CONFIG=fake` replays recorded answers: plumbing only, no key, no network. A live run needs the key of the configuration, by name, and stays local. A reviewer rating file (`RATINGS=`, template `eval/reviewer_ratings.template.csv`) gives the "judged useful" metric; without it the report says "not rated" |
+| `make provider-shape CONFIG=<id>` | One live retrieval call on a synthetic public query; writes the response shape (names and types only) to `diagnostics/` (git-ignored). See Configuration |
 | `make test-model` | The tests that use the real model (slow; `make test` leaves them out and uses a small fake detector) |
 | `make lint` | Linters, format checks and type checks (Ruff and mypy; Biome and TypeScript) |
 | `make test` | Backend and frontend tests, including the API contract test against `openapi.yaml` |

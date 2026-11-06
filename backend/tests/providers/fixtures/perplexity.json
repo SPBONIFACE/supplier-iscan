@@ -130,5 +130,106 @@
       "output_tokens": 5,
       "total_tokens": 15
     }
+  },
+  "retrieval_documented": {
+    "$comment": "Origin: the example response of https://docs.perplexity.ai/docs/agent-api/output-control.md (read 6 Nov 2026), shortened to three results; the company, texts and URLs are synthetic. What it reproduces from the documented example: results carry id, snippet, title, url, date (null when unknown), last_updated and source; the search_results item has no id; the message has id, content and role; the usage has a cost object. Not recorded from the live API (#122 asks for the owner's shape file to confirm).",
+    "id": "resp_081e7a0a-0000-0000-0000-000000000001",
+    "created_at": 1779391825,
+    "model": "perplexity/sonar",
+    "object": "response",
+    "status": "completed",
+    "output": [
+      {
+        "results": [
+          {
+            "id": 1,
+            "snippet": "Acme SA is a French manufacturer of valves.\n...\nFounded in 1950, Acme...",
+            "title": "About Acme SA",
+            "url": "https://acme.example/about",
+            "date": null,
+            "last_updated": "2026-05-16",
+            "source": "web"
+          },
+          {
+            "id": 2,
+            "snippet": "Acme SA annual report 2025: revenue, employees and certifications.",
+            "title": "Acme SA annual report",
+            "url": "https://acme.example/report",
+            "date": "2026-01-01",
+            "last_updated": null,
+            "source": "web"
+          },
+          {
+            "id": 3,
+            "snippet": null,
+            "title": "Acme SA on a register",
+            "url": "https://register.example/acme-sa",
+            "date": null,
+            "last_updated": null,
+            "source": "web"
+          }
+        ],
+        "type": "search_results",
+        "queries": [
+          "Acme SA annual report"
+        ]
+      },
+      {
+        "id": "msg_41254287-0000-0000-0000-000000000001",
+        "content": [
+          {
+            "text": "Acme SA publishes an annual report.[web:1][web:2]",
+            "type": "output_text"
+          }
+        ],
+        "role": "assistant",
+        "status": "completed",
+        "type": "message"
+      }
+    ],
+    "usage": {
+      "input_tokens": 120,
+      "output_tokens": 80,
+      "total_tokens": 200,
+      "cost": {
+        "currency": "USD",
+        "input_cost": 0.0001,
+        "output_cost": 0.0002,
+        "total_cost": 0.0053,
+        "tool_calls_cost": 0.005
+      },
+      "tool_calls_details": {
+        "web_search": {
+          "invocation": 1
+        }
+      }
+    }
+  },
+  "structuring_with_nulls": {
+    "$comment": "Origin: hand-built from the Structured Outputs page of docs.perplexity.ai (read 6 Nov 2026): the JSON is in the message's output_text, and a declared property that is not in `required` may be JSON null. Synthetic company; not recorded from the live API.",
+    "id": "resp_4",
+    "created_at": 1,
+    "model": "perplexity/sonar",
+    "object": "response",
+    "status": "completed",
+    "output": [
+      {
+        "id": "msg_2",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"legal_name\": \"Acme SA\", \"country\": \"FR\", \"website\": null, \"branches\": [{\"city\": \"Lyon\", \"phone\": null}]}"
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 10,
+      "output_tokens": 5,
+      "total_tokens": 15
+    }
   }
 }
