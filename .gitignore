@@ -16,6 +16,9 @@ spm.model
 eval/reports/
 eval/ratings.csv
 
+# Provider response shapes (make provider-shape; field names and types only)
+diagnostics/
+
 # Python
 .venv/
 __pycache__/

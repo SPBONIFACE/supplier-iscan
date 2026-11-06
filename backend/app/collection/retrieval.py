@@ -27,6 +27,7 @@ from app.providers import (
     RetrievedUrl,
     StructuredOutputInvalid,
 )
+from app.providers.failures import validation_detail
 from app.providers.metering import CallContext
 from app.redaction import RedactionGate
 
@@ -90,7 +91,8 @@ def make_retriever(
         except ProviderError:
             logger.warning("Retrieval provider not usable")
             raise RetrievalFailed("provider_unavailable") from None
-        except ValidationError:
+        except ValidationError as error:
+            logger.warning("Retrieval answer invalid: fields=[%s]", validation_detail(error))
             raise RetrievalFailed("invalid_response") from None
         return rank(result.urls, lacking)
 

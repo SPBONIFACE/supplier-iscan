@@ -14,7 +14,7 @@ provider. Prompts come from #55 and are passed in as text; the redaction gate (#
 """
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from app.limits.budget import BudgetGate
 from app.providers.catalogue import ProviderConfigSpec, Role
 from app.providers.errors import ProviderCallError, ProviderError, StructuredOutputInvalid
-from app.providers.failures import classify_failure
+from app.providers.failures import classify_failure, validation_detail
 from app.providers.metering import NO_USAGE, CallContext, CallUsage, Outcome, UsageMeter
 from app.redaction.text import RedactedText
 
@@ -99,6 +99,8 @@ class StructuringOutput:
 class RetrievalOutput:
     urls: list[RetrievedUrl]
     usage: CallUsage = NO_USAGE
+    # The provider's response object, for `make provider-shape` only; never logged or stored.
+    raw: object = field(default=None, repr=False, compare=False)
 
 
 class StructuringAdapter(Protocol):
@@ -119,14 +121,17 @@ def _call_failure(config: ProviderConfigSpec, error: Exception) -> ProviderError
     if isinstance(error, ProviderError):
         return error
     kind, status_code = classify_failure(error)
-    # The type and status only: an SDK message can quote the request or the response body.
+    # The type and status only: an SDK message can quote the request or the response body. For a
+    # validation failure, also the field path, the failed rule and the received type (#122).
+    detail = validation_detail(error)
     logger.warning(
-        "Provider call failed: provider=%s configuration=%s kind=%s status=%s error=%s",
+        "Provider call failed: provider=%s configuration=%s kind=%s status=%s error=%s%s",
         config.provider,
         config.id,
         kind,
         status_code,
         type(error).__name__,
+        f" fields=[{detail}]" if detail else "",
     )
     return ProviderCallError(
         provider=config.provider, config_id=config.id, kind=kind, status_code=status_code
@@ -256,6 +261,11 @@ class RetrievalClient(_BoundClient):
         self._adapter = adapter
 
     def retrieve(self, request: RetrievalRequest, context: CallContext) -> RetrievalResult:
+        return self.retrieve_detailed(request, context)[0]
+
+    def retrieve_detailed(
+        self, request: RetrievalRequest, context: CallContext
+    ) -> tuple[RetrievalResult, RetrievalOutput]:
         _require_redacted(request.query)
         failure: ProviderError | None = None
         output: RetrievalOutput | None = None
@@ -278,4 +288,5 @@ class RetrievalClient(_BoundClient):
         unique: dict[str, RetrievedUrl] = {}
         for item in output.urls:
             unique.setdefault(item.url, item)
-        return RetrievalResult(urls=list(unique.values())[: request.max_results])
+        result = RetrievalResult(urls=list(unique.values())[: request.max_results])
+        return result, output

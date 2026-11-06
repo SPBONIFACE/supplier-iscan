@@ -68,6 +68,20 @@ def _kind_for_status(status: int) -> FailureKind:
     return "rejected"
 
 
+def validation_detail(error: Exception) -> str:
+    """Where a pydantic validation failed, for the log: the field path, the rule that failed and
+    the type received, for up to five errors. Never the message or the input, which can quote the
+    response (#122). Empty for any other exception."""
+    if not isinstance(error, ValidationError):
+        return ""
+    parts = []
+    for item in error.errors(include_url=False, include_context=False, include_input=True)[:5]:
+        path = ".".join(str(step) for step in item["loc"]) or "<root>"
+        received = type(item.get("input")).__name__
+        parts.append(f"{path} rule={item['type']} received={received}")
+    return "; ".join(parts)
+
+
 def classify_failure(error: Exception) -> tuple[FailureKind, int | None]:
     names = {cls.__name__ for cls in type(error).__mro__}
     if names & _TIMEOUT_CLASS_NAMES or isinstance(error, TimeoutError):
