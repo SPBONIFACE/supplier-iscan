@@ -1,6 +1,6 @@
-"""`make provider-shape CONFIG=<id>`: one retrieval call on a synthetic public query, with the shape
-diagnostic on (#122). It writes the SHAPE of the response (names and types, no text, no URL) to
-`diagnostics/` (git-ignored), which can be shared.
+"""`make provider-shape CONFIG=<id>`: one retrieval call on a synthetic public query (#122).
+It writes the SHAPE of the response (names and types, no text, no URL) to `diagnostics/`
+(git-ignored), which can be shared. The key is never taken on the command line.
 
 The configuration is looked up in the approved list like a live `make eval`; its key is read from
 the environment by name; the query goes through the redaction gate and the metered retrieval
@@ -18,7 +18,7 @@ from app.providers import ProviderError, Providers, load_catalogue
 from app.providers.interface import RetrievalRequest
 from app.providers.metering import CallContext, ListSink, UsageMeter
 from app.providers.pricing import check_prices, load_price_table
-from app.providers.shape import FLAG
+from app.providers.shape import write_shape
 from app.redaction import RedactionGate
 from app.redaction.text import RedactionUnavailable
 from eval.areas import ORGANISATION
@@ -33,7 +33,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config", required=True, help="approved retrieval configuration id")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s")
-    os.environ[FLAG] = "1"
     try:
         settings = load_settings()
         catalogue = load_catalogue(
@@ -50,12 +49,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"provider-shape: {error}", file=sys.stderr)
         return 2
     try:
-        result = client.retrieve(
+        result, output = client.retrieve_detailed(
             RetrievalRequest(INSTRUCTIONS, query), CallContext(organisation_id=ORGANISATION)
         )
     except ProviderError as error:
         print(f"provider-shape: the call failed ({error})", file=sys.stderr)
         return 1
+    directory = Path(os.environ.get("PROVIDER_SHAPE_DIR", "").strip() or "diagnostics")
+    written = write_shape(client.provider, "retrieval", output.raw, directory)
+    print(f"provider-shape: shape written to {written}")
     print(f"provider-shape: the adapter read {len(result.urls)} address(es) from the response")
     return 0
 

@@ -116,12 +116,13 @@ Extraction fills the `fact` fields of the profile from the stored sources and ke
 found in the cited source. It sends at most `EXTRACT_MAX_INPUT_CHARS` characters of source text per call (default
 20000), and gives a certification fact the link of `IAF_CERTSEARCH_URL` (default `https://www.iafcertsearch.org/`).
 
-Diagnostic for a provider response that fails validation (off by default): with `PROVIDER_SHAPE_DIAGNOSTIC=1` the
-adapter that supports it (Perplexity) writes the shape of each live response (field names, types, string and list
-lengths; no text, no URL, no key) to `PROVIDER_SHAPE_DIR` (default `diagnostics/`, git-ignored). To run it once:
-`PERPLEXITY_API_KEY=… make provider-shape CONFIG=perplexity-sonar-retrieval` makes one retrieval call on a synthetic
-public query and writes `diagnostics/perplexity-retrieval-<time>.json`, which is safe to share. It uses the same
-approved configuration file, price table and name-detection model as a live `make eval`.
+Diagnostic for a provider response that fails validation: `make provider-shape CONFIG=<retrieval configuration id>`
+makes one retrieval call on a synthetic public query and writes the shape of the response (field names, types, string
+and list lengths; no text, no URL, no key) to `diagnostics/` (git-ignored), which is safe to share. Only this command
+writes it; the application never does. Do not type the key on the command line (it stays in the shell history):
+export it first through a hidden prompt (in zsh, `read -s "PERPLEXITY_API_KEY?Key: "; export PERPLEXITY_API_KEY`) or
+load it from your own secret store, then run the command. It uses the same approved configuration file, price table
+and name-detection model as a live `make eval`.
 
 ### Commands
 

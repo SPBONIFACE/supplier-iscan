@@ -19,6 +19,7 @@ from app.providers.interface import (
     StructuringClient,
     StructuringRequest,
 )
+from app.providers.shape import write_shape
 from tests.providers.support import CONTEXT, Recorder, fixture, make_meter
 from tests.providers.test_adapters import RETRIEVAL_CASES, STRUCTURING_CASES, Case
 from tests.redacted import redacted
@@ -144,26 +145,29 @@ def test_validation_failure_log_names_the_field_and_the_types_but_no_content(
     assert "SECRET-SNIPPET" not in text and "https://acme.example" not in text
 
 
-def test_shape_diagnostic_is_off_by_default(
+def test_the_adapter_writes_nothing_whatever_the_environment_says(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.delenv("PROVIDER_SHAPE_DIAGNOSTIC", raising=False)
-    monkeypatch.setenv("PROVIDER_SHAPE_DIR", str(tmp_path / "out"))
-
-    _search(_documented())
-
-    assert not (tmp_path / "out").exists()
-
-
-def test_shape_diagnostic_writes_names_and_types_only(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+    # Only `make provider-shape` writes a shape; no setting makes the application do it.
     monkeypatch.setenv("PROVIDER_SHAPE_DIAGNOSTIC", "1")
     monkeypatch.setenv("PROVIDER_SHAPE_DIR", str(tmp_path / "out"))
+    monkeypatch.chdir(tmp_path)
 
     _search(_documented())
 
-    (written,) = (tmp_path / "out").iterdir()
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_the_retrieval_output_carries_the_response_for_the_shape_command() -> None:
+    assert _search(_documented()).raw is not None
+
+
+def test_write_shape_writes_names_and_types_only(tmp_path: Path) -> None:
+    output = _search(_documented())
+
+    written = write_shape("perplexity", "retrieval", output.raw, tmp_path / "out")
+
+    assert written is not None
     text = written.read_text(encoding="utf-8")
     shape = json.loads(text)["shape"]
     result = shape["output"]["items"][0]["results"]["items"][0]

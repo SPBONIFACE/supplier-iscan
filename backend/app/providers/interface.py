@@ -14,7 +14,7 @@ provider. Prompts come from #55 and are passed in as text; the redaction gate (#
 """
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -99,6 +99,8 @@ class StructuringOutput:
 class RetrievalOutput:
     urls: list[RetrievedUrl]
     usage: CallUsage = NO_USAGE
+    # The provider's response object, for `make provider-shape` only; never logged or stored.
+    raw: object = field(default=None, repr=False, compare=False)
 
 
 class StructuringAdapter(Protocol):
@@ -259,6 +261,11 @@ class RetrievalClient(_BoundClient):
         self._adapter = adapter
 
     def retrieve(self, request: RetrievalRequest, context: CallContext) -> RetrievalResult:
+        return self.retrieve_detailed(request, context)[0]
+
+    def retrieve_detailed(
+        self, request: RetrievalRequest, context: CallContext
+    ) -> tuple[RetrievalResult, RetrievalOutput]:
         _require_redacted(request.query)
         failure: ProviderError | None = None
         output: RetrievalOutput | None = None
@@ -281,4 +288,5 @@ class RetrievalClient(_BoundClient):
         unique: dict[str, RetrievedUrl] = {}
         for item in output.urls:
             unique.setdefault(item.url, item)
-        return RetrievalResult(urls=list(unique.values())[: request.max_results])
+        result = RetrievalResult(urls=list(unique.values())[: request.max_results])
+        return result, output

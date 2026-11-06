@@ -16,8 +16,8 @@ https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/overview. The model
   so one odd entry never fails the response (#122).
 - Metering: the amount Perplexity bills (`usage.cost.total_cost`, tokens and tool calls
   included) is the cost of the call; tool calls are counted from `usage.tool_calls_details`.
-- Diagnostic: with `PROVIDER_SHAPE_DIAGNOSTIC=1` the shape of each response (names and types, no
-  text) is written to a local file (`app.providers.shape`).
+- Diagnostic: the retrieval output carries the response object (`raw`), so that `make
+  provider-shape` can write its shape. The adapter itself writes nothing.
 
 The client gets the key and the endpoint explicitly and `max_retries=0` (#12 meters each attempt).
 """
@@ -40,7 +40,6 @@ from app.providers.interface import (
     StructuringRequest,
 )
 from app.providers.metering import NO_USAGE, CallUsage
-from app.providers.shape import write_shape
 
 # The bounds of `RetrievedUrl`.
 URL_MAX_LENGTH = 4096
@@ -164,7 +163,6 @@ class PerplexityStructuring:
                 "json_schema": {"name": schema_name, "schema": json_schema},
             },
         )
-        write_shape("perplexity", "structuring", response)
         text = response.output_text
         return StructuringOutput(
             _structured_text(text if isinstance(text, str) else "", json_schema), _usage(response)
@@ -187,7 +185,6 @@ class PerplexityRetrieval:
             stream=False,
             tools=[{"type": "web_search"}],
         )
-        write_shape("perplexity", "retrieval", response)
         usage = _usage(response)
         output = _output(response)
         found = [
@@ -202,7 +199,7 @@ class PerplexityRetrieval:
             )
         ]
         if found:
-            return RetrievalOutput(found, usage)
+            return RetrievalOutput(found, usage, response)
         cited = [
             entry
             for item in output
@@ -211,7 +208,7 @@ class PerplexityRetrieval:
             for annotation in _field(content, "annotations") or []
             if (entry := _retrieved(_field(annotation, "url"), _field(annotation, "title")))
         ]
-        return RetrievalOutput(cited, usage)
+        return RetrievalOutput(cited, usage, response)
 
 
 def build_structuring(config: ProviderConfigSpec, api_key: str) -> PerplexityStructuring:

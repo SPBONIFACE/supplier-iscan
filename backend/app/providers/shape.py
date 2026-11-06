@@ -1,6 +1,7 @@
 """Opt-in diagnostic: the SHAPE of one live provider response, written to a local file (#122).
 
-Off unless `PROVIDER_SHAPE_DIAGNOSTIC=1`. The file holds field names, JSON types, string lengths
+Called only by `make provider-shape` (`eval/provider_shape.py`); the application never writes it.
+The file holds field names, JSON types, string lengths
 and list lengths, and nothing else: no text, no URL, no value. It goes to `PROVIDER_SHAPE_DIR`
 (default `diagnostics/`, git-ignored). It is meant to be run once on a synthetic public query and
 shared, so a response that fails validation can be compared with what the adapter expects.
@@ -8,22 +9,14 @@ shared, so a response that fails validation can be compared with what the adapte
 
 import json
 import logging
-import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
-FLAG = "PROVIDER_SHAPE_DIAGNOSTIC"
-DIRECTORY_SETTING = "PROVIDER_SHAPE_DIR"
-DEFAULT_DIRECTORY = "diagnostics"
 _MAX_ITEMS = 12
 _MAX_DEPTH = 12
-
-
-def enabled() -> bool:
-    return os.environ.get(FLAG, "").strip() == "1"
 
 
 def describe(value: object, depth: int = 0) -> object:
@@ -61,11 +54,8 @@ def _as_dict(response: object) -> object:
         return response
 
 
-def write_shape(provider: str, label: str, response: object) -> Path | None:
-    """Write the shape of `response` when the flag is set; returns the file, or None."""
-    if not enabled():
-        return None
-    directory = Path(os.environ.get(DIRECTORY_SETTING, "").strip() or DEFAULT_DIRECTORY)
+def write_shape(provider: str, label: str, response: object, directory: Path) -> Path | None:
+    """Write the shape of `response` into `directory`; returns the file, or None."""
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     path = directory / f"{provider}-{label}-{stamp}.json"
     document: dict[str, Any] = {
