@@ -68,10 +68,14 @@ def prepare_database(engine: Engine, settings: Settings) -> None:
         connection.execute(text("SELECT pg_advisory_lock(:key)"), {"key": _STARTUP_LOCK_KEY})
         connection.commit()
         try:
+            # A migration may run long (an index build, a backfill): no statement timeout for it,
+            # whatever DATABASE_STATEMENT_TIMEOUT_SECONDS says for requests.
+            connection.execute(text("SET statement_timeout = 0"))
             upgrade_to_head(connection)
             connection.commit()
             with Session(engine, expire_on_commit=False) as db:
                 ensure_local_administrator(db, settings)
         finally:
+            connection.execute(text("RESET statement_timeout"))
             connection.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": _STARTUP_LOCK_KEY})
             connection.commit()

@@ -133,7 +133,9 @@ Settings (names only; values in the environment):
 - `TELEMETRY_EXPORT_TIMEOUT_SECONDS`: how long one export may take before it is dropped (default 5). Export runs
   in background threads, so an unreachable collector never fails or slows a request or a run.
 - `DATABASE_STATEMENT_TIMEOUT_SECONDS`: the longest a database statement may run (default 30); a database that
-  accepts connections but does not answer gives a 503 (or a paused run), not a hanging request.
+  accepts connections but does not answer gives a 503 (or a paused run), not a hanging request. Migrations run with
+  no statement timeout. The access log (one line per request) has the method, the route template, the status and the
+  duration, never the path or the query string; uvicorn's own access log is switched off.
 
 Metrics (names as exported; Prometheus shows dots as underscores): `iscan.runs.started`, `iscan.runs.finished`
 (attribute `iscan.status`: `completed`, `partial`, `insufficient_sources`, `stopped`, `failed`; a paused run is not

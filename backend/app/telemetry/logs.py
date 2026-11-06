@@ -111,6 +111,9 @@ def configure_logging(service: str, stream: TextIO | None = None) -> None:
         logger = logging.getLogger(name)
         logger.handlers.clear()
         logger.propagate = True
+    # uvicorn's access log writes the full request line, query string included: replaced by the
+    # access line of TelemetryMiddleware (method, route template, status, duration).
+    logging.getLogger("uvicorn.access").disabled = True
     # The SDK loggers a DEBUG level was set on before this ran.
     for name in QUIET_LOGGERS:
         if logging.getLogger(name).level == logging.DEBUG:

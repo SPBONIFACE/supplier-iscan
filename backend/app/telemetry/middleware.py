@@ -8,6 +8,7 @@ gives a log entry and a span event in the request's trace.
 """
 
 import logging
+import time
 
 from opentelemetry.trace import Span, SpanKind
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
@@ -29,6 +30,7 @@ class TelemetryMiddleware:
             return
         method = scope["method"]
         status = 0
+        started = time.monotonic()
 
         async def send_with_status(message: Message) -> None:
             nonlocal status
@@ -46,11 +48,24 @@ class TelemetryMiddleware:
                 status = status or 500
                 self._finish(telemetry, span, scope, method, status)
                 logger.error("%s %s failed: %s", method, self._route(scope), type(error).__name__)
+                self._access_log(scope, method, status, started)
                 raise
             self._finish(telemetry, span, scope, method, status)
+            self._access_log(scope, method, status, started)
             if status >= 500:
                 core.mark_failed(span, "HTTPError", {"http.response.status_code": status})
                 logger.warning("%s %s answered %s", method, self._route(scope), status)
+
+    def _access_log(self, scope: Scope, method: str, status: int, started: float) -> None:
+        """The access log: method, route template, status, duration. Never the path or the query
+        string, which can hold an e-mail address or a token; `uvicorn.access` is switched off."""
+        logger.info(
+            "%s %s %s %dms",
+            method,
+            self._route(scope),
+            status,
+            (time.monotonic() - started) * 1000,
+        )
 
     @staticmethod
     def _route(scope: Scope) -> str:
