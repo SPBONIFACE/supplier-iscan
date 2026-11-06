@@ -30,9 +30,14 @@ def test_only_the_token_segment_is_redacted(path: str, expected: str | None) -> 
     assert redact_invitation_token(path) == (expected or path)
 
 
-def test_access_log_lines_do_not_contain_the_token(caplog: pytest.LogCaptureFixture) -> None:
+def test_access_log_lines_do_not_contain_the_token(
+    caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
     make_client(database_check=lambda: True)  # creating the application installs the filter
     logger = logging.getLogger(ACCESS_LOGGER)
+    # The telemetry set-up switches uvicorn's access log off (#51); the filter stays as defence
+    # in depth, so the test turns the logger back on.
+    monkeypatch.setattr(logger, "disabled", False)
 
     with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
         # The call uvicorn makes for each request.

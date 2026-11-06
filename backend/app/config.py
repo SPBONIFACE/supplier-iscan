@@ -74,6 +74,16 @@ DEMO_ORGANISATION_ID = "DEMO_ORGANISATION_ID"
 # stops startup). The most retries of one provider call after a schema failure.
 RUN_BUDGET_EUR = "RUN_BUDGET_EUR"
 PROVIDER_MAX_RETRIES = "PROVIDER_MAX_RETRIES"
+# Observability (#51). OTLP over HTTP: the base address of the collector (the standard OpenTelemetry
+# name). Empty: export is off and the application runs as usual. Credentials for the collector, if
+# any, go in the standard OTEL_EXPORTER_OTLP_HEADERS, read by the SDK and never by this code.
+OTEL_EXPORTER_OTLP_ENDPOINT = "OTEL_EXPORTER_OTLP_ENDPOINT"
+# How long one export may take before it is abandoned (seconds). Exports run in a background
+# thread, so a slow collector never delays a request or a run.
+TELEMETRY_EXPORT_TIMEOUT_SECONDS = "TELEMETRY_EXPORT_TIMEOUT_SECONDS"
+# The longest a database statement may run (seconds): a database that accepts connections but does
+# not answer then yields a 503, not a hanging request (#8 QA note).
+DATABASE_STATEMENT_TIMEOUT_SECONDS = "DATABASE_STATEMENT_TIMEOUT_SECONDS"
 
 # Local defaults when the setting is empty, so that a self-hosted instance starts without them.
 # They are configuration, not product terms: every operator sets their own.
@@ -85,6 +95,8 @@ DEFAULT_CRITERIA_MAX_CHARS = 2000
 DEFAULT_BUYER_NOTES_MAX_CHARS = 1000
 DEFAULT_BUYER_TEXT_MAX_CHARS = 5000
 DEFAULT_PROVIDER_MAX_RETRIES = 1
+DEFAULT_TELEMETRY_EXPORT_TIMEOUT_SECONDS = 5
+DEFAULT_DATABASE_STATEMENT_TIMEOUT_SECONDS = 30
 MAX_PROVIDER_RETRIES = 5
 DEFAULT_REVIEW_TEXT_MAX_CHARS = 2000
 DEFAULT_COMPARISON_MAX_PROFILES = 10
@@ -135,6 +147,10 @@ class Settings:
     # None when unset: `load_providers` then stops startup (see `require_run_budget`).
     run_budget_eur: Decimal | None = None
     provider_max_retries: int = DEFAULT_PROVIDER_MAX_RETRIES
+    # None: telemetry export is off (self-hosting default).
+    telemetry_endpoint: str | None = None
+    telemetry_export_timeout_seconds: int = DEFAULT_TELEMETRY_EXPORT_TIMEOUT_SECONDS
+    database_statement_timeout_seconds: int = DEFAULT_DATABASE_STATEMENT_TIMEOUT_SECONDS
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -196,6 +212,17 @@ def _parse_contact_url(raw: str) -> str | None:
         character.isspace() or character in "()<>" or ord(character) < 32 for character in value
     ):
         raise ConfigurationError(f"{CRAWLER_CONTACT_URL} must be an http(s) address")
+    return value
+
+
+def _parse_telemetry_endpoint(raw: str) -> str | None:
+    value = raw.strip().rstrip("/")
+    if not value:
+        return None
+    parts = urlsplit(value)
+    if parts.scheme not in ("http", "https") or not parts.hostname or parts.query or parts.fragment:
+        # The value is not echoed: it can hold credentials.
+        raise ConfigurationError(f"{OTEL_EXPORTER_OTLP_ENDPOINT} must be an http(s) address")
     return value
 
 
@@ -315,4 +342,11 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         demo_organisation_id=_parse_demo_organisation(env.get(DEMO_ORGANISATION_ID, "")),
         run_budget_eur=_parse_run_budget(env.get(RUN_BUDGET_EUR, "")),
         provider_max_retries=_parse_max_retries(env.get(PROVIDER_MAX_RETRIES, "")),
+        telemetry_endpoint=_parse_telemetry_endpoint(env.get(OTEL_EXPORTER_OTLP_ENDPOINT, "")),
+        telemetry_export_timeout_seconds=_parse_positive_int(
+            env, TELEMETRY_EXPORT_TIMEOUT_SECONDS, DEFAULT_TELEMETRY_EXPORT_TIMEOUT_SECONDS
+        ),
+        database_statement_timeout_seconds=_parse_positive_int(
+            env, DATABASE_STATEMENT_TIMEOUT_SECONDS, DEFAULT_DATABASE_STATEMENT_TIMEOUT_SECONDS
+        ),
     )

@@ -81,14 +81,75 @@ def test_a_rejected_call_logs_the_provider_error_type_and_message_only(
         assert secret not in text
 
 
+class Rejected(Exception):
+    status_code = 400
+
+    def __init__(self, message: str, kind: str = "invalid_request_error") -> None:
+        super().__init__("not logged")
+        self.body = {"type": "error", "error": {"type": kind, "message": message}}
+
+
+PROMPT = "Confidential tender for Acme Holdings, budget 4.2M"
+HOSTILE_MESSAGES = [
+    f"messages.0.content: '{PROMPT}' is invalid",  # quoted
+    f'messages.0.content: "{PROMPT}" is invalid',
+    f"messages.0.content: `{PROMPT}` is invalid",
+    f"messages.0.content: {PROMPT} is invalid",  # unquoted
+    f"messages.0.content.{PROMPT.replace(' ', '_')}.text: invalid",  # in a parameter path
+    f"system: {PROMPT[:30]}...",  # a fragment of 16 characters or more
+    "contact bob.smith@example.com about this",  # email
+    "see https://example.com/path?token=abc for details",  # URL
+    "call +33 1 23 45 67 89 now",  # phone
+    "invalid x-api-key sk-ant-api03-AbCdEf123456",  # key, prefixed
+    "invalid key AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q",  # key, prefixed
+    "invalid key 0123456789abcdef0123456789abcdef",  # hex
+    "invalid key Zm9vYmFyYmF6cXV4Zm9vYmFyYmF6cXV4",  # base64-like
+    "unterminated quote 'secret text goes on",
+]
+SECRETS = [
+    PROMPT,
+    "Confidential tender",
+    "bob.smith",
+    "example.com",
+    "sk-ant",
+    "AIzaSy",
+    "0123456789abcdef",
+    "Zm9vYmFy",
+    "secret text",
+    "67 89",
+]
+
+
+@pytest.mark.parametrize("message", HOSTILE_MESSAGES)
+def test_a_provider_message_that_may_echo_the_request_is_never_logged(message: str) -> None:
+    logged = provider_error_detail(Rejected(message), (PROMPT, "Extract the supplier."))
+
+    assert "provider_error_type=invalid_request_error" in logged
+    for secret in SECRETS:
+        assert secret.casefold() not in logged.casefold(), (secret, logged)
+
+
+def test_a_message_sharing_a_long_run_with_the_request_is_withheld() -> None:
+    logged = provider_error_detail(Rejected(f"bad value near {PROMPT[:20]} here"), (PROMPT,))
+
+    assert logged == "provider_error_type=invalid_request_error provider_error_message=<withheld>"
+
+
+@pytest.mark.parametrize(
+    "message", ["max_tokens: field required", "output_config.format.schema: not supported"]
+)
+def test_a_harmless_message_is_still_logged(message: str) -> None:
+    logged = provider_error_detail(Rejected(message), (PROMPT, "Extract the supplier."))
+
+    assert f"provider_error_message={message!r}" in logged
+
+
 def test_the_detail_is_empty_without_an_http_status_and_is_bounded() -> None:
     assert provider_error_detail(ValueError("anything")) == ""
-
-    class Rejected(Exception):
-        status_code = 400
-        body = {"error": {"type": "t", "message": "word " * 500}}
-
-    assert len(provider_error_detail(Rejected())) < 500
+    assert len(provider_error_detail(Rejected("word " * 500))) < 300
+    assert provider_error_detail(Rejected("x", kind="has spaces and 'quotes'")) == (
+        "provider_error_message='x'"
+    )
 
 
 def test_the_anthropic_request_is_in_the_documented_shape() -> None:

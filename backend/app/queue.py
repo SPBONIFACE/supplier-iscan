@@ -17,6 +17,7 @@ from sqlalchemy import and_, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.models import Job
+from app.telemetry import TRACEPARENT, current_traceparent
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,11 @@ class ClaimedJob:
 
 
 def enqueue(db: Session, kind: str, payload: dict[str, Any]) -> uuid.UUID:
-    """Add a job in the caller's transaction (the caller commits, with its own changes)."""
+    """Add a job in the caller's transaction (the caller commits, with its own changes). The
+    trace of the caller travels in the payload (`traceparent`), so that the worker continues it."""
+    traceparent = current_traceparent()
+    if traceparent is not None:
+        payload = {**payload, TRACEPARENT: traceparent}
     job = Job(kind=kind, payload=payload)
     db.add(job)
     db.flush()

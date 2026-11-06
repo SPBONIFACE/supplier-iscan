@@ -263,7 +263,9 @@ def test_fit_is_queued_then_drafted_against_the_criteria_only(
     assert again.status_code == 202
     assert_matches_contract(queued, "/runs/{id}/fit", "post")
     jobs = [job for job in jobs_of(engine) if job.kind == ASSESSMENT_JOB]
-    assert len(jobs) == 1 and jobs[0].payload == {"run_id": str(drafted.run_id), "part": "fit"}
+    assert len(jobs) == 1
+    payload = {key: value for key, value in jobs[0].payload.items() if key != "traceparent"}
+    assert payload == {"run_id": str(drafted.run_id), "part": "fit"}  # + the request's trace (#51)
     assert drafted.assessment()["pending"] == ["fit"]
 
     quality, sites = drafted.facts["quality_management"], drafted.facts["production_sites"]
