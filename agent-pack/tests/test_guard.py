@@ -315,3 +315,73 @@ def test_truly_unparseable_stays_blocked() -> None:
     result = run(bash("echo \"unclosed $(cat <<'EOF'\nfine\nEOF\n"))
     assert result.returncode == 2
     assert "could not be parsed" in result.stderr
+
+
+BLOCKED_SECRET = [
+    bash(c)
+    for c in [
+        "security find-generic-password -s anthropic -w",
+        "security -q find-generic-password -a me -w",
+        "/usr/bin/security find-internet-password -s x -w",
+        "security find-certificate -p -c Name",
+        "security find-certificate -ap",
+        "security dump-keychain -d login.keychain",
+        "security export -k login.keychain -t privKeys",
+        "security unlock-keychain -p x login.keychain",
+        "secret-tool lookup service iscan",
+        "pass show provider/key",
+        "gopass show provider/key",
+        "op read op://vault/item/field",
+        "op item get iscan --fields key",
+        "bw get password iscan",
+        "iscan-keys",
+        "iscan-keys && make run",
+        "security find-generic-password -w | pbcopy",
+        "true && security find-generic-password -w",
+        "echo $(security find-generic-password -w)",
+        'echo "$(security find-generic-password -w)"',
+        "X=`security find-generic-password -w`",
+        "(security dump-keychain)",
+        "sudo security find-generic-password -w",
+        "env FOO=1 security find-generic-password -w",
+        "xargs security find-generic-password",
+        "uv run security find-generic-password -w",
+        "pnpm exec security find-generic-password -w",
+        "zsh -c 'security find-generic-password -w'",
+        "bash -c 'op read op://v/i/f'",
+        "bash -lc 'iscan-keys; make run'",
+        "zsh -ic iscan-keys",
+        "sh -c \"bash -c 'pass show a'\"",
+        "eval 'bw get password x'",
+        "nohup iscan-keys",
+    ]
+]
+ALLOWED_SECRET = [
+    bash(c)
+    for c in [
+        "security list-keychains",
+        "security find-certificate -c Name",
+        "security find-identity -v",
+        "security help",
+        "cat ~/.zshrc",
+        "grep -n iscan ~/.zshrc",
+        "pass ls",
+        "op --version",
+        "bw status",
+        "secret-tool store --label x",
+        "zsh -c 'echo hello'",
+    ]
+]
+
+
+@pytest.mark.parametrize("stdin", BLOCKED_SECRET)
+def test_secret_store_read_blocked(stdin: str) -> None:
+    result = run(stdin)
+    assert result.returncode == 2
+    assert "own terminal" in result.stderr
+    assert "Sandra" not in result.stderr
+
+
+@pytest.mark.parametrize("stdin", ALLOWED_SECRET)
+def test_secret_free_commands_allowed(stdin: str) -> None:
+    assert run(stdin).returncode == 0

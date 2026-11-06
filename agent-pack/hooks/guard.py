@@ -19,6 +19,12 @@ agent. Rules (AGENTS.md):
      owner's step, `make approve-dependency` (agent-pack/scripts/approve_dependency.py), is
      blocked for agents too, also through wrappers; the owner runs it in their own terminal.
      There is no bypass by environment variable.
+  5. Never read secrets from the macOS Keychain or another OS secret store: `security`
+     (find-generic-password, find-internet-password, find-certificate -p, dump-keychain, export,
+     unlock-keychain), `secret-tool lookup`, `pass show`, `gopass show`, `op read`, `op item get`,
+     `bw get`; and never call the key loader `iscan-keys`. Same reach as the other rules
+     (pipelines, `&&`, subshells, wrappers, `-c`). `security list-keychains` and
+     `security find-certificate` without -p stay allowed.
 Input the script cannot parse is blocked, never allowed.
 """
 
@@ -48,6 +54,11 @@ LIST_RULE = (
     "dependency without asking). Do not edit it, and do not run make approve-dependency. Stop "
     "and report the package and the exact version you need, and why. Reading the file is allowed."
 )
+KEYSTORE_RULE = (
+    "Blocked: reading secrets from the OS keychain or a secret store, or calling the key loader "
+    "(iscan-keys), is not allowed for agents. Stop. Ask the owner to run the command in their own "
+    "terminal. Never ask for the key value itself."
+)
 PARSE_RULE = "Blocked: the hook input could not be parsed, so it cannot be checked."
 
 ENV_NAME = re.compile(r"^\.env([.*?\[].*)?$")
@@ -72,6 +83,12 @@ OPERATORS = re.compile(r"^[();<>|&]+$")
 NPM_BLOCKED = {"install", "i", "in", "ins", "inst", "add", "ci", "clean-install", "it", "cit"}
 WRAPPERS = {"sudo", "env", "command", "exec", "time", "nohup", "nice", "xargs", "builtin"}
 SHELLS = {"bash", "sh", "zsh", "dash", "ksh"}
+SECURITY_READS = {
+    "find-generic-password", "find-internet-password", "dump-keychain", "export",
+    "unlock-keychain",
+}  # fmt: skip
+LOADER_NAME = "iscan-keys"
+SHELL_C_FLAG = re.compile(r"^-[a-z]*c[a-z]*$")
 LIST_NAME = "approved-dependencies.md"
 APPROVE_NAME = "approve-dependency"  # make target and script (approve_dependency.py)
 RUNNERS = {"make", "gmake", "uv", "uvx"}
@@ -182,6 +199,10 @@ def check_command(command: str, depth: int = 0) -> None:
             if is_env_name(part):
                 raise Block(ENV_RULE)
 
+    for tok in tokens:
+        if "$(" in tok:  # a command substitution inside quotes
+            check_command(tok.replace("$(", " ; ").replace(")", " ; "), depth + 1)
+
     for segment in split_segments(tokens):
         args = list(segment)
         while args and (ASSIGNMENT.match(args[0]) or args[0].rsplit("/", 1)[-1] in WRAPPERS):
@@ -223,6 +244,8 @@ def check_argv(args: list[str], depth: int) -> None:
     rest = args[1:]
     if runs_approval(cmd, rest):
         raise Block(LIST_RULE)
+    if reads_secret_store(cmd, rest):
+        raise Block(KEYSTORE_RULE)
     if cmd == "npx":
         raise Block(NPM_RULE)
     if cmd == "npm" and npm_subcommand(rest) in NPM_BLOCKED:
@@ -252,8 +275,30 @@ def check_argv(args: list[str], depth: int) -> None:
         check_argv(rest[1:], depth + 1)
     if cmd == "eval":
         check_command(" ".join(rest), depth + 1)
-    elif cmd in SHELLS and "-c" in rest and rest.index("-c") + 1 < len(rest):
-        check_command(rest[rest.index("-c") + 1], depth + 1)
+    elif cmd in SHELLS:
+        flags = [i for i, a in enumerate(rest) if SHELL_C_FLAG.match(a)]
+        if flags and flags[0] + 1 < len(rest):
+            check_command(rest[flags[0] + 1], depth + 1)
+
+
+def reads_secret_store(cmd: str, rest: list[str]) -> bool:
+    """True for a command that reads a secret from an OS secret store, or the key loader."""
+    words = positional_words(rest, set())
+    if cmd == LOADER_NAME:
+        return True
+    if cmd == "security":
+        if words[:1] == ["find-certificate"]:
+            return any(re.match(r"^-[a-zA-Z]*p[a-zA-Z]*$", a) for a in rest)
+        return words[:1] != [] and words[0] in SECURITY_READS
+    if cmd == "secret-tool":
+        return words[:1] == ["lookup"]
+    if cmd in {"pass", "gopass"}:
+        return words[:1] == ["show"]
+    if cmd == "op":
+        return words[:1] == ["read"] or words[:2] == ["item", "get"]
+    if cmd == "bw":
+        return words[:1] == ["get"]
+    return False
 
 
 def runs_approval(cmd: str, rest: list[str]) -> bool:
