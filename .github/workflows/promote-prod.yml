@@ -78,6 +78,9 @@ jobs:
 
       - name: Set up the gcloud command line
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        with:
+          version: "592.0.0" # Google Cloud CLI, pinned
+          install_components: beta # worker pools are a beta command
 
       - name: Read the exact images and commit that run in dev
         id: dev

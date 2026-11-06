@@ -14,8 +14,9 @@ cannot be known before then.
   (`REDACTION_THREADS`, default 4).
 - The `images` CI workflow runs the model inside the built image with a 4 GB memory limit and 2 CPUs, offline
   (`--network none`), and prints the load time and the peak memory in its summary. **Measured on the GitHub runner
-  (6 Nov 2026, PR #128, 2 CPUs, 7.9 GB): the model loads in 11 s, a first short redaction takes 0.4 s, 12.3 kB of
-  text takes 30.7 s, the process peaks at 2.9 GB (container 3.1 GB) under the 4 GB limit.** So the model does run
+  (6 Nov 2026, PR #128, 2 CPUs, 7.9 GB): the model loads in 7.9 s (11.0 s in the first run), a first short
+  redaction takes 0.3 s, 12.3 kB of text takes 25 s, the process peaks at 2.9 GB (container 2.9 GB) under the 4 GB
+  limit; the image is 3.0 GB uncompressed after `uv sync --no-cache`.** So the model does run
   in the built image, in the memory proposed here, with about 1 GB of headroom; if Cloud Run reports memory
   kills, raise the memory to 6 GiB first. (The earlier failure to finish was the 4 GB Docker VM shared with other
   containers, not the image.)
