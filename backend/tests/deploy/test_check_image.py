@@ -124,6 +124,8 @@ def test_third_party_files_are_not_judged_by_name_or_content(
             "opt/venv/lib/python3.13/site-packages/pkg/tests/server.key": PRIVATE_KEY,
             "usr/share/doc/pkg/example.txt": PRIVATE_KEY,
             "etc/ssl/certs/ca.pem": "-----BEGIN CERTIFICATE-----\n",
+            "opt/venv/lib/python3.13/site-packages/numpy/testing/_private/utils.py": "x = 1\n",
+            "root/.cache/uv/archive-v0/abc/pkg/tests/test_keys.py": PRIVATE_KEY,
         },
     )
 

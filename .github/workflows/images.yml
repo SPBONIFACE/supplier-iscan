@@ -43,10 +43,13 @@ jobs:
         run: docker build --tag iscan-api:ci backend
 
       - name: Image check (no secret, no private file; size report)
-        run: python3 deploy/check_image.py iscan-api:ci --max-size-mb 3500 | tee image-check.txt
+        # `shell: bash` (not the default) turns on pipefail, so a failed check fails the step despite tee.
+        shell: bash
+        run: python3 deploy/check_image.py iscan-api:ci --max-size-mb 3500 2>&1 | tee image-check.txt
 
       - name: Model smoke test inside the image (offline, 4 GB memory limit)
         id: smoke
+        shell: bash
         # --network none proves nothing is downloaded at run time; HF_HUB_OFFLINE is also set by the
         # image. --memory 4g is the size proposed for Cloud Run (deploy/env/*.conf). The smoke script
         # is mounted read-only from the repository; it is not part of the image.
@@ -90,7 +93,8 @@ jobs:
         run: docker build --file frontend/Dockerfile.prod --tag iscan-web:ci frontend
 
       - name: Image check (no secret, no private file; size report)
-        run: python3 deploy/check_image.py iscan-web:ci --max-size-mb 200 | tee image-check.txt
+        shell: bash
+        run: python3 deploy/check_image.py iscan-web:ci --max-size-mb 200 2>&1 | tee image-check.txt
 
       - name: Run it and read the run-time configuration
         run: |

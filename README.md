@@ -188,3 +188,34 @@ and name-detection model as a live `make eval`.
 
 Every port is published on `127.0.0.1` only. The API accepts browser requests from the origin set in
 `CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`). The API contract is [`openapi.yaml`](openapi.yaml).
+
+## Deployment
+
+The hosted instance runs on Google Cloud Run (EU) with a Neon PostgreSQL database (EU). Setup is done once by the
+owner with the step-by-step [owner guide](_docs/operations/owner-deployment-guide.md); the reasoning behind sizes,
+the worker and telemetry is in [`_docs/operations/cloud-run-sizing.md`](_docs/operations/cloud-run-sizing.md).
+
+- **Dev**: every push to `main` whose CI run is green runs `.github/workflows/deploy-dev.yml`: build the API,
+  worker and frontend images, check them (`deploy/check_image.py`: no `.env`, private key, `_private/` content or
+  credential pattern in any layer; size report), push them to Artifact Registry, migrate the dev database
+  (`python -m app.migrate`, a Cloud Run job), deploy, call `GET /health`. The new revision gets traffic only after
+  its health check passes.
+- **Production**: manual (`.github/workflows/promote-prod.yml`), behind the GitHub environment `production` with a
+  required reviewer. It deploys the exact image digests running in dev, with the same migration and health gates.
+  Rollback: send traffic back to the previous revision (guide, step 16).
+- **Until Google Cloud is set up** (repository variables `GCP_PROJECT_ID`, `GCP_REGION`,
+  `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_DEPLOY_SERVICE_ACCOUNT`) the deployment workflows print a notice and skip;
+  CI stays green.
+- **No long-lived key anywhere**: GitHub signs in to Google Cloud with Workload Identity Federation. Application
+  secrets (database URL, administrator, provider keys) live in Google Secret Manager as `iscan-<env>-<name>`, are
+  passed to the services by name at run time and never enter an image, a workflow or a file.
+- **Settings** per environment are in `deploy/env/` (`*.yaml`: application settings by name; `*.conf`: Cloud Run
+  sizing). The API and the worker are one image; the frontend image takes `API_BASE_URL` at start, so the same image
+  serves every environment.
+- **Images CI** (`.github/workflows/images.yml`) builds the images on the runner for every change to them, checks
+  them, and runs a redaction smoke test inside the built backend image, offline and with a 4 GB memory limit; the
+  load time and peak memory appear in the run summary.
+- **Telemetry**: Google Cloud Trace and Cloud Monitoring through an OpenTelemetry Collector sidecar
+  (`deploy/collector`); the application setting is `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`.
+- **Session cookie**: the frontend and the API must share a registrable domain (for example `app.example.org` and
+  `api.example.org`), see the guide, step 14.

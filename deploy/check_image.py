@@ -41,6 +41,7 @@ BINARY_SUFFIXES = {
 # checked everywhere. `usr/share/nginx/` (the built frontend) is read though under usr/share.
 CONTENT_SKIPPED = (
     "opt/model/",
+    "root/.cache/uv/",
     "usr/lib/",
     "usr/share/",
     "usr/local/lib/",
@@ -64,6 +65,7 @@ PRIVATE_KEY_SUFFIXES = (".p12", ".pfx", ".jks", ".keystore", ".key")
 LIBRARY_PREFIXES = (
     "opt/venv/lib/",
     "opt/model/",
+    "root/.cache/uv/",
     "usr/lib/",
     "usr/share/",
     "usr/local/lib/",
@@ -122,7 +124,8 @@ def check_name(path: str) -> list[str]:
     found: list[str] = []
     if name == ".env" or name.startswith(".env."):
         found.append("environment file")
-    if PRIVATE_DIRECTORIES & set(parts):
+    # Third-party packages have directories called _private (numpy.testing._private): not ours.
+    if PRIVATE_DIRECTORIES & set(parts) and not path.startswith(LIBRARY_PREFIXES):
         found.append("content of _private/")
     if not path.startswith(LIBRARY_PREFIXES):
         if name in CREDENTIAL_FILE_NAMES:

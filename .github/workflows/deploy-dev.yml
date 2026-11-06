@@ -101,6 +101,7 @@ jobs:
           docker build --tag "$registry/collector:$GIT_SHA" deploy/collector
 
       - name: Image checks (no secret, no private file; size report)
+        shell: bash # pipefail on: a failed check fails the step although its output goes through tee
         run: |
           registry="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/iscan"
           {
