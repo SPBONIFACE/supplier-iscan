@@ -39,6 +39,7 @@ from app.profile_definition import ProfileDefinition
 from app.providers.usage import run_usage_totals
 from app.runs.executor import RUN_JOB
 from app.runs.refusal import check_resume, reserve_run_slot
+from app.telemetry import current as telemetry
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -504,6 +505,7 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request:
         )
     )
     db.commit()
+    telemetry().run_started()
     db.refresh(run)
     return _run_out(db, scope, run, identity, hide_names(request, scope), [], 0)
 

@@ -15,7 +15,7 @@ provider. Prompts come from #55 and are passed in as text; the redaction gate (#
 
 import logging
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -25,6 +25,7 @@ from app.providers.errors import ProviderCallError, ProviderError, StructuredOut
 from app.providers.failures import classify_failure, validation_detail
 from app.providers.metering import NO_USAGE, CallContext, CallUsage, Outcome, UsageMeter
 from app.redaction.text import RedactedText
+from app.telemetry import record_failure, span
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,8 @@ def _call_failure(config: ProviderConfigSpec, error: Exception) -> ProviderError
     if isinstance(error, ProviderError):
         return error
     kind, status_code = classify_failure(error)
+    # An event on the call's span: the kind and the error type, never the SDK's message.
+    record_failure(type(error).__name__, {"iscan.failure_kind": kind})
     # The type and status only: an SDK message can quote the request or the response body. For a
     # validation failure, also the field path, the failed rule and the received type (#122).
     detail = validation_detail(error)
@@ -178,6 +181,19 @@ class _BoundClient:
     def model_id(self) -> str:
         return self.config.model_id
 
+    def _call_span(self, attempt: int) -> Any:
+        """The span of one provider call: identifiers only, never the prompt or the response."""
+        return span(
+            "provider.call",
+            {
+                "iscan.provider": self.config.provider,
+                "iscan.provider_config": self.config.id,
+                "iscan.model_id": self.config.model_id,
+                "iscan.role": self.role,
+                "iscan.attempt": attempt,
+            },
+        )
+
     def _record(
         self, context: CallContext, attempt: int, outcome: Outcome, usage: CallUsage
     ) -> None:
@@ -209,10 +225,11 @@ class StructuringClient(_BoundClient):
             failure: ProviderError | None = None
             output: StructuringOutput | None = None
             self._check_budget(context, input_chars, request.max_output_tokens, 0)
-            try:
-                output = self._adapter.generate_json(request, schema_name, json_schema)
-            except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
-                failure = _call_failure(self.config, error)
+            with self._call_span(attempt):
+                try:
+                    output = self._adapter.generate_json(request, schema_name, json_schema)
+                except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
+                    failure = _call_failure(self.config, error)
             if failure is not None:
                 # Every attempt is metered, a failed one too.
                 self._record(context, attempt, "failed", NO_USAGE)
@@ -275,10 +292,11 @@ class RetrievalClient(_BoundClient):
             RETRIEVAL_MAX_OUTPUT_TOKENS,
             RETRIEVAL_MAX_TOOL_CALLS,
         )
-        try:
-            output = self._adapter.search(request)
-        except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
-            failure = _call_failure(self.config, error)
+        with self._call_span(1):
+            try:
+                output = self._adapter.search(request)
+            except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
+                failure = _call_failure(self.config, error)
         if failure is not None:
             self._record(context, 1, "failed", NO_USAGE)
             raise failure

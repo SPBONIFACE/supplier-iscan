@@ -21,8 +21,17 @@ from app.assessment.drafting import ASSESSMENT_JOB, run_draft_job
 from app.config import CRAWLER_CONTACT_URL, ConfigurationError, Settings, load_settings
 from app.db import Database, utc_now
 from app.providers import Providers
-from app.runs.executor import INTERRUPTED, RUN_JOB, RunEnvironment, execute_run, fail_run
+from app.runs.executor import (
+    INTERRUPTED,
+    RUN_JOB,
+    RunEnvironment,
+    count_finished,
+    execute_run,
+    fail_run,
+)
 from app.runs.stages import DEFAULT_STAGES, LeaseLost, Stage
+from app.telemetry import TRACEPARENT, context_from_traceparent, span
+from app.telemetry.setup import configure
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +73,30 @@ def work_once(
     if job is None:
         return False
     run_id = uuid.UUID(job.payload["run_id"])
+    # The job carries the trace of the request that queued it: the worker continues it.
+    with span(
+        "job.process",
+        {
+            "iscan.job_kind": job.kind,
+            "iscan.job_attempt": job.attempts,
+            "iscan.run_id": str(run_id),
+        },
+        parent=context_from_traceparent(job.payload.get(TRACEPARENT)),
+    ):
+        return _process(database, settings, worker_id, stages, providers, now, drafter, job, run_id)
 
+
+def _process(
+    database: Database,
+    settings: Settings,
+    worker_id: str,
+    stages: Mapping[str, Stage],
+    providers: Providers | None,
+    now: Callable[[], datetime],
+    drafter: Drafter,
+    job: Any,
+    run_id: uuid.UUID,
+) -> bool:
     def beat() -> None:
         with database.session() as db:
             if not queue.heartbeat(db, job.id, worker_id, settings.run_lease, now()):
@@ -76,7 +108,8 @@ def work_once(
     try:
         if job.attempts > MAX_ATTEMPTS:
             logger.error("Run %s: job claimed %s times, run ended", run_id, job.attempts)
-            fail_run(database, run_id, INTERRUPTED)
+            with count_finished(database, run_id):
+                fail_run(database, run_id, INTERRUPTED)
         else:
             execute_run(RunEnvironment(database, stages, providers, beat), run_id)
     except LeaseLost:
@@ -128,15 +161,17 @@ def _draft_part(
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     settings = load_settings()
+    telemetry = configure("worker", settings)
     if not settings.database_url:
         raise SystemExit("DATABASE_URL is not set")
     if not settings.crawler_contact_url:
         raise SystemExit(f"{CRAWLER_CONTACT_URL} is not set: collection cannot start without it")
     from app.main import load_providers  # imported here: it builds the API's providers
 
-    database = Database(settings.database_url)
+    database = Database(
+        settings.database_url, statement_timeout_seconds=settings.database_statement_timeout_seconds
+    )
     providers = load_providers(settings, database)
     worker_id = f"worker-{os.getpid()}-{uuid.uuid4().hex[:6]}"
     stopping = threading.Event()
@@ -152,6 +187,7 @@ def main() -> None:
             logger.warning("Worker %s: the database is unavailable", worker_id)
         stopping.wait(settings.worker_poll_seconds)
     database.dispose()
+    telemetry.shutdown()  # sends what is left; bounded by the export timeout
     logger.info("Worker %s stopped", worker_id)
 
 
