@@ -5,9 +5,12 @@ The five SDKs raise different classes, but they share two shapes: an HTTP status
 transport errors of the underlying HTTP client (timeouts, connection failures). Transport errors
 are recognised by class name, so that this module imports no HTTP library (#15 policy).
 
-Only the class and the status are read: never the message, which can quote the request or the
-response body.
+`classify_failure` reads only the class and the status. The provider's own error type and message
+are read separately by `provider_error_detail`, for the log of a rejected call only (#125).
 """
+
+import json
+import re
 
 from pydantic import ValidationError
 
@@ -94,3 +97,51 @@ def classify_failure(error: Exception) -> tuple[FailureKind, int | None]:
     if names & _INVALID_RESPONSE_CLASS_NAMES or isinstance(error, ValidationError | ValueError):
         return "invalid_response", None
     return "unexpected", None
+
+
+_MAX_DETAIL = 400
+_BLANKS = re.compile(r"\s+")
+
+
+def _clean(value: object) -> str:
+    return _BLANKS.sub(" ", value).strip()[:_MAX_DETAIL] if isinstance(value, str) else ""
+
+
+def provider_error_detail(error: Exception) -> str:
+    """The provider's own error type and message of an HTTP error, for the log (#125).
+
+    These describe the request (for example `invalid_request_error`, "output_config.format.schema:
+    ... not supported"), never its content: the providers do not echo prompts. Read from the
+    parsed body the SDKs keep on the exception (Anthropic and OpenAI `error.type` and
+    `error.message`; Perplexity the same; Mistral `detail` or `message`; Google `status` and
+    `message`), whitespace collapsed and cut at 400 characters. Empty for a transport failure or
+    when the provider sent nothing readable. Only called for an exception with an HTTP status.
+    """
+    if _status_code(error) is None:
+        return ""
+    body = getattr(error, "body", None) or getattr(error, "details", None)
+    if isinstance(body, str | bytes):
+        try:
+            body = json.loads(body)
+        except ValueError:
+            body = None
+    body = body if isinstance(body, dict) else {}
+    nested = body.get("error")
+    source = nested if isinstance(nested, dict) else body
+    kind = (
+        _clean(source.get("type"))
+        or _clean(source.get("status"))
+        or _clean(getattr(error, "status", None))
+        or _clean(source.get("code"))
+    )
+    message = (
+        _clean(source.get("message"))
+        or _clean(source.get("detail"))
+        or _clean(getattr(error, "message", None))
+    )
+    parts = []
+    if kind:
+        parts.append(f"provider_error_type={kind}")
+    if message:
+        parts.append(f"provider_error_message={message!r}")
+    return " ".join(parts)

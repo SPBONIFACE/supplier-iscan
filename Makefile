@@ -1,7 +1,7 @@
 # Supplier iScan: the four project commands. Paths are relative to this file; nothing here depends
 # on the host machine beyond the prerequisites listed in README.md ("Running it").
 .DEFAULT_GOAL := help
-.PHONY: help install fetch-model test test-model eval provider-shape lint run stop approve-dependency
+.PHONY: help install fetch-model test test-model eval provider-shape provider-check lint run stop approve-dependency
 
 help: ## List the commands
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  make %-12s %s\n", $$1, $$2}'
@@ -28,6 +28,9 @@ eval: ## Evaluate the LLM features: CONFIG=<approved id>|fake [PROMPTS=<path>] [
 
 provider-shape: ## One live retrieval call on a synthetic query; writes the response SHAPE to diagnostics/: CONFIG=<id>
 	cd backend && PYTHONPATH=.. PROVIDER_SHAPE_DIR="$(CURDIR)/diagnostics" uv run --locked python -m eval.provider_shape --config "$(CONFIG)"
+
+provider-check: ## One tiny live structured call; prints OK or the provider's error type and message: CONFIG=<id>
+	cd backend && PYTHONPATH=.. uv run --locked python -m eval.provider_check --config "$(CONFIG)"
 
 lint: ## Run linters, format checks and type checks
 	cd backend && uv run --locked ruff check . ../eval && uv run --locked ruff format --check . ../eval && uv run --locked mypy

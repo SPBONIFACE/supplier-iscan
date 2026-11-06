@@ -1,7 +1,13 @@
 """Claude, through the official `anthropic` SDK (Messages API).
 
-- Structuring: `output_config.format` with a JSON schema (structured outputs); the JSON text of
-  the answer is returned for validation.
+- Structuring: `output_config.format` with a JSON schema (structured outputs, documented at
+  https://platform.claude.com/docs/en/build-with-claude/structured-outputs); the JSON text of the
+  answer is returned for validation. The API accepts only a subset of JSON Schema (no
+  `minLength`/`maxLength`, `minimum`/`maximum`, `maxItems`, `minItems` above 1; every object needs
+  `additionalProperties: false`; other keywords are a 400). `api_schema` converts the app's schema
+  with the SDK's own `transform_schema`, which drops what the API refuses and moves it into the
+  field description. Only the request is simplified: the app still validates the answer fully
+  (#125).
 - Retrieval: the server-side `web_search` tool; URLs come from the typed citations of the answer
   (with the cited source text as snippet) and from the typed search-result blocks, never from the
   answer text.
@@ -42,6 +48,11 @@ def make_client(
     )
 
 
+def api_schema(json_schema: dict[str, object]) -> dict[str, Any]:
+    """The app's JSON schema in the subset Anthropic's structured outputs accept (#125)."""
+    return anthropic.transform_schema(json_schema)
+
+
 def _usage(message: Any) -> CallUsage:
     """Input includes cache reads and writes; web searches are the billed tool calls."""
     usage = message.usage
@@ -70,7 +81,7 @@ class ClaudeStructuring:
             max_tokens=request.max_output_tokens,
             system=request.instructions,
             messages=[{"role": "user", "content": request.data.text}],
-            output_config={"format": {"type": "json_schema", "schema": json_schema}},
+            output_config={"format": {"type": "json_schema", "schema": api_schema(json_schema)}},
         )
         text = "".join(block.text for block in message.content if block.type == "text")
         return StructuringOutput(text, _usage(message))
