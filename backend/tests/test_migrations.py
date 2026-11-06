@@ -80,3 +80,16 @@ def test_startup_migrates_an_empty_database_and_creates_the_administrator(
     with empty_engine.connect() as connection:
         users = connection.exec_driver_sql("SELECT role FROM users").all()
     assert [row.role for row in users] == ["admin"]
+
+
+def test_the_migration_command_applies_the_migrations_to_database_url(
+    empty_engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.migrate import main
+
+    monkeypatch.setenv("DATABASE_URL", empty_engine.url.render_as_string(hide_password=False))
+
+    main()
+    main()  # a second run changes nothing
+
+    assert TABLES <= set(inspect(empty_engine).get_table_names())

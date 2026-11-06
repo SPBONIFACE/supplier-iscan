@@ -30,7 +30,7 @@ provider-shape: ## One live retrieval call on a synthetic query; writes the resp
 	cd backend && PYTHONPATH=.. PROVIDER_SHAPE_DIR="$(CURDIR)/diagnostics" uv run --locked python -m eval.provider_shape --config "$(CONFIG)"
 
 lint: ## Run linters, format checks and type checks
-	cd backend && uv run --locked ruff check . ../eval && uv run --locked ruff format --check . ../eval && uv run --locked mypy
+	cd backend && uv run --locked ruff check . ../eval ../deploy && uv run --locked ruff format --check . ../eval ../deploy && uv run --locked mypy
 	cd frontend && pnpm lint && pnpm typecheck
 	cd agent-pack && uv run --locked ruff check . && uv run --locked ruff format --check . && uv run --locked mypy
 	cd agent-pack && uv run --locked python scripts/check_dependencies.py

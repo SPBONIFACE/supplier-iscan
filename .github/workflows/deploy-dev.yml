@@ -1,0 +1,141 @@
+# Deploy to DEV (#52): after a push to main whose CI run is green, build the three images, check them,
+# push them to Artifact Registry, migrate the dev database, deploy to Cloud Run dev, check /health.
+#
+# Until the owner has set up Google Cloud, this workflow does nothing: the first job reads four
+# repository variables and, when one is missing, prints a notice and every other job is skipped (the
+# run is green). Owner guide: _docs/operations/owner-deployment-guide.md.
+#
+# No long-lived key exists: GitHub proves its identity to Google Cloud with Workload Identity
+# Federation (OpenID Connect token of this run). Secrets stay in Google Secret Manager, by name.
+# Actions are pinned to full commit SHAs; the comment gives the release.
+name: Deploy dev
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  config:
+    name: is deployment configured?
+    # A push to main whose CI run succeeded, or a manual run from main.
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Check the repository variables
+        id: check
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_DEPLOY_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+        run: |
+          missing=""
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WORKLOAD_IDENTITY_PROVIDER GCP_DEPLOY_SERVICE_ACCOUNT; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deployment skipped::Not configured yet. Missing repository variables:$missing. See _docs/operations/owner-deployment-guide.md."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: build, check, migrate, deploy, health
+    needs: config
+    if: needs.config.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write # the OpenID Connect token that Workload Identity Federation exchanges
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      # Environment-level variables of the GitHub environment "dev" (see the owner guide).
+      CRAWLER_CONTACT_URL: ${{ vars.CRAWLER_CONTACT_URL }}
+      WEB_ORIGIN: ${{ vars.WEB_ORIGIN }}
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+      EUR_PER_USD: ${{ vars.EUR_PER_USD }}
+      GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Check out the commit that passed CI
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Sign in to Google Cloud (Workload Identity Federation, no key)
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up the gcloud command line
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Let Docker push to Artifact Registry
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Build the three images
+        run: |
+          registry="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/iscan"
+          docker build --tag "$registry/api:$GIT_SHA" backend
+          docker build --file frontend/Dockerfile.prod --tag "$registry/web:$GIT_SHA" frontend
+          docker build --tag "$registry/collector:$GIT_SHA" deploy/collector
+
+      - name: Image checks (no secret, no private file; size report)
+        run: |
+          registry="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/iscan"
+          {
+            echo "### Image checks"
+            for pair in api:3500 web:200 collector:300; do
+              echo "#### ${pair%%:*}"
+              echo '```'
+              python3 deploy/check_image.py "$registry/${pair%%:*}:$GIT_SHA" --max-size-mb "${pair##*:}"
+              echo '```'
+            done
+          } 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          # GitHub runs this with `bash -e -o pipefail`: a failed check fails the step.
+
+      - name: Push the images and record their digests
+        id: push
+        run: |
+          registry="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/iscan"
+          for name in api web collector; do
+            docker push "$registry/$name:$GIT_SHA"
+            digest="$(docker inspect --format '{{index .RepoDigests 0}}' "$registry/$name:$GIT_SHA")"
+            case "$digest" in *@sha256:*) ;; *) echo "No digest for $name" >&2; exit 1 ;; esac
+            echo "$name=$digest" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Migrate the dev database
+        env:
+          IMAGE_API: ${{ steps.push.outputs.api }}
+        run: deploy/deploy.sh dev migrate
+
+      - name: Deploy to Cloud Run dev (traffic moves only after /health passes)
+        env:
+          IMAGE_API: ${{ steps.push.outputs.api }}
+          IMAGE_WEB: ${{ steps.push.outputs.web }}
+          IMAGE_COLLECTOR: ${{ steps.push.outputs.collector }}
+        run: deploy/deploy.sh dev deploy
+
+      - name: Health check of the deployed dev
+        run: deploy/deploy.sh dev health
