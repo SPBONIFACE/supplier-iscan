@@ -116,6 +116,45 @@ Extraction fills the `fact` fields of the profile from the stored sources and ke
 found in the cited source. It sends at most `EXTRACT_MAX_INPUT_CHARS` characters of source text per call (default
 20000), and gives a certification fact the link of `IAF_CERTSEARCH_URL` (default `https://www.iafcertsearch.org/`).
 
+### Observability
+
+The API and the worker write JSON logs to standard error (`timestamp`, `level`, `service`, `logger`, `message`, and
+`trace_id` and `span_id` inside a trace; an exception is logged by its type and stack only, never its message), and
+build one trace per run: the request that starts it, the queued job (the trace ID travels in the job), each stage
+(`run.stage`: identity, collection, extraction, assessment) and each provider call. Spans, metrics and logs hold
+identifiers, statuses and counts only: attributes come from an allow-list, never from a request body, a prompt, a
+source text or a supplier name. SDK debug logging (`ANTHROPIC_LOG`, `PERPLEXITY_LOG`, etc.) is switched off at start.
+
+Settings (names only; values in the environment):
+
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: base address of an OTLP/HTTP collector, for example `http://localhost:4318`. Empty
+  (the default): nothing is exported and the application runs as usual. Credentials for a collector, if it needs
+  any, go in `OTEL_EXPORTER_OTLP_HEADERS` (read by the OpenTelemetry SDK).
+- `TELEMETRY_EXPORT_TIMEOUT_SECONDS`: how long one export may take before it is dropped (default 5). Export runs
+  in background threads, so an unreachable collector never fails or slows a request or a run.
+- `DATABASE_STATEMENT_TIMEOUT_SECONDS`: the longest a database statement may run (default 30); a database that
+  accepts connections but does not answer gives a 503 (or a paused run), not a hanging request.
+
+Metrics (names as exported; Prometheus shows dots as underscores): `iscan.runs.started`, `iscan.runs.finished`
+(attribute `iscan.status`: `completed`, `partial`, `insufficient_sources`, `stopped`, `failed`; a paused run is not
+finished), `iscan.run.stage.duration` (seconds, by `iscan.stage`), `iscan.llm.tokens` (by `iscan.token_type`),
+`iscan.llm.cost` (EUR), `iscan.llm.calls` (by `iscan.outcome`), the LLM ones by role, provider and model, and
+`iscan.http.requests` (by route template and status; a rise in 503 covers a database that does not answer).
+
+The profile-run failure rate (what the alert of #53 reads) is failed runs divided by finished runs over a window.
+In PromQL, with the usual conversion of names:
+
+```
+sum(increase(iscan_runs_finished_total{iscan_status="failed"}[1h])) / sum(increase(iscan_runs_finished_total[1h]))
+```
+
+It has no value, hence no alert, when no run finished in the window. `app.telemetry.failure_rate` computes the same
+quantity from the counts and is covered by a test.
+
+For a local collector, point the endpoint at any OTLP/HTTP receiver, for example an OpenTelemetry Collector with the
+`otlp` receiver on port 4318. The optional Docker Compose telemetry stack (Collector, Prometheus, Loki, Tempo,
+Grafana) belongs to #52 and #53.
+
 ### Commands
 
 | Command | What it does |

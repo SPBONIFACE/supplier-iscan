@@ -35,7 +35,9 @@ def make_database_check(database_url: str | None) -> DatabaseCheck:
             return False
         try:
             with psycopg.connect(
-                database_url, connect_timeout=DATABASE_CONNECT_TIMEOUT_SECONDS
+                database_url,
+                connect_timeout=DATABASE_CONNECT_TIMEOUT_SECONDS,
+                options=f"-c statement_timeout={DATABASE_CONNECT_TIMEOUT_SECONDS * 1000}",
             ) as connection:
                 connection.execute("SELECT 1")
         except Exception as error:  # noqa: BLE001 - any failure means "unavailable"

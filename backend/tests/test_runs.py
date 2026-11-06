@@ -86,9 +86,11 @@ def test_start_queues_the_run_without_executing_a_stage(client: TestClient, engi
     run = get_run(engine, uuid.UUID(body["id"]))
     assert run.started_at is None  # nothing executed in the request
     jobs = jobs_of(engine)
-    assert [(job.kind, job.state, job.payload) for job in jobs] == [
-        (RUN_JOB, "queued", {"run_id": body["id"]})
+    # The payload also holds the request's trace (#51), so that the worker continues it.
+    assert [(job.kind, job.state, set(job.payload)) for job in jobs] == [
+        (RUN_JOB, "queued", {"run_id", "traceparent"})
     ]
+    assert jobs[0].payload["run_id"] == body["id"]
     with Session(engine) as db:
         events = db.scalars(select(UsageEvent).where(UsageEvent.kind == "run")).all()
     assert [(event.user_id, event.organisation_id) for event in events] == [

@@ -41,6 +41,8 @@ from app.providers.store import sync_provider_configs
 from app.providers.usage import DbUsageSink
 from app.review.routes import router as review_router
 from app.runs.routes import router as runs_router
+from app.telemetry.middleware import TelemetryMiddleware
+from app.telemetry.setup import configure as configure_telemetry
 from app.users.routes import router as users_router
 
 logger = logging.getLogger(__name__)
@@ -108,7 +110,11 @@ def create_app(
 ) -> FastAPI:
     settings = settings or load_settings()
     check_database = database_check or make_database_check(settings.database_url)
-    database = Database(settings.database_url, engine)
+    database = Database(
+        settings.database_url,
+        engine,
+        statement_timeout_seconds=settings.database_statement_timeout_seconds,
+    )
     providers = providers or load_providers(settings, database)
     profile_definition = profile_definition or load_definition(settings)
     prompt_set = prompt_set or load_prompts(settings)
@@ -173,6 +179,8 @@ def create_app(
         allow_headers=["Content-Type"],
         allow_credentials=True,
     )
+    # Outermost: every request, refusals included, is in a trace (#51).
+    app.add_middleware(TelemetryMiddleware)
 
     @app.get(
         "/health",
@@ -210,4 +218,8 @@ def create_app(
     return app
 
 
+# JSON logs and telemetry export for the API process, before the application is built (so that the
+# first-start administrator line is written in JSON). A test builds its own application with
+# `create_app` and leaves the process-wide telemetry alone.
+configure_telemetry("api", load_settings())
 app = create_app()

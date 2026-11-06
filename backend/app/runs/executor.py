@@ -7,10 +7,12 @@ under a row lock, so a member's stop and the worker's progress never overwrite e
 
 import logging
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import ConfigurationError
 from app.db import Database, utc_now
@@ -29,6 +31,8 @@ from app.runs.stages import (
     classify,
     pause_reason,
 )
+from app.telemetry import current as telemetry
+from app.telemetry import record_failure, span, stage_span
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +152,39 @@ def _end_with(database: Database, run_id: uuid.UUID, outcome: StageOutcome) -> N
     )
 
 
+def _status(database: Database, run_id: uuid.UUID) -> str | None:
+    try:
+        with database.session() as db:
+            run = db.get(ProfileRun, run_id)
+            return run.status if run is not None else None
+    except SQLAlchemyError:
+        return None  # the database is down: the metric is skipped, the run is not affected
+
+
+@contextmanager
+def count_finished(database: Database, run_id: uuid.UUID) -> Iterator[None]:
+    """Counts the run in `iscan.runs.finished` (by its final status) when what runs inside ends it.
+    Read from the record after the commit, so that a rolled-back change is never counted, and
+    a run that was already final before is not counted twice."""
+    before = _status(database, run_id)
+    try:
+        yield
+    finally:
+        after = _status(database, run_id)
+        if after in FINISHED_STATUSES and before not in FINISHED_STATUSES:
+            telemetry().run_finished(after or "")
+
+
 def execute_run(env: RunEnvironment, run_id: uuid.UUID) -> None:
+    """Run the stages from the run's current stage, in a span of the job's trace."""
+    with (
+        span("run.execute", {"iscan.run_id": str(run_id)}),
+        count_finished(env.database, run_id),
+    ):
+        _execute_run(env, run_id)
+
+
+def _execute_run(env: RunEnvironment, run_id: uuid.UUID) -> None:
     """Run the stages from the run's current stage. Returns when the run is no longer `running`."""
     with env.database.session() as db:
         run = db.scalar(select(ProfileRun).where(ProfileRun.id == run_id).with_for_update())
@@ -176,7 +212,8 @@ def execute_run(env: RunEnvironment, run_id: uuid.UUID) -> None:
             context = StageContext(
                 run_id, organisation_id, stage, env.database, env.providers, check_stop
             )
-            outcome = env.stages[stage](context)
+            with stage_span(stage, run_id):
+                outcome = env.stages[stage](context)
             if outcome is not None:
                 _end_with(env.database, run_id, outcome)
                 return
@@ -186,16 +223,19 @@ def execute_run(env: RunEnvironment, run_id: uuid.UUID) -> None:
     except RunStopped:
         _update(env.database, run_id, lambda run: _finish(run, "stopped"))
     except RunBudgetExhausted as exhausted:
+        record_failure("RunBudgetExhausted", {"iscan.stage": stage})
         _end_partial(env, run_id, stage, exhausted.done)
     except ConfigurationError:
         # The operator named the setting in the log; the member gets a plain message, and the run
         # ends as failed (no request was sent).
+        record_failure("ConfigurationError", {"iscan.stage": stage})
         logger.error(
             "Run %s failed in stage %s: the service is not configured", run_id, stage, exc_info=True
         )
         fail_run(env.database, run_id, NOT_CONFIGURED, counts=False)  # a service fault (#103)
     except Exception as error:
         dependency = classify(error)
+        record_failure(type(error).__name__, {"iscan.stage": stage, "iscan.dependency": dependency})
         if dependency is None:
             logger.error("Run %s failed in stage %s", run_id, stage, exc_info=True)
             fail_run(env.database, run_id, FAILED)

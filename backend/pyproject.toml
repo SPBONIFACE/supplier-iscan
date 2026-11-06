@@ -14,6 +14,11 @@ dependencies = [
     "jsonschema==4.26.0",
     "mistralai==3.2.0",
     "openai==3.29.0",
+    # Observability (#51), approved-dependencies.md: API and SDK, and OTLP over HTTP (no gRPC, no
+    # auto-instrumentation).
+    "opentelemetry-api==1.45.1",
+    "opentelemetry-exporter-otlp-proto-http==1.45.1",
+    "opentelemetry-sdk==1.45.1",
     "perplexityai==0.43.8",
     "phonenumbers==9.0.41",
     "protego==0.7.0",

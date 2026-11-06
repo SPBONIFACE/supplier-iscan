@@ -24,6 +24,7 @@ from app.db import utc_now
 from app.providers.catalogue import ProviderConfigSpec, Role
 from app.providers.errors import ProviderConfigurationRefused
 from app.providers.pricing import PriceEntry, PriceTable
+from app.telemetry import current as telemetry
 
 Outcome = Literal["success", "invalid_output", "failed"]
 CostBasis = Literal["provider", "price_table", "unreported"]
@@ -173,6 +174,16 @@ class UsageMeter:
             price_as_of=as_of,
         )
         self._sink.record(entry)
+        telemetry().llm_call(
+            config.provider,
+            config.model_id,
+            role,
+            outcome,
+            entry.input_tokens,
+            entry.output_tokens,
+            entry.reasoning_tokens,
+            float(entry.cost),
+        )
         return entry
 
 
