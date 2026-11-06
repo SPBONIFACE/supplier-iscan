@@ -3,7 +3,10 @@ import type { CurrentUser } from "../lib/api";
 export const LOGIN_PATH = "/login";
 
 export const isPublicPath = (pathname: string): boolean =>
-  pathname === LOGIN_PATH || pathname.startsWith("/invitations/");
+  pathname === LOGIN_PATH ||
+  pathname.startsWith("/invitations/") ||
+  pathname === "/demo" ||
+  pathname.startsWith("/demo/");
 
 /** Login URL that brings the user back to `target` after signing in. */
 export const loginUrl = (target: string): string =>

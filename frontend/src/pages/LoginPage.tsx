@@ -1,6 +1,6 @@
 import { type FormEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Navigate, useSearchParams } from "react-router";
+import { Link, Navigate, useSearchParams } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { homePath, safeNext } from "../auth/paths";
 import { Button, FormField, MessageBanner } from "../components/ui";
@@ -81,6 +81,9 @@ export function LoginPage() {
         </div>
       </form>
       <p className="meta">{t("login.invitationOnly")}</p>
+      <p>
+        <Link to="/demo">{t("demo.explore")}</Link>
+      </p>
     </div>
   );
 }

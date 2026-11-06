@@ -5,6 +5,7 @@ import { homePath, LOGIN_PATH, loginUrl } from "./auth/paths";
 import { Layout } from "./components/Layout";
 import { LoadingIndicator } from "./components/ui";
 import { ComparisonPage } from "./pages/ComparisonPage";
+import { DemoCardPanel, DemoComparisonPage, DemoLandingPage, DemoShell } from "./pages/DemoPages";
 import { IdentityChatPage } from "./pages/IdentityChatPage";
 import { InvitationPage } from "./pages/InvitationPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -45,6 +46,12 @@ export function App() {
       <Route element={<Layout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/invitations/:token" element={<InvitationPage />} />
+        {/* The public demo (#50): no sign-in, read-only. */}
+        <Route path="/demo" element={<DemoLandingPage />} />
+        <Route path="/demo/profiles" element={<DemoShell />}>
+          <Route path=":profileId" element={<DemoCardPanel />} />
+        </Route>
+        <Route path="/demo/compare" element={<DemoComparisonPage />} />
         <Route element={<RequireAuth />}>
           <Route path="/" element={<Home />} />
           {/* Placeholders: #38 comparison, #48 admin. */}

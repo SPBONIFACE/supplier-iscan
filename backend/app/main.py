@@ -18,6 +18,8 @@ from app.buyer.routes import router as buyer_router
 from app.comparison.routes import router as comparison_router
 from app.config import ConfigurationError, Settings, load_settings, require_run_budget
 from app.db import Database
+from app.demo.readonly import DemoReadOnlyMiddleware
+from app.demo.routes import router as demo_router
 from app.errors import install_error_handlers
 from app.financial.table import CountryTable, load_country_table
 from app.health import DatabaseCheck, HealthStatus, make_database_check
@@ -159,6 +161,9 @@ def create_app(
     app.state.identity_services = None
     install_access_log_redaction()
     install_error_handlers(app)
+    # The demo is read-only on the server: any non-GET request under /demo is refused with 403
+    # (#50). Added before the CORS middleware, which therefore wraps it.
+    app.add_middleware(DemoReadOnlyMiddleware)
     # Exact origins from configuration, never a wildcard (load_settings rejects "*").
     # Credentials are allowed so that the frontend can send the session cookie.
     app.add_middleware(
@@ -198,6 +203,7 @@ def create_app(
     app.include_router(buyer_router)
     app.include_router(assessment_router)
     app.include_router(review_router)
+    app.include_router(demo_router)
     app.include_router(admin_organisations_router)
     app.include_router(admin_invitations_router)
     app.include_router(invitations_router)

@@ -9,6 +9,8 @@ type Props = {
   runId: string;
   /** Why the file cannot be made now (the run is still going): the button is disabled and says so. */
   unavailableReason?: string;
+  /** The id is a demo profile's: the public demo route builds the file (#50). */
+  demo?: boolean;
 };
 
 /** Hands a downloaded file to the browser. Only a blob URL of our own response is used. */
@@ -23,7 +25,7 @@ function save(blob: Blob, filename: string) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function DownloadPdf({ runId, unavailableReason }: Props) {
+export function DownloadPdf({ runId, unavailableReason, demo = false }: Props) {
   const { t, i18n } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<"error" | "in_progress" | null>(null);
@@ -45,7 +47,10 @@ export function DownloadPdf({ runId, unavailableReason }: Props) {
     setBusy(true);
     setProblem(null);
     setDone(false);
-    const result = await api.downloadRunPdf(runId, i18n.language === "fr" ? "fr" : "en");
+    const language = i18n.language === "fr" ? "fr" : "en";
+    const result = await (demo
+      ? api.downloadDemoProfilePdf(runId, language)
+      : api.downloadRunPdf(runId, language));
     setBusy(false);
     if (result.ok) {
       save(result.data.blob, result.data.filename);

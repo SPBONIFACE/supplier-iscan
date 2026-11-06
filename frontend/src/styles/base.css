@@ -1647,3 +1647,38 @@ legend {
   gap: var(--isc-space-5);
   margin-top: var(--isc-space-4);
 }
+
+/* The public demo (#50): the disclaimer band under the top bar of every demo screen. */
+.demo-band {
+  background: var(--isc-color-paper-margin);
+  border-bottom: 1px solid var(--isc-color-rule);
+}
+.demo-band .in {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--isc-space-3) var(--isc-space-6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--isc-space-2) var(--isc-space-4);
+  align-items: baseline;
+}
+.demo-band .demo-text {
+  flex: 1 1 400px;
+  margin: 0;
+}
+.hero {
+  padding: var(--isc-space-8) 0 var(--isc-space-6);
+  max-width: 760px;
+}
+.hero .lede {
+  font-size: var(--isc-font-size-h3);
+  color: var(--isc-color-ink-secondary);
+}
+.three {
+  list-style: none;
+  padding: var(--isc-space-4) 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0 var(--isc-space-6);
+  border-top: 1px solid var(--isc-color-ink);
+}

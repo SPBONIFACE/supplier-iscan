@@ -6,6 +6,7 @@ from app.models.accounts import Organisation, User, UserSession
 from app.models.assessment import AssessmentItem
 from app.models.buyer import BuyerInput
 from app.models.crawl import CrawlPermission, SuppressionEntry
+from app.models.demo import DemoProfile
 from app.models.facts import Fact
 from app.models.failures import RunFailure
 from app.models.identity import IdentitySession
@@ -21,6 +22,7 @@ __all__ = [
     "AssessmentItem",
     "BuyerInput",
     "CrawlPermission",
+    "DemoProfile",
     "Fact",
     "IdentitySession",
     "Invitation",

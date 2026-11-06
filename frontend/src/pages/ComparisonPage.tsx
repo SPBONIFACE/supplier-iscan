@@ -91,16 +91,31 @@ export function ComparisonPage() {
 
 type Section = { id: string; label: string; fields: ProfileField[] };
 
-function ComparisonTable({
+/** Where the demo's comparison links lead: its own list, cards and selection (#50). */
+export type ComparisonPaths = {
+  list: string;
+  card: (id: string) => string;
+  select: (ids: string[]) => string;
+};
+
+const MEMBER_PATHS: ComparisonPaths = {
+  list: "/workspace",
+  card: (id) => `/profiles/${id}`,
+  select: (ids) => `/compare?runs=${ids.map(encodeURIComponent).join(",")}`,
+};
+
+export function ComparisonTable({
   items,
   sections,
   organisationName,
   ids,
+  paths = MEMBER_PATHS,
 }: {
   items: ComparisonRun[];
   sections: Section[];
   organisationName: string | null;
   ids: string[];
+  paths?: ComparisonPaths;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -128,7 +143,7 @@ function ComparisonTable({
 
   const remove = (id: string) => {
     const left = ids.filter((other) => other !== id);
-    navigate(`/compare?runs=${left.map(encodeURIComponent).join(",")}`, { replace: true });
+    navigate(paths.select(left), { replace: true });
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTableElement>) => {
@@ -203,7 +218,7 @@ function ComparisonTable({
           <p className="meta">{t(compact ? "compare.introMatrix" : "compare.intro")}</p>
         </div>
         <div className="ph-actions">
-          <Link className="btn btn-secondary" to="/workspace">
+          <Link className="btn btn-secondary" to={paths.list}>
             {t("compare.changeSelection")}
           </Link>
         </div>
@@ -252,6 +267,7 @@ function ComparisonTable({
                     run={item.run}
                     name={names[index] ?? ""}
                     compact={compact}
+                    cardPath={paths.card(item.run.id)}
                     onRemove={() => remove(item.run.id)}
                   />
                 </th>
@@ -328,11 +344,13 @@ function ColumnHead({
   run,
   name,
   compact,
+  cardPath,
   onRemove,
 }: {
   run: Run;
   name: string;
   compact: boolean;
+  cardPath: string;
   onRemove: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -368,7 +386,7 @@ function ColumnHead({
       ) : null}
       <div className="acts">
         {hasProfile ? (
-          <Link to={`/profiles/${run.id}`} className="sm">
+          <Link to={cardPath} className="sm">
             {t("compare.openCard")} <span className="vh">{name}</span>
           </Link>
         ) : (
