@@ -165,6 +165,13 @@ export it first through a hidden prompt (in zsh, `read -s "PERPLEXITY_API_KEY?Ke
 load it from your own secret store, then run the command. It uses the same approved configuration file, price table
 and name-detection model as a live `make eval`.
 
+Check that a structuring configuration accepts the app's requests: `make provider-check CONFIG=<structuring configuration id>`
+makes one tiny synthetic structured call (a schema with the same kind of constraints as the app's) and prints `OK`, or
+the provider's error type and message, and nothing else (no prompt, no answer, no key). Set the key as above, through a
+hidden prompt (for Anthropic, `read -s "ANTHROPIC_API_KEY?Key: "; export ANTHROPIC_API_KEY`), never on the command line.
+A call the provider rejects is logged by the application, for every provider, with the provider's error type and message
+(they describe the request, never its content).
+
 ### Commands
 
 | Command | What it does |
@@ -173,6 +180,7 @@ and name-detection model as a live `make eval`.
 | `make fetch-model` | Fetches the name-detection model used by redaction: about 1.2 GB, pinned revision, sha256-checked, into `~/.cache/supplier-iscan` (outside the repository; override with `REDACTION_MODEL_DIR`). Files already there are kept; nothing is downloaded at run time |
 | `make eval CONFIG=<id> PROMPTS=<path>` | Evaluates the LLM features against the reference sets in `eval/` and writes a Markdown and JSON report to `eval/reports/` (not committed). `CONFIG=fake` replays recorded answers: plumbing only, no key, no network. A live run needs the key of the configuration, by name, and stays local. A reviewer rating file (`RATINGS=`, template `eval/reviewer_ratings.template.csv`) gives the "judged useful" metric; without it the report says "not rated" |
 | `make provider-shape CONFIG=<id>` | One live retrieval call on a synthetic public query; writes the response shape (names and types only) to `diagnostics/` (git-ignored). See Configuration |
+| `make provider-check CONFIG=<id>` | One tiny live structured call on a synthetic prompt; prints OK or the provider's error type and message. See Configuration |
 | `make test-model` | The tests that use the real model (slow; `make test` leaves them out and uses a small fake detector) |
 | `make lint` | Linters, format checks and type checks (Ruff and mypy; Biome and TypeScript) |
 | `make test` | Backend and frontend tests, including the API contract test against `openapi.yaml` |

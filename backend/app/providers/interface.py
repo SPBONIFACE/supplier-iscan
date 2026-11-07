@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from app.limits.budget import BudgetGate
 from app.providers.catalogue import ProviderConfigSpec, Role
 from app.providers.errors import ProviderCallError, ProviderError, StructuredOutputInvalid
-from app.providers.failures import classify_failure, validation_detail
+from app.providers.failures import classify_failure, provider_error_detail, validation_detail
 from app.providers.metering import NO_USAGE, CallContext, CallUsage, Outcome, UsageMeter
 from app.redaction.text import RedactedText
 from app.telemetry import record_failure, span
@@ -118,23 +118,30 @@ class RetrievalAdapter(Protocol):
     def search(self, request: RetrievalRequest) -> RetrievalOutput: ...
 
 
-def _call_failure(config: ProviderConfigSpec, error: Exception) -> ProviderError:
+def _call_failure(
+    config: ProviderConfigSpec, error: Exception, request_texts: tuple[str, ...] = ()
+) -> ProviderError:
     if isinstance(error, ProviderError):
         return error
     kind, status_code = classify_failure(error)
     # An event on the call's span: the kind and the error type, never the SDK's message.
     record_failure(type(error).__name__, {"iscan.failure_kind": kind})
-    # The type and status only: an SDK message can quote the request or the response body. For a
-    # validation failure, also the field path, the failed rule and the received type (#122).
+    # The class and status; for a validation failure the field path, the failed rule and the
+    # received type (#122); for an HTTP error the provider's error type and its message only
+    # after sanitising against the request's texts (#125). Never the exception's string, request
+    # or headers.
     detail = validation_detail(error)
+    detail = f" fields=[{detail}]" if detail else ""
+    reason = provider_error_detail(error, request_texts)
     logger.warning(
-        "Provider call failed: provider=%s configuration=%s kind=%s status=%s error=%s%s",
+        "Provider call failed: provider=%s configuration=%s kind=%s status=%s error=%s%s%s",
         config.provider,
         config.id,
         kind,
         status_code,
         type(error).__name__,
-        f" fields=[{detail}]" if detail else "",
+        detail,
+        f" {reason}" if reason else "",
     )
     return ProviderCallError(
         provider=config.provider, config_id=config.id, kind=kind, status_code=status_code
@@ -229,7 +236,9 @@ class StructuringClient(_BoundClient):
                 try:
                     output = self._adapter.generate_json(request, schema_name, json_schema)
                 except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
-                    failure = _call_failure(self.config, error)
+                    failure = _call_failure(
+                        self.config, error, (request.instructions, request.data.text)
+                    )
             if failure is not None:
                 # Every attempt is metered, a failed one too.
                 self._record(context, attempt, "failed", NO_USAGE)
@@ -296,7 +305,9 @@ class RetrievalClient(_BoundClient):
             try:
                 output = self._adapter.search(request)
             except Exception as error:  # noqa: BLE001 - every failure becomes a typed error
-                failure = _call_failure(self.config, error)
+                failure = _call_failure(
+                    self.config, error, (request.instructions, request.query.text)
+                )
         if failure is not None:
             self._record(context, 1, "failed", NO_USAGE)
             raise failure
