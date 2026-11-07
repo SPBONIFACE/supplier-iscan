@@ -253,6 +253,37 @@ HEREDOC_STILL_CHECKED = [
     "cat <<'EOF'\nit's\nEOF\nuv add x",
     "gh issue create --body-file - <<'EOF'\ncat .env\nEOF",  # a .env name in the text
 ]
+# A program given to an interpreter on standard input: its text is not shell, so an apostrophe
+# in it must not block (regression: "Panos's" in a Python string failed closed as unparseable).
+INTERPRETER_HEREDOCS = [
+    "python3 - <<'EOF'\nprint(\"Panos's notes on Argon's results\")\nEOF",
+    "cd /tmp && python3 - <<'EOF'\nnote = \"it's Argon's turn\"\nprint(note)\nEOF\nls",
+    'python3 - <<EOF\nprint("Panos\'s")\nEOF',
+    "node <<'EOF'\nconsole.log(\"it's fine\")\nEOF",
+    "uv run python - <<'EOF'\nprint(\"don't\")\nEOF",
+    "python3 - <<'EOF'\nopen('.env.example').read()  # it's allowed\nEOF",
+]
+# The same kind of program, with something forbidden in it: still blocked.
+INTERPRETER_HEREDOC_BLOCKED = [
+    "python3 - <<'EOF'\nprint(\"Panos's\")\nopen('.env').read()\nEOF",
+    'python3 - <<\'EOF\'\nprint("Argon\'s")\nopen("backend/.env.local")\nEOF',
+    "python3 - <<'EOF'\nimport os\nos.system('pip install x')  # Panos's\nEOF",
+    'python3 - <<\'EOF\'\nimport subprocess\nsubprocess.run(["uv", "add", "x"])\nEOF',
+    'python3 - <<\'EOF\'\nimport subprocess\nsubprocess.run(["pnpm", "add", "x"])\nEOF',
+    "python3 - <<'EOF'\nimport subprocess\nsubprocess.run(['npm', 'install'])\nEOF",
+    "python3 - <<'EOF'\nimport os\nos.system(\"python -m pip install x\")\nEOF",
+    "python3 - <<'EOF'\nimport os\nos.system('security find-generic-password -s k -w')\nEOF",
+    "python3 - <<'EOF'\nimport os\nos.system(\"bash -c 'iscan-keys'\")\nEOF",
+    "python3 - <<'EOF'\nimport os\nos.system('make approve-dependency PACKAGE=x')\nEOF",
+    "python3 - <<'EOF'\np = '_docs/process/approved-dependencies.md'\nopen(p, 'a').write('x')\nEOF",
+    "python3 - <<'EOF'\nprint(\"it's\")\nEOF\nuv add x",  # a command after the body
+    "python3 - <<'EOF'\nprint(1)\npip install x",  # no closing delimiter
+]
+# A heredoc-like text in a quoted message (no closing delimiter): read as shell, as before.
+INTERPRETER_HEREDOC_MENTIONED = [
+    'git commit -m "fix: python3 - <<EOF ... EOF was blocked\n\nbody line"',
+    "gh pr create --body \"Problem: \\`python3 - <<'EOF' ... EOF\\` was blocked\nSecond line\"",
+]
 
 
 @pytest.mark.parametrize("stdin", BLOCKED_DEPENDENCY)
@@ -309,6 +340,30 @@ def test_heredoc_text_is_not_parsed_as_shell(command: str) -> None:
 @pytest.mark.parametrize("command", HEREDOC_STILL_CHECKED)
 def test_heredoc_does_not_hide_commands(command: str) -> None:
     assert run(bash(command)).returncode == 2, command
+
+
+@pytest.mark.parametrize("command", INTERPRETER_HEREDOCS)
+def test_interpreter_heredoc_text_is_not_parsed_as_shell(command: str) -> None:
+    result = run(bash(command))
+    assert result.returncode == 0, (command, result.stderr)
+    assert result.stdout == ""
+
+
+@pytest.mark.parametrize("command", INTERPRETER_HEREDOC_BLOCKED)
+def test_interpreter_heredoc_is_still_checked(command: str) -> None:
+    result = run(bash(command))
+    assert result.returncode == 2, command
+    assert "could not be parsed" not in result.stderr, (command, result.stderr)
+
+
+@pytest.mark.parametrize("command", INTERPRETER_HEREDOC_MENTIONED)
+def test_heredoc_named_in_a_message_is_allowed(command: str) -> None:
+    result = run(bash(command))
+    assert result.returncode == 0, (command, result.stderr)
+
+
+def test_unclosed_interpreter_heredoc_with_apostrophe_stays_blocked() -> None:
+    assert run(bash("python3 - <<'EOF'\nprint(\"it's\")\npip install x")).returncode == 2
 
 
 def test_truly_unparseable_stays_blocked() -> None:

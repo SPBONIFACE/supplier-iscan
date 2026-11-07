@@ -118,6 +118,12 @@ HEREDOC = re.compile(r"<<-?\s*(['\"])([A-Za-z_][A-Za-z0-9_]*)\1")
 HEREDOC_RUNNERS = re.compile(
     r"[\s;&|(`](bash|sh|zsh|dash|ksh|python[0-9.]*|node|perl|ruby|eval|source|\.)\s"
 )
+# A heredoc fed to an interpreter (not a shell): its body is a program, not shell, so it is not
+# given to the shell tokenizer (an apostrophe in its text is not an open quote); it is checked
+# word by word instead (check_program_body). Quoted or unquoted delimiter.
+ANY_HEREDOC = re.compile(r"(?<!<)<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
+HEREDOC_INTERPRETERS = re.compile(r"[\s;&|(`](python[0-9.]*|node|perl|ruby)\s")
+PROGRAM_WORD = re.compile(r"[^\s'\"`()\[\]{},;:=+<>|&*%!?\\]+")
 PATH_KEYS = ("file_path", "path", "notebook_path", "pattern", "glob")
 
 
@@ -154,23 +160,68 @@ def split_segments(tokens: list[str]) -> list[list[str]]:
     return [s for s in segments if s]
 
 
-def strip_heredocs(command: str) -> str:
-    """Drop the body of a heredoc with a quoted delimiter: it is data (an issue or pull request
-    text), not shell, and its apostrophes and quotes broke the tokenizer. A body fed to a shell or
-    an interpreter (`bash <<'EOF'`) is kept, so it is still checked; so is the body of an unquoted
-    delimiter, where the shell expands `$(...)`. .env names are still searched in the whole text."""
+def split_heredocs(command: str) -> tuple[str, list[str]]:
+    """Return the command without the heredoc bodies that are not shell, and the bodies fed to an
+    interpreter on standard input (`python3 - <<'EOF'`).
+
+    - Quoted delimiter, any command but a shell or an interpreter (`cat`, `gh ... --body-file -`):
+      the body is data (an issue or pull request text), dropped; its apostrophes broke the
+      tokenizer.
+    - Fed to a shell (`bash <<'EOF'`), or unquoted delimiter to a command that is not an
+      interpreter (the shell expands `$(...)`): kept and tokenized as shell.
+    - Fed to an interpreter (python, node, perl, ruby), quoted or not: a program, not shell. It
+      is returned apart and checked word by word (check_program_body), so an apostrophe in its
+      text cannot break the tokenizer and a forbidden command in it is still caught.
+
+    .env names are still searched in the whole text."""
     out: list[str] = []
+    programs: list[str] = []
     end: str | None = None
+    body: list[str] | None = None
     for line in command.split("\n"):
         if end is not None:
             if line.strip() == end:
                 end = None
+                if body is not None:
+                    programs.append("\n".join(body))
+                    body = None
+            elif body is not None:
+                body.append(line)
             continue
         out.append(line)
+        match = ANY_HEREDOC.search(line)
+        if match and HEREDOC_INTERPRETERS.search(" " + line[: match.start()] + " "):
+            end = match.group(2)
+            body = []
+            continue
         match = HEREDOC.search(line)
         if match and not HEREDOC_RUNNERS.search(" " + line[: match.start()] + " "):
             end = match.group(2)
-    return "\n".join(out)
+    if body is not None:
+        # No closing delimiter: perhaps not a heredoc at all (`<<EOF` quoted in a message). The
+        # lines go back to the shell text, as before this rule, and are also checked as a program.
+        programs.append("\n".join(body))
+        out.extend(body)
+    return "\n".join(out), programs
+
+
+def strip_heredocs(command: str) -> str:
+    return split_heredocs(command)[0]
+
+
+def check_program_body(body: str) -> None:
+    """Check a program given to an interpreter on standard input. It is not shell, so it is not
+    tokenized as shell: every word is taken as the possible start of a command, so a command
+    written inside a string (`os.system('pip install x')`, `["uv", "add", "x"]`) is still
+    caught. Shells and eval are not followed here: the words after them are checked anyway."""
+    words = PROGRAM_WORD.findall(body)
+    for word in words:
+        if is_env_name(word):
+            raise Block(ENV_RULE)
+    for i, word in enumerate(words):
+        if word == "eval" or word.rsplit("/", 1)[-1] in SHELLS:
+            continue
+        check_argv(words[i:], 1)
 
 
 def tokenize(command: str) -> list[str]:
@@ -192,6 +243,8 @@ def check_command(command: str, depth: int = 0) -> None:
 
     if mentions_env_file(command):
         raise Block(ENV_RULE)
+    for body in split_heredocs(command)[1]:
+        check_program_body(body)
     for tok in tokens:
         if OPERATORS.match(tok):
             continue
@@ -323,6 +376,8 @@ def command_writes_list(command: str, depth: int = 0) -> bool:
     are not writes. Obfuscated names (a glob, a variable) are not caught."""
     if depth > 3 or LIST_NAME not in command.lower():
         return False
+    if any(LIST_NAME in body.lower() for body in split_heredocs(command)[1]):
+        return True  # a program that names the file may write it
     tokens = tokenize(command)
     for i, tok in enumerate(tokens):
         if ">" in tok and OPERATORS.match(tok):
