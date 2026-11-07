@@ -11,8 +11,6 @@
 #   GCP_PROJECT_ID, GCP_REGION                    where
 #   IMAGE_API, IMAGE_WEB, IMAGE_COLLECTOR         images, pinned by digest (name@sha256:...)
 #   CRAWLER_CONTACT_URL                           public contact page named in the crawler's User-Agent
-#   WEB_ORIGIN, API_BASE_URL                      optional: the public addresses when a custom domain
-#                                                 is used; default: the run.app addresses
 #   EUR_PER_USD                                   optional: EUR for 1 USD, for costs in EUR
 # Secrets are referenced by NAME from Secret Manager (iscan-ENV-<name>, see the owner guide); this
 # script never reads a secret value. Sizing: deploy/env/ENV.conf; container settings: deploy/env/ENV.yaml.
@@ -113,8 +111,9 @@ migrate)
 
 deploy)
   need IMAGE_API IMAGE_WEB IMAGE_COLLECTOR CRAWLER_CONTACT_URL
-  web_origin="${WEB_ORIGIN:-$(run_app_url "$web_service")}"
-  api_url="${API_BASE_URL:-$(run_app_url "$api_service")}"
+  web_origin="$(run_app_url "$web_service")"
+  # The browser talks to the frontend only; its nginx forwards /api/ to this address (frontend/deploy).
+  api_url="$(run_app_url "$api_service")"
   work="$(mktemp -d)"
   trap 'rm -rf "$work"' EXIT
 
@@ -172,19 +171,22 @@ for t in json.load(sys.stdin).get("status", {}).get("traffic", []):
   "${gc[@]}" run deploy "$web_service" --region "$GCP_REGION" \
     --image "$IMAGE_WEB" --port 8080 --service-account "$web_sa" --allow-unauthenticated \
     --cpu "$WEB_CPU" --memory "$WEB_MEMORY" --min-instances 0 --max-instances "$WEB_MAX_INSTANCES" \
-    --set-env-vars "API_BASE_URL=$api_url" --labels "$labels"
+    --set-env-vars "API_UPSTREAM_URL=$api_url" --labels "$labels"
 
   # --- Worker: a Cloud Run worker pool (no HTTP port, runs continuously). See cloud-run-sizing.md. ---
-  if [ "$WORKER_INSTANCES" -gt 0 ] || "${gc[@]}" beta run worker-pools describe "$worker_pool" --region "$GCP_REGION" > /dev/null 2>&1; then
-    "${gc[@]}" beta run worker-pools deploy "$worker_pool" --region "$GCP_REGION" \
-      --service-account "$runtime_sa" --instances "$WORKER_INSTANCES" --labels "$labels" \
-      --container worker --image "$IMAGE_API" --command /opt/venv/bin/python --args="-m,app.worker" \
-      --cpu "$WORKER_CPU" --memory "$WORKER_MEMORY" \
-      --env-vars-file "$work/app.yaml" --set-secrets "$base_secrets$extra" \
-      --container collector --image "$IMAGE_COLLECTOR" --cpu "$COLLECTOR_CPU" --memory "$COLLECTOR_MEMORY"
-  else
-    echo "Worker for $env_name is switched off (WORKER_INSTANCES=0) and does not exist: nothing deployed."
+  # The deploy never switches the worker on. A new pool is created with ZERO instances; an existing pool
+  # keeps the number it has (--instances is not passed), so a deploy neither starts nor stops it.
+  # The owner switches it on and off with the two commands of the owner guide (step 17).
+  worker_instances=()
+  if ! "${gc[@]}" beta run worker-pools describe "$worker_pool" --region "$GCP_REGION" > /dev/null 2>&1; then
+    worker_instances=(--instances 0)
   fi
+  "${gc[@]}" beta run worker-pools deploy "$worker_pool" --region "$GCP_REGION" \
+    --service-account "$runtime_sa" "${worker_instances[@]}" --labels "$labels" \
+    --container worker --image "$IMAGE_API" --command /opt/venv/bin/python --args="-m,app.worker" \
+    --cpu "$WORKER_CPU" --memory "$WORKER_MEMORY" \
+    --env-vars-file "$work/app.yaml" --set-secrets "$base_secrets$extra" \
+    --container collector --image "$IMAGE_COLLECTOR" --cpu "$COLLECTOR_CPU" --memory "$COLLECTOR_MEMORY"
   ;;
 
 health)

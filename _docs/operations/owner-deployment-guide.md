@@ -10,7 +10,7 @@ password or key is ever stored in GitHub or in a file: they stay in Google Secre
 
 **Time and money.** About 2 hours the first time. Cost stays small while nobody uses it: Cloud Run scales to zero,
 Neon scales to zero. A budget alert (step 2) warns you by email if the bill grows. The one thing that costs
-continuously is the production worker (one always-on instance); see step 17.
+continuously is the worker, and it is **off** until you switch it on (step 17).
 
 **Words you will meet.** *Project*: your box in Google Cloud. *Cloud Shell*: a terminal that runs in your web
 browser, with Google's tools already installed (nothing to install on your computer). *Secret Manager*: Google's
@@ -250,7 +250,6 @@ Then, in **each environment** (`dev` and `production`), under **Environment vari
 |---|---|
 | `CRAWLER_CONTACT_URL` | the public contact page that tells suppliers who is crawling their site (required: the worker refuses to start without it) |
 | `EUR_PER_USD` | the conversion rate you use, for example `0.92` (needed when a USD-priced provider is selected) |
-| `WEB_ORIGIN`, `API_BASE_URL` | only when you use a custom domain (step 14); otherwise leave them out |
 
 Do not add any password or key here.
 
@@ -267,16 +266,15 @@ a summary of image sizes. Green means dev is live. If it is red, open the failed
 
 When it works, open the Cloud Run page in the console, service `iscan-web-dev`, and click its address.
 
-### 14. A domain name, so that login works
+### 14. Nothing to do for the address (no domain name needed)
 
-The session cookie only travels between two addresses that share a domain. Google's default addresses
-(`...run.app`) do not share one, so a buyer would be logged out at once. You need one domain you own, with two
-names, for example `app.example.org` (website) and `api.example.org` (API). In the console, Cloud Run, **Manage
-custom domains** (or a load balancer, if domain mappings are not offered in your region), map `app` to
-`iscan-web-dev` / `iscan-web-prod` and `api` to the API services, and add the DNS records it shows at your domain
-registrar. Then set `WEB_ORIGIN` (`https://app.example.org`) and `API_BASE_URL` (`https://api.example.org`) in the
-environment variables of step 12 and run "Deploy dev" again. Use separate names for dev
-(`app-dev...`, `api-dev...`).
+Buyers use **one address only**: the `...run.app` address of the website service (`iscan-web-dev` or
+`iscan-web-prod`). The website passes everything under `/api/` on to the API by itself, so the login stays valid
+and you do not need to buy or set up a domain name. The deployment sets this up (it gives the website the address
+of the API). The API also keeps its own `...run.app` address, but nobody needs it.
+
+If you want a nicer address later (your own domain in front of the website service), that is a separate decision;
+nothing in the application depends on it.
 
 ---
 
@@ -308,9 +306,25 @@ of rolling back. To stop everything at once: `gcloud run services update iscan-a
 
 ### 17. Costs, the worker, and alerts
 
-- The **worker** (it carries out the profile runs) is the one part that runs all the time in production. In dev it is
-  switched off (`WORKER_INSTANCES=0` in `deploy/env/dev.conf`): to test a run in dev, change that to `1` in a pull
-  request, merge, and set it back to `0` afterwards. Without a worker, a started run waits in the queue.
+- The **worker** (it carries out the profile runs and the drafting of assessments) is **off by default, in dev and
+  in production**: the deployment creates it with zero instances and never switches it on. While it is off, nothing
+  costs and nothing is computed: a run you start shows "En attente de démarrage" (waiting to start) and stays in
+  the queue until the worker is on. Switch it on before a test run or a demo, and off afterwards. In Cloud Shell
+  (replace `dev` by `prod` for production; `REGION` is `europe-west3`, type `REGION=europe-west3` first if Cloud
+  Shell was closed since step 1):
+
+  ```sh
+  # ON: one worker
+  gcloud beta run worker-pools update iscan-worker-dev --region="$REGION" --instances=1
+  # OFF: no worker, no cost
+  gcloud beta run worker-pools update iscan-worker-dev --region="$REGION" --instances=0
+  ```
+
+  A waiting run starts by itself a few seconds after the worker is on. Switching it off while a run is in progress
+  interrupts that run; it is picked up again, or can be resumed, when the worker comes back. **Do not forget to
+  switch it off**: an instance left on is the one thing here that costs by the hour. To see the state:
+  `gcloud beta run worker-pools describe iscan-worker-dev --region="$REGION"`. The first deployment creates the
+  worker, so these commands work only after step 13.
 - The worker polls the database, so the production Neon database does not fall asleep while the worker runs. Check
   Neon's monthly compute allowance on your plan.
 - The budget alert (step 2) is your safety net. If a warning arrives: open Billing, **Reports**, group by

@@ -96,26 +96,9 @@ jobs:
         shell: bash
         run: python3 deploy/check_image.py iscan-web:ci --max-size-mb 200 2>&1 | tee image-check.txt
 
-      - name: Run it and read the run-time configuration
-        run: |
-          docker run --detach --name web --publish 8080:8080 \
-            -e API_BASE_URL=https://api.example.test iscan-web:ci
-          for attempt in $(seq 1 20); do
-            curl --silent --fail http://localhost:8080/ > /dev/null && break
-            sleep 1
-          done
-          curl --silent --fail http://localhost:8080/config.js | tee config.js
-          grep -q 'apiBaseUrl: "https://api.example.test"' config.js
-          # A client-side route answers with the page, not a 404.
-          curl --silent --fail http://localhost:8080/runs/abc | grep -q 'id="root"'
-          docker rm --force web
-
-      - name: A bad API address stops the container
-        run: |
-          if docker run --rm -e 'API_BASE_URL=javascript:alert(1)' iscan-web:ci; then
-            echo "the container started with a bad API_BASE_URL" >&2
-            exit 1
-          fi
+      - name: Gateway test (stub API, forwarded headers, logs without query strings, bad settings)
+        shell: bash
+        run: python3 deploy/check_proxy.py iscan-web:ci
 
       - name: Report
         if: always()

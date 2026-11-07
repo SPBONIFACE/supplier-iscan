@@ -60,9 +60,10 @@ The worker is a polling loop with no HTTP port that must run continuously and wo
   (scale to zero, exact cost), but that needs the API to call the Cloud Run Jobs API and a different queue
   design: a change of architecture, not a deployment task.
 - A Cloud Run **worker pool** is made for this: a continuous container without an HTTP endpoint, a fixed number
-  of instances (`WORKER_INSTANCES`), no request needed. Its cost is the price of the instance while it exists.
-  The worker stays on its own scaling: one instance in production, **zero in dev** (switch it on to test a run,
-  off afterwards). Worker pools are a recent Cloud Run feature (the `gcloud beta run worker-pools` command): *to
+  of instances, no request needed. Its cost is the price of the instance while it runs.
+  The worker is **off by default in dev and in production**: `deploy/deploy.sh` creates the pool with zero
+  instances and never changes the count of an existing pool; the owner switches it on for a run or a demo and off
+  afterwards (guide, step 17). With no worker, a started run waits in the queue (the screen says it is waiting to start). Worker pools are a recent Cloud Run feature (the `gcloud beta run worker-pools` command): *to
   confirm* at the first deploy that the command and the region support it. Fallback if not: a service with
   `--no-cpu-throttling --min-instances 1` and a minimal health listener (follow-up code change).
 - The worker polls the database (`WORKER_POLL_SECONDS`, 5 s here), so a production Neon compute never goes idle
@@ -78,12 +79,12 @@ Set per environment in `deploy/env/*.yaml` (non-secret) and from GitHub environm
 | `RUN_BUDGET_EUR` | yaml | per-run cost budget, API and worker refuse to start without it |
 | `COLLECT_MAX_REQUESTS`, `COLLECT_MAX_DOMAINS` | yaml | ceilings per run: 200 and 10 |
 | `CRAWLER_CONTACT_URL` | GitHub environment variable | public contact page named in the crawler's User-Agent; the worker refuses to start without it |
-| `CORS_ALLOWED_ORIGINS` | computed | exactly the frontend's address of that environment (`WEB_ORIGIN`, or its run.app address) |
+| `CORS_ALLOWED_ORIGINS` | computed | exactly the frontend's address of that environment (its run.app address) |
 | `EUR_PER_USD` | GitHub environment variable | conversion rate for costs |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`, `TELEMETRY_EXPORT_TIMEOUT_SECONDS`, `DATABASE_STATEMENT_TIMEOUT_SECONDS` | yaml | telemetry and database timeouts |
 | `RUN_LEASE_SECONDS`, `WORKER_POLL_SECONDS` | yaml | job queue |
 | `PROVIDER_CONFIG_FILE`, `PRICE_TABLE_FILE`, `PROFILE_DEFINITION_FILE`, `PROMPT_SET_FILE`, `COUNTRY_TABLE_FILE`, `PDF_DISCLAIMER_FILE` | computed | paths of files mounted from Secret Manager at run time, when the secret exists (`/secrets/<name>/content.json`) |
-| `API_BASE_URL` | computed (frontend) | address of the API, written into the frontend's `config.js` at start |
+| `API_UPSTREAM_URL` | computed (frontend) | address of the API service; the frontend's nginx forwards `/api/` to it (below) |
 
 Not set (defaults apply): `INVITATION_VALIDITY_HOURS` (72), `PASSWORD_MIN_LENGTH` (12), `MONTHLY_SPEND_CAP_EUR`
 (no cap: the owner may want one; add it to the yaml), `REDACTION_THREADS` (4), PDF limits (no cap on rendering
@@ -95,13 +96,45 @@ Secrets, by name, in Secret Manager as `iscan-<env>-<name>`: `database-url`, `ad
 (each passed on when it exists), and the file secrets `provider-config`, `price-table`, `profile-definition`,
 `prompt-set`, `country-table`, `pdf-disclaimer`.
 
-## CORS and the session cookie
+## One address: the frontend forwards `/api/` to the API
 
-The session cookie is `SameSite=Lax; Secure`. The browser sends it on calls from the frontend to the API only when
-both are on the **same site**. Two `*.run.app` addresses are different sites (`run.app` is on the public suffix
-list), so the default addresses will NOT keep a buyer logged in. Use one custom domain with two names, for example
-`app.example.org` (frontend) and `api.example.org` (API), set as `WEB_ORIGIN` and `API_BASE_URL`. This is an owner
-decision (a domain name) and the main thing to settle before real users; the guide's step 14 covers it.
+The session cookie is `SameSite=Lax; Secure; HttpOnly`. Two `*.run.app` addresses are different sites (`run.app`
+is on the public suffix list), so a browser calling the API at its own address would not send the cookie. The
+decision (owner, 7 Nov 2026): **no custom domain**. The browser talks to the frontend service only, with relative
+addresses (`/api/...`); the frontend's nginx (`frontend/deploy/nginx.conf.template`) forwards them to the API service.
+The cookie is set by an answer that comes through the frontend's address, so it belongs to that one site.
+
+- **Prefix**: nginx removes `/api`; the API still serves at its root (`/health`, `/runs`, ...), so `openapi.yaml` is
+  unchanged. The frontend's API base is `/api` (set when the image is built, the same in every environment).
+- **Upstream**: `API_UPSTREAM_URL` is set at run time by `deploy/deploy.sh` (the API's run.app address); the image
+  has no address in it, and refuses to start if it is missing, not `https://`, or not a plain address.
+  nginx connects over HTTPS (`proxy_ssl_server_name on`, `Host` and the TLS name set to the upstream's host) and
+  looks the name up again every 30 s (the platform's resolver).
+- **Timeouts**: connect 10 s, send 60 s, read 330 s: longer than the API's own 300 s limit, so the API answers (or
+  Cloud Run ends the request) before nginx gives up; the slowest call is the PDF. Body limit 256 KB (the API
+  accepts short JSON bodies; its longest text field is 2000 characters).
+- **Client address**: the application does not read the client's IP address anywhere (no rate limit or quota is
+  per address: limits are per organisation, per run and per domain crawled), and uvicorn ignores `X-Forwarded-*`
+  from any sender other than 127.0.0.1. Nothing therefore trusts those headers, which is the safe choice: a
+  caller cannot forge an address, because none is used. Cloud Run's front end adds the real client to
+  `X-Forwarded-For`, nginx appends its own peer address and passes it with `X-Forwarded-Proto`, so a later feature
+  that needs the client (a login rate limit) can take the first entry written by Cloud Run, trusting exactly two
+  hops (Cloud Run's front end, then nginx), and only that. Until then, do not add `--forwarded-allow-ips`.
+- **Logs**: the access line is `METHOD /path status bytes seconds upstream-status`. Never the query string, a
+  cookie or any header; the invitation token in `/api/invitations/<token>` is replaced by `[redacted]`. nginx's
+  error log is limited to critical errors, because its lines quote the whole request line, query string included;
+  an unreachable API shows as 502 or 504 in the access log and in the API's own logs.
+- **CORS**: the browser's calls are same-origin, so CORS is not needed any more. It stays, narrowed to the one
+  exact frontend address (no wildcard, no localhost default in a deployed environment), as a harmless safeguard;
+  it can be removed in a later change without effect on users.
+- **API address**: the API service stays public (`--allow-unauthenticated`, as the frontend's nginx calls it with
+  no Google identity). Someone who knows its address can call it directly: every protected call still needs the
+  session cookie, which that address never receives from the browser. Closing it (Google identity tokens between
+  the two services) is a possible hardening, not done here.
+
+Tools approved by the owner, 7 Nov 2026: `google-github-actions/auth` v3.0.0, `google-github-actions/setup-gcloud`
+v3.0.1, Google Cloud CLI 592.0.0, `nginxinc/nginx-unprivileged` 1.29.3-alpine (digest pinned), `otelcol-google`
+(digest pinned).
 
 ## Telemetry: Google Cloud's own
 

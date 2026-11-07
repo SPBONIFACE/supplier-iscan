@@ -6,8 +6,3 @@ interface ImportMetaEnv {
   /** Interval in milliseconds between two reads of a run still going; 3000 when absent. */
   readonly VITE_RUN_POLL_INTERVAL_MS?: string;
 }
-
-interface Window {
-  /** Run-time configuration written by /config.js (addresses only, never secrets). */
-  ISCAN_CONFIG?: { apiBaseUrl?: string };
-}

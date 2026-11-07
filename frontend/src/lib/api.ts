@@ -59,11 +59,7 @@ export type ApiFailure = {
 };
 export type ApiResult<T> = { ok: true; data: T } | ApiFailure;
 
-// A deployed instance sets the API address at run time (public/config.js, rewritten by the container
-// from API_BASE_URL), so that one image serves every environment; local development falls back to
-// the build-time value, then to the local API.
-const baseUrl =
-  window.ISCAN_CONFIG?.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 // `fetch` is resolved at call time, so tests can replace it.
 const client = createClient<paths>({

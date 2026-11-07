@@ -60,8 +60,6 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION }}
       # Variables of the GitHub environment "production".
       CRAWLER_CONTACT_URL: ${{ vars.CRAWLER_CONTACT_URL }}
-      WEB_ORIGIN: ${{ vars.WEB_ORIGIN }}
-      API_BASE_URL: ${{ vars.API_BASE_URL }}
       EUR_PER_USD: ${{ vars.EUR_PER_USD }}
     steps:
       - name: Check out main (to read what runs in dev)

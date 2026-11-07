@@ -70,8 +70,6 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION }}
       # Environment-level variables of the GitHub environment "dev" (see the owner guide).
       CRAWLER_CONTACT_URL: ${{ vars.CRAWLER_CONTACT_URL }}
-      WEB_ORIGIN: ${{ vars.WEB_ORIGIN }}
-      API_BASE_URL: ${{ vars.API_BASE_URL }}
       EUR_PER_USD: ${{ vars.EUR_PER_USD }}
       GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:

@@ -218,12 +218,16 @@ the worker and telemetry is in [`_docs/operations/cloud-run-sizing.md`](_docs/op
   secrets (database URL, administrator, provider keys) live in Google Secret Manager as `iscan-<env>-<name>`, are
   passed to the services by name at run time and never enter an image, a workflow or a file.
 - **Settings** per environment are in `deploy/env/` (`*.yaml`: application settings by name; `*.conf`: Cloud Run
-  sizing). The API and the worker are one image; the frontend image takes `API_BASE_URL` at start, so the same image
+  sizing). The API and the worker are one image; the frontend image takes `API_UPSTREAM_URL` at start, so the same image
   serves every environment.
 - **Images CI** (`.github/workflows/images.yml`) builds the images on the runner for every change to them, checks
   them, and runs a redaction smoke test inside the built backend image, offline and with a 4 GB memory limit; the
   load time and peak memory appear in the run summary.
 - **Telemetry**: Google Cloud Trace and Cloud Monitoring through an OpenTelemetry Collector sidecar
   (`deploy/collector`); the application setting is `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`.
-- **Session cookie**: the frontend and the API must share a registrable domain (for example `app.example.org` and
-  `api.example.org`), see the guide, step 14.
+- **One address**: the browser talks to the frontend service only; its nginx forwards `/api/` to the API service
+  (`frontend/deploy/`), so the session cookie stays on one site and no domain name is needed
+  (`cloud-run-sizing.md`, "One address"). `deploy/check_proxy.py` tests this on the built image in CI.
+- **Worker off by default**: the deployment creates the worker with zero instances in dev and production and never
+  switches it on; the owner switches it on for a run or a demo and off afterwards (guide, step 17). With no worker
+  a started run waits in the queue.
