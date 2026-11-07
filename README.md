@@ -41,6 +41,24 @@ The AI proposes; the buyer decides.
 - **Transparency:** the chat says it is an AI; every AI statement shows its model, date and review status.
 - **English and French** interface.
 
+## About the crawler
+
+If you found a link to this page in your website's logs, it was left by the Supplier iScan crawler
+(`SupplierIScan/1.0`). A buyer starts it for one named supplier at a time; it reads a few public pages about that
+company to build a sourced profile. It follows `robots.txt` and text-and-data-mining reservations
+(`tdm-reservation`, `tdmrep.json`), makes at most 200 requests across at most 10 websites per run, and never logs in,
+fills in forms or gets around access controls.
+
+To stop it visiting your site, add this to your `robots.txt`:
+
+```
+User-agent: SupplierIScan
+Disallow: /
+```
+
+or open an issue in this repository naming your domain, and it will be added to the crawler's suppression list.
+Someone running their own instance of Supplier iScan sets their own contact page (`CRAWLER_CONTACT_URL`).
+
 ## Architecture (planned)
 
 | Layer | Technology |
