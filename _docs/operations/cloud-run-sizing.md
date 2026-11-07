@@ -124,6 +124,19 @@ The cookie is set by an answer that comes through the frontend's address, so it 
   cookie or any header; the invitation token in `/api/invitations/<token>` is replaced by `[redacted]`. nginx's
   error log is limited to critical errors, because its lines quote the whole request line, query string included;
   an unreachable API shows as 502 or 504 in the access log and in the API's own logs.
+- **Upstream certificate**: nginx checks the API's TLS certificate (`proxy_ssl_verify on`, the image's CA bundle,
+  depth 3). The CI test uses an http stub, where this does not apply; it is first exercised at a real deploy.
+- **Forwarded protocol**: nginx always sends `X-Forwarded-Proto: https` (Cloud Run only serves https); a value
+  sent by a client is never passed on.
+- **Invitation token in logs**: any logged path that mentions `invitations` (any case, with or without `/api`,
+  after nginx's own normalisation of `//` and percent-encoding) is written as `/invitations/[redacted]`.
+  Cloud Run's own request logs (`run.googleapis.com/requests`) record the full URL for the web and the API
+  service, which nginx and the application cannot change. `deploy/deploy.sh` therefore sets, at every deploy and
+  idempotently, an exclusion `iscan-no-invitation-urls` on the project's `_Default` log sink for those request logs
+  whose `httpRequest.requestUrl` contains `/invitations/` (the deployer needs `roles/logging.configWriter`).
+  Known limit: query strings in other Cloud Run request logs are kept. No secret is put in a query string:
+  the only query parameters in `openapi.yaml` are `language`, `lang`, `run_ids` and `profile_ids`. The proper fix
+  is to take the token out of the URL path (a follow-up issue).
 - **CORS**: the browser's calls are same-origin, so CORS is not needed any more. It stays, narrowed to the one
   exact frontend address (no wildcard, no localhost default in a deployed environment), as a harmless safeguard;
   it can be removed in a later change without effect on users.

@@ -68,6 +68,24 @@ print("Health: api and database available" + ("; settings not set: " + ", ".join
   return 1
 }
 
+# Cloud Run records every request, with its full URL, in Cloud Logging (outside the application's control).
+# The invitation token is part of the URL path, so those entries are excluded from the project's _Default
+# log sink (the entries are not stored). Idempotent: created when missing, updated when present. Covers the
+# web and API services of dev and prod, which share the project. Needs roles/logging.configWriter (guide).
+ensure_log_exclusion() {
+  local name="iscan-no-invitation-urls"
+  local filter='resource.type="cloud_run_revision" AND log_id("run.googleapis.com/requests") AND httpRequest.requestUrl:"/invitations/"'
+  local spec="name=$name,filter=$filter,description=Invitation tokens are part of the URL: do not store those request logs"
+  if "${gc[@]}" logging sinks describe _Default --format=json | python3 -c '
+import json, sys
+sys.exit(0 if any(e.get("name") == sys.argv[1] for e in json.load(sys.stdin).get("exclusions", [])) else 1)
+' "$name"; then
+    "${gc[@]}" logging sinks update _Default --update-exclusion="$spec"
+  else
+    "${gc[@]}" logging sinks update _Default --add-exclusion="$spec"
+  fi
+}
+
 case "$action" in
 images)
   # Reads what is running, so that production gets exactly the images that were tested in dev.
@@ -111,6 +129,7 @@ migrate)
 
 deploy)
   need IMAGE_API IMAGE_WEB IMAGE_COLLECTOR CRAWLER_CONTACT_URL
+  ensure_log_exclusion
   web_origin="$(run_app_url "$web_service")"
   # The browser talks to the frontend only; its nginx forwards /api/ to this address (frontend/deploy).
   api_url="$(run_app_url "$api_service")"

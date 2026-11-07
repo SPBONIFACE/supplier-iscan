@@ -41,6 +41,17 @@ STUB_CONF = (
     + "|".join(f"{name}={value}" for name, value in STUB_FIELDS.items())
     + '"; } }'
 )
+# Every way to write an invitation path that must stay out of the logs.
+INVITATION_PATHS = (
+    "/invitations/{}",
+    "/invitations/{}/accept",
+    "/api/invitations/{}",
+    "/api//invitations/{}/x",
+    "/api/%69nvitations/{}/x",
+    "/%49nvitations/{}",
+    "/API/Invitations/{}",
+    "/api/invitations/{}?x=1",
+)
 MARK_QUERY = "marker_query_12345"
 MARK_COOKIE = "marker_cookie_67890"
 MARK_INVITE = "marker_invite_abcde"
@@ -58,11 +69,18 @@ def docker(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
 
 
 def get(
-    url: str, *, method: str = "GET", data: bytes | None = None, cookie: str | None = None
+    url: str,
+    *,
+    method: str = "GET",
+    data: bytes | None = None,
+    cookie: str | None = None,
+    forwarded_proto: str | None = None,
 ) -> tuple[int, str]:
     request = urllib.request.Request(url, data=data, method=method)  # noqa: S310
     if cookie:
         request.add_header("Cookie", cookie)
+    if forwarded_proto:
+        request.add_header("X-Forwarded-Proto", forwarded_proto)
     if data is not None:
         request.add_header("Content-Type", "application/json")
     try:
@@ -128,9 +146,13 @@ def check(image: str) -> None:
             expect(fields["cookie"] == f"session={MARK_COOKIE}", "the cookie reaches the API")
             expect(fields["host"] == f"{stub}:8080", "Host is the upstream's own")
             expect(bool(fields["xff"]), "X-Forwarded-For is passed")
-            expect(fields["proto"] == "http", "X-Forwarded-Proto is passed")
+            expect(fields["proto"] == "https", "X-Forwarded-Proto is https")
 
-            status, body = get(f"{base}/api/invitations/{MARK_INVITE}", method="GET")
+            status, body = get(f"{base}/api/health", forwarded_proto="http")
+            expect("proto=https" in body, "a client X-Forwarded-Proto is not passed on")
+            for path in INVITATION_PATHS:
+                get(f"{base}{path.format(MARK_INVITE)}")
+            status, body = get(f"{base}/api/invitations/{MARK_INVITE}")
             expect(
                 status == 200 and f"path=/invitations/{MARK_INVITE}" in body,
                 "a path with a token is forwarded",

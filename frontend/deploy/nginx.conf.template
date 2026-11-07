@@ -6,19 +6,14 @@
 # to the API (the /api prefix is removed: the API serves at its root, as openapi.yaml says), so the session
 # cookie belongs to one site.
 
-# The access log line has the path only: never the query string, a cookie or any header (#51). The one
-# secret that sits in a path, the invitation token, is replaced.
-# ($uri is rewritten for the API, so the path comes from the request line, cut before any "?".)
-map $request_uri $iscan_request_path {
-  ~^(?<only_path>[^?]*) $only_path;
-}
-map $iscan_request_path $iscan_logged_path {
-  ~^(?<head>/api/invitations/)[^/]+(?<tail>.*)$ "${head}[redacted]${tail}";
-  default $iscan_request_path;
-}
-map $http_x_forwarded_proto $iscan_forwarded_proto {
-  default $http_x_forwarded_proto;
-  "" $scheme;
+# The access log line has the path only: never the query string, a cookie or any header (#51). Any path
+# that mentions "invitations" (the invitation token sits in it), with or without /api, in any letter case,
+# is logged without the rest. $uri is nginx's own normalised form (percent-encoding decoded, "//" merged),
+# taken before the /api prefix is removed, so variants such as /api//invitations/T or /%69nvitations/T match too.
+# (The first "set" of the server block runs before the location's rewrite.)
+map $iscan_original_uri $iscan_logged_path {
+  ~*invitations "/invitations/[redacted]";
+  default $iscan_original_uri;
 }
 log_format iscan_path '$request_method $iscan_logged_path $status $body_bytes_sent ${request_time}s upstream=$upstream_status';
 
@@ -28,6 +23,7 @@ server {
   root /usr/share/nginx/html;
   index index.html;
   server_tokens off;
+  set $iscan_original_uri $uri;
 
   access_log /dev/stdout iscan_path;
   # Error lines quote the whole request line, query string included: only critical ones are written.
@@ -57,10 +53,15 @@ server {
     proxy_pass $iscan_upstream;
     proxy_http_version 1.1;
     proxy_ssl_server_name on;
+    # The API's certificate is checked (ignored for the http stub of the CI test).
+    proxy_ssl_verify on;
+    proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+    proxy_ssl_verify_depth 3;
     proxy_ssl_name @UPSTREAM_HOSTNAME@;
     proxy_set_header Host @UPSTREAM_HOST@;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $iscan_forwarded_proto;
+    # Cloud Run's front end always speaks https to the buyer; a value sent by the client is never passed on.
+    proxy_set_header X-Forwarded-Proto https;
     proxy_set_header Connection "";
     proxy_connect_timeout 10s;
     proxy_send_timeout 60s;

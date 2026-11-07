@@ -102,8 +102,8 @@ for role in roles/secretmanager.secretAccessor roles/cloudtrace.agent roles/moni
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$RUNTIME_SA" --role="$role" --condition=None --quiet > /dev/null
 done
 
-# deployer: deploy to Cloud Run, push images, see (not read) secrets, read the project number
-for role in roles/run.admin roles/artifactregistry.writer roles/secretmanager.viewer roles/browser; do
+# deployer: deploy to Cloud Run, push images, see (not read) secrets, read the project number, set a log filter
+for role in roles/run.admin roles/artifactregistry.writer roles/secretmanager.viewer roles/browser roles/logging.configWriter; do
   gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$DEPLOY_SA" --role="$role" --condition=None --quiet > /dev/null
 done
 # the deployer may start services as the runtime and web robots, and nothing else
@@ -272,6 +272,12 @@ Buyers use **one address only**: the `...run.app` address of the website service
 `iscan-web-prod`). The website passes everything under `/api/` on to the API by itself, so the login stays valid
 and you do not need to buy or set up a domain name. The deployment sets this up (it gives the website the address
 of the API). The API also keeps its own `...run.app` address, but nobody needs it.
+
+One more thing the deployment does by itself, so that nothing is left for you to do: Google's own request logs
+write down the full address of every request, and an invitation link contains its secret. At every deployment a
+filter is set (in Cloud Logging, "Log Router", the `_Default` sink, exclusion `iscan-no-invitation-urls`) so that
+requests to invitation addresses are not stored. This is why the deployer robot gets the role
+"Logs Configuration Writer" in step 6.
 
 If you want a nicer address later (your own domain in front of the website service), that is a separate decision;
 nothing in the application depends on it.

@@ -27,9 +27,16 @@ concurrency:
 jobs:
   config:
     name: is deployment configured?
-    # A push to main whose CI run succeeded, or a manual run from main.
+    # A push to main of THIS repository whose CI run succeeded, or a manual run from main.
+    # The `branches: [main]` filter of the trigger matches only the NAME of the head branch, and CI also runs
+    # on pull requests: a pull request from a fork whose branch is called "main" would match it, and its
+    # code would then run with the deployment credentials. Hence the event and the repository are checked here.
     if: >-
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      (github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
+        && github.event.workflow_run.event == 'push'
+        && github.event.workflow_run.head_repository.full_name == github.repository
+        && github.event.workflow_run.head_branch == 'main')
       || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 5
