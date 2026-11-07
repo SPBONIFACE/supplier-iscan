@@ -1,0 +1,44 @@
+# OpenTelemetry Collector for Cloud Run (a sidecar next to the API and the worker).
+# The application sends OTLP/HTTP to http://localhost:4318 (OTEL_EXPORTER_OTLP_ENDPOINT, no
+# credential: the sidecar shares the instance). The collector authenticates to Google Cloud with
+# the service account of the instance, so no key exists anywhere.
+#   traces  -> Google Cloud Trace
+#   metrics -> Google Cloud Managed Service for Prometheus (Cloud Monitoring), queryable with PromQL,
+#              which is what the alert on the run failure rate reads (README, Observability)
+# Logs are not sent from here: Cloud Run sends the JSON log lines on standard error to Cloud Logging.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 127.0.0.1:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+  resourcedetection:
+    detectors: [gcp]
+    timeout: 10s
+  batch:
+    send_batch_size: 200
+    timeout: 5s
+
+exporters:
+  # The project and the credentials come from the environment of the instance (its service account).
+  googlecloud: {}
+  googlemanagedprometheus: {}
+
+service:
+  telemetry:
+    logs:
+      level: warn
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [googlecloud]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [googlemanagedprometheus]

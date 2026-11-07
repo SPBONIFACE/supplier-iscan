@@ -13,13 +13,16 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
+  # Also on main after a merge: the dev deployment (deploy-dev.yml) starts only when this run is green.
+  push:
+    branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:

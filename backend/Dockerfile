@@ -29,7 +29,9 @@ RUN apt-get update \
 
 # Runtime dependencies only, installed from the committed lockfile without changing it.
 COPY pyproject.toml uv.lock .python-version ./
-RUN uv sync --locked --no-dev
+# --no-cache: with UV_LINK_MODE=copy the download cache would stay in the image as a second copy of
+# every package (about 3 GB, found by the image check of #52).
+RUN uv sync --locked --no-dev --no-cache
 
 # The name-detection model (#19): fetched here, at build time, from a pinned revision and checked
 # against sha256 digests in scripts/fetch_model.py; the running application never downloads

@@ -33,3 +33,16 @@ def alembic_config(connection: Connection | None = None) -> Config:
 
 def upgrade_to_head(connection: Connection) -> None:
     command.upgrade(alembic_config(connection), "head")
+
+
+def main() -> None:
+    """`python -m app.migrate`: apply the migrations to the database named by DATABASE_URL.
+
+    The deployment pipeline runs this as a job before a new version is deployed. No statement
+    timeout applies (see `app/migrations/env.py`).
+    """
+    command.upgrade(alembic_config(), "head")
+
+
+if __name__ == "__main__":
+    main()

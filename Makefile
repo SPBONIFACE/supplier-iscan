@@ -33,10 +33,11 @@ provider-check: ## One tiny live structured call; prints OK or the provider's er
 	cd backend && PYTHONPATH=.. uv run --locked python -m eval.provider_check --config "$(CONFIG)"
 
 lint: ## Run linters, format checks and type checks
-	cd backend && uv run --locked ruff check . ../eval && uv run --locked ruff format --check . ../eval && uv run --locked mypy
+	cd backend && uv run --locked ruff check . ../eval ../deploy && uv run --locked ruff format --check . ../eval ../deploy && uv run --locked mypy
 	cd frontend && pnpm lint && pnpm typecheck
 	cd agent-pack && uv run --locked ruff check . && uv run --locked ruff format --check . && uv run --locked mypy
 	cd agent-pack && uv run --locked python scripts/check_dependencies.py
+	python3 deploy/check_workflows.py
 
 run: ## Start the database, the API and the frontend with Docker Compose
 	docker compose up --build
