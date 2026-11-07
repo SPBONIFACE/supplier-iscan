@@ -139,6 +139,10 @@ The hook uses the standard library only.
 | `google-github-actions/auth` | v3.0.0 (commit `7c6bc770dae815cd3e89ee6cdf493a5fab2cc093`) | Apache-2.0 | Workload Identity Federation to Google Cloud, no long-lived key | Released 28 Aug 2025 |
 | `google-github-actions/setup-gcloud` | v3.0.1 (commit `aa5489c8933f4cc7a4f7d45035b3b1440c9c10db`) | Apache-2.0 | `gcloud run deploy`, Artifact Registry push, Cloud Monitoring alert policy | `deploy-cloudrun` action not needed |
 | `anthropics/claude-code-action` | v1.0.248 (9 Oct; commit resolved at install) | MIT | On-call agent runtime (#53) | (owner decision 6). Daily releases: pin a commit ≥ 14 days old. |
+| Google Cloud CLI (`gcloud`, with the `beta` component) | 592.0.0 | Apache-2.0 | Deploy, jobs, secret checks and worker switching in the deploy workflows (installed by `setup-gcloud`) | Version pinned in the workflows; `beta` is needed for `run worker-pools`. Approved by the owner, 7 Nov 2026 |
+| `nginxinc/nginx-unprivileged` | 1.29.3-alpine, `sha256:5aea7cc516b419e3526f47dd1531be31a56a046cfe44754d94f9383e13e2ee99` | Apache-2.0 | Base of the frontend image: serves the app and forwards `/api/` as a non-root user | Image digest pinned in `frontend/Dockerfile.prod`. Approved by the owner, 7 Nov 2026 |
+| `otelcol-google` (Google-built OpenTelemetry Collector) | tag `latest` of 6 Nov 2026, `sha256:871b9e716d8749660c0e5fd7e7fd5a21b04d412919ab86792528ee4cfa258f89` | Apache-2.0 | Sidecar that sends traces to Cloud Trace and metrics to Cloud Monitoring | Pinned by digest in `deploy/collector/Dockerfile`. Approved by the owner, 7 Nov 2026 |
+
 
 ## Already locked in the repository (recorded 3 Nov 2026 for `agent-pack/scripts/check_dependencies.py`)
 
