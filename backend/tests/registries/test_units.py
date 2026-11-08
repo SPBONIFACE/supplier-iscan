@@ -1,18 +1,21 @@
 """Settings, text normalisation, ranking, merging and cache of the registries module (#14)."""
 
 import asyncio
+from collections.abc import Callable
 
 import httpx2
 import pytest
 
 from app.config import ConfigurationError
+from app.http_client import GuardedClient
 from app.registries.cache import InMemoryRegistryCache
+from app.registries.guarded_fetch import GuardedFetch
 from app.registries.http import FetchError
-from app.registries.httpx2_fetch import Httpx2Fetch
 from app.registries.models import RegistryCandidate, RegistrySearchQuery
 from app.registries.ranking import merge_candidates, rank_candidates
 from app.registries.settings import RegistrySettings, load_registry_settings
 from app.registries.text import match_key, normalise_text, search_languages
+from tests.http_client.support import StubResolver
 from tests.registries.support import FakeTime
 
 # --- Settings ------------------------------------------------------------------------------
@@ -197,30 +200,35 @@ def test_cache_rejects_a_non_positive_duration() -> None:
         InMemoryRegistryCache(0)
 
 
-# --- httpx2 adapter (replaced by the guarded client of #15) --------------------------------
+# --- guarded client adapter (#16) ----------------------------------------------------------
+
+HOST_ADDRESSES = {"www.wikidata.org": ["93.184.215.14"], "api.gleif.org": ["93.184.215.15"]}
 
 
-def test_httpx2_fetch_sends_params_and_headers_and_returns_the_body() -> None:
+def guarded_fetch(handler: Callable[[httpx2.Request], httpx2.Response]) -> GuardedFetch:
+    client = GuardedClient(
+        resolver=StubResolver(HOST_ADDRESSES), inner_transport=httpx2.MockTransport(handler)
+    )
+    return GuardedFetch(client, 5.0)
+
+
+def test_guarded_fetch_sends_params_and_headers_and_returns_the_body() -> None:
     seen: list[httpx2.Request] = []
 
     def handler(request: httpx2.Request) -> httpx2.Response:
         seen.append(request)
         return httpx2.Response(200, json={"ok": True}, headers={"Retry-After": "3"})
 
-    async def run() -> tuple[int, bytes, str | None]:
-        fetch = Httpx2Fetch(5.0, transport=httpx2.MockTransport(handler))
-        response = await fetch(
+    response = asyncio.run(
+        guarded_fetch(handler)(
             "https://www.wikidata.org/w/api.php",
             {"search": "Société Générale"},
             {"User-Agent": "SupplierIScan/test (contact)"},
         )
-        await fetch.aclose()
-        return response.status_code, response.body, response.headers.get("retry-after")
+    )
 
-    status, body, retry_after = asyncio.run(run())
-
-    assert status == 200 and body == b'{"ok":true}'
-    assert retry_after == "3"
+    assert response.status_code == 200 and response.body == b'{"ok":true}'
+    assert response.headers.get("retry-after") == "3"
     assert seen[0].headers["User-Agent"] == "SupplierIScan/test (contact)"
     assert seen[0].url.params["search"] == "Société Générale"
 
@@ -232,17 +240,23 @@ def test_httpx2_fetch_sends_params_and_headers_and_returns_the_body() -> None:
         (httpx2.ReadTimeout("slow"), "timeout"),
     ],
 )
-def test_httpx2_fetch_maps_transport_errors(error: Exception, kind: str) -> None:
+def test_guarded_fetch_maps_transport_errors(error: Exception, kind: str) -> None:
     def handler(request: httpx2.Request) -> httpx2.Response:
         raise error
 
-    async def run() -> None:
-        fetch = Httpx2Fetch(5.0, transport=httpx2.MockTransport(handler))
-        try:
-            await fetch("https://api.gleif.org/api/v1/lei-records", {}, {})
-        finally:
-            await fetch.aclose()
-
     with pytest.raises(FetchError) as raised:
-        asyncio.run(run())
+        asyncio.run(guarded_fetch(handler)("https://api.gleif.org/api/v1/lei-records", {}, {}))
     assert raised.value.kind == kind
+
+
+def test_guarded_fetch_refuses_an_address_the_guard_blocks() -> None:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        raise AssertionError("no request may leave")
+
+    client = GuardedClient(
+        resolver=StubResolver({"api.gleif.org": ["127.0.0.1"]}),
+        inner_transport=httpx2.MockTransport(handler),
+    )
+
+    with pytest.raises(FetchError):
+        asyncio.run(GuardedFetch(client, 5.0)("https://api.gleif.org/x", {}, {}))

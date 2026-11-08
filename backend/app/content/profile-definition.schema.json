@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Supplier iScan profile definition",
+  "description": "The sections and fields of a supplier profile (spec, Profile definition). Identifiers are in English; labels are given in English and French.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sections"],
+  "properties": {
+    "$comment": { "type": "string" },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": { "$ref": "#/$defs/section" }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,59}$"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "fr"],
+      "properties": {
+        "en": { "$ref": "#/$defs/label" },
+        "fr": { "$ref": "#/$defs/label" }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "labels", "fields"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "labels": { "$ref": "#/$defs/labels" },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": { "$ref": "#/$defs/field" }
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "labels", "kind", "extraction_hint"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "labels": { "$ref": "#/$defs/labels" },
+        "kind": { "enum": ["fact", "assessment", "buyer"] },
+        "extraction_hint": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "certification": { "type": "boolean", "default": false },
+        "concerns_people": { "type": "boolean", "default": false },
+        "key_figure": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "$comment": "Example profile definition, written from the public specification only. An instance supplies its own file through PROFILE_DEFINITION_FILE.",
+  "sections": [
+    {
+      "id": "company_overview",
+      "labels": { "en": "Company overview", "fr": "Présentation de l'entreprise" },
+      "fields": [
+        {
+          "id": "legal_form",
+          "labels": { "en": "Legal form", "fr": "Forme juridique" },
+          "kind": "fact",
+          "extraction_hint": "The legal form of the company as stated by the company or its registry."
+        },
+        {
+          "id": "founding_year",
+          "labels": { "en": "Founding year", "fr": "Année de création" },
+          "kind": "fact",
+          "extraction_hint": "The year the company was founded.",
+          "key_figure": true
+        },
+        {
+          "id": "employee_count",
+          "labels": { "en": "Number of employees", "fr": "Nombre de salariés" },
+          "kind": "fact",
+          "extraction_hint": "The number of employees, or a range, with the year it refers to.",
+          "key_figure": true
+        },
+        {
+          "id": "management_team",
+          "labels": { "en": "Management", "fr": "Direction" },
+          "kind": "fact",
+          "extraction_hint": "The roles in the management team as published by the company.",
+          "concerns_people": true
+        }
+      ]
+    },
+    {
+      "id": "production_footprint",
+      "labels": { "en": "Production footprint", "fr": "Empreinte de production" },
+      "fields": [
+        {
+          "id": "production_sites",
+          "labels": { "en": "Production sites", "fr": "Sites de production" },
+          "kind": "fact",
+          "extraction_hint": "The locations (city and country) of the production sites."
+        },
+        {
+          "id": "main_products",
+          "labels": { "en": "Main products", "fr": "Principaux produits" },
+          "kind": "fact",
+          "extraction_hint": "The main products or product families the company manufactures."
+        }
+      ]
+    },
+    {
+      "id": "certifications",
+      "labels": { "en": "Certifications", "fr": "Certifications" },
+      "fields": [
+        {
+          "id": "quality_management",
+          "labels": {
+            "en": "Quality management certification",
+            "fr": "Certification de management de la qualité"
+          },
+          "kind": "fact",
+          "extraction_hint": "A quality management certification the company states it holds, with the standard named.",
+          "certification": true,
+          "key_figure": true
+        },
+        {
+          "id": "environmental_management",
+          "labels": {
+            "en": "Environmental management certification",
+            "fr": "Certification de management environnemental"
+          },
+          "kind": "fact",
+          "extraction_hint": "An environmental management certification the company states it holds, with the standard named.",
+          "certification": true,
+          "key_figure": true
+        }
+      ]
+    },
+    {
+      "id": "swot",
+      "labels": { "en": "SWOT", "fr": "SWOT" },
+      "fields": [
+        {
+          "id": "strengths",
+          "labels": { "en": "Strengths", "fr": "Forces" },
+          "kind": "assessment",
+          "extraction_hint": "Strengths of the supplier, drafted from the cited facts only."
+        },
+        {
+          "id": "weaknesses",
+          "labels": { "en": "Weaknesses", "fr": "Faiblesses" },
+          "kind": "assessment",
+          "extraction_hint": "Weaknesses of the supplier, drafted from the cited facts only."
+        },
+        {
+          "id": "opportunities",
+          "labels": { "en": "Opportunities", "fr": "Opportunités" },
+          "kind": "assessment",
+          "extraction_hint": "Opportunities for the buyer, drafted from the cited facts only."
+        },
+        {
+          "id": "threats",
+          "labels": { "en": "Threats", "fr": "Menaces" },
+          "kind": "assessment",
+          "extraction_hint": "Threats for the buyer, drafted from the cited facts only."
+        },
+        {
+          "id": "buyer_notes",
+          "labels": { "en": "Buyer notes", "fr": "Notes de l'acheteur" },
+          "kind": "buyer",
+          "extraction_hint": "Entered by the buyer only; never generated."
+        }
+      ]
+    }
+  ]
+}

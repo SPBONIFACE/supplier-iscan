@@ -1,0 +1,360 @@
+/* Supplier card PDF (mock-up 06-pdf-card): research-brief typesetting with the shared tokens
+   (tokens.css, generated from _docs/design/tokens.json) and the IBM Plex fonts (fonts.css). */
+@page {
+  size: A4 portrait;
+  margin: 20mm 18mm 34mm;
+  background: var(--isc-color-field);
+  @top-left {
+    content: element(runhead);
+  }
+  @bottom-left {
+    content: element(runfoot);
+    vertical-align: top;
+    width: 80%;
+  }
+  @bottom-right {
+    vertical-align: top;
+    font-size: 9px;
+    color: var(--isc-color-ink-tertiary);
+  }
+}
+.run-head {
+  position: running(runhead);
+  font-size: 9px;
+  color: var(--isc-color-ink-secondary);
+}
+.run-foot {
+  position: running(runfoot);
+  font-size: 9px;
+  color: var(--isc-color-ink-tertiary);
+  border-top: 1px solid var(--isc-color-rule);
+  padding-top: 1.5mm;
+  width: 140mm;
+}
+.run-foot .dis {
+  margin-top: 1mm;
+  border: 1px dashed var(--isc-color-border-control);
+  padding: 0.6mm 1.5mm;
+}
+html {
+  font-family: var(--isc-font-family-sans), "IBM Plex Sans JP", "IBM Plex Sans KR",
+    "IBM Plex Sans SC", sans-serif;
+  font-size: var(--isc-font-size-base);
+  line-height: var(--isc-font-line-height-compact);
+  color: var(--isc-color-ink);
+  background: var(--isc-color-field);
+  overflow-wrap: break-word;
+}
+:lang(ja) {
+  font-family: "IBM Plex Sans JP", var(--isc-font-family-sans), sans-serif;
+}
+:lang(ko) {
+  font-family: "IBM Plex Sans KR", var(--isc-font-family-sans), sans-serif;
+}
+:lang(zh) {
+  font-family: "IBM Plex Sans SC", var(--isc-font-family-sans), sans-serif;
+}
+h1,
+h2,
+h3 {
+  font-family: var(--isc-font-family-serif);
+  font-weight: var(--isc-font-weight-semibold);
+  line-height: var(--isc-font-line-height-tight);
+  margin: 0;
+  break-after: avoid;
+}
+h1 {
+  font-size: var(--isc-font-size-display);
+  margin: 2mm 0 1mm;
+}
+p {
+  margin: 0;
+}
+.micro {
+  font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold);
+  letter-spacing: var(--isc-font-letter-spacing-micro);
+  text-transform: uppercase;
+}
+.sec {
+  color: var(--isc-color-ink-secondary);
+}
+.meta {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-tertiary);
+}
+.mono {
+  font-family: var(--isc-font-family-mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.deck {
+  font-size: var(--isc-font-size-h3);
+  color: var(--isc-color-ink-secondary);
+  padding-bottom: 5mm;
+  border-bottom: var(--isc-border-section-rule) solid var(--isc-color-ink);
+}
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8mm;
+  margin-top: 5mm;
+}
+.pdl {
+  display: grid;
+  grid-template-columns: 34mm minmax(0, 1fr);
+  margin: 0;
+  font-size: var(--isc-font-size-sm);
+}
+.pdl dt,
+.pdl dd {
+  margin: 0;
+  padding: 1.4mm 2mm 1.4mm 0;
+  border-bottom: 1px solid var(--isc-color-rule);
+}
+.pdl dt {
+  font-weight: var(--isc-font-weight-semibold);
+  color: var(--isc-color-ink-secondary);
+}
+.ph2 {
+  font-size: var(--isc-font-size-h2);
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink);
+  padding-top: 2mm;
+  margin: 6mm 0 1mm;
+}
+.ph2 .no {
+  font-family: var(--isc-font-family-sans);
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-tertiary);
+  margin-right: 2mm;
+}
+.ph2.newpage {
+  break-before: page;
+}
+.ph3 {
+  font-size: var(--isc-font-size-h3);
+  margin: 5mm 0 1mm;
+}
+.flag {
+  margin-top: 5mm;
+  padding: 2mm 3mm;
+  background: var(--isc-status-flag-bg);
+  border-left: var(--isc-border-flag-rule) solid var(--isc-status-flag-rule);
+  color: var(--isc-status-flag-fg);
+  break-inside: avoid;
+}
+.legend {
+  display: grid;
+  gap: 1.5mm;
+  font-size: var(--isc-font-size-sm);
+}
+.legend div {
+  display: flex;
+  gap: 3mm;
+  align-items: baseline;
+}
+.legend div > :first-child {
+  flex: 0 0 44mm;
+}
+.badge {
+  display: inline-block;
+  padding: 0.4mm 1.5mm;
+  border-radius: var(--isc-radius-control);
+  font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold);
+  letter-spacing: var(--isc-font-letter-spacing-micro);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge.pending {
+  color: var(--isc-status-pending-fg);
+  border: 1px dashed var(--isc-status-pending-border);
+}
+.badge.decided {
+  color: var(--isc-status-decided-fg);
+  border: 1px solid var(--isc-status-decided-border);
+}
+.ev {
+  font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold);
+  letter-spacing: var(--isc-font-letter-spacing-micro);
+  text-transform: uppercase;
+  color: var(--isc-status-evidence-fg);
+}
+.missing {
+  padding-left: 2mm;
+  border-left: var(--isc-border-quote-rule) solid var(--isc-status-missing-rule);
+  color: var(--isc-status-missing-fg);
+}
+.not-covered {
+  color: var(--isc-color-ink-secondary);
+  font-style: italic;
+}
+.pf {
+  display: grid;
+  grid-template-columns: 38mm minmax(0, 1fr) 30mm;
+  gap: 0 4mm;
+  padding: 2.2mm 0;
+  border-bottom: 1px solid var(--isc-color-rule);
+  break-inside: avoid;
+}
+.pf .l {
+  font-size: var(--isc-font-size-sm);
+  font-weight: var(--isc-font-weight-semibold);
+  color: var(--isc-color-ink-secondary);
+}
+.pf .hint {
+  display: block;
+  font-weight: var(--isc-font-weight-regular);
+  color: var(--isc-color-ink-tertiary);
+}
+.pf .v {
+  font-weight: var(--isc-font-weight-medium);
+}
+.pf .q,
+.q {
+  margin: 1.2mm 0 0;
+  padding-left: 2mm;
+  border-left: var(--isc-border-quote-rule) solid var(--isc-color-border-control);
+  font-family: var(--isc-font-family-serif);
+  font-size: 13px;
+  line-height: var(--isc-font-line-height-body);
+}
+.redact {
+  color: var(--isc-status-evidence-fg);
+  font-weight: var(--isc-font-weight-semibold);
+}
+.srcline {
+  margin-top: 1mm;
+  font-size: 11px;
+}
+.labels {
+  display: flex;
+  gap: 2mm;
+  margin-top: 0.8mm;
+}
+.url {
+  margin-top: 0.8mm;
+  font-size: 11px;
+}
+.pf .st {
+  display: grid;
+  gap: 1mm;
+  align-content: start;
+  justify-items: start;
+}
+.byline {
+  font-size: 11px;
+  color: var(--isc-color-ink-tertiary);
+}
+.orig {
+  font-size: var(--isc-font-size-sm);
+  color: var(--isc-color-ink-tertiary);
+  margin-top: 1mm;
+}
+.ps {
+  padding: 2.2mm 0;
+  border-bottom: 1px solid var(--isc-color-rule);
+  break-inside: avoid;
+  display: grid;
+  gap: 1mm;
+}
+.ps .h {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2mm;
+}
+.ps .prov {
+  font-size: 11px;
+  color: var(--isc-color-ink-tertiary);
+}
+.plain {
+  margin: 0;
+  padding-left: 5mm;
+}
+table.pt {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--isc-font-size-sm);
+  table-layout: fixed;
+}
+.pt caption {
+  text-align: left;
+  color: var(--isc-color-ink-secondary);
+  padding-bottom: 1mm;
+}
+.pt th,
+.pt td {
+  text-align: left;
+  vertical-align: top;
+  padding: 1.4mm 2mm 1.4mm 0;
+  border-bottom: 1px solid var(--isc-color-rule);
+  overflow-wrap: anywhere;
+}
+.pt thead th {
+  border-bottom: 1px solid var(--isc-color-ink);
+  color: var(--isc-color-ink-secondary);
+  font-weight: var(--isc-font-weight-semibold);
+}
+.srcs {
+  font-size: 11px;
+  margin: 0;
+  padding-left: 5mm;
+  display: grid;
+  gap: 0.8mm;
+}
+
+/* Font stacks. The renderer defines --pdf-* (one name per font file, see render.font_css_for):
+   WeasyPrint merges two files of one family name into a single embedded font. Each weight has its
+   own stack, so that the weight a rule asks for is the weight of the face. */
+html {
+  font-family: var(--pdf-sans-400);
+  font-weight: 400;
+}
+h1,
+h2,
+h3,
+.deck {
+  font-family: var(--pdf-serif-600);
+  font-weight: 600;
+}
+.deck {
+  font-family: var(--pdf-sans-400);
+  font-weight: 400;
+}
+.micro,
+.badge,
+.ev,
+.pf .l,
+.pdl dt,
+.pt thead th,
+.redact {
+  font-family: var(--pdf-sans-600);
+  font-weight: 600;
+}
+.pf .v {
+  font-family: var(--pdf-sans-500);
+  font-weight: 500;
+}
+.q {
+  font-family: var(--pdf-serif-400);
+  font-weight: 400;
+}
+.mono {
+  font-family: var(--pdf-mono-400);
+  font-weight: 400;
+}
+.ph2 .no {
+  font-family: var(--pdf-sans-400);
+  font-weight: 400;
+}
+*:lang(ja) {
+  font-family: var(--pdf-ja);
+}
+*:lang(ko) {
+  font-family: var(--pdf-ko);
+}
+*:lang(zh) {
+  font-family: var(--pdf-zh);
+}

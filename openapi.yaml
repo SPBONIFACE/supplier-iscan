@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.3.0
+  version: 0.19.1
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -9,6 +9,15 @@ info:
     Authentication: `POST /auth/login` sets a session cookie (`HttpOnly`, `Secure`, `SameSite=Lax`).
     Every operation that declares the `sessionCookie` security requirement answers 401 when the
     cookie is missing, expired, revoked by a logout, or tampered with.
+
+
+    Organisation isolation: every member operation is scoped to the organisation of the session;
+    no member operation takes an organisation id from the client. A request for a resource of
+    another organisation answers the shared `NotFound` response, identical to the answer for an id
+    that does not exist. An administrator reads the content of an organisation (supplier names,
+    fact values, quotes, corrections, criteria, notes, assessments) only as a member of that
+    organisation, like any member: the local administrator of a self-hosted instance reaches the
+    default organisation's content, and no other.
 servers:
   - url: http://localhost:8000
     description: Local development (Docker Compose)
@@ -17,8 +26,26 @@ tags:
     description: Operational endpoints
   - name: auth
     description: Sign-in, sign-out and the current user
+  - name: identity
+    description: Identity chat that turns a supplier name into a confirmed identity record
   - name: users
     description: User records
+  - name: organisation
+    description: The signed-in member's own organisation
+  - name: profile
+    description: The profile definition loaded at startup
+  - name: runs
+    description: Profile runs. They execute in a worker; no request waits for a stage.
+  - name: demo
+    description: >-
+      The public demo (#50): read-only, no sign-in, no personal data. It serves only the pre-built
+      `DemoProfile` records. Every request to a path under `/demo` other than GET answers 403,
+      before any other check; nothing under `/demo` writes, queues a job, calls a model or
+      crawls. It reads no organisation, member or usage data.
+  - name: review
+    description: >-
+      Review of facts and assessment statements by any member of the organisation. The AI
+      proposes; the member decides.
   - name: admin
     description: Administrator operations. A signed-in member gets 403 on every one of them.
   - name: invitations
@@ -32,7 +59,9 @@ paths:
       summary: Report whether the API and its database are available
       description: >-
         Always answers while the API process runs. Returns 200 when the database answers, and 503
-        when it does not. The body never contains error details.
+        when it does not. The body never contains error details. `missing_settings` names the API
+        key settings that the provider configurations selected for retrieval and structuring need
+        and that are not set; it gives names only, never a value, and does not change the status.
       responses:
         "200":
           description: The API and the database are available.
@@ -43,6 +72,7 @@ paths:
               example:
                 api: available
                 database: available
+                missing_settings: []
         "503":
           description: The API is running but the database is unavailable.
           content:
@@ -52,6 +82,7 @@ paths:
               example:
                 api: available
                 database: unavailable
+                missing_settings: [GEMINI_API_KEY]
   /auth/login:
     post:
       operationId: login
@@ -145,6 +176,1048 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /organisation:
+    get:
+      operationId: getOwnOrganisation
+      tags: [organisation]
+      summary: Return the signed-in member's own organisation
+      description: >-
+        The organisation of the session, never another one: there is no organisation id to pass.
+        Also says how many profiles may still be started and whether a new run would be refused
+        right now, and why, so that the workspace can show it before the member starts. No spend
+        amount is exposed.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The member's own organisation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberOrganisation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /profile-definition:
+    get:
+      operationId: getProfileDefinition
+      tags: [profile]
+      summary: Return the active profile definition
+      description: >-
+        The sections and fields of a profile, loaded at startup from the instance's profile
+        definition file (the shipped example when none is configured), with labels in the requested
+        language and the content hash that each run records. Any signed-in member may read it.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: language
+          in: query
+          required: false
+          description: Language of the labels. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The active definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileDefinition"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity/disclosure:
+    get:
+      operationId: getIdentityDisclosure
+      tags: [identity]
+      summary: The AI disclosure, in the requested UI language
+      description: >-
+        The text the chat shows as its first message, exactly as in spec F1 (no placeholder). The
+        client displays it as returned and never rewords it.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: language
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Language"
+      responses:
+        "200":
+          description: The disclosure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityDisclosure"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions:
+    post:
+      operationId: createIdentitySession
+      tags: [identity]
+      summary: Open an identity session for a supplier name and optional hints
+      description: >-
+        An empty, whitespace-only or zero-width-only name, or an invalid website hint, answers 422
+        with the field name. The first turn of the session is the disclosure; the agent's first
+        proposal follows. When one or both registries are unreachable the agent says so in a
+        turn, never with an error response.
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentitySessionCreate"
+      responses:
+        "201":
+          description: The session, with its first proposal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}:
+    get:
+      operationId: getIdentitySession
+      tags: [identity]
+      summary: Read an identity session
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The session with all its turns.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}/messages:
+    post:
+      operationId: sendIdentityMessage
+      tags: [identity]
+      summary: Correct or add details in free text; the agent proposes again
+      description: >-
+        Triggers a new registry search and a new proposal. A URL inside the text goes through the
+        outbound-URL guard. An agent failure is a turn of kind `error` in the session (answer 200),
+        never a 500. A confirmed session answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityMessage"
+      responses:
+        "200":
+          description: The session with the new turns.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}/candidates:
+    get:
+      operationId: listIdentityCandidates
+      tags: [identity]
+      summary: The candidates other than the current proposal, best match first
+      description: A hint lowers a candidate's rank and never removes it.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The other candidates.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityCandidateList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}/website:
+    post:
+      operationId: submitIdentityWebsite
+      tags: [identity]
+      summary: "None of these: propose an identity from a website or domain"
+      description: >-
+        The domain is checked by the outbound-URL guard and must respond. If it does, the new
+        proposal is the last turn. If not, the last turn has kind `website_rejected` and carries
+        the reason, and the session stays open (answer 200). A malformed address answers 422.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityWebsite"
+      responses:
+        "200":
+          description: The session with the new turns.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySession"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /identity-sessions/{id}/confirm:
+    post:
+      operationId: confirmIdentity
+      tags: [identity]
+      summary: Confirm one candidate; this stores the identity record
+      description: >-
+        The only way a session ends. A second confirmation answers 409. `natural_person` is set
+        when the legal form is a sole trader or another natural-person business.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityConfirm"
+      responses:
+        "200":
+          description: The stored identity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityConfirmed"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs:
+    post:
+      operationId: startRun
+      tags: [runs]
+      summary: Start a profile run for a confirmed supplier identity
+      description: >-
+        Queues the run and answers 202 at once; no stage executes in the request. The identity
+        must be confirmed and belong to the member's organisation; an identity that is
+        unconfirmed, unknown or another organisation's answers 404. Each start is recorded in the
+        usage log (kind `run`). The limits are checked, and the quota slot taken, in the same
+        transaction as the start, so that two simultaneous starts cannot both take the last slot.
+        A run that ends `insufficient_sources`, or fails because the service is not fully
+        configured, releases its slot; so does a run paused on a dependency while it waits.
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunStart"
+      responses:
+        "202":
+          description: The run is queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: >-
+            The run is refused, with the reason (#29): the profile quota is used, access has ended,
+            the organisation is not activated, or the monthly spend cap is reached.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRefused"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    get:
+      operationId: listRuns
+      tags: [runs]
+      summary: List the organisation's runs, newest first
+      description: >-
+        At most the 100 most recent runs of the member's organisation. On a hosted instance an
+        administrator gets run metadata only (status, stage, cost, errors): `supplier_name` is
+        null for them. The local administrator of a self-hosted instance is a member of the
+        default organisation and reads its names.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The runs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}:
+    get:
+      operationId: getRun
+      tags: [runs]
+      summary: Read a run
+      description: >-
+        Status, stage, provider and model ID per role, tokens and cost (totals of every attempt,
+        failed and retried ones included), and `proposed_facts`, the number of facts still
+        `proposed` (it falls after each review). A run that reached its cost budget ends `partial`
+        and lists the `uncovered_sections` with a plain `partial_explanation`. On a hosted
+        instance an administrator gets
+        run metadata only: `supplier_name` is null for them.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/sources:
+    get:
+      operationId: listRunSources
+      tags: [runs]
+      summary: List the sources collected for a run
+      description: >-
+        The pages and PDFs the collection stage stored for the run: URL, fetch time and content
+        type, oldest first. The extracted text is not part of the listing. Another organisation's
+        run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The sources of the run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/failures:
+    get:
+      operationId: listRunFailures
+      tags: [runs]
+      summary: List the collection failures of a run
+      description: >-
+        The failure log of the collection stage, oldest first: for each failure the address, the
+        strategy tried, the kind of failure, the next strategy chosen and a plain-language
+        message. Another organisation's run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The failures of the run (empty when there were none).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunFailureList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/facts:
+    get:
+      operationId: listRunFacts
+      tags: [runs]
+      summary: List the facts extracted for a run
+      description: >-
+        One entry per `fact` field of the profile definition the run uses, in the order of the
+        definition: a proposed (or reviewed: approved, corrected) fact (value, verbatim quote in its source language, source,
+        attribution) or `not_found`, which is shown as "No public evidence found". It is never a
+        negative statement about the supplier: an entry without a kept value carries no value and
+        no quote, and a certification field without a kept value is `not_found`, never "not
+        certified". Empty until the extraction stage has stored its results. When the run ended
+        `partial`, the fields of the sections in its `uncovered_sections` that were not extracted
+        are absent: they were not examined, which is not "No public evidence found". Another
+        organisation's run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The facts of the run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FactList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /comparison:
+    get:
+      operationId: getComparison
+      tags: [runs]
+      summary: Compare the facts of several of the organisation's runs, field by field
+      description: >-
+        For each run in `run_ids` (request order), the run and its facts: one entry per `fact`
+        field of the profile definition that extraction stored, as in `GET /runs/{id}/facts`
+        (value, status, source type, verbatim quote, attribution, or `not_found`, which is shown
+        as "No public evidence found"). The field and section labels come from `GET
+        /profile-definition`. The comparison covers facts only: it carries no assessment, no
+        score and no ranking, and a natural-person supplier's "Not assessed" is not part of it
+        (owner decision D-073). A run that has not finished (`queued`, `running`, `paused`) has an
+        empty `facts` list: the screen shows "run in progress". A run that ended `partial` omits
+        the fields of its `uncovered_sections` that were not extracted: they were not examined,
+        which is not "No public evidence found". Duplicate ids count once. Fewer than 2 distinct
+        ids, or more than `comparison_max_profiles` of `GET /organisation`, answers 422. If any
+        id is unknown, malformed or belongs to another organisation, the whole request answers
+        the one 404, identical to an unknown id, with no partial data. An administrator, scoped
+        to their own organisation, gets 404 for another organisation's runs.
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: run_ids
+          in: query
+          required: true
+          description: >-
+            The runs to compare, repeated (`run_ids=a&run_ids=b`). Between 2 and the configured
+            maximum of distinct ids.
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: The runs and their facts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comparison"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/assessment:
+    get:
+      operationId: getRunAssessment
+      tags: [runs]
+      summary: Read the assessment draft of a run
+      description: >-
+        The AI-drafted assessment statements of the run: SWOT points, risk indicators, evidence
+        gaps and the procurement recommendations. Every statement cites facts of this run (or is
+        an evidence gap naming the missing evidence), carries its provenance and is an `ai_draft`
+        until reviewed (a statement a member deleted is not returned). There is no aggregate
+        score. `pending` until the assessment stage has
+        stored its results. For an identity flagged `natural_person` the status is
+        `not_assessed`, the message reads "Not assessed: natural-person business" and no
+        statement exists: nothing is requested from or stored by the provider for it.
+        `buyer_context_version` is null while the run has no buyer context; every recommendation
+        text then starts with "Assuming a first evaluation of this supplier:" (French:
+        "En supposant une première évaluation de ce fournisseur :"). Another organisation's run
+        answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The assessment of the run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assessment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/criteria:
+    put:
+      operationId: putRunCriteria
+      tags: [runs]
+      summary: Store the fit criteria of a profile
+      description: >-
+        Stores the member's fit criteria for this profile (a `BuyerInput` with the reserved field
+        `fit_criteria`), recording who and when. The list replaces the stored one; an empty list
+        is accepted and means "no criteria" (the fit section then reads "Enter your criteria to
+        assess fit" and no model call is made for fit). `version` is the version the edit is
+        based on (0 when nothing is stored yet). When another edit was saved since, nothing is
+        written and the answer is 409 with the current value. The total length of the criteria is
+        limited by configuration (422 beyond it). Criteria are visible to the owning organisation
+        only. Another organisation's run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriteriaUpdate"
+      responses:
+        "200":
+          description: The stored criteria, with the new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Criteria"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/fit:
+    post:
+      operationId: draftRunFit
+      tags: [runs]
+      summary: Draft the fit statements against the stored criteria
+      description: >-
+        Queues the drafting of fit statements (kind `fit`, or an `evidence_gap`) against the
+        criteria stored for this profile, and only against them. The worker drafts them with the
+        same validation, provenance and metering as the rest of the assessment; redrafting
+        replaces the earlier `ai_draft` fit statements and never a reviewed one. Read the result
+        with `GET /runs/{id}/assessment` (`pending` lists `fit` while the job is queued or
+        running). 409 when no criteria are stored ("Enter your criteria to assess fit"), when
+        the assessment has not been drafted yet, for an identity flagged `natural_person`
+        ("Not assessed: natural-person business"), or when the run is `partial` or has used its
+        cost budget ("The run reached its cost budget; no further AI call is made for it.").
+        403 with reason `spend_cap_reached` when the instance's LLM spend for the current UTC
+        month has reached the configured cap (#29, #37); nothing is queued and the statements
+        already stored stay readable. The profile quota and the access period do not apply to
+        drafting on an existing profile.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "202":
+          description: The drafting is queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftingAccepted"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: The monthly spend cap of the instance is reached (reason `spend_cap_reached`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRefused"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >-
+            No criteria are stored, the assessment is not drafted yet, the identity is a
+            natural-person business, or the run reached its cost budget.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/buyer-context:
+    put:
+      operationId: putRunBuyerContext
+      tags: [runs]
+      summary: Store the buyer context of a profile
+      description: >-
+        Stores the buyer context (a `BuyerInput` with the reserved field `buyer_context`): the
+        relationship (`incumbent` or `new`, required), the current share of category spend
+        (0 to 100), the contract end date, the strategic intent (zero or more of the listed
+        values) and notes (length limited by configuration). Everything but the relationship is
+        optional. The put replaces the stored context and increases its version. `version` is
+        the version the edit is based on (0 when nothing is stored yet); an outdated version
+        answers 409 with the current value. An out-of-range share, an invalid date, an unknown
+        intent or notes that are too long answer 422. The buyer context is commercially
+        sensitive: visible to the owning organisation only. Recommendations drafted earlier are
+        flagged in the assessment (`buyer_context_outdated`) until they are redrafted.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyerContextUpdate"
+      responses:
+        "200":
+          description: The stored buyer context, with the new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerContext"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/recommendations:
+    post:
+      operationId: draftRunRecommendations
+      tags: [runs]
+      summary: Redraft the procurement recommendations with the buyer context
+      description: >-
+        Queues the redrafting of the six recommendation kinds with the current buyer context, or
+        on the first-evaluation assumption when none is stored. The worker applies the same
+        validation as the assessment stage. Each recommendation drafted with a context stores the
+        `buyer_context_version` it used. Redrafting replaces the earlier `ai_draft`
+        recommendations and never a reviewed one. 409 when the assessment has not been drafted
+        yet, for an identity flagged `natural_person` ("Not assessed: natural-person
+        business"), or when the run is `partial` or has used its cost budget ("The run reached
+        its cost budget; no further AI call is made for it.").
+        403 with reason `spend_cap_reached` when the instance's LLM spend for the current UTC
+        month has reached the configured cap (#29, #37); nothing is queued.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "202":
+          description: The redrafting is queued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftingAccepted"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: The monthly spend cap of the instance is reached (reason `spend_cap_reached`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRefused"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >-
+            The assessment is not drafted yet, the identity is a natural-person business, or the
+            run reached its cost budget.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/buyer-inputs:
+    get:
+      operationId: getRunBuyerInputs
+      tags: [runs]
+      summary: Read the fit criteria, the buyer context and the buyer fields of a profile
+      description: >-
+        What the members saved for this profile, with the version of each part (to send with the
+        next edit) and who saved it and when. Visible to the owning organisation only, like the
+        values themselves. Another organisation's run answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The saved criteria, buyer context and buyer fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerInputs"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/buyer-inputs/{field}:
+    put:
+      operationId: putRunBuyerInput
+      tags: [runs]
+      summary: Store the free text of a buyer field
+      description: >-
+        Stores the member's free text for a field of kind `buyer` of the profile definition
+        (a `BuyerInput`), recording who and when. A field that is not of kind `buyer` (an unknown
+        field, a `fact` or `assessment` field, or the reserved `fit_criteria` and `buyer_context`)
+        answers 422. A buyer input is never drafted by the AI and never sent to a model.
+        `version` is the version the edit is based on (0 when nothing is stored yet); an outdated
+        version answers 409 with the current value.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: field
+          in: path
+          required: true
+          description: The id of a field of kind `buyer` in the profile definition.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyerInputUpdate"
+      responses:
+        "200":
+          description: The stored text, with the new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerInput"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/VersionConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/pdf:
+    get:
+      operationId: getRunPdf
+      tags: [runs]
+      summary: Download the supplier card as a PDF
+      description: >-
+        The supplier card of a run as a PDF generated on the server, in the requested language
+        (labels; quotes stay in their source language): every fact field with its status, quote
+        excerpt, source type, source URL and date, or "No public evidence found"; the assessment
+        with its procurement recommendations, the buyer context and the buyer inputs, deleted
+        statements excluded; for a natural-person identity "Not assessed: natural-person business"
+        in place of the assessment. Each AI-generated section is labelled "AI draft" or "reviewed
+        by …" with its provenance (model, version, generation time, review status); the same
+        provenance is written to the file metadata. The first page carries the disclaimer (a
+        content file; a marked placeholder until the owner supplies the text), the generation date
+        and, when set, the source-content deletion date, the "partial" flag with its uncovered
+        sections and the "identity to verify" flag. The file is generated on request and not
+        stored; no model is called. A missing `lang` is `en`; any other value answers 422. An
+        unknown id, another organisation's run and the administrator answer the one 404; a run
+        that has not finished answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The PDF.
+          headers:
+            Content-Disposition:
+              description: >-
+                `attachment; filename="supplier-card-<name>-<date>.pdf"`, the name reduced to
+                ASCII letters, digits and hyphens.
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >-
+            The run has not finished ("The run is still in progress."), or it ended without a
+            profile (stopped, failed, insufficient sources), so there is no card to export.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/stop:
+    post:
+      operationId: stopRun
+      tags: [runs]
+      summary: Stop a run
+      description: >-
+        Any member of the organisation may stop a run. A queued or paused run becomes `stopped`
+        at once. A running run is flagged (`stop_requested`) and ends `stopped` at the next stage
+        boundary or before its next provider call. A finished run answers 409.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "200":
+          description: The run, stopped or flagged to stop.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The run has already finished.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /runs/{id}/resume:
+    post:
+      operationId: resumeRun
+      tags: [runs]
+      summary: Resume a paused run
+      description: >-
+        Continues a `paused` run from the stage where it paused, without repeating stored
+        results. The run is queued again (202). A run that is not paused answers 409. It is
+        refused with 403 `RunRefused` when the organisation is not activated, its access has
+        ended, or the instance's monthly spend cap is reached (`not_activated`, `access_ended`,
+        `spend_cap_reached`), since resuming spends again. The quota is not checked: the run
+        continues, it is not a new one.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      responses:
+        "202":
+          description: The run is queued again.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Access ended, not activated, or the monthly spend cap is reached.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunRefused"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The run is not paused.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /facts/{id}:
+    patch:
+      operationId: reviewFact
+      tags: [review]
+      summary: Approve or correct a fact
+      description: >-
+        Any member of the owning organisation sets the status of a fact to `approved`, or to
+        `corrected` with a corrected value, recording `reviewed_by` and `reviewed_at`. The
+        original AI value (`original_value`) and the verbatim quote with its source are never
+        overwritten: a first correction stores the AI value in `original_value`, a second
+        correction replaces the corrected `value` and keeps `original_value`. A corrected value is
+        the member's own: it carries no quote of its own, and the quote stays the evidence for
+        `original_value`. A `not_found` fact has nothing to approve or correct (409; "No public
+        evidence found" stays as it is), and a `corrected` fact is not approved (correct it again
+        instead). `version` is the version the member read: when the fact changed since, nothing
+        is written and the answer is 409 with the current fact. A review of a run that has not
+        finished (queued, running or paused) answers 409 "The run is still in progress."
+        An empty or blank corrected value, a value on an approval, a missing value on a
+        correction, or a value longer than the configured limit answers 422; the submitted value
+        is never echoed back. The corrected value may identify a person: it is content of the
+        organisation, visible to its members only (never to the administrator), and is redacted
+        like any other text before it reaches a model. Another organisation's fact answers 404,
+        like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FactReview"
+      responses:
+        "200":
+          description: The fact after the review, with its new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fact"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ReviewConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /assessment-statements/{id}:
+    patch:
+      operationId: reviewAssessmentStatement
+      tags: [review]
+      summary: Approve, correct or delete an assessment statement
+      description: >-
+        Any member of the owning organisation sets the status of a statement to `approved`, to
+        `corrected` with a corrected text, or to `deleted`, recording `reviewed_by` and
+        `reviewed_at` in the provenance. A first correction keeps the AI text in
+        `original_text`; a second correction replaces the text and keeps it. The cited facts, the
+        level, label and timing, and the provenance of the AI draft (provider, model, prompt,
+        generation time) are never changed. A deleted statement keeps its status `deleted` and its
+        provenance but is no longer returned by `GET /runs/{id}/assessment`; it cannot be
+        reviewed again (409 with the statement as stored). A statement is labelled "AI draft,
+        pending your validation" exactly while its status is `ai_draft`. A redraft never replaces
+        or removes a reviewed statement (approved, corrected or deleted). `version` is the
+        version the member read: when the statement changed since, nothing is written and the
+        answer is 409 with the current statement. A review of a run that has not finished
+        (queued, running or paused) answers 409 "The run is still in progress." An empty or blank
+        corrected text, a text on an approval or a deletion, a missing text on a correction, or a
+        text longer than the configured limit answers 422; the submitted text is never echoed
+        back. Another organisation's statement answers 404, like an unknown id.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementReview"
+      responses:
+        "200":
+          description: The statement after the review, with its new version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssessmentStatement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/ReviewConflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
   /admin/organisations:
@@ -378,6 +1451,190 @@ paths:
           $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+  /demo/profile-definition:
+    get:
+      operationId: getDemoProfileDefinition
+      tags: [demo]
+      summary: The profile definition, for the demo screens (public)
+      description: >-
+        The same sections and fields as `GET /profile-definition`, without a session, so that the
+        demo screens can label the facts of the demo profiles. It holds no organisation data.
+      security: []
+      parameters:
+        - name: language
+          in: query
+          required: false
+          description: Language of the labels. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The active definition.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileDefinition"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /demo/profiles:
+    get:
+      operationId: listDemoProfiles
+      tags: [demo]
+      summary: List the demo profiles (public)
+      description: >-
+        The pre-built demo profiles, in the order the administrator command stored them. An empty
+        list is not an error: the demo then shows an empty state. No sign-in. The response holds
+        no user, organisation, member or usage data, and no person name.
+      security: []
+      parameters:
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels and of the disclaimer. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The demo profiles.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoProfileList"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /demo/profiles/{id}:
+    get:
+      operationId: getDemoProfile
+      tags: [demo]
+      summary: One demo profile with its facts and AI assessment draft (public)
+      description: >-
+        The supplier card of a demo profile: its facts with quote, source and date, its sources'
+        metadata, and its assessment statements with provenance and review status. A statement
+        not reviewed is "AI draft, pending your validation". `id` is the id of the `DemoProfile`
+        record; the id of a real run answers 404, as does any unknown or malformed id.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels and of the disclaimer. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The demo profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoProfile"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /demo/profiles/{id}/pdf:
+    get:
+      operationId: getDemoProfilePdf
+      tags: [demo]
+      summary: The supplier card of a demo profile as a PDF (public)
+      description: >-
+        The same PDF as `GET /runs/{id}/pdf`, built from the stored demo profile, with the demo
+        disclaimer on every page. No model is called. The rendered file is kept in memory per
+        profile and language and reused (a new demo set uses new ids, so nothing stale is served);
+        at most a few files are rendered at once. A real run id, an
+        unknown id or a malformed id answers 404.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/ResourceId"
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels and of the disclaimer. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The PDF.
+          headers:
+            Content-Disposition:
+              description: >-
+                `attachment; filename="supplier-card-<name>-<date>.pdf"`, the name reduced to
+                ASCII letters, digits and hyphens.
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "503":
+          description: >-
+            The PDF cannot be made now, or too many PDFs are being made at once (the wait is
+            short). `Retry-After` says when to try again. Nothing else in the demo is affected.
+          headers:
+            Retry-After:
+              description: Seconds to wait before trying again.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /demo/comparison:
+    get:
+      operationId: getDemoComparison
+      tags: [demo]
+      summary: Compare the facts of several demo profiles (public)
+      description: >-
+        As `GET /comparison`, for demo profiles: facts only, no assessment, no score and no
+        ranking, in request order. Fewer than 2 distinct ids, or more than
+        `comparison_max_profiles`, answers 422. If any id is unknown, malformed or a real run id,
+        the whole request answers the one 404, with no partial data. The comparison PDF waits for
+        #40; it is not part of this contract yet.
+      security: []
+      parameters:
+        - name: profile_ids
+          in: query
+          required: true
+          description: >-
+            The demo profiles to compare, repeated (`profile_ids=a&profile_ids=b`). Between 2 and
+            the configured maximum of distinct ids.
+          schema:
+            type: array
+            items:
+              type: string
+        - name: lang
+          in: query
+          required: false
+          description: Language of the labels and of the disclaimer. English when absent.
+          schema:
+            type: string
+            enum: [en, fr]
+            default: en
+      responses:
+        "200":
+          description: The demo profiles and their facts.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoComparison"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+
 components:
   parameters:
     ResourceId:
@@ -431,6 +1688,17 @@ components:
             errors:
               - field: email
                 message: Email is required.
+    DemoReadOnly:
+      description: >-
+        Any request under `/demo` other than GET (POST, PUT, PATCH, DELETE): the demo is
+        read-only. Answered before any other check, on every such path whether it exists or not,
+        with no sign-in needed. Nothing is written, queued or called.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: The demo is read-only.
     Forbidden:
       description: Signed in, but this operation is for administrators only.
       content:
@@ -442,7 +1710,10 @@ components:
     NotFound:
       description: >-
         The resource does not exist, or the caller may not see it. Both answers are identical, so
-        that the existence of a resource is never revealed.
+        that the existence of a resource is never revealed. This is the response of every
+        operation for a resource outside the caller's organisation (another organisation's
+        resource, or, for an administrator, the content of an organisation they are not a member
+        of).
       content:
         application/json:
           schema:
@@ -459,6 +1730,64 @@ components:
             $ref: "#/components/schemas/Error"
           example:
             detail: This invitation link is not valid. Ask your administrator for a new one.
+    Conflict:
+      description: The request conflicts with the current state (for example an identity already confirmed).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: This identity is already confirmed.
+    VersionConflict:
+      description: >-
+        The edit was based on an outdated version: nothing was written. `current` is the value
+        stored now, so that no edit is silently lost (null when nothing is stored).
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [detail, current]
+            properties:
+              detail:
+                type: string
+              current:
+                oneOf:
+                  - $ref: "#/components/schemas/Criteria"
+                  - $ref: "#/components/schemas/BuyerContext"
+                  - $ref: "#/components/schemas/BuyerInput"
+                  - type: "null"
+          example:
+            detail: Someone saved a newer version. Review it before saving again.
+            current: null
+    ReviewConflict:
+      description: >-
+        Nothing was written. Either the review was based on an outdated version (or the statement
+        was deleted): `current` is the fact or statement as stored now, so that no review is
+        silently lost; or the run is still in progress, the fact is `not_found`, or a `corrected`
+        fact was to be approved (`detail` only).
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/Error"
+              - type: object
+                additionalProperties: false
+                required: [detail, current]
+                properties:
+                  detail:
+                    type: string
+                  current:
+                    oneOf:
+                      - $ref: "#/components/schemas/Fact"
+                      - $ref: "#/components/schemas/AssessmentStatement"
+          examples:
+            outdated:
+              value:
+                detail: Someone reviewed this since you read it. Check the current version before reviewing again.
+            inProgress:
+              value:
+                detail: The run is still in progress.
     ServiceUnavailable:
       description: The database is unavailable. Plain message, no technical details.
       content:
@@ -468,10 +1797,1253 @@ components:
           example:
             detail: The service is temporarily unavailable. Please try again in a few minutes.
   schemas:
+    Language:
+      type: string
+      enum: [en, fr]
+    IdentityDisclosure:
+      type: object
+      additionalProperties: false
+      required: [language, text]
+      properties:
+        language:
+          $ref: "#/components/schemas/Language"
+        text:
+          type: string
+    IdentityHints:
+      type: object
+      additionalProperties: false
+      properties:
+        website:
+          type: [string, "null"]
+        country:
+          description: ISO 3166-1 alpha-2 code.
+          type: [string, "null"]
+        sector:
+          type: [string, "null"]
+    IdentitySessionCreate:
+      type: object
+      additionalProperties: false
+      required: [name, profile_language, ui_language]
+      properties:
+        name:
+          type: string
+          maxLength: 300
+        hints:
+          $ref: "#/components/schemas/IdentityHints"
+        profile_language:
+          $ref: "#/components/schemas/Language"
+        ui_language:
+          $ref: "#/components/schemas/Language"
+    IdentityMessage:
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties:
+        text:
+          type: string
+          maxLength: 2000
+    IdentityWebsite:
+      type: object
+      additionalProperties: false
+      required: [website]
+      properties:
+        website:
+          description: A URL or a bare domain.
+          type: string
+          maxLength: 2000
+    IdentityConfirm:
+      type: object
+      additionalProperties: false
+      required: [candidate_id]
+      properties:
+        candidate_id:
+          type: string
+    RegistryStatus:
+      type: object
+      additionalProperties: false
+      required: [gleif, wikidata]
+      properties:
+        gleif:
+          type: string
+          enum: [ok, unreachable]
+        wikidata:
+          type: string
+          enum: [ok, unreachable]
+    IdentityCandidate:
+      type: object
+      additionalProperties: false
+      required: [id, legal_name, legal_form, website, country, sector, description, found_in, identifiers]
+      properties:
+        id:
+          type: string
+        legal_name:
+          type: string
+        legal_form:
+          type: [string, "null"]
+        website:
+          type: [string, "null"]
+        country:
+          description: Country name in the session's UI language.
+          type: [string, "null"]
+        sector:
+          type: [string, "null"]
+        description:
+          description: One line.
+          type: [string, "null"]
+        found_in:
+          type: array
+          items:
+            type: string
+            enum: [gleif, wikidata, website, web]
+        identifiers:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [scheme, value]
+            properties:
+              scheme:
+                type: string
+              value:
+                type: string
+    IdentityCandidateList:
+      type: object
+      additionalProperties: false
+      required: [candidates]
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdentityCandidate"
+    IdentityTurn:
+      type: object
+      additionalProperties: false
+      required: [id, role, kind, text, candidate, created_at]
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [assistant, user]
+        kind:
+          description: >-
+            `disclosure` is always the first turn. `proposal` carries the top candidate.
+            `notice` is an agent message without candidate (for example both registries down).
+            `website_rejected` carries the reason a website was refused. `error` is an agent
+            failure in plain words.
+          type: string
+          enum: [disclosure, text, proposal, notice, website_rejected, error]
+        text:
+          type: string
+        candidate:
+          oneOf:
+            - $ref: "#/components/schemas/IdentityCandidate"
+            - type: "null"
+        created_at:
+          type: string
+          format: date-time
+    IdentitySession:
+      type: object
+      additionalProperties: false
+      required: [id, name, hints, profile_language, status, turns, registries, identity_id, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        hints:
+          $ref: "#/components/schemas/IdentityHints"
+        profile_language:
+          $ref: "#/components/schemas/Language"
+        status:
+          type: string
+          enum: [open, confirmed]
+        turns:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdentityTurn"
+        registries:
+          $ref: "#/components/schemas/RegistryStatus"
+        identity_id:
+          type: [string, "null"]
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+    IdentityConfirmed:
+      type: object
+      additionalProperties: false
+      required: [identity_id, candidate, natural_person, confirmed_at]
+      properties:
+        identity_id:
+          type: string
+          format: uuid
+        candidate:
+          $ref: "#/components/schemas/IdentityCandidate"
+        natural_person:
+          type: boolean
+        confirmed_at:
+          type: string
+          format: date-time
+    RunRefused:
+      type: object
+      additionalProperties: false
+      required: [detail, reason]
+      properties:
+        detail:
+          type: string
+        reason:
+          type: string
+          enum: [quota_reached, access_ended, not_activated, spend_cap_reached]
+    ProfileField:
+      type: object
+      additionalProperties: false
+      required: [id, label, kind, certification, concerns_people, key_figure]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        kind:
+          type: string
+          enum: [fact, assessment, buyer]
+        certification:
+          type: boolean
+        concerns_people:
+          type: boolean
+        key_figure:
+          description: >-
+            True when the supplier card repeats this field in its band of key figures, under the
+            header (the definition file chooses which).
+          type: boolean
+    ProfileSection:
+      type: object
+      additionalProperties: false
+      required: [id, label, fields]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileField"
+    ProfileDefinition:
+      type: object
+      additionalProperties: false
+      required: [hash, language, sections]
+      properties:
+        hash:
+          description: Content hash (`sha256:` and 64 hex digits) of the definition; each run records it.
+          type: string
+        language:
+          type: string
+          enum: [en, fr]
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileSection"
+    RunStatus:
+      type: string
+      enum: [queued, running, paused, stopped, failed, insufficient_sources, partial, completed]
+    RunStage:
+      type: string
+      enum: [identity, collection, extraction, assessment]
+    RunDependency:
+      description: The dependency that made a run pause.
+      type: string
+      enum:
+        - structuring_provider
+        - retrieval_provider
+        - llm_provider
+        - registry
+        - website
+        - database
+        - network
+    RunStart:
+      type: object
+      additionalProperties: false
+      required: [identity_id]
+      properties:
+        identity_id:
+          type: string
+          format: uuid
+    RunRoleModel:
+      type: object
+      additionalProperties: false
+      required: [role, config_id, provider, model_id]
+      properties:
+        role:
+          type: string
+          enum: [retrieval, structuring]
+        config_id:
+          type: string
+        provider:
+          type: string
+        model_id:
+          type: string
+    ExcludedSource:
+      description: A source the crawler did not use, at the site owner's request.
+      type: object
+      additionalProperties: false
+      required: [domain, message]
+      properties:
+        domain:
+          type: string
+        message:
+          description: Always "Source excluded at the site owner's request."
+          type: string
+    RunUsage:
+      description: Totals of every provider call attempt of the run (failed and retried included).
+      type: object
+      additionalProperties: false
+      required: [calls, input_tokens, output_tokens, reasoning_tokens, tool_calls, cost, roles]
+      properties:
+        calls:
+          type: integer
+        input_tokens:
+          type: integer
+        output_tokens:
+          description: Without reasoning tokens.
+          type: integer
+        reasoning_tokens:
+          type: integer
+        tool_calls:
+          type: integer
+        cost:
+          description: Cost in EUR, as a decimal string.
+          type: string
+        roles:
+          description: Provider and model ID used per role, first used first.
+          type: array
+          items:
+            $ref: "#/components/schemas/RunRoleModel"
+    Run:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - identity_id
+        - supplier_name
+        - supplier_website
+        - supplier_country
+        - supplier_sector
+        - natural_person
+        - status
+        - stage
+        - stop_requested
+        - counts_against_quota
+        - pause_dependency
+        - pause_reason
+        - error
+        - profile_definition_hash
+        - prompt_set_hash
+        - usage
+        - excluded_sources
+        - identity_to_verify
+        - grounding_failures
+        - invalid_items
+        - uncovered_sections
+        - partial_explanation
+        - proposed_facts
+        - insufficient_sources_explanation
+        - created_at
+        - started_at
+        - finished_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        identity_id:
+          type: string
+          format: uuid
+        supplier_name:
+          description: The confirmed legal name. Null for an administrator of a hosted instance.
+          type: [string, "null"]
+        supplier_website:
+          description: The website of the confirmed identity, as given or found. Null when there is none, and for an administrator of a hosted instance.
+          type: [string, "null"]
+        supplier_country:
+          description: The country of the confirmed identity. Null when unknown, and for an administrator of a hosted instance.
+          type: [string, "null"]
+        supplier_sector:
+          description: The sector of the confirmed identity. Null when unknown, and for an administrator of a hosted instance.
+          type: [string, "null"]
+        natural_person:
+          description: >-
+            True when the confirmed supplier is a natural person (a sole trader). The assessment
+            is not prepared for them (owner decision D-073); the card says so neutrally, because of
+            the legal form. False for an administrator of a hosted instance.
+          type: boolean
+        status:
+          $ref: "#/components/schemas/RunStatus"
+        stage:
+          $ref: "#/components/schemas/RunStage"
+        stop_requested:
+          type: boolean
+        counts_against_quota:
+          description: >-
+            Whether the run counts against the organisation's profile quota. Paused runs, runs
+            that failed on a dependency and runs that end `insufficient_sources` do not count.
+          type: boolean
+        pause_dependency:
+          oneOf:
+            - $ref: "#/components/schemas/RunDependency"
+            - type: "null"
+        pause_reason:
+          description: Plain-language reason, naming the dependency. Null unless paused.
+          type: [string, "null"]
+        error:
+          description: Plain-language reason of a failed run. Null otherwise.
+          type: [string, "null"]
+        profile_definition_hash:
+          description: Hash of the profile definition the run uses (ProfileDefinition.hash), set when the run starts.
+          type: [string, "null"]
+        prompt_set_hash:
+          type: [string, "null"]
+        usage:
+          $ref: "#/components/schemas/RunUsage"
+        excluded_sources:
+          description: >-
+            Domains the crawler did not use because the site owner reserved text and data mining,
+            blocked AI crawlers, or asked for suppression. Only the domain and the message are
+            shown; the crawl-permission record itself is readable by the administrator only.
+          type: array
+          items:
+            $ref: "#/components/schemas/ExcludedSource"
+        identity_to_verify:
+          description: >-
+            True when, after collection, nothing has confirmed the identity: the confirmed legal
+            name appears in none of the website's sources, or the website gave no source but
+            other sources were found. False when nothing at all was found (the run ends
+            `insufficient_sources`). The buyer verifies the identity; nothing is blocked.
+          type: boolean
+        grounding_failures:
+          description: >-
+            Extraction: the number of values discarded because their quote was not found in the
+            stored text of the cited source (also a quote that cites a source that is not the one
+            given, a quote over 300 characters, and a value its quote does not support). 0 until
+            the extraction stage has run.
+          type: integer
+          minimum: 0
+        invalid_items:
+          description: >-
+            Extraction and assessment: the number of items the structuring provider returned that
+            did not match the schema, dropped after one retry. 0 until those stages have run.
+          type: integer
+          minimum: 0
+        uncovered_sections:
+          description: >-
+            Set when the status is `partial` (the run reached its per-run cost budget, a setting
+            the operator chooses; it always applies): the ids of the sections of the profile
+            definition that were not covered, in the order of the definition, a section whose
+            facts were only partly extracted included, and the reserved id `recommendations` for
+            the procurement recommendations (they are not a section of the definition). A
+            section listed here was not examined: its fields are absent from
+            `GET /runs/{id}/facts`, never `not_found`, and "No public evidence found" is not
+            said of them. Empty for every other status.
+          type: array
+          items:
+            type: string
+        partial_explanation:
+          description: >-
+            Plain-language explanation, set when the status is `partial`: the run stopped at its
+            cost budget, what was done and what was not (the sections listed in
+            `uncovered_sections`), that the uncovered parts say nothing about the supplier, and
+            that what was produced before the stop is kept. A partial run counts against the
+            organisation's quota and makes no further AI call. Null otherwise.
+          type: [string, "null"]
+        proposed_facts:
+          description: >-
+            The number of facts of the run still `proposed` (extracted and not yet approved or
+            corrected by a member). 0 until the extraction stage has stored its results.
+          type: integer
+          minimum: 0
+        insufficient_sources_explanation:
+          description: >-
+            Plain-language explanation, set when the status is `insufficient_sources`: no usable
+            public source was collected, the failure log is available at
+            `GET /runs/{id}/failures`, and the run does not count against the quota. Null otherwise.
+          type: [string, "null"]
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: [string, "null"]
+          format: date-time
+        finished_at:
+          type: [string, "null"]
+          format: date-time
+    Source:
+      description: A page or PDF collected for a run (the extracted text is not listed).
+      type: object
+      additionalProperties: false
+      required: [id, url, fetched_at, content_type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+        fetched_at:
+          type: string
+          format: date-time
+        content_type:
+          description: Media type of the response, for example `text/html` or `application/pdf`.
+          type: string
+    SourceList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Source"
+    RunFailure:
+      type: object
+      additionalProperties: false
+      required: [id, url, strategy, kind, next_strategy, message, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          description: The address that failed; null for a failure that has none (the retrieval provider).
+          type: [string, "null"]
+        strategy:
+          $ref: "#/components/schemas/CollectionStrategy"
+        kind:
+          type: string
+          enum:
+            - http_error
+            - timeout
+            - unreachable
+            - empty_content
+            - blocked_by_robots
+            - refused
+            - too_large
+            - not_a_page
+            - provider_unavailable
+            - invalid_response
+            - attempt_cap
+        next_strategy:
+          description: The strategy chosen next; null when none is left.
+          oneOf:
+            - $ref: "#/components/schemas/CollectionStrategy"
+            - type: "null"
+        message:
+          description: Plain-language description. Absence is never a statement about the supplier.
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CollectionStrategy:
+      type: string
+      enum: [website, sitemap, retrieval]
+    RunFailureList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RunFailure"
+    FactStatus:
+      description: >-
+        `proposed` for a value kept by extraction and not yet reviewed; `approved` and `corrected`
+        after a member's review (`PATCH /facts/{id}`); `not_found` for a field with no kept value
+        ("No public evidence found"), which is never reviewed.
+      type: string
+      enum: [proposed, approved, corrected, not_found]
+    SourceType:
+      description: >-
+        `supplier_claim` ("Supplier's own claim"): the source is on the confirmed website's domain
+        or one of its subdomains (with or without `www`), on a domain listed in the identity's
+        registry identifiers, or is a PDF linked from a page of the confirmed website, wherever it
+        is hosted. `third_party` ("Third-party source") otherwise.
+      type: string
+      enum: [supplier_claim, third_party]
+    Fact:
+      description: >-
+        The extracted value of one `fact` field with its evidence. For `not_found` every
+        evidence member is null (and `quote_redacted` is false).
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - section
+        - field
+        - status
+        - value
+        - quote
+        - quote_redacted
+        - source_id
+        - source_url
+        - source_type
+        - publisher
+        - author
+        - fetched_at
+        - verification_url
+        - original_value
+        - version
+        - reviewed_by
+        - reviewed_by_email
+        - reviewed_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        section:
+          description: Id of the section of the profile definition.
+          type: string
+        field:
+          description: Id of the field of the profile definition.
+          type: string
+        status:
+          $ref: "#/components/schemas/FactStatus"
+        value:
+          description: >-
+            The value shown. For a `corrected` fact it is the member's corrected value, not
+            evidence: the quote supports `original_value`.
+          type: [string, "null"]
+        quote:
+          description: >-
+            At most 300 characters, verbatim from the source in its source language (never
+            translated), found in the stored redacted text of the source. May be identifiable.
+            Never changed by a review.
+          type: [string, "null"]
+        quote_redacted:
+          description: True when the quote contains a redaction mark `[…]` ("Redacted extract").
+          type: boolean
+        source_id:
+          description: The source of the quote (see `GET /runs/{id}/sources`).
+          type: [string, "null"]
+          format: uuid
+        source_url:
+          type: [string, "null"]
+        source_type:
+          oneOf:
+            - $ref: "#/components/schemas/SourceType"
+            - type: "null"
+        publisher:
+          description: The site name or, failing that, the domain of the source.
+          type: [string, "null"]
+        author:
+          description: The author of the source when it names one (a PDF); otherwise null.
+          type: [string, "null"]
+        fetched_at:
+          description: When the source was fetched ("Found in <source> on <date>").
+          type: [string, "null"]
+          format: date-time
+        verification_url:
+          description: >-
+            For a certification field with a kept value: the IAF CertSearch address where the
+            buyer verifies the certificate ("Verify on IAF CertSearch"). Null otherwise.
+          type: [string, "null"]
+        original_value:
+          description: >-
+            The AI value, kept once the fact is `corrected`; null otherwise. Never overwritten.
+          type: [string, "null"]
+        version:
+          description: The version to send with the next review; it increases with each review.
+          type: integer
+          minimum: 1
+        reviewed_by:
+          description: The member who last approved or corrected the fact; null while `proposed` or `not_found`.
+          type: [string, "null"]
+          format: uuid
+        reviewed_by_email:
+          description: >-
+            The email of that member, to show who reviewed (members cannot read other user
+            records). Null while `proposed` or `not_found`. It stays within the organisation.
+          type: [string, "null"]
+        reviewed_at:
+          type: [string, "null"]
+          format: date-time
+    FactReview:
+      type: object
+      additionalProperties: false
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [approved, corrected]
+        value:
+          description: >-
+            The corrected value, required (not blank) when the status is `corrected`, and absent
+            or null for `approved`.
+          type: [string, "null"]
+        version:
+          description: The version of the fact the member read.
+          type: integer
+          minimum: 1
+    StatementReview:
+      type: object
+      additionalProperties: false
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [approved, corrected, deleted]
+        text:
+          description: >-
+            The corrected text, required (not blank) when the status is `corrected`, and absent
+            or null otherwise.
+          type: [string, "null"]
+        version:
+          description: The version of the statement the member read.
+          type: integer
+          minimum: 1
+    CriteriaUpdate:
+      type: object
+      additionalProperties: false
+      required: [criteria, version]
+      properties:
+        criteria:
+          description: The fit criteria, one per entry; an empty list means none. Each entry is not empty.
+          type: array
+          items:
+            type: string
+            minLength: 1
+        version:
+          description: The version this edit is based on (0 when nothing is stored yet).
+          type: integer
+          minimum: 0
+    Criteria:
+      type: object
+      additionalProperties: false
+      required: [criteria, version, updated_by, updated_by_email, updated_at]
+      properties:
+        criteria:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+          minimum: 1
+        updated_by:
+          type: [string, "null"]
+          format: uuid
+        updated_by_email:
+          description: >-
+            The email of that member, to show who saved (members cannot read other user records).
+            It stays within the organisation.
+          type: [string, "null"]
+        updated_at:
+          type: string
+          format: date-time
+    BuyerRelationship:
+      type: string
+      enum: [incumbent, new]
+    StrategicIntent:
+      type: string
+      enum: [dual_sourcing, cost_reduction, capacity_security, risk_reduction]
+    BuyerContextUpdate:
+      type: object
+      additionalProperties: false
+      required: [relationship, version]
+      properties:
+        relationship:
+          $ref: "#/components/schemas/BuyerRelationship"
+        current_share_pct:
+          description: Current share of category spend, 0 to 100.
+          oneOf:
+            - type: number
+              minimum: 0
+              maximum: 100
+            - type: "null"
+        contract_end_date:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        strategic_intent:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/StrategicIntent"
+        notes:
+          description: Free text; its length is limited by configuration.
+          type: [string, "null"]
+        version:
+          description: The version this edit is based on (0 when nothing is stored yet).
+          type: integer
+          minimum: 0
+    BuyerContext:
+      type: object
+      additionalProperties: false
+      required:
+        - relationship
+        - current_share_pct
+        - contract_end_date
+        - strategic_intent
+        - notes
+        - version
+        - updated_by
+        - updated_by_email
+        - updated_at
+      properties:
+        relationship:
+          $ref: "#/components/schemas/BuyerRelationship"
+        current_share_pct:
+          type: [number, "null"]
+        contract_end_date:
+          type: [string, "null"]
+          format: date
+        strategic_intent:
+          type: array
+          items:
+            $ref: "#/components/schemas/StrategicIntent"
+        notes:
+          type: [string, "null"]
+        version:
+          type: integer
+          minimum: 1
+        updated_by:
+          type: [string, "null"]
+          format: uuid
+        updated_by_email:
+          description: >-
+            The email of that member, to show who saved (members cannot read other user records).
+            It stays within the organisation.
+          type: [string, "null"]
+        updated_at:
+          type: string
+          format: date-time
+    BuyerInputUpdate:
+      type: object
+      additionalProperties: false
+      required: [text, version]
+      properties:
+        text:
+          description: Free text written by the member; its length is limited by configuration. May be empty.
+          type: string
+        version:
+          description: The version this edit is based on (0 when nothing is stored yet).
+          type: integer
+          minimum: 0
+    BuyerInput:
+      type: object
+      additionalProperties: false
+      required: [field, text, version, updated_by, updated_by_email, updated_at]
+      properties:
+        field:
+          type: string
+        text:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+        updated_by:
+          type: [string, "null"]
+          format: uuid
+        updated_by_email:
+          description: >-
+            The email of that member, to show who saved (members cannot read other user records).
+            It stays within the organisation.
+          type: [string, "null"]
+        updated_at:
+          type: string
+          format: date-time
+    BuyerInputs:
+      description: >-
+        What the members of the organisation have entered for a profile, to show it and to send the
+        version of each edit: the fit criteria, the buyer context and the free text of each `buyer`
+        field. A part nobody saved is null (or absent from `inputs`).
+      type: object
+      additionalProperties: false
+      required: [criteria, buyer_context, inputs]
+      properties:
+        criteria:
+          oneOf:
+            - $ref: "#/components/schemas/Criteria"
+            - type: "null"
+        buyer_context:
+          oneOf:
+            - $ref: "#/components/schemas/BuyerContext"
+            - type: "null"
+        inputs:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuyerInput"
+    DraftingAccepted:
+      type: object
+      additionalProperties: false
+      required: [part, status]
+      properties:
+        part:
+          type: string
+          enum: [fit, recommendations]
+        status:
+          type: string
+          enum: [queued]
+    FinancialAccess:
+      description: >-
+        The access status of one document. `paid`, `reduced_disclosure` and `registry_unavailable`
+        are never reported as "unavailable"; a failed registry request is `registry_unavailable`,
+        never `no_filing_identified`.
+      type: string
+      enum:
+        - public_download
+        - free_registration
+        - paid
+        - reduced_disclosure
+        - confidentiality_declared
+        - no_filing_identified
+        - registry_unavailable
+    FinancialDocumentType:
+      type: string
+      enum: [income_statement, balance_sheet, notes, audit_report]
+    FinancialDocument:
+      type: object
+      additionalProperties: false
+      required: [type, scope, access, registry_link]
+      properties:
+        type:
+          $ref: "#/components/schemas/FinancialDocumentType"
+        scope:
+          description: >-
+            `supplier_entity` for the confirmed legal entity's own accounts; `group` for
+            parent-company or consolidated accounts, kept apart.
+          type: string
+          enum: [supplier_entity, group]
+        access:
+          $ref: "#/components/schemas/FinancialAccess"
+        registry_link:
+          description: The registry address where the document is looked up (the app never buys it); null when no registry guidance is configured.
+          type: [string, "null"]
+          format: uri
+    FinancialGuidance:
+      description: >-
+        Built by rules in code from the country table; no model writes it, no document is bought,
+        and no credit score, estimate or commercial report replaces filed financial statements.
+        The same text is stored as an `evidence_gap` statement whose provider is `rules`.
+      type: object
+      additionalProperties: false
+      required:
+        - country
+        - financial_year
+        - configured
+        - example_table
+        - registry_name
+        - registry_url
+        - last_checked
+        - documents
+        - missing_evidence
+        - documents_to_request
+        - message
+      properties:
+        country:
+          type: [string, "null"]
+        financial_year:
+          type: integer
+        configured:
+          description: False when the country is not in the table (no registry guidance is configured for it).
+          type: boolean
+        example_table:
+          description: True when the table in use is the example shipped with the repository (rows not verified).
+          type: boolean
+        registry_name:
+          type: [string, "null"]
+        registry_url:
+          type: [string, "null"]
+          format: uri
+        last_checked:
+          description: When the country row was last checked.
+          type: [string, "null"]
+          format: date
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialDocument"
+        missing_evidence:
+          type: array
+          items:
+            type: string
+            enum:
+              - income_statement
+              - full_notes
+              - audit_report
+              - more_recent_period
+              - supplier_entity_accounts
+        documents_to_request:
+          type: array
+          items:
+            type: string
+            enum: [statutory_accounts, audited_statements, tax_schedules, management_accounts]
+        message:
+          type: string
+    AssessmentKind:
+      description: >-
+        SWOT (`strength`, `weakness`, `opportunity`, `threat`), `risk_indicator`,
+        `evidence_gap`, `fit` (against the member's criteria), and the six recommendation kinds. Each recommendation kind other than
+        `next_action` appears at most once per draft.
+      type: string
+      enum:
+        - strength
+        - weakness
+        - opportunity
+        - threat
+        - risk_indicator
+        - evidence_gap
+        - fit
+        - procurement_implication
+        - relationship_level
+        - contract_approach
+        - volume_share
+        - next_action
+        - procurement_priority
+    AssessmentLevel:
+      description: A qualitative level. There is no numeric score anywhere in the assessment.
+      type: string
+      enum: [low, medium, high]
+    RelationshipLabel:
+      type: string
+      enum: [strategic, preferred, transactional]
+    AssessmentStatus:
+      description: >-
+        Review status of a statement: `ai_draft` until a member approves, corrects or deletes it
+        (`PATCH /assessment-statements/{id}`). A `deleted` statement is not returned by the
+        assessment.
+      type: string
+      enum: [ai_draft, approved, corrected, deleted]
+    AssessmentProvenance:
+      type: object
+      additionalProperties: false
+      required:
+        - provider
+        - model_id
+        - model_version
+        - prompt_id
+        - prompt_version
+        - generated_at
+        - status
+        - reviewed_by
+        - reviewed_by_email
+        - reviewed_at
+      properties:
+        provider:
+          description: >-
+            The provider, or `rules` for a statement written by rules in code (the financial
+            evidence guidance), which no model wrote.
+          type: string
+        model_id:
+          type: string
+        model_version:
+          description: The id of the approved provider configuration that pins the exact model version.
+          type: string
+        prompt_id:
+          type: string
+        prompt_version:
+          type: string
+        generated_at:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/AssessmentStatus"
+        reviewed_by:
+          description: The member who last reviewed the statement; null while `ai_draft`.
+          type: [string, "null"]
+          format: uuid
+        reviewed_by_email:
+          description: >-
+            The email of that member, to show who reviewed (members cannot read other user
+            records). Null while `ai_draft`. It stays within the organisation.
+          type: [string, "null"]
+        reviewed_at:
+          type: [string, "null"]
+          format: date-time
+    AssessmentStatement:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - kind
+        - text
+        - level
+        - label
+        - timing
+        - cited_fact_ids
+        - cites_buyer_context
+        - gap_evidence
+        - buyer_context_version
+        - buyer_context_outdated
+        - provenance
+        - version
+        - original_text
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          description: The version to send with the next review; it increases with each review.
+          type: integer
+          minimum: 1
+        original_text:
+          description: >-
+            The AI text, kept once the statement is `corrected`; null otherwise. Never overwritten.
+          type: [string, "null"]
+        kind:
+          $ref: "#/components/schemas/AssessmentKind"
+        text:
+          description: >-
+            The statement, in the profile language. After a correction it is the member's text. A recommendation starts with the
+            first-evaluation assumption when the run has no buyer context. Never a negative claim
+            about the supplier.
+          type: string
+        level:
+          description: Required for `procurement_priority`; only ever together with cited facts.
+          oneOf:
+            - $ref: "#/components/schemas/AssessmentLevel"
+            - type: "null"
+        label:
+          description: Required for `relationship_level`; null for every other kind.
+          oneOf:
+            - $ref: "#/components/schemas/RelationshipLabel"
+            - type: "null"
+        timing:
+          description: Required for `next_action` (for example "within 2 weeks"); null otherwise.
+          type: [string, "null"]
+        cited_fact_ids:
+          description: >-
+            Ids of facts of this run (see `GET /runs/{id}/facts`), never a `not_found` fact.
+            Empty only for an `evidence_gap`.
+          type: array
+          items:
+            type: string
+            format: uuid
+        cites_buyer_context:
+          description: >-
+            True when the statement rests on the buyer context (always false until buyer context
+            exists).
+          type: boolean
+        gap_evidence:
+          description: For an `evidence_gap`, the evidence that would close it; null otherwise.
+          type: [string, "null"]
+        buyer_context_version:
+          description: The buyer-context version the statement used; null without buyer context.
+          type: [integer, "null"]
+        buyer_context_outdated:
+          description: >-
+            True for a recommendation drafted with a buyer context older than the current one
+            (the context was changed after the draft), or drafted on the first-evaluation
+            assumption while a context is stored now: redraft it to take the context into
+            account. False otherwise, and always false for the other kinds.
+          type: boolean
+        provenance:
+          $ref: "#/components/schemas/AssessmentProvenance"
+    Assessment:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - message
+        - buyer_context_version
+        - rejected_statements
+        - current_buyer_context_version
+        - fit_message
+        - pending
+        - financial_guidance
+        - items
+      properties:
+        status:
+          description: >-
+            `pending` before the assessment stage has stored its results, `drafted` after,
+            `not_assessed` for an identity flagged `natural_person`, `partial` when the run
+            reached its cost budget before the assessment was complete (see `uncovered_sections`
+            of the run; the statements already drafted are returned and no more are drafted).
+          type: string
+          enum: [pending, drafted, partial, not_assessed]
+        message:
+          description: >-
+            "Not assessed: natural-person business" when the status is `not_assessed`; null
+            otherwise.
+          type: [string, "null"]
+        buyer_context_version:
+          type: [integer, "null"]
+        current_buyer_context_version:
+          description: The version of the buyer context stored now; null when none is stored.
+          type: [integer, "null"]
+        fit_message:
+          description: >-
+            "Enter your criteria to assess fit" while no criteria are stored for the profile
+            (for a `not_assessed` identity, "Not assessed: natural-person business"); null
+            otherwise.
+          type: [string, "null"]
+        pending:
+          description: Drafting jobs queued or running for this run (`POST .../fit`, `POST .../recommendations`).
+          type: array
+          items:
+            type: string
+            enum: [fit, recommendations]
+        financial_guidance:
+          description: >-
+            The financial evidence guidance, built by rules in code from the country table; null
+            while the assessment is pending and for a `not_assessed` identity.
+          oneOf:
+            - $ref: "#/components/schemas/FinancialGuidance"
+            - type: "null"
+        rejected_statements:
+          description: >-
+            The number of drafted items rejected by the validation rules (no cited fact, a fact
+            that is not in this run or is `not_found`, a level without facts, a missing label,
+            timing or gap evidence, a duplicate recommendation, a claim on buyer context, a
+            statement citing a field about people, a financial-stability gap). Items that did not
+            match the schema are counted in `invalid_items` of the run.
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssessmentStatement"
+    FactList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fact"
+    ComparisonRun:
+      description: One compared run with its facts (empty while the run has not finished).
+      type: object
+      additionalProperties: false
+      required: [run, facts]
+      properties:
+        run:
+          $ref: "#/components/schemas/Run"
+        facts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fact"
+    Comparison:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          description: One entry per distinct requested id, in request order.
+          type: array
+          items:
+            $ref: "#/components/schemas/ComparisonRun"
+    RunList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Run"
     HealthStatus:
       type: object
       additionalProperties: false
-      required: [api, database]
+      required: [api, database, missing_settings]
       properties:
         api:
           description: Status of the API process. It is always available when it answers.
@@ -481,6 +3053,16 @@ components:
           description: Whether the API can reach its database.
           type: string
           enum: [available, unavailable]
+        missing_settings:
+          description: >-
+            Names of the API key settings required by the selected provider configurations that
+            are not set (for example `GEMINI_API_KEY`), sorted. Empty when every key is set. A
+            profile run cannot start while a name is listed. Never contains a value.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^[A-Z][A-Z0-9_]*$"
     LoginRequest:
       type: object
       additionalProperties: false
@@ -511,6 +3093,139 @@ components:
         organisation_id:
           type: string
           format: uuid
+    DemoRun:
+      description: >-
+        The header of a demo profile, as `Run` shows a finished run but with no usage, cost,
+        user, organisation or run id. `id` is the id of the `DemoProfile` record.
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - supplier_name
+        - supplier_website
+        - supplier_country
+        - supplier_sector
+        - natural_person
+        - status
+        - identity_to_verify
+        - uncovered_sections
+        - partial_explanation
+        - excluded_sources
+        - proposed_facts
+        - finished_at
+        - profile_definition_hash
+      properties:
+        id:
+          type: string
+          format: uuid
+        supplier_name:
+          type: string
+        supplier_website:
+          type: [string, "null"]
+        supplier_country:
+          type: [string, "null"]
+        supplier_sector:
+          type: [string, "null"]
+        natural_person:
+          type: boolean
+        status:
+          type: string
+          enum: [completed, partial]
+        identity_to_verify:
+          type: boolean
+        uncovered_sections:
+          type: array
+          items:
+            type: string
+        partial_explanation:
+          type: [string, "null"]
+        excluded_sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExcludedSource"
+        proposed_facts:
+          description: Facts still `proposed`, that is, not reviewed.
+          type: integer
+        finished_at:
+          type: string
+          format: date-time
+        profile_definition_hash:
+          type: [string, "null"]
+    DemoSource:
+      description: Metadata of a source of a demo profile (the text is not kept).
+      type: object
+      additionalProperties: false
+      required: [url, fetched_at, content_type]
+      properties:
+        url:
+          type: string
+        fetched_at:
+          type: string
+          format: date-time
+        content_type:
+          type: string
+    DemoDisclaimer:
+      description: >-
+        The demo disclaimer, from the owner-supplied content file (a marked placeholder until
+        supplied). It is shown on every demo screen and printed in every demo PDF.
+      type: string
+    DemoProfileList:
+      type: object
+      additionalProperties: false
+      required: [items, disclaimer]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoRun"
+        disclaimer:
+          $ref: "#/components/schemas/DemoDisclaimer"
+    DemoProfile:
+      description: >-
+        A read-only copy of a finished run of the demo organisation, with person names stripped:
+        no fact about a person is kept, no author, no reviewer, no email. Fact and statement ids
+        are those of the copy, not of the run.
+      type: object
+      additionalProperties: false
+      required: [run, facts, assessment, sources, disclaimer]
+      properties:
+        run:
+          $ref: "#/components/schemas/DemoRun"
+        facts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fact"
+        assessment:
+          $ref: "#/components/schemas/Assessment"
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoSource"
+        disclaimer:
+          $ref: "#/components/schemas/DemoDisclaimer"
+    DemoComparisonProfile:
+      type: object
+      additionalProperties: false
+      required: [run, facts]
+      properties:
+        run:
+          $ref: "#/components/schemas/DemoRun"
+        facts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fact"
+    DemoComparison:
+      type: object
+      additionalProperties: false
+      required: [items, disclaimer]
+      properties:
+        items:
+          description: One entry per distinct requested id, in request order.
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoComparisonProfile"
+        disclaimer:
+          $ref: "#/components/schemas/DemoDisclaimer"
     Error:
       type: object
       additionalProperties: false
@@ -626,6 +3341,53 @@ components:
           minimum: 0
         created_at:
           type: string
+          format: date-time
+    MemberOrganisation:
+      description: >-
+        What a member sees of their own organisation. Nothing about any other organisation.
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - status
+        - seat_limit
+        - profile_quota
+        - profiles_remaining
+        - run_refusal_reason
+        - access_ends_at
+        - comparison_max_profiles
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [pending_activation, active, acceptance_renewal_required]
+        comparison_max_profiles:
+          description: >-
+            The most profiles one comparison accepts (instance configuration). `GET /comparison`
+            answers 422 above it.
+          type: integer
+          minimum: 2
+        seat_limit:
+          description: Maximum number of users. Null means unlimited.
+          type: [integer, "null"]
+        profile_quota:
+          description: Maximum number of profile runs. Null means unlimited.
+          type: [integer, "null"]
+        profiles_remaining:
+          description: >-
+            Profile runs that may still start: the quota minus the runs that count against it,
+            never below 0. Null when the quota is unlimited.
+          type: [integer, "null"]
+        run_refusal_reason:
+          description: >-
+            Why a new run would be refused now, or null when it would be accepted. Checked in
+            this order: not activated, access ended, quota used, instance monthly spend cap reached.
+          type: [string, "null"]
+          enum: [not_activated, access_ended, quota_reached, spend_cap_reached, null]
+        access_ends_at:
+          description: End of access. Null while not yet activated, or when the access is unlimited.
+          type: [string, "null"]
           format: date-time
     OrganisationList:
       type: object

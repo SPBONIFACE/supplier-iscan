@@ -30,7 +30,9 @@ def run_migrations_online() -> None:
     database_url = os.environ.get("DATABASE_URL", "").strip()
     if not database_url:
         raise SystemExit("DATABASE_URL is not set")
-    engine = make_engine(database_url)
+    engine = make_engine(
+        database_url, statement_timeout_seconds=0
+    )  # migrations: no statement timeout
     try:
         with engine.connect() as new_connection:
             _run(new_connection)

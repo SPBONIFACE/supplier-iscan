@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock-ups #5: supplier card, review and assessment · Supplier iScan</title>
+<!-- Mock-ups only: IBM Plex is loaded from Google Fonts so the files open without a build step.
+     The application self-hosts its fonts from its own origin (#31); no third-party font CDN at run time. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&amp;family=IBM+Plex+Sans+JP:wght@400;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Serif:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="tokens.css">
+<style>
+/* Mock-up stylesheet for issue #5. Every value comes from tokens.css (var(--isc-…)); the only raw values are
+   layout keywords, the 1440px and narrow breakpoints, and the annotation markers, which are not part of the design. */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--isc-color-paper); color: var(--isc-color-ink);
+  font-family: var(--isc-font-family-sans); font-size: var(--isc-font-size-base);
+  line-height: var(--isc-font-line-height-compact); font-variant-numeric: tabular-nums; overflow-wrap: break-word;
+}
+a { color: var(--isc-color-cobalt); text-underline-offset: 2px; }
+a:hover { color: var(--isc-color-cobalt-strong); }
+:focus-visible, .is-focused { outline: var(--isc-focus-width) solid var(--isc-focus-color); outline-offset: var(--isc-focus-offset); }
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.mono { font-family: var(--isc-font-family-mono); }
+p { margin: 0; }
+h1, h2, h3, h4 { margin: 0; }
+[lang="ja"] { font-family: "IBM Plex Sans JP", var(--isc-font-family-sans); }
+
+/* ---------- Mock-up chrome and annotations (not part of the product) ---------- */
+.mock { display: flex; flex-wrap: wrap; align-items: center; gap: var(--isc-space-2) var(--isc-space-5);
+  padding: var(--isc-space-3) var(--isc-space-5); background: var(--isc-color-ink); color: var(--isc-color-paper);
+  font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm); }
+.mock a { color: var(--isc-color-paper); }
+.mock :focus-visible { outline-color: var(--isc-color-paper); }
+.mock-toggle { margin-left: auto; display: inline-flex; align-items: center; gap: var(--isc-space-2); cursor: pointer; }
+.mock-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--isc-color-paper); }
+.fo { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 3px;
+  margin-right: var(--isc-space-2); background: var(--isc-color-ink); color: var(--isc-color-paper);
+  font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold);
+  font-style: normal; line-height: 1; vertical-align: middle; letter-spacing: 0; text-transform: none; flex: none; }
+body:has(#fo-toggle:not(:checked)) .fo { display: none; }
+.mock-divider { margin: var(--isc-space-5) 0 0; padding: var(--isc-space-3) var(--isc-space-4); border: var(--isc-border-hairline) dashed var(--isc-color-ink-tertiary);
+  font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); }
+.mock-notes { padding: var(--isc-space-6) var(--isc-space-5) var(--isc-space-8); border-top: var(--isc-border-flag-rule) solid var(--isc-color-ink);
+  background: var(--isc-color-paper-margin); font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm);
+  line-height: var(--isc-font-line-height-body); }
+.mock-notes-inner { max-width: 1100px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--isc-space-6); }
+.mock-notes h2 { font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-base); margin: 0 0 var(--isc-space-3); }
+.mock-notes ol, .mock-notes ul { margin: 0; padding-left: var(--isc-space-6); }
+.mock-notes li + li { margin-top: var(--isc-space-2); }
+.mock-notes kbd { font-family: inherit; border: var(--isc-border-hairline) solid var(--isc-color-ink-tertiary); padding: 0 var(--isc-space-2); border-radius: var(--isc-radius-control); background: var(--isc-color-field); }
+.mock-tag { font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+
+/* ---------- Layout ---------- */
+.skip { position: absolute; left: var(--isc-space-3); top: -100px; padding: var(--isc-space-3) var(--isc-space-4); background: var(--isc-color-paper); }
+.skip:focus { top: var(--isc-space-3); }
+.topbar { display: flex; align-items: center; gap: var(--isc-space-6); height: var(--isc-space-8); padding: 0 var(--isc-space-5);
+  border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.brand { font-family: var(--isc-font-family-serif); font-weight: var(--isc-font-weight-semibold); font-size: var(--isc-font-size-h3); color: var(--isc-color-ink); text-decoration: none; white-space: nowrap; }
+.nav { display: flex; gap: var(--isc-space-5); }
+.nav a { text-decoration: none; padding: var(--isc-space-3) 0; }
+.nav a[aria-current="page"] { color: var(--isc-color-ink); border-bottom: var(--isc-border-section-rule) solid var(--isc-color-cobalt); }
+.topbar-who { margin-left: auto; font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); white-space: nowrap; }
+.app { display: grid; grid-template-columns: minmax(0, 1fr) var(--isc-size-panel); align-items: stretch; }
+.workspace { min-width: 0; padding: var(--isc-space-6) var(--isc-space-5); }
+.ws-title { font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h2); font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight);
+  padding-top: var(--isc-space-3); border-top: var(--isc-border-section-rule) solid var(--isc-color-ink); }
+.ws-sub { margin-top: var(--isc-space-2); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+.list { width: 100%; border-collapse: collapse; margin-top: var(--isc-space-4); }
+.list th { text-align: left; font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary);
+  padding: var(--isc-space-2) var(--isc-space-3); border-bottom: var(--isc-border-hairline) solid var(--isc-color-ink); white-space: nowrap; }
+.list td { padding: var(--isc-space-2) var(--isc-space-3); height: var(--isc-size-row); border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.list tr.is-open td { background: var(--isc-color-cobalt-tint); }
+.list .num { text-align: right; }
+.list a { text-decoration: none; }
+.panel { min-width: 0; border-left: var(--isc-border-section-rule) solid var(--isc-color-ink); background: var(--isc-color-paper); }
+@media (min-width: 1440px) {
+  .app { grid-template-columns: minmax(0, 1fr) calc(var(--isc-size-panel) + var(--isc-size-margin-note)); }
+}
+@media (max-width: 1023px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .workspace { display: none; }
+  .panel { border-left: 0; }
+  .topbar-who { display: none; }
+}
+@media (max-width: 480px) {
+  .topbar { gap: var(--isc-space-4); padding: 0 var(--isc-space-4); }
+  .nav { gap: var(--isc-space-4); }
+}
+
+/* ---------- Card header ---------- */
+.card-head { padding: var(--isc-space-4) var(--isc-space-5) var(--isc-space-4); border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.card-bar { display: flex; justify-content: space-between; align-items: center; gap: var(--isc-space-3); margin-bottom: var(--isc-space-3); }
+.kicker, .micro { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro);
+  text-transform: uppercase; line-height: var(--isc-font-line-height-tight); color: var(--isc-color-ink-secondary); }
+.card-name { font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h1); font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight); }
+.card-legal { margin-top: var(--isc-space-1); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); }
+.card-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--isc-space-4) var(--isc-space-5); margin: var(--isc-space-4) 0 0; }
+.card-meta > div { min-width: 0; }
+.card-meta dt { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase; color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-tight); }
+.card-meta dd { margin: var(--isc-space-1) 0 0; }
+.card-meta .url { font-size: var(--isc-font-size-sm); }
+.card-meta .later { color: var(--isc-color-ink-tertiary); }
+.card-count { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--isc-space-2) var(--isc-space-4); margin-top: var(--isc-space-4); padding-top: var(--isc-space-3);
+  border-top: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.card-count strong { font-weight: var(--isc-font-weight-semibold); }
+.card-count .meta { font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+@media (max-width: 560px) { .card-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- Card body, sections ---------- */
+.card-body { padding: 0 var(--isc-space-5) var(--isc-space-7); }
+.flags { display: grid; gap: var(--isc-space-2); margin-top: var(--isc-space-4); }
+.flag { padding: var(--isc-space-3) var(--isc-space-4); background: var(--isc-status-flag-bg); color: var(--isc-status-flag-fg);
+  border-left: var(--isc-border-flag-rule) solid var(--isc-status-flag-rule); }
+.flag .micro { color: var(--isc-status-flag-fg); }
+.flag p { margin-top: var(--isc-space-1); line-height: var(--isc-font-line-height-body); max-width: var(--isc-size-measure); }
+.section { margin-top: var(--isc-space-6); }
+.section-title { display: flex; justify-content: space-between; align-items: baseline; gap: var(--isc-space-3); padding-top: var(--isc-space-3);
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink); font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h2);
+  font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight); }
+.section-title .meta { font-family: var(--isc-font-family-sans); font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-regular); color: var(--isc-color-ink-tertiary); white-space: nowrap; }
+.section-lede { margin-top: var(--isc-space-2); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-body); max-width: var(--isc-size-measure); }
+.sub-title { margin: var(--isc-space-5) 0 0; padding-bottom: var(--isc-space-2); border-bottom: var(--isc-border-hairline) solid var(--isc-color-ink);
+  font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h3); font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight);
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--isc-space-3); }
+.sub-title .meta { font-family: var(--isc-font-family-sans); font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-regular); color: var(--isc-color-ink-tertiary); }
+.not-covered { margin-top: var(--isc-space-3); color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-body); }
+.not-assessed { margin-top: var(--isc-space-3); color: var(--isc-status-not-assessed-fg); line-height: var(--isc-font-line-height-body); }
+
+/* ---------- Fact row ---------- */
+.facts { list-style: none; margin: 0; padding: 0; }
+.fact { display: grid; grid-template-columns: var(--isc-size-label-column) minmax(0, 1fr); column-gap: var(--isc-space-4);
+  padding: var(--isc-space-2) var(--isc-space-3); min-height: var(--isc-size-row); border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); align-items: start; }
+.fact:hover { background: var(--isc-color-cobalt-tint); }
+.fact:focus-visible, .fact.is-focused { outline-offset: calc(-1 * var(--isc-focus-width)); }
+.f-label { grid-column: 1; grid-row: 1 / span 2; padding-top: var(--isc-space-1); font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary); }
+.f-hint { display: block; margin-top: var(--isc-space-1); font-weight: var(--isc-font-weight-regular); color: var(--isc-color-ink-tertiary); }
+.f-main { grid-column: 2; min-width: 0; }
+.f-line { display: flex; justify-content: space-between; align-items: baseline; gap: var(--isc-space-3); }
+.f-value { min-width: 0; }
+.f-status { flex: none; display: flex; align-items: baseline; gap: var(--isc-space-2); }
+.f-src { display: flex; flex-wrap: wrap; align-items: center; gap: var(--isc-space-2) var(--isc-space-3); margin-top: var(--isc-space-2); }
+.f-review { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--isc-space-2) var(--isc-space-3); margin-top: var(--isc-space-2); }
+.f-actions { display: flex; gap: var(--isc-space-2); margin-left: auto; }
+.f-original { margin-top: var(--isc-space-2); padding-top: var(--isc-space-2); border-top: var(--isc-border-hairline) dashed var(--isc-color-rule); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+.f-original .f-src { margin-top: var(--isc-space-1); }
+.f-cert { margin-top: var(--isc-space-2); font-size: var(--isc-font-size-sm); }
+.byline { font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+.fact > .note { grid-column: 2; grid-row: 3; }
+.fact > .f-form { grid-column: 2; }
+@media (min-width: 1440px) {
+  .fact { grid-template-columns: var(--isc-size-label-column) minmax(0, 1fr) var(--isc-size-margin-note); }
+  .fact > .note { grid-column: 3; grid-row: 1 / span 3; margin: 0 calc(-1 * var(--isc-space-3)) 0 0; }
+}
+@media (max-width: 640px) {
+  .fact { grid-template-columns: minmax(0, 1fr); }
+  .f-label, .f-main, .fact > .note, .fact > .f-form { grid-column: 1; grid-row: auto; }
+  .f-label { padding-top: 0; margin-bottom: var(--isc-space-1); }
+}
+
+/* Missing evidence: brick, reserved */
+.missing { display: block; padding-left: var(--isc-space-3); border-left: var(--isc-border-quote-rule) solid var(--isc-status-missing-rule); color: var(--isc-status-missing-fg); }
+
+/* ---------- Status badge, evidence labels ---------- */
+.badge { display: inline-block; padding: var(--isc-space-1) var(--isc-space-2); border-radius: var(--isc-radius-control); font-size: var(--isc-font-size-micro);
+  font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase; line-height: var(--isc-font-line-height-tight); white-space: nowrap; }
+.badge--pending { color: var(--isc-status-pending-fg); border: var(--isc-border-hairline) var(--isc-status-pending-border-style) var(--isc-status-pending-border); }
+.badge--decided { color: var(--isc-status-decided-fg); border: var(--isc-border-hairline) var(--isc-status-decided-border-style) var(--isc-status-decided-border); }
+.badge--deleted { color: var(--isc-status-deleted-fg); border: var(--isc-border-hairline) var(--isc-status-deleted-border-style) var(--isc-status-deleted-border); }
+.ev { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase;
+  line-height: var(--isc-font-line-height-tight); color: var(--isc-status-evidence-fg); white-space: nowrap; }
+.gap-label { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase;
+  line-height: var(--isc-font-line-height-tight); color: var(--isc-status-missing-fg); }
+
+/* ---------- Source chip ---------- */
+.chip { display: inline-flex; align-items: center; gap: var(--isc-space-2); min-height: var(--isc-size-target-min); padding: var(--isc-space-1) var(--isc-space-3);
+  border: var(--isc-border-control) solid var(--isc-color-border-control); border-radius: var(--isc-radius-control); background: transparent;
+  color: var(--isc-color-cobalt); font: inherit; font-size: var(--isc-font-size-sm); text-align: left; cursor: pointer; }
+.chip:hover { color: var(--isc-color-cobalt-strong); }
+.chip[aria-expanded="true"] { background: var(--isc-color-cobalt-tint); }
+.chip-ind { font-family: var(--isc-font-family-mono); }
+
+/* ---------- Margin note and quote block ---------- */
+.note { min-width: 0; margin: var(--isc-space-2) 0 var(--isc-space-1); padding: var(--isc-space-4); background: var(--isc-color-paper-margin); }
+.note-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--isc-space-3); margin-bottom: var(--isc-space-3); }
+.note-title { font-size: var(--isc-font-size-micro); font-weight: var(--isc-font-weight-semibold); letter-spacing: var(--isc-font-letter-spacing-micro); text-transform: uppercase; color: var(--isc-color-ink-secondary); }
+.quote { margin: 0; padding-left: var(--isc-space-4); border-left: var(--isc-border-quote-rule) solid var(--isc-color-ink-tertiary); max-width: var(--isc-size-measure);
+  font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-quote); line-height: var(--isc-font-line-height-body); color: var(--isc-color-ink); }
+.quote[lang="ja"] { font-family: "IBM Plex Sans JP", var(--isc-font-family-serif); }
+.redact { color: var(--isc-color-ink); white-space: nowrap; }
+.quote-src { margin-top: var(--isc-space-3); padding-left: calc(var(--isc-space-4) + var(--isc-border-quote-rule)); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); }
+.quote-src .labels { display: flex; flex-wrap: wrap; gap: var(--isc-space-2) var(--isc-space-3); margin-top: var(--isc-space-2); }
+.attr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--isc-space-1) var(--isc-space-3); margin: var(--isc-space-3) 0 0; }
+.attr dt { font-weight: var(--isc-font-weight-semibold); }
+.attr dd { margin: 0; min-width: 0; }
+.url { font-family: var(--isc-font-family-mono); font-size: var(--isc-font-size-sm); overflow-wrap: anywhere; }
+.btn-close-note { margin-left: auto; }
+
+/* ---------- Buttons and form fields ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--isc-size-control); padding: 0 var(--isc-space-4);
+  border-radius: var(--isc-radius-control); font: inherit; font-weight: var(--isc-font-weight-medium); cursor: pointer; white-space: nowrap; }
+.btn--primary { background: var(--isc-color-cobalt); color: var(--isc-color-on-cobalt); border: var(--isc-border-control) solid var(--isc-color-cobalt); }
+.btn--primary:hover { background: var(--isc-color-cobalt-strong); border-color: var(--isc-color-cobalt-strong); }
+.btn--secondary { background: transparent; color: var(--isc-color-ink); border: var(--isc-border-control) solid var(--isc-color-border-control); }
+.btn--text { background: transparent; color: var(--isc-color-cobalt); border: 0; padding: 0 var(--isc-space-2); }
+.btn--text:hover { color: var(--isc-color-cobalt-strong); text-decoration: underline; }
+.btn[disabled], .btn[aria-disabled="true"] { background: var(--isc-color-paper-margin); color: var(--isc-color-ink-disabled); border: var(--isc-border-control) dashed var(--isc-color-border-control); cursor: not-allowed; }
+.field { display: grid; gap: var(--isc-space-1); }
+.field label, .field .label { font-size: var(--isc-font-size-sm); font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink); }
+.input, .textarea { width: 100%; min-height: var(--isc-size-control); padding: var(--isc-space-2) var(--isc-space-3); background: var(--isc-color-field);
+  border: var(--isc-border-control) solid var(--isc-color-border-control); border-radius: var(--isc-radius-control); color: var(--isc-color-ink); font: inherit; }
+.textarea { line-height: var(--isc-font-line-height-body); resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--isc-color-ink-tertiary); }
+.input.is-focused, .textarea.is-focused { outline-offset: var(--isc-focus-offset); }
+.help { font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-body); }
+.form-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--isc-space-3); margin-top: var(--isc-space-3); }
+.kbd-hint { font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-tertiary); }
+.f-form { margin: var(--isc-space-2) 0 var(--isc-space-1); padding: var(--isc-space-3) 0 var(--isc-space-1); border-top: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.message { margin: var(--isc-space-2) 0; padding: var(--isc-space-2) 0 var(--isc-space-2) var(--isc-space-4); border-left: var(--isc-border-section-rule) solid var(--isc-color-ink); line-height: var(--isc-font-line-height-body); }
+.message strong { font-weight: var(--isc-font-weight-semibold); }
+
+/* ---------- Assessment ---------- */
+.stmts { list-style: none; margin: 0; padding: 0; }
+.stmt { padding: var(--isc-space-3) 0; border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.stmt-text { line-height: var(--isc-font-line-height-body); max-width: var(--isc-size-measure); }
+.stmt-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--isc-space-2) var(--isc-space-4); margin-top: var(--isc-space-2); font-size: var(--isc-font-size-sm); color: var(--isc-color-ink-secondary); }
+.level strong { color: var(--isc-color-ink); font-weight: var(--isc-font-weight-semibold); }
+.cites { display: inline; margin: 0; padding: 0; list-style: none; }
+.cites li { display: inline; }
+.cites li + li::before { content: " · "; color: var(--isc-color-ink-tertiary); }
+.stmt-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--isc-space-2) var(--isc-space-3); margin-top: var(--isc-space-3); }
+.stmt-actions { display: flex; flex-wrap: wrap; gap: var(--isc-space-2); margin-left: auto; }
+.disclosure { background: none; border: 0; padding: 0 var(--isc-space-1); min-height: var(--isc-size-target-min); color: var(--isc-color-cobalt); font: inherit; font-size: var(--isc-font-size-sm); cursor: pointer; }
+.disclosure:hover { color: var(--isc-color-cobalt-strong); text-decoration: underline; }
+.prov { margin-top: var(--isc-space-3); padding: var(--isc-space-3) var(--isc-space-4); background: var(--isc-color-paper-margin); font-size: var(--isc-font-size-sm); }
+.prov dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--isc-space-1) var(--isc-space-4); margin: 0; }
+.prov dt { color: var(--isc-color-ink-secondary); font-weight: var(--isc-font-weight-semibold); }
+.prov dd { margin: 0; min-width: 0; }
+.prov .hist { margin-top: var(--isc-space-3); padding-top: var(--isc-space-3); border-top: var(--isc-border-hairline) solid var(--isc-color-rule); }
+.struck { text-decoration: line-through; color: var(--isc-status-deleted-fg); }
+.gap { padding-left: var(--isc-space-4); border-left: var(--isc-border-quote-rule) solid var(--isc-status-missing-rule); }
+.gap .stmt-text { margin-top: var(--isc-space-1); }
+.docs { width: 100%; border-collapse: collapse; margin-top: var(--isc-space-3); font-size: var(--isc-font-size-sm); }
+.docs caption { text-align: left; font-weight: var(--isc-font-weight-semibold); padding-bottom: var(--isc-space-2); }
+.docs th { text-align: left; font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary); padding: var(--isc-space-2) var(--isc-space-3) var(--isc-space-2) 0; border-bottom: var(--isc-border-hairline) solid var(--isc-color-ink); }
+.docs td { padding: var(--isc-space-2) var(--isc-space-3) var(--isc-space-2) 0; border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); vertical-align: baseline; }
+.docs .access { font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink); }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--isc-space-2) var(--isc-space-4); margin: var(--isc-space-3) 0 0; font-size: var(--isc-font-size-sm); line-height: var(--isc-font-line-height-body); }
+.kv dt { font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary); }
+.kv dd { margin: 0; min-width: 0; }
+@media (max-width: 560px) {
+  .docs thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .docs tr { display: block; padding: var(--isc-space-2) 0; border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); }
+  .docs td { display: block; padding: var(--isc-space-1) 0; border: 0; }
+  .docs td::before { content: attr(data-label) ": "; font-weight: var(--isc-font-weight-semibold); color: var(--isc-color-ink-secondary); }
+  .kv { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .kv dd { margin-bottom: var(--isc-space-2); }
+}
+.buyer { margin-top: var(--isc-space-4); display: grid; gap: var(--isc-space-5); }
+.buyer-field .byline { margin-top: var(--isc-space-1); }
+.criteria-saved { margin-top: var(--isc-space-3); padding: var(--isc-space-3) var(--isc-space-4); background: var(--isc-color-field); border: var(--isc-border-control) solid var(--isc-color-border-control); border-radius: var(--isc-radius-control); line-height: var(--isc-font-line-height-body); }
+.criteria-saved ul { margin: 0; padding-left: var(--isc-space-5); }
+.empty-fit { margin-top: var(--isc-space-3); color: var(--isc-color-ink-secondary); line-height: var(--isc-font-line-height-body); }
+
+.index { max-width: 1100px; margin: 0 auto; padding: var(--isc-space-6) var(--isc-space-5) var(--isc-space-8); }
+.index h1 { font-family: var(--isc-font-family-serif); font-size: var(--isc-font-size-h1); font-weight: var(--isc-font-weight-semibold); line-height: var(--isc-font-line-height-tight); }
+.index .list td { vertical-align: baseline; height: auto; padding-top: var(--isc-space-3); padding-bottom: var(--isc-space-3); line-height: var(--isc-font-line-height-body); }
+.index ul.plain { margin: var(--isc-space-3) 0 0; padding-left: var(--isc-space-6); line-height: var(--isc-font-line-height-body); max-width: var(--isc-size-measure); }
+.index ul.plain li + li { margin-top: var(--isc-space-2); }
+@media (max-width: 640px) { .index .list thead { display: none; } .index .list tr { display: block; border-bottom: var(--isc-border-hairline) solid var(--isc-color-rule); padding: var(--isc-space-2) 0; } .index .list td { display: block; border: 0; padding: var(--isc-space-1) 0; } }
+</style>
+</head>
+<body>
+<main class="index">
+  <p class="kicker">Supplier iScan · issue #5 · design</p>
+  <h1>Mock-ups: supplier card, review and assessment</h1>
+  <p class="section-lede" style="font-size:var(--isc-font-size-base)">Static HTML, no build step, no JavaScript. Each file uses only <span class="mono">tokens.css</span>, generated from <span class="mono">_docs/design/tokens.json</span>, and the components of the #3 brief. Open any file in a browser; desktop 1280px is the primary width; every file reflows to 400px without horizontal scrolling. The dark bar on each screen is mock-up chrome: it links back here and toggles the focus-order markers. All companies, people, domains (<span class="mono">*.example</span>), registries and model IDs are fictional; person names appear only as […].</p>
+  <section class="section"><h2 class="section-title">Supplier card<span class="meta">4 files</span></h2>
+<table class="list"><thead><tr><th scope="col">State</th><th scope="col">File</th><th scope="col">Shows</th></tr></thead><tbody><tr><td><a href="05-supplier-card-default.html">Default (EN)</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-supplier-card-default.html</td><td>Header with source-content deletion date and proposed count; fact rows with status and source chip; Quote open in the margin note (French source, redacted extract, attributed); No public evidence found; IAF CertSearch link; concerns_people field.</td></tr><tr><td><a href="05-supplier-card-default.fr.html">Default (FR)</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-supplier-card-default.fr.html</td><td>Same card in French: labels, statuses, dates (26/10/2026), French spacing. Quotes unchanged.</td></tr><tr><td><a href="05-supplier-card-edge-cases.html">Edge cases</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-supplier-card-edge-cases.html</td><td>Long value; quote at the 300-character limit; Japanese quote (non-Latin script).</td></tr><tr><td><a href="05-supplier-card-flags.html">Flags</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-supplier-card-flags.html</td><td>"identity to verify" and "partial" (sections not covered) banners; source content already deleted.</td></tr></tbody></table></section><section class="section"><h2 class="section-title">Fact review<span class="meta">3 files</span></h2>
+<table class="list"><thead><tr><th scope="col">State</th><th scope="col">File</th><th scope="col">Shows</th></tr></thead><tbody><tr><td><a href="05-review-default.html">Default</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-review-default.html</td><td>Approve and Correct on every row; approved byline with who and when; count of facts still proposed; focus order.</td></tr><tr><td><a href="05-review-correction.html">Correction</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-review-correction.html</td><td>Inline correction form; corrected fact with original AI value and Quote alongside, who and when.</td></tr><tr><td><a href="05-review-conflict.html">Conflict</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-review-conflict.html</td><td>Another member changed the same fact meanwhile: message, current state, the member's text kept.</td></tr></tbody></table></section><section class="section"><h2 class="section-title">Assessment<span class="meta">5 files</span></h2>
+<table class="list"><thead><tr><th scope="col">State</th><th scope="col">File</th><th scope="col">Shows</th></tr></thead><tbody><tr><td><a href="05-assessment-ai-draft.html">AI draft</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-assessment-ai-draft.html</td><td>SWOT and risk indicators with level and cited facts; no score; evidence gaps; financial guidance (access status, documents to request, registry link); provenance on demand.</td></tr><tr><td><a href="05-assessment-review.html">Review</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-assessment-review.html</td><td>Correct a statement; delete with confirmation; history of deleted statements; corrected provenance.</td></tr><tr><td><a href="05-assessment-criteria-empty.html">Criteria: empty</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-assessment-criteria-empty.html</td><td>"Enter your criteria to assess fit"; draft disabled; empty buyer input fields.</td></tr><tr><td><a href="05-assessment-criteria-fit.html">Criteria: fit drafted</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-assessment-criteria-fit.html</td><td>Saved criteria, fit statements, buyer input with who and when.</td></tr><tr><td><a href="05-assessment-natural-person.html">Natural-person business</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-assessment-natural-person.html</td><td>"Not assessed: natural-person business".</td></tr></tbody></table></section>
+  <section class="section"><h2 class="section-title">Recommendations, buyer context and key figures<span class="meta">7 files, added 1 Nov 2026 (spec F5, F8, F9)</span></h2>
+<table class="list"><thead><tr><th scope="col">State</th><th scope="col">File</th><th scope="col">Shows</th></tr></thead><tbody><tr><td><a href="05-recommendations-first-evaluation.html">Recommendations, no buyer context</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-recommendations-first-evaluation.html</td><td>Six recommendations, each opening “Assuming a first evaluation of this supplier:”; invitation to add buyer context; relationship level, priority and volume share as text; AI draft label, Approve/Correct/Delete, provenance; focus order.</td></tr><tr><td><a href="05-recommendations-first-evaluation.fr.html">Same, French</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-recommendations-first-evaluation.fr.html</td><td>French version of the page above.</td></tr><tr><td><a href="05-recommendations-with-context.html">Recommendations, with buyer context</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-recommendations-with-context.html</td><td>Context box (entered by you, no AI label, who and when) and a “Buyer context, version 2” citation on each recommendation.</td></tr><tr><td><a href="05-recommendations-outdated-context.html">Context changed since the draft</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-recommendations-outdated-context.html</td><td>Marker “Buyer context changed since this draft”, Redraft recommendations action, drafting indicator state; reviewed items kept.</td></tr><tr><td><a href="05-buyer-context-form.html">Buyer context form, validation errors</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-buyer-context-form.html</td><td>All fields optional; error summary and inline errors on share and date; focus order.</td></tr><tr><td><a href="05-recommendations-natural-person.html">Natural-person business</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-recommendations-natural-person.html</td><td>“Not assessed: natural-person business”; no recommendation, no context form.</td></tr><tr><td><a href="05-supplier-card-key-figures.html">Card header with key figures</a></td><td class="mono" style="font-size:var(--isc-font-size-sm)">05-supplier-card-key-figures.html</td><td>Ruled band of five figures repeating facts, each with status and source chip; missing evidence in brick.</td></tr></tbody></table></section>
+  <section class="section"><h2 class="section-title">Acceptance criteria of #5</h2>
+  <table class="list"><thead><tr><th scope="col">Criterion</th><th scope="col">Where</th></tr></thead><tbody><tr><td>Card: header, fields, value, status, chip, Quote with attribution, Found in, Source type, Redacted extract</td><td class=mono style='font-size:var(--isc-font-size-sm)'>05-supplier-card-default(.fr).html</td></tr><tr><td>Field and profile states: No public evidence found, IAF CertSearch, identity to verify, partial; long value, 300-character quote, non-Latin quote</td><td class=mono style='font-size:var(--isc-font-size-sm)'>05-supplier-card-default.html, -flags, -edge-cases</td></tr><tr><td>Fact review: approve, correct with original AI value and Quote, who and when, proposed count, concurrent change</td><td class=mono style='font-size:var(--isc-font-size-sm)'>05-review-*.html</td></tr><tr><td>Assessment: SWOT, risk indicators, level, cited facts, no score, evidence gaps, financial guidance, AI-draft label, approve / correct / delete, provenance</td><td class=mono style='font-size:var(--isc-font-size-sm)'>05-assessment-ai-draft.html, 05-assessment-review.html</td></tr><tr><td>Criteria and buyer input: fit entry and statements, empty state, buyer input distinct from AI, natural-person case</td><td class=mono style='font-size:var(--isc-font-size-sm)'>05-assessment-criteria-*.html, 05-assessment-natural-person.html</td></tr><tr><td>Card in EN and FR; keyboard operation and focus order annotated on every screen; tokens and components from #3 only</td><td class=mono style='font-size:var(--isc-font-size-sm)'>every file (focus toggle in the dark bar); tokens.css generated from tokens.json</td></tr></tbody></table></section>
+  <section class="section"><h2 class="section-title">For the owner</h2>
+  <ul class="plain"><li>Financial guidance is built by rules, so it cannot honestly carry "AI draft, pending your validation" (spec F8 says every statement does). Mock-up: dashed "Pending your validation" with provenance "Rules, not a model". Decide the label.</li><li>Natural-person business: the mock-up keeps business-capability SWOT points and replaces risk and financial content. Alternative: no assessment at all.</li><li>Access-status wording for the seven financial document statuses (EN/FR), proposed in 05-assessment-ai-draft.html; the brief does not list them.</li><li>Side panel background: paper, not paper-margin (so the margin note keeps its tone).</li><li>Margin note behaviour: 300px column beside the fact from 1440px wide; inline under the row below that.</li><li>Source-content deletion date in the header: "Scheduled for &lt;date&gt;" / "Deleted on &lt;date&gt;"; when the date is null (no retention set) the header item is left out, no date invented.</li><li>French card values shown in French; "About people" field note; "n facts still proposed" and "n statements pending" counts; banner sentences: all proposals.</li><li>Concurrent fact edit: "Apply my correction" overwrites the other member's correction after they have seen it.</li></ul></section>
+  <section class="section"><h2 class="section-title">Conventions</h2>
+  <ul class="plain">
+    <li>Evidence status ("Found in &lt;source&gt; on &lt;date&gt;", Source type, Redacted extract, missing evidence) sits in the source line and the margin note. Buyer review status (Proposed, Approved, Corrected; AI draft, Approved, Corrected, Deleted) sits at the right of the value or under the statement. They never share a shape or a place. The word "verified" is not used for a review.</li>
+    <li>Brick red appears only on "No public evidence found" and on Evidence gaps.</li>
+    <li>Fonts: IBM Plex from Google Fonts in these mock-ups only; the application self-hosts them (#31).</li>
+  </ul></section>
+</main>
+</body>
+</html>

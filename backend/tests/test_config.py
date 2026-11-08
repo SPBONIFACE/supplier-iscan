@@ -83,3 +83,44 @@ def test_settings_repr_hides_secrets() -> None:
 
     assert "db-secret" not in repr(settings)
     assert "admin-secret" not in repr(settings)
+
+
+def test_the_country_table_and_the_buyer_text_limits_are_read_by_name() -> None:
+    default = load_settings({})
+    custom = load_settings(
+        {
+            "COUNTRY_TABLE_FILE": " /tables/countries.json ",
+            "CRITERIA_MAX_CHARS": "300",
+            "BUYER_NOTES_MAX_CHARS": "50",
+            "BUYER_TEXT_MAX_CHARS": "700",
+        }
+    )
+
+    assert default.country_table_file is None
+    assert (default.criteria_max_chars, default.buyer_notes_max_chars) == (2000, 1000)
+    assert custom.country_table_file == "/tables/countries.json"
+    assert (custom.criteria_max_chars, custom.buyer_notes_max_chars) == (300, 50)
+    assert custom.buyer_text_max_chars == 700
+    with pytest.raises(ConfigurationError, match="CRITERIA_MAX_CHARS"):
+        load_settings({"CRITERIA_MAX_CHARS": "0"})
+
+
+def test_worker_settings_have_defaults_and_are_validated() -> None:
+    default = load_settings({})
+    custom = load_settings({"RUN_LEASE_SECONDS": "45", "WORKER_POLL_SECONDS": "1"})
+
+    assert (default.run_lease.total_seconds(), default.worker_poll_seconds) == (300, 2)
+    assert (custom.run_lease.total_seconds(), custom.worker_poll_seconds) == (45, 1)
+    with pytest.raises(ConfigurationError, match="RUN_LEASE_SECONDS"):
+        load_settings({"RUN_LEASE_SECONDS": "0"})
+
+
+def test_the_comparison_maximum_is_a_setting_with_a_local_default() -> None:
+    default = load_settings({})
+    custom = load_settings({"COMPARISON_MAX_PROFILES": "4"})
+
+    assert default.comparison_max_profiles == 10
+    assert custom.comparison_max_profiles == 4
+    for value in ("1", "0", "many", "-3"):
+        with pytest.raises(ConfigurationError, match="COMPARISON_MAX_PROFILES"):
+            load_settings({"COMPARISON_MAX_PROFILES": value})

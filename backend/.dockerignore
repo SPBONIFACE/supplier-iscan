@@ -7,3 +7,7 @@ tests/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+# Model files are fetched inside the build (scripts/fetch_model.py), never copied in.
+*.bin
+*.safetensors
+models/

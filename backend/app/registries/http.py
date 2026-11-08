@@ -2,8 +2,8 @@
 
 The network itself is behind ``Fetch``, a small injectable interface (request in, response out):
 this module imports no networking library. The application's outbound HTTP client provides it
-(for now ``app.registries.httpx2_fetch``; the guarded client of #15 once merged); tests provide
-recorded fixtures.
+(``app.registries.guarded_fetch``, on the guarded client of #15); tests provide recorded
+fixtures.
 
 - a descriptive User-Agent with a contact, sent with every request;
 - an optional cap on parallel requests (Wikidata: at most 5);

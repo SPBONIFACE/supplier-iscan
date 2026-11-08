@@ -160,9 +160,30 @@ def test_user_responses_match_the_contract(client: TestClient, engine: Engine) -
     check(send_with_session(client, "GET", f"/users/{member.id}", None), path, "get", 401)
 
 
+def test_own_organisation_responses_match_the_contract(client: TestClient, engine: Engine) -> None:
+    path = "/organisation"
+    operation = load_contract()["paths"][path]["get"]
+    assert operation["security"] == [{"sessionCookie": []}]
+    assert "parameters" not in operation  # no organisation id from the client
+
+    check(send_with_session(client, "GET", path, None), path, "get", 401)
+    sign_in(client, engine, role="member")
+    check(client.get(path), path, "get", 200)
+    ending = create_organisation(engine, access_ends_at=utc_now() + timedelta(days=1))
+    sign_in(client, engine, role="admin", organisation_id=ending)
+    check(client.get(path), path, "get", 200)
+
+
+def test_not_found_is_the_answer_outside_the_callers_organisation() -> None:
+    description = load_contract()["components"]["responses"]["NotFound"]["description"]
+
+    assert "outside the caller's organisation" in description
+
+
 @pytest.mark.parametrize(
     ("method", "path", "template", "body"),
     [
+        ("GET", "/organisation", "/organisation", None),
         ("GET", "/admin/organisations", "/admin/organisations", None),
         ("GET", f"/users/{uuid.uuid4()}", "/users/{id}", None),
         ("GET", "/invitations/some-token", "/invitations/{token}", None),

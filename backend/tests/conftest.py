@@ -9,6 +9,7 @@ Without DATABASE_URL, tests that need a database are skipped locally and fail in
 
 import os
 from collections.abc import Iterator
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -19,6 +20,20 @@ from app.db import make_engine
 from app.migrate import upgrade_to_head
 from tests.db_support import temporary_database, truncate_all
 from tests.support import LOCAL_ORIGIN, make_client
+
+
+@pytest.fixture(autouse=True)
+def _fast_name_detector(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The process-wide redactor uses a fake name detector (no model, quick) in every test but
+    those marked `model`, which use the real one (see tests/redaction/conftest.py)."""
+    if request.node.get_closest_marker("model"):
+        return
+    from app.redaction import engine
+    from tests.redaction.support import fake_redactor
+
+    monkeypatch.setattr(
+        engine, "_REDACTOR", fake_redactor("Anna Keller-Brandt", "Zoë Okonkwo-Lindqvist")
+    )
 
 
 @pytest.fixture(scope="session")
@@ -59,7 +74,11 @@ def engine(_shared_engine: Engine) -> Iterator[Engine]:
 
 @pytest.fixture
 def settings(database_url: str) -> Settings:
-    return Settings(database_url=database_url, allowed_origins=(LOCAL_ORIGIN,))
+    return Settings(
+        database_url=database_url,
+        allowed_origins=(LOCAL_ORIGIN,),
+        run_budget_eur=Decimal(5),
+    )
 
 
 @pytest.fixture

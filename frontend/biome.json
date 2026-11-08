@@ -7,7 +7,14 @@
     "root": ".."
   },
   "files": {
-    "includes": ["**", "!pnpm-lock.yaml"]
+    "includes": [
+      "**",
+      "!pnpm-lock.yaml",
+      "!public/fonts",
+      "!src/lib/api-schema.d.ts",
+      "!src/styles/tokens.css",
+      "!src/styles/fonts.css"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -16,7 +23,22 @@
     "lineWidth": 100
   },
   "linter": {
-    "enabled": true
+    "enabled": true,
+    "rules": {
+      "style": {
+        "noRestrictedGlobals": {
+          "level": "error",
+          "options": {
+            "deniedGlobals": {
+              "fetch": "Use the API client in src/lib/api.ts.",
+              "XMLHttpRequest": "Use the API client in src/lib/api.ts.",
+              "WebSocket": "Use the API client in src/lib/api.ts.",
+              "EventSource": "Use the API client in src/lib/api.ts."
+            }
+          }
+        }
+      }
+    }
   },
   "assist": {
     "enabled": true,
@@ -25,5 +47,17 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/lib/api.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedGlobals": "off"
+          }
+        }
+      }
+    }
+  ]
 }

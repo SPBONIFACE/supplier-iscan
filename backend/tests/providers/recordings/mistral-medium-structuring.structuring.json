@@ -1,0 +1,35 @@
+{
+  "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
+  "recorded_at": null,
+  "origin": "hand-written in the provider's documented response shape (not yet recorded from the live API)",
+  "config_id": "mistral-medium-structuring",
+  "role": "structuring",
+  "status": 200,
+  "body": {
+    "id": "cmpl_1",
+    "object": "chat.completion",
+    "model": "mistral-medium-latest",
+    "created": 1,
+    "usage": {
+      "prompt_tokens": 226,
+      "completion_tokens": 94,
+      "total_tokens": 320
+    },
+    "choices": [
+      {
+        "index": 0,
+        "finish_reason": "stop",
+        "message": {
+          "role": "assistant",
+          "content": "{\"extractions\": [{\"field\": \"legal_name\", \"status\": \"found\", \"value\": \"Acme SA\", \"quote\": \"Acme SA is a French limited company\", \"source_id\": \"S1\"}, {\"field\": \"headcount\", \"status\": \"found\", \"value\": \"340\", \"quote\": \"Acme SA employed 340 people at 31 December 2025\", \"source_id\": \"S2\"}, {\"field\": \"revenue\", \"status\": \"found\", \"value\": \"EUR 48.2 million\", \"quote\": \"Revenue for 2025 was EUR 48.2 million\", \"source_id\": \"S2\"}, {\"field\": \"iso_14001\", \"status\": \"not_found\", \"value\": null, \"quote\": null, \"source_id\": null}]}"
+        }
+      }
+    ]
+  },
+  "expected_usage": {
+    "input_tokens": 226,
+    "output_tokens": 94,
+    "reasoning_tokens": 0,
+    "tool_calls": 0
+  }
+}

@@ -93,6 +93,23 @@ async def _on_invalid_field(request: Request, error: Exception) -> JSONResponse:
     )
 
 
+class RunRefusedError(Exception):
+    """New work is refused by a limit (#29): answered with 403 RunRefused {detail, reason}."""
+
+    def __init__(self, reason: str, detail: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+        self.detail = detail
+
+
+async def _on_run_refused(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, RunRefusedError)  # noqa: S101 - registered for this type
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
+        content={"detail": error.detail, "reason": error.reason},
+    )
+
+
 async def _on_validation_error(request: Request, error: Exception) -> JSONResponse:
     assert isinstance(error, RequestValidationError)  # noqa: S101 - registered for this type
     return JSONResponse(
@@ -112,5 +129,6 @@ async def _on_database_unavailable(request: Request, error: Exception) -> JSONRe
 def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(RequestValidationError, _on_validation_error)
     app.add_exception_handler(InvalidField, _on_invalid_field)
+    app.add_exception_handler(RunRefusedError, _on_run_refused)
     for error_type in (DatabaseUnavailable, OperationalError, InterfaceError):
         app.add_exception_handler(error_type, _on_database_unavailable)

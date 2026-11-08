@@ -4,7 +4,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.registries.text import normalise_text
+from app.registries.text import has_visible_text, normalise_text
 
 RegistryName = Literal["wikidata", "gleif"]
 REGISTRY_NAMES: tuple[RegistryName, ...] = ("wikidata", "gleif")
@@ -27,7 +27,7 @@ class RegistrySearchQuery(BaseModel):
     @classmethod
     def _name_is_not_blank(cls, value: str) -> str:
         normalised = normalise_text(value)
-        if not normalised:
+        if not normalised or not has_visible_text(normalised):
             raise ValueError("the supplier name must not be empty")
         return normalised
 

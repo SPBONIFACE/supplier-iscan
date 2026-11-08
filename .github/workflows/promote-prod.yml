@@ -1,0 +1,110 @@
+# Promote to PRODUCTION (#52): manual. Deploys to Cloud Run prod the EXACT image digests that run in dev
+# (nothing is rebuilt), after the same migration and health gates. The job uses the GitHub environment
+# "production", which requires a reviewer's approval before it starts (owner setting, see the guide).
+#
+# Skips with a notice, and stays green, when Google Cloud is not configured yet.
+# Actions are pinned to full commit SHAs; the comment gives the release.
+name: Promote to production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  config:
+    name: is deployment configured?
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Check the repository variables
+        id: check
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_DEPLOY_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+        run: |
+          missing=""
+          for name in GCP_PROJECT_ID GCP_REGION GCP_WORKLOAD_IDENTITY_PROVIDER GCP_DEPLOY_SERVICE_ACCOUNT; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Promotion skipped::Not configured yet. Missing repository variables:$missing. See _docs/operations/owner-deployment-guide.md."
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  promote:
+    name: migrate, deploy, health (production)
+    needs: config
+    if: needs.config.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Required reviewer: the run waits here until the owner approves it in GitHub.
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      # Variables of the GitHub environment "production".
+      CRAWLER_CONTACT_URL: ${{ vars.CRAWLER_CONTACT_URL }}
+      EUR_PER_USD: ${{ vars.EUR_PER_USD }}
+    steps:
+      - name: Check out main (to read what runs in dev)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: main
+          persist-credentials: false
+
+      - name: Sign in to Google Cloud (Workload Identity Federation, no key)
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up the gcloud command line
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        with:
+          version: "592.0.0" # Google Cloud CLI, pinned
+          install_components: beta # worker pools are a beta command
+
+      - name: Read the exact images and commit that run in dev
+        id: dev
+        run: |
+          main/deploy/deploy.sh dev images | tee dev-images.txt
+          while IFS='=' read -r name value; do echo "$name=$value" >> "$GITHUB_OUTPUT"; done < dev-images.txt
+
+      - name: Check out the commit that built those images (its scripts and settings)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.dev.outputs.GIT_SHA }}
+          path: release
+          persist-credentials: false
+
+      - name: Migrate the production database
+        env:
+          IMAGE_API: ${{ steps.dev.outputs.IMAGE_API }}
+        run: release/deploy/deploy.sh prod migrate
+
+      - name: Deploy to Cloud Run prod (traffic moves only after /health passes)
+        env:
+          IMAGE_API: ${{ steps.dev.outputs.IMAGE_API }}
+          IMAGE_WEB: ${{ steps.dev.outputs.IMAGE_WEB }}
+          IMAGE_COLLECTOR: ${{ steps.dev.outputs.IMAGE_COLLECTOR }}
+          GIT_SHA: ${{ steps.dev.outputs.GIT_SHA }}
+        run: release/deploy/deploy.sh prod deploy
+
+      - name: Health check of the deployed production
+        run: release/deploy/deploy.sh prod health

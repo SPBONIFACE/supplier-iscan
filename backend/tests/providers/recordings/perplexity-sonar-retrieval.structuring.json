@@ -1,0 +1,49 @@
+{
+  "$comment": "Response shape of the provider API for the synthetic input in _input.json. Replace with a real recording: see tests/providers/README.md.",
+  "recorded_at": null,
+  "origin": "hand-built in the documented Agent API response shape (docs.perplexity.ai migrate-from-sonar, web-search and output-control pages, read 5 Nov 2026) and checked against the installed perplexityai 0.43.8 types; not recorded from the live API",
+  "config_id": "perplexity-sonar-retrieval",
+  "role": "structuring",
+  "status": 200,
+  "body": {
+    "id": "resp_1",
+    "created_at": 1,
+    "model": "perplexity/sonar",
+    "object": "response",
+    "status": "completed",
+    "output": [
+      {
+        "id": "msg_1",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"extractions\": [{\"field\": \"legal_name\", \"status\": \"found\", \"value\": \"Acme SA\", \"quote\": \"Acme SA is a French limited company\", \"source_id\": \"S1\"}, {\"field\": \"headcount\", \"status\": \"found\", \"value\": \"340\", \"quote\": \"Acme SA employed 340 people at 31 December 2025\", \"source_id\": \"S2\"}, {\"field\": \"revenue\", \"status\": \"found\", \"value\": \"EUR 48.2 million\", \"quote\": \"Revenue for 2025 was EUR 48.2 million\", \"source_id\": \"S2\"}, {\"field\": \"iso_14001\", \"status\": \"not_found\", \"value\": null, \"quote\": null, \"source_id\": null}]}",
+            "annotations": []
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 228,
+      "output_tokens": 92,
+      "total_tokens": 320,
+      "cost": {
+        "currency": "USD",
+        "input_cost": 5.7e-05,
+        "output_cost": 0.00023,
+        "total_cost": 0.000287
+      }
+    }
+  },
+  "expected_usage": {
+    "input_tokens": 228,
+    "output_tokens": 92,
+    "reasoning_tokens": 0,
+    "tool_calls": 0,
+    "billed_amount": "0.000287",
+    "billed_currency": "USD"
+  }
+}

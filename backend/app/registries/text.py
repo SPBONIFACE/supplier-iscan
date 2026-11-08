@@ -17,6 +17,15 @@ import unicodedata
 _LATIN_RANGES = ((0x0000, 0x024F), (0x1E00, 0x1EFF))
 
 
+def has_visible_text(value: str) -> bool:
+    """False for a text made only of whitespace, control or invisible format characters
+    (zero-width space U+200B, joiner, byte-order mark...)."""
+    return any(
+        not char.isspace() and unicodedata.category(char) not in ("Cc", "Cf", "Zs", "Zl", "Zp")
+        for char in value
+    )
+
+
 def normalise_text(value: str) -> str:
     return " ".join(unicodedata.normalize("NFC", value).split())
 

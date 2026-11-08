@@ -12,7 +12,7 @@ Configuration (environment, all optional):
 
 import os
 import time
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 
@@ -35,7 +35,11 @@ _MAX_TIMEOUT_SECONDS = 300.0
 _MAX_REDIRECTS_LIMIT = 20
 MSG_INVALID_REDIRECT = "The website redirected to an invalid address."
 
-__all__ = ["FetchSettings", "GuardedClient", "load_fetch_settings"]
+__all__ = ["NETWORK_ERRORS", "FetchSettings", "GuardedClient", "load_fetch_settings"]
+
+# What a fetch raises when the network fails (connection, TLS, read, timeout): for callers that
+# treat it as "the site did not answer" without importing the HTTP library (#17).
+NETWORK_ERRORS: tuple[type[Exception], ...] = (httpx2.HTTPError,)
 
 
 @dataclass(frozen=True)
@@ -121,12 +125,15 @@ class GuardedClient:
         resolver: Resolver = system_resolver,
         inner_transport: httpx2.BaseTransport | None = None,
         headers: Mapping[str, str] | None = None,
+        before_request: Callable[[httpx2.URL], None] | None = None,
     ) -> None:
         self.settings = settings or load_fetch_settings()
         # Name-mangled: the raw client is still guarded (its transport is `GuardedTransport`) but
         # has no total deadline, so it is not an attribute other modules can reach by accident.
         self.__client = httpx2.Client(
-            transport=GuardedTransport(resolver=resolver, inner=inner_transport),
+            transport=GuardedTransport(
+                resolver=resolver, inner=inner_transport, before_request=before_request
+            ),
             trust_env=False,
             follow_redirects=False,
             headers=dict(headers or {}),
@@ -149,12 +156,15 @@ class GuardedClient:
         *,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
+        follow_redirects: bool = True,
     ) -> Iterator[httpx2.Response]:
         """GET `url`, following checked redirects; yield the final response, body not yet read.
 
         `timeout` (default `FetchSettings.timeout_seconds`) is a total wall-clock limit for the
         whole fetch, body reads inside the block included. `response.url` is the final URL after
-        redirects. Raises `FetchError` subclasses for the
+        redirects. With `follow_redirects=False` a redirect response is yielded as it is; its
+        target is read with `redirect_target` (the caller vets it before requesting it).
+        Raises `FetchError` subclasses for the
         guard's own refusals and `httpx2.HTTPError` subclasses for network failures.
         """
         current = validate_url(url) if isinstance(url, httpx2.URL) else normalise_url(url)
@@ -175,7 +185,7 @@ class GuardedClient:
                 except (httpx2.InvalidURL, UnicodeError) as error:  # defence in depth
                     raise InvalidUrlError(MSG_INVALID_REDIRECT) from error
                 location = response.extensions.get(_LOCATION)
-                if location is None:
+                if location is None or not follow_redirects:
                     try:
                         yield response
                     finally:
@@ -187,14 +197,25 @@ class GuardedClient:
             f"The website redirected more than {self.settings.max_redirects} times."
         )
 
+    def redirect_target(self, url: str | httpx2.URL, response: httpx2.Response) -> str | None:
+        """The validated absolute target of a redirect response to `url`; None if not a redirect."""
+        location = response.extensions.get(_LOCATION)
+        if location is None:
+            return None
+        current = validate_url(url) if isinstance(url, httpx2.URL) else normalise_url(url)
+        return str(_redirect_target(current, location))
+
     def get(
         self,
         url: str | httpx2.URL,
         *,
         timeout: float | None = None,
         headers: Mapping[str, str] | None = None,
+        follow_redirects: bool = True,
     ) -> httpx2.Response:
         """Like `stream`, with the body read. For bounded reads (PDFs), use `stream`."""
-        with self.stream(url, timeout=timeout, headers=headers) as response:
+        with self.stream(
+            url, timeout=timeout, headers=headers, follow_redirects=follow_redirects
+        ) as response:
             response.read()
             return response

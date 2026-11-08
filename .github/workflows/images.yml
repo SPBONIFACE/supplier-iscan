@@ -1,0 +1,111 @@
+# Image checks (#52): build the images on the runner, refuse secrets and private files in them, report
+# their size, and PROVE THE NAME-DETECTION MODEL RUNS INSIDE THE BUILT BACKEND IMAGE (offline, with the
+# memory a Cloud Run instance gets). No cloud account, no secret, nothing is pushed.
+# Runs when something that goes into an image changes, and on request.
+# Actions are pinned to full commit SHAs; the comment gives the release.
+name: Images
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "deploy/**"
+      - ".github/workflows/images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend image, model smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Runner resources
+        run: |
+          echo "cpus: $(nproc)"
+          free -m
+          df -h / | tail -1
+
+      - name: Build the backend image
+        run: docker build --tag iscan-api:ci backend
+
+      - name: Image check (no secret, no private file; size report)
+        # `shell: bash` (not the default) turns on pipefail, so a failed check fails the step despite tee.
+        shell: bash
+        run: python3 deploy/check_image.py iscan-api:ci --max-size-mb 3500 2>&1 | tee image-check.txt
+
+      - name: Model smoke test inside the image (offline, 4 GB memory limit)
+        id: smoke
+        shell: bash
+        # --network none proves nothing is downloaded at run time; HF_HUB_OFFLINE is also set by the
+        # image. --memory 4g is the size proposed for Cloud Run (deploy/env/*.conf). The smoke script
+        # is mounted read-only from the repository; it is not part of the image.
+        run: |
+          set -o pipefail
+          docker run --rm --network none --memory 4g --memory-swap 4g --cpus 2 \
+            -e PYTHONPATH=/app -e HF_HUB_OFFLINE=1 -e TRANSFORMERS_OFFLINE=1 \
+            -v "$PWD/deploy:/smoke:ro" \
+            iscan-api:ci /opt/venv/bin/python /smoke/smoke_redaction.py 2> smoke-stderr.txt | tee smoke.json
+          tail -n 1 smoke.json > result.json
+
+      - name: Smoke test diagnostics on failure
+        if: failure() && steps.smoke.outcome == 'failure'
+        run: tail -n 40 smoke-stderr.txt
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### Backend image"
+            echo '```'
+            cat image-check.txt 2>/dev/null || echo "image check did not run"
+            echo '```'
+            echo "### Name-detection model inside the built image (4 GB limit, 2 CPUs, offline)"
+            echo '```json'
+            cat result.json 2>/dev/null || echo "the smoke test did not finish"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  frontend:
+    name: frontend image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the frontend image
+        run: docker build --file frontend/Dockerfile.prod --tag iscan-web:ci frontend
+
+      - name: Image check (no secret, no private file; size report)
+        shell: bash
+        run: python3 deploy/check_image.py iscan-web:ci --max-size-mb 200 2>&1 | tee image-check.txt
+
+      - name: Gateway test (stub API, forwarded headers, logs without query strings, bad settings)
+        shell: bash
+        run: python3 deploy/check_proxy.py iscan-web:ci
+
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "### Frontend image"
+            echo '```'
+            cat image-check.txt 2>/dev/null || echo "image check did not run"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

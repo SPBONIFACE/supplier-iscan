@@ -1,0 +1,15 @@
+# Settings of the PRODUCTION environment for the API and the worker (Cloud Run --env-vars-file).
+# Names and non-secret values only. Secrets (database URL, administrator, provider keys) are
+# referenced by name from Google Secret Manager by deploy/deploy.sh and never appear in a file.
+# Values set per deployment from GitHub environment variables: CRAWLER_CONTACT_URL, CORS_ALLOWED_ORIGINS.
+INSTANCE_MODE: "hosted"
+# Per-run cost budget (EUR). The owner's decision; change it here, in a pull request.
+RUN_BUDGET_EUR: "5"
+# Ceilings per run (issue #52, from #103).
+COLLECT_MAX_REQUESTS: "200"
+COLLECT_MAX_DOMAINS: "10"
+OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4318"
+TELEMETRY_EXPORT_TIMEOUT_SECONDS: "5"
+DATABASE_STATEMENT_TIMEOUT_SECONDS: "30"
+RUN_LEASE_SECONDS: "300"
+WORKER_POLL_SECONDS: "5"

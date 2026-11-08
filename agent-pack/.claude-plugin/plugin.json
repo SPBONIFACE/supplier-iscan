@@ -1,0 +1,7 @@
+{
+  "name": "supplier-iscan-pack",
+  "version": "0.1.0",
+  "description": "Extension pack for the coding agents that build Supplier iScan: evidence-wording skill, contract MCP server, guard hook.",
+  "author": { "name": "Sandra Boniface" },
+  "license": "MIT"
+}

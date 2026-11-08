@@ -20,8 +20,12 @@ Outside `app/http_client/`, the test fails on:
 Fetches to supplier sites go through `app.http_client.GuardedClient` and `check_website`. A static
 scan cannot see code built at run time (`exec`, computed module names); review catches those.
 
-Database drivers and the official LLM SDKs (which contact only their configured provider) are not
-networking libraries in this sense and are not listed.
+Database drivers are not networking libraries in this sense and are not listed. The official LLM
+SDKs (`anthropic`, `openai`, `google.genai`, `mistralai`, `perplexity`) are listed (#11): they
+open connections, to the fixed endpoint of an approved provider configuration and never to a user
+URL, and are imported only by the provider adapters of `app/providers/adapters/`, which are in
+`ALLOWED_MODULES` and usable only inside their package (the registry reaches them through
+`app.providers.adapters.ADAPTERS`, after the approved-configuration checks).
 """
 
 import ast
@@ -35,6 +39,7 @@ REPOSITORY = BACKEND.parent
 SCANNED_ROOTS = [BACKEND / "app", BACKEND / "worker", REPOSITORY / "worker"]
 HTTP_CLIENT_MODULE = BACKEND / "app" / "http_client"
 HTTP_CLIENT_PACKAGE = "app.http_client"
+PROVIDER_ADAPTERS = BACKEND / "app" / "providers" / "adapters"
 
 # Modules that open sockets or network connections.
 NETWORK_MODULES = frozenset(
@@ -64,6 +69,12 @@ NETWORK_MODULES = frozenset(
         "websocket",
         "websockets",
         "xmlrpc.client",
+        # Official LLM SDKs (#11): only in the provider adapters (ALLOWED_MODULES).
+        "anthropic",
+        "google.genai",
+        "mistralai",
+        "openai",
+        "perplexity",
     }
 )
 # Names bound to a networking library: refused as an imported name or as an attribute, whatever
@@ -131,9 +142,30 @@ HTTP_CLIENT_INTERNAL_NAMES = frozenset(
 # module is usable only inside its own package (see `_allowed_module_findings`): it is not a way
 # around the guard for the rest of the application.
 ALLOWED_MODULES: dict[str, str] = {
-    "backend/app/registries/httpx2_fetch.py": (
-        "#14: the registries' single network module, to the fixed public hosts of Wikidata and "
-        "GLEIF only; to be switched to the guarded client in #16."
+    "backend/app/providers/adapters/anthropic_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
+    ),
+    "backend/app/providers/adapters/google_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
+    ),
+    "backend/app/providers/adapters/mistral_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
+    ),
+    "backend/app/providers/adapters/openai_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
+    ),
+    "backend/app/providers/adapters/perplexity_adapter.py": (
+        "#11: provider adapter on the official SDK, to the fixed endpoint of an approved "
+        "provider configuration only (never a user URL); reached only through "
+        "app.providers.adapters.ADAPTERS by the registry, after the configuration checks."
     ),
 }
 
@@ -513,6 +545,20 @@ def test_every_http_client_module_declares_its_public_names() -> None:
         "import xmlrpc\nxmlrpc.client.ServerProxy('http://example.com')",
         "import ssl\nssl.get_server_certificate(('example.com', 443))",
         "import smtplib",
+        # #11: the LLM SDKs are networking libraries outside the provider adapters.
+        "import anthropic",
+        "import openai",
+        "from openai import OpenAI",
+        "from google import genai",
+        "import google.genai",
+        "from mistralai.client import Mistral",
+        "import perplexity",
+        "__import__('anthropic')",
+        # ... and the adapters cannot be used outside their package.
+        "from app.providers.adapters.google_adapter import make_client",
+        "from app.providers.adapters import google_adapter",
+        "import app.providers.adapters.openai_adapter",
+        "from app.providers.adapters.mistral_adapter import *",
     ],
 )
 def test_the_scan_detects_each_way_of_opening_a_connection(source: str) -> None:
@@ -544,87 +590,31 @@ def test_only_the_public_surface_of_the_http_client_may_be_imported() -> None:
     assert find_network_access("from app.http_client import GuardedClient") == []
 
 
-# QA's bypass on #15 (FAIL, criterion 6, third round): a module elsewhere using the registries'
-# unguarded fetcher, which accepts any URL.
-QA_PROBE_CRAWLER = """\
-from app.registries.httpx2_fetch import Httpx2Fetch
-async def fetch_supplier_page(url): return (await Httpx2Fetch(10.0)(url, {}, {})).body
-"""
-
-
-def test_the_allowed_module_and_its_names_are_known_to_the_scan() -> None:
-    (fetcher,) = ALLOWED
-
-    assert fetcher.name == "app.registries.httpx2_fetch"
-    assert fetcher.package == "app.registries"
-    assert {"httpx2_fetch", "Httpx2Fetch"} <= fetcher.names
-
-
-def test_a_module_elsewhere_using_the_allowed_fetcher_fails_the_scan() -> None:
-    probe = BACKEND / "app" / "qa_probe_crawler.py"
-    sources = {**_application_sources(), probe: QA_PROBE_CRAWLER}
-
-    violations = _violations(sources)
-
-    assert list(violations) == ["backend/app/qa_probe_crawler.py"]
+def test_the_allowed_modules_and_their_names_are_known_to_the_scan() -> None:
+    # #16: the registries' own unguarded fetcher is gone; only the provider adapters remain.
+    assert {adapter.package for adapter in ALLOWED} == {"app.providers.adapters"}
+    assert {"make_client", "build_structuring"} <= ALLOWED[0].names
+    assert not (BACKEND / "app" / "registries" / "httpx2_fetch.py").exists()
 
 
 OUTSIDE = "app.services.crawler"
+ADAPTER = "app.providers.adapters.anthropic_adapter"
 
 
 @pytest.mark.parametrize(
     ("source", "module"),
     [
-        (QA_PROBE_CRAWLER, "app.qa_probe_crawler"),
-        ("from app.registries.httpx2_fetch import Httpx2Fetch", OUTSIDE),
-        ("from app.registries.httpx2_fetch import Httpx2Fetch as Fetch", OUTSIDE),
-        ("from app.registries.httpx2_fetch import *", OUTSIDE),
-        ("import app.registries.httpx2_fetch", OUTSIDE),
-        ("import app.registries.httpx2_fetch as f\nf.Httpx2Fetch(1.0)", OUTSIDE),
-        ("from app.registries import httpx2_fetch", OUTSIDE),
-        ("from app.registries import httpx2_fetch as f", OUTSIDE),
-        ("from app import registries\nregistries.httpx2_fetch.Httpx2Fetch", OUTSIDE),
-        ("import app.registries as r\nr.httpx2_fetch", OUTSIDE),
-        ("from app.registries import service\nservice.Httpx2Fetch", OUTSIDE),
-        # A re-export through the package or one of its modules.
-        ("from app.registries import Httpx2Fetch", OUTSIDE),
-        ("from app.registries.service import Httpx2Fetch", OUTSIDE),
-        ("from app.registries.service import *", OUTSIDE),
-        ("from app.registries import *", OUTSIDE),
-        # Relative imports, resolved against the module's own name.
-        ("from .registries.httpx2_fetch import Httpx2Fetch", "app.qa_probe_crawler"),
-        ("from .registries import httpx2_fetch", "app.qa_probe_crawler"),
-        ("from ..registries.httpx2_fetch import Httpx2Fetch", OUTSIDE),
-        ("from ..registries import Httpx2Fetch", OUTSIDE),
-        # Literal names given to getattr or import_module.
-        ("import importlib\nimportlib.import_module('app.registries.httpx2_fetch')", OUTSIDE),
-        ("import app.registries as r\ngetattr(r, 'httpx2_fetch')", OUTSIDE),
-        ("from app.registries import service\ngetattr(service, 'Httpx2Fetch')", OUTSIDE),
-        # Inside the package, the fetcher may not leave under another name.
-        ("from app.registries.httpx2_fetch import Httpx2Fetch as F", "app.registries.service"),
-        ("from .httpx2_fetch import Httpx2Fetch as Fetch", "app.registries.service"),
-        ("from . import httpx2_fetch as f", "app.registries.__init__"),
+        (f"from {ADAPTER} import make_client", OUTSIDE),
+        (f"from {ADAPTER} import make_client as f", OUTSIDE),
+        (f"import {ADAPTER}", OUTSIDE),
+        ("from app.providers.adapters import anthropic_adapter", OUTSIDE),
+        ("from app.providers import adapters\nadapters.anthropic_adapter", OUTSIDE),
+        ("from ..providers.adapters import anthropic_adapter", OUTSIDE),
+        (f"import importlib\nimportlib.import_module('{ADAPTER}')", OUTSIDE),
     ],
 )
-def test_the_allowed_fetcher_cannot_be_used_outside_its_package(source: str, module: str) -> None:
+def test_an_allowed_adapter_cannot_be_used_outside_its_package(source: str, module: str) -> None:
     assert find_network_access(source, module)
-
-
-@pytest.mark.parametrize(
-    ("source", "module"),
-    [
-        ("from app.registries.httpx2_fetch import Httpx2Fetch", "app.registries.service"),
-        ("from .httpx2_fetch import Httpx2Fetch", "app.registries.service"),
-        ("from . import httpx2_fetch", "app.registries.__init__"),
-        ("from app.registries.http import FetchError", "app.registries.gleif"),
-        # The registries' public surface stays usable from elsewhere.
-        ("from app.registries import RegistrySearchService", "app.main"),
-        ("from app.registries import build_registry_service, load_registry_settings", "app.main"),
-        ("from app.registries.models import RegistryCandidate", "app.api.suppliers"),
-    ],
-)
-def test_the_allowed_fetcher_is_usable_inside_its_package(source: str, module: str) -> None:
-    assert find_network_access(source, module) == []
 
 
 def test_the_guarded_clients_raw_client_is_an_internal_name() -> None:
@@ -632,3 +622,15 @@ def test_the_guarded_clients_raw_client_is_an_internal_name() -> None:
         "from app.http_client import GuardedClient\nGuardedClient()._GuardedClient__client.get(u)",
         "app.services.sample",
     )
+
+
+def test_only_the_registry_reaches_the_provider_adapters() -> None:
+    # #11: the adapter package is entered only through the registry, which checks the
+    # configuration (approved, key set) before building an adapter.
+    importers = sorted(
+        str(path.relative_to(REPOSITORY))
+        for path, source in _application_sources().items()
+        if PROVIDER_ADAPTERS not in path.parents and "app.providers.adapters" in source
+    )
+
+    assert importers == ["backend/app/providers/registry.py"]

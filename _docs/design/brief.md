@@ -1,7 +1,7 @@
 # Supplier iScan: design brief
 
-> **Status: proposed, pending the owner's approval on issue #3 or its pull request.** Until the owner approves it,
-> no mock-up (#4 to #7) and no frontend or PDF work builds on this brief or on `tokens.json`.
+> **Status: approved by the owner on 27 Oct 2026 (issue #3).** Mock-ups, frontend and PDF work build on this brief and
+> on `tokens.json`. A bolder visual direction may replace it after the course.
 
 This brief fixes the visual direction, the shared components, the status vocabulary and the design tokens of Supplier
 iScan. Every mock-up, the frontend (#31 onwards) and the server-side PDF (#39, #40) build on it. The tokens live in one

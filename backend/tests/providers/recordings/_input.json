@@ -1,0 +1,22 @@
+{
+  "$comment": "Synthetic input of every contract recording: a fictitious company, no personal data.",
+  "instructions": "Extract each requested field from the sources. Answer only from the sources. Quote the sources verbatim and give the id of the source. If a field is not stated, give the status not_found.",
+  "fields": [
+    "legal_name",
+    "headcount",
+    "revenue",
+    "iso_14001"
+  ],
+  "sources": [
+    {
+      "source_id": "S1",
+      "text": "Acme SA is a French limited company (societe anonyme) registered in Lyon, France. Its registered office is 12 rue de la Republique, 69002 Lyon. Acme SA manufactures industrial valves."
+    },
+    {
+      "source_id": "S2",
+      "text": "Annual report 2025. Acme SA employed 340 people at 31 December 2025. Revenue for 2025 was EUR 48.2 million. The company holds ISO 9001 certification."
+    }
+  ],
+  "query": "Airbus SE annual report 2025",
+  "retrieval_instructions": "Find public pages about the supplier. Cite the pages you used."
+}

@@ -28,6 +28,8 @@ from sqlalchemy.orm import DeclarativeBase, Session
 # Short enough that a request fails fast when the database is down, long enough for a cold
 # serverless database to wake up.
 DATABASE_CONNECT_TIMEOUT_SECONDS = 5
+# The longest one statement may run; the setting DATABASE_STATEMENT_TIMEOUT_SECONDS overrides it.
+DEFAULT_STATEMENT_TIMEOUT_SECONDS = 30
 
 # Stable constraint names, so that migrations can refer to them.
 NAMING_CONVENTION = {
@@ -61,23 +63,36 @@ def to_sqlalchemy_url(database_url: str) -> str:
     return database_url
 
 
-def make_engine(database_url: str) -> Engine:
+def make_engine(
+    database_url: str, statement_timeout_seconds: int = DEFAULT_STATEMENT_TIMEOUT_SECONDS
+) -> Engine:
     return create_engine(
         to_sqlalchemy_url(database_url),
         pool_pre_ping=True,
         # Never put bound parameters (password hashes, token hashes, emails) in logs or in the
         # text of exceptions.
         hide_parameters=True,
-        connect_args={"connect_timeout": DATABASE_CONNECT_TIMEOUT_SECONDS},
+        connect_args={
+            "connect_timeout": DATABASE_CONNECT_TIMEOUT_SECONDS,
+            # A statement that does not finish is cancelled by the server (an OperationalError,
+            # answered with a 503 / a paused run), so a stuck database never hangs a request.
+            "options": f"-c statement_timeout={statement_timeout_seconds * 1000}",
+        },
     )
 
 
 class Database:
     """The application's engine, created on first use so that the API starts without a database."""
 
-    def __init__(self, database_url: str | None, engine: Engine | None = None) -> None:
+    def __init__(
+        self,
+        database_url: str | None,
+        engine: Engine | None = None,
+        statement_timeout_seconds: int = DEFAULT_STATEMENT_TIMEOUT_SECONDS,
+    ) -> None:
         self._database_url = database_url
         self._engine = engine
+        self._statement_timeout_seconds = statement_timeout_seconds
 
     @property
     def engine(self) -> Engine:
@@ -85,7 +100,7 @@ class Database:
             if not self._database_url:
                 raise DatabaseUnavailable("DATABASE_URL is not set")
             try:
-                self._engine = make_engine(self._database_url)
+                self._engine = make_engine(self._database_url, self._statement_timeout_seconds)
             except ArgumentError:
                 # The message would contain the URL: drop it.
                 raise DatabaseUnavailable("DATABASE_URL cannot be parsed") from None

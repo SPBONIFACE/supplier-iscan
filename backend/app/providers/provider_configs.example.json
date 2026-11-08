@@ -1,0 +1,87 @@
+{
+  "$comment": "Example approved provider configurations (spec F6). Every record is disabled and unverified: the training setting, retention, region and transfer mechanism are placeholders, not statements about any provider. Before use, the operator checks each point against the provider's current terms for the exact API, model and endpoint, writes the values found, sets verified_at to the date of that check and enabled to true. Point PROVIDER_CONFIG_FILE at your own copy. API keys never go in this file: they are read from ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, MISTRAL_API_KEY and PERPLEXITY_API_KEY. `roles` names the configuration each role uses (spec defaults: Perplexity for retrieval, Gemini Flash for structuring).",
+  "provider_configs": [
+    {
+      "id": "gemini-flash-structuring",
+      "provider": "google",
+      "api": "generate_content",
+      "model_id": "gemini-2.5-flash",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "training_setting": "to be verified",
+      "retention": "to be verified",
+      "region": "to be verified",
+      "transfer_mechanism": "to be verified",
+      "verified_at": null,
+      "enabled": false
+    },
+    {
+      "id": "perplexity-sonar-retrieval",
+      "provider": "perplexity",
+      "api": "agent",
+      "model_id": "perplexity/sonar",
+      "endpoint": "https://api.perplexity.ai",
+      "training_setting": "to be verified",
+      "retention": "to be verified",
+      "region": "to be verified",
+      "transfer_mechanism": "to be verified",
+      "verified_at": null,
+      "enabled": false
+    },
+    {
+      "id": "claude-sonnet",
+      "provider": "anthropic",
+      "api": "messages",
+      "model_id": "claude-sonnet-4-5",
+      "endpoint": "https://api.anthropic.com",
+      "training_setting": "to be verified",
+      "retention": "to be verified",
+      "region": "to be verified",
+      "transfer_mechanism": "to be verified",
+      "verified_at": null,
+      "enabled": false
+    },
+    {
+      "id": "openai-gpt-responses",
+      "provider": "openai",
+      "api": "responses",
+      "model_id": "gpt-5-mini",
+      "endpoint": "https://api.openai.com/v1",
+      "training_setting": "to be verified",
+      "retention": "to be verified",
+      "region": "to be verified",
+      "transfer_mechanism": "to be verified",
+      "verified_at": null,
+      "enabled": false
+    },
+    {
+      "id": "mistral-medium-structuring",
+      "provider": "mistral",
+      "api": "chat_completions",
+      "model_id": "mistral-medium-latest",
+      "endpoint": "https://api.mistral.ai",
+      "training_setting": "to be verified",
+      "retention": "to be verified",
+      "region": "to be verified",
+      "transfer_mechanism": "to be verified",
+      "verified_at": null,
+      "enabled": false
+    },
+    {
+      "id": "mistral-medium-retrieval",
+      "provider": "mistral",
+      "api": "conversations",
+      "model_id": "mistral-medium-latest",
+      "endpoint": "https://api.mistral.ai",
+      "training_setting": "to be verified",
+      "retention": "to be verified",
+      "region": "to be verified",
+      "transfer_mechanism": "to be verified",
+      "verified_at": null,
+      "enabled": false
+    }
+  ],
+  "roles": {
+    "retrieval": "perplexity-sonar-retrieval",
+    "structuring": "gemini-flash-structuring"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$comment": "EXAMPLE country table, for tests and a first start. The country and the registry are invented (Exampleland, a reserved example domain); every access status and every date below is purely illustrative and describes no real registry. last_checked is set to 2000-01-01 on purpose so that it reads as not checked. The owner replaces this file with a verified table, named by COUNTRY_TABLE_FILE; nothing is merged.",
+  "example": true,
+  "countries": [
+    {
+      "country": "XX",
+      "registry_name": "Exampleland Company Register (example)",
+      "registry_url": "https://registry.example/",
+      "last_checked": "2000-01-01",
+      "documents": [
+        { "type": "income_statement", "access": "reduced_disclosure" },
+        { "type": "balance_sheet", "access": "public_download" },
+        { "type": "notes", "access": "free_registration" },
+        { "type": "audit_report", "access": "paid" }
+      ]
+    }
+  ]
+}

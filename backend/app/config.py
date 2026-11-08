@@ -5,10 +5,13 @@ file is read here, and no value is ever logged or shown in an error message.
 """
 
 import os
+import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import timedelta
+from decimal import Decimal, InvalidOperation
 from typing import Literal
+from urllib.parse import urlsplit
 
 # Local development origin of the Vite dev server (spec, Security model: Allowed origins).
 # Deployed environments set CORS_ALLOWED_ORIGINS to their own frontend origin.
@@ -24,14 +27,82 @@ CORS_ALLOWED_ORIGINS = "CORS_ALLOWED_ORIGINS"
 INSTANCE_MODE = "INSTANCE_MODE"
 ADMIN_EMAIL = "ADMIN_EMAIL"
 ADMIN_PASSWORD = "ADMIN_PASSWORD"  # noqa: S105 - the name of the setting, not a password
+# Path of the approved provider configurations file (#11); the shipped example when unset.
+# Provider API keys are read by name in app.providers (KEY_SETTINGS), never stored in Settings.
+PROVIDER_CONFIG_FILE = "PROVIDER_CONFIG_FILE"
+# Price table (#12): prices per model with an "as of" date; the shipped example when unset.
+# Providers bill in USD and costs are shown in EUR, so the conversion rate is a setting
+# (EUR for 1 USD).
+PRICE_TABLE_FILE = "PRICE_TABLE_FILE"
+# Profile definition (#21): sections and fields of a profile; the shipped example when unset.
+PROFILE_DEFINITION_FILE = "PROFILE_DEFINITION_FILE"
+# Prompt set (#55): the instructions of the LLM features; the shipped example when unset.
+PROMPT_SET_FILE = "PROMPT_SET_FILE"
+# Financial country table (#26): registries and document access per country; the shipped example
+# (clearly marked, rows not verified) when unset. The real table is the owner's.
+COUNTRY_TABLE_FILE = "COUNTRY_TABLE_FILE"
+# Longest texts a member may enter for a profile (#26): the fit criteria (all together), the notes
+# of the buyer context, and a buyer field.
+CRITERIA_MAX_CHARS = "CRITERIA_MAX_CHARS"
+BUYER_NOTES_MAX_CHARS = "BUYER_NOTES_MAX_CHARS"
+BUYER_TEXT_MAX_CHARS = "BUYER_TEXT_MAX_CHARS"
+# The longest corrected value of a fact or corrected text of a statement (#28).
+REVIEW_TEXT_MAX_CHARS = "REVIEW_TEXT_MAX_CHARS"
+# Disclaimer printed on the supplier card PDF (#39): owner-supplied text, EN and FR; a marked
+# placeholder (the shipped example) when unset.
+PDF_DISCLAIMER_FILE = "PDF_DISCLAIMER_FILE"
+# The most profiles one side-by-side comparison accepts (#38, owner decision, 27 Oct 2026).
+COMPARISON_MAX_PROFILES = "COMPARISON_MAX_PROFILES"
+EUR_PER_USD = "EUR_PER_USD"
 INVITATION_VALIDITY_HOURS = "INVITATION_VALIDITY_HOURS"
 PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the setting
+# Job queue (#13): how long a worker holds a job before another may reclaim it, and how often an
+# idle worker looks for work.
+RUN_LEASE_SECONDS = "RUN_LEASE_SECONDS"
+WORKER_POLL_SECONDS = "WORKER_POLL_SECONDS"
+# Crawler identity (#17): the public contact page named in the User-Agent of every request to a
+# supplier site. No default: the operator publishes their own page (#47).
+CRAWLER_CONTACT_URL = "CRAWLER_CONTACT_URL"
+# Monthly LLM spend cap of the instance, in EUR (spec F7). Unset: no cap.
+MONTHLY_SPEND_CAP_EUR = "MONTHLY_SPEND_CAP_EUR"
+# The organisation whose finished runs the demo command may copy into the public demo (#50). No
+# default: the operator creates a demo organisation of synthetic or public-company runs and names
+# it. Unset: the command refuses to run.
+DEMO_ORGANISATION_ID = "DEMO_ORGANISATION_ID"
+# Hard cost budget of one profile run, in EUR (spec F7, #30). Always on, on a self-hosted
+# instance too, and with no default: the operator chooses it (a missing, zero or negative value
+# stops startup). The most retries of one provider call after a schema failure.
+RUN_BUDGET_EUR = "RUN_BUDGET_EUR"
+PROVIDER_MAX_RETRIES = "PROVIDER_MAX_RETRIES"
+# Observability (#51). OTLP over HTTP: the base address of the collector (the standard OpenTelemetry
+# name). Empty: export is off and the application runs as usual. Credentials for the collector, if
+# any, go in the standard OTEL_EXPORTER_OTLP_HEADERS, read by the SDK and never by this code.
+OTEL_EXPORTER_OTLP_ENDPOINT = "OTEL_EXPORTER_OTLP_ENDPOINT"
+# How long one export may take before it is abandoned (seconds). Exports run in a background
+# thread, so a slow collector never delays a request or a run.
+TELEMETRY_EXPORT_TIMEOUT_SECONDS = "TELEMETRY_EXPORT_TIMEOUT_SECONDS"
+# The longest a database statement may run (seconds): a database that accepts connections but does
+# not answer then yields a 503, not a hanging request (#8 QA note).
+DATABASE_STATEMENT_TIMEOUT_SECONDS = "DATABASE_STATEMENT_TIMEOUT_SECONDS"
 
 # Local defaults when the setting is empty, so that a self-hosted instance starts without them.
 # They are configuration, not product terms: every operator sets their own.
 DEFAULT_INVITATION_VALIDITY_HOURS = 72
 DEFAULT_PASSWORD_MIN_LENGTH = 12
+DEFAULT_RUN_LEASE_SECONDS = 300
+DEFAULT_WORKER_POLL_SECONDS = 2
+DEFAULT_CRITERIA_MAX_CHARS = 2000
+DEFAULT_BUYER_NOTES_MAX_CHARS = 1000
+DEFAULT_BUYER_TEXT_MAX_CHARS = 5000
+DEFAULT_PROVIDER_MAX_RETRIES = 1
+DEFAULT_TELEMETRY_EXPORT_TIMEOUT_SECONDS = 5
+DEFAULT_DATABASE_STATEMENT_TIMEOUT_SECONDS = 30
+MAX_PROVIDER_RETRIES = 5
+DEFAULT_REVIEW_TEXT_MAX_CHARS = 2000
+DEFAULT_COMPARISON_MAX_PROFILES = 10
+MIN_COMPARISON_MAX_PROFILES = 2
 MAX_SETTING_NUMBER = 100_000
+MAX_RUN_BUDGET_EUR = Decimal(100_000)
 
 
 class ConfigurationError(ValueError):
@@ -53,9 +124,33 @@ class Settings:
     # database has no user yet; changing them later changes nothing.
     admin_email: str | None = None
     admin_password: str | None = field(default=None, repr=False)
+    provider_config_file: str | None = None
+    price_table_file: str | None = None
+    profile_definition_file: str | None = None
+    prompt_set_file: str | None = None
+    country_table_file: str | None = None
+    pdf_disclaimer_file: str | None = None
+    criteria_max_chars: int = DEFAULT_CRITERIA_MAX_CHARS
+    buyer_notes_max_chars: int = DEFAULT_BUYER_NOTES_MAX_CHARS
+    buyer_text_max_chars: int = DEFAULT_BUYER_TEXT_MAX_CHARS
+    review_text_max_chars: int = DEFAULT_REVIEW_TEXT_MAX_CHARS
+    comparison_max_profiles: int = DEFAULT_COMPARISON_MAX_PROFILES
+    eur_per_usd: Decimal | None = None
     # How long an invitation link stays valid, and the shortest accepted password (#9).
     invitation_validity: timedelta = timedelta(hours=DEFAULT_INVITATION_VALIDITY_HOURS)
     password_min_length: int = DEFAULT_PASSWORD_MIN_LENGTH
+    run_lease: timedelta = timedelta(seconds=DEFAULT_RUN_LEASE_SECONDS)
+    worker_poll_seconds: int = DEFAULT_WORKER_POLL_SECONDS
+    crawler_contact_url: str | None = None
+    monthly_spend_cap_eur: Decimal | None = None
+    demo_organisation_id: uuid.UUID | None = None
+    # None when unset: `load_providers` then stops startup (see `require_run_budget`).
+    run_budget_eur: Decimal | None = None
+    provider_max_retries: int = DEFAULT_PROVIDER_MAX_RETRIES
+    # None: telemetry export is off (self-hosting default).
+    telemetry_endpoint: str | None = None
+    telemetry_export_timeout_seconds: int = DEFAULT_TELEMETRY_EXPORT_TIMEOUT_SECONDS
+    database_statement_timeout_seconds: int = DEFAULT_DATABASE_STATEMENT_TIMEOUT_SECONDS
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -91,6 +186,114 @@ def _parse_positive_int(env: Mapping[str, str], name: str, default: int) -> int:
     return int(raw)
 
 
+def _parse_comparison_max(raw: str) -> int:
+    value = raw.strip()
+    if not value:
+        return DEFAULT_COMPARISON_MAX_PROFILES
+    if (
+        not (value.isascii() and value.isdigit())
+        or not MIN_COMPARISON_MAX_PROFILES <= int(value) <= MAX_SETTING_NUMBER
+    ):
+        raise ConfigurationError(
+            f"{COMPARISON_MAX_PROFILES} must be a whole number between "
+            f"{MIN_COMPARISON_MAX_PROFILES} and {MAX_SETTING_NUMBER}"
+        )
+    return int(value)
+
+
+def _parse_contact_url(raw: str) -> str | None:
+    value = raw.strip()
+    if not value:
+        return None
+    parts = urlsplit(value)
+    if parts.scheme not in ("http", "https") or not parts.hostname or parts.username:
+        raise ConfigurationError(f"{CRAWLER_CONTACT_URL} must be an http(s) address")
+    if any(
+        character.isspace() or character in "()<>" or ord(character) < 32 for character in value
+    ):
+        raise ConfigurationError(f"{CRAWLER_CONTACT_URL} must be an http(s) address")
+    return value
+
+
+def _parse_telemetry_endpoint(raw: str) -> str | None:
+    value = raw.strip().rstrip("/")
+    if not value:
+        return None
+    parts = urlsplit(value)
+    if parts.scheme not in ("http", "https") or not parts.hostname or parts.query or parts.fragment:
+        # The value is not echoed: it can hold credentials.
+        raise ConfigurationError(f"{OTEL_EXPORTER_OTLP_ENDPOINT} must be an http(s) address")
+    return value
+
+
+def _parse_rate(raw: str) -> Decimal | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        rate = Decimal(value)
+    except InvalidOperation:
+        rate = Decimal(0)
+    if not rate.is_finite() or not Decimal("0.01") <= rate <= Decimal(100):
+        raise ConfigurationError(f"{EUR_PER_USD} must be a number between 0.01 and 100")
+    return rate
+
+
+def _parse_spend_cap(raw: str) -> Decimal | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        cap = Decimal(value)
+    except InvalidOperation:
+        cap = Decimal(0)
+    if not cap.is_finite() or cap <= 0:
+        raise ConfigurationError(f"{MONTHLY_SPEND_CAP_EUR} must be a number above 0")
+    return cap
+
+
+def _parse_demo_organisation(raw: str) -> uuid.UUID | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        return uuid.UUID(value)
+    except ValueError:
+        raise ConfigurationError(f"{DEMO_ORGANISATION_ID} must be an organisation id") from None
+
+
+def _parse_run_budget(raw: str) -> Decimal | None:
+    value = raw.strip()
+    if not value:
+        return None
+    try:
+        budget = Decimal(value)
+    except InvalidOperation:
+        budget = Decimal(0)
+    if not budget.is_finite() or not 0 < budget <= MAX_RUN_BUDGET_EUR:
+        raise ConfigurationError(f"{RUN_BUDGET_EUR} must be a number above 0 and at most 100000")
+    return budget
+
+
+def _parse_max_retries(raw: str) -> int:
+    value = raw.strip()
+    if not value:
+        return DEFAULT_PROVIDER_MAX_RETRIES
+    if not value.isascii() or not value.isdigit() or int(value) > MAX_PROVIDER_RETRIES:
+        raise ConfigurationError(
+            f"{PROVIDER_MAX_RETRIES} must be a whole number between 0 and {MAX_PROVIDER_RETRIES}"
+        )
+    return int(value)
+
+
+def require_run_budget(settings: "Settings") -> Decimal:
+    """The per-run budget in EUR; a missing one stops startup (owner decision, 27 Oct 2026: the
+    budget always applies, on a self-hosted instance too)."""
+    if settings.run_budget_eur is None:
+        raise ConfigurationError(f"{RUN_BUDGET_EUR} must be set to a number above 0")
+    return settings.run_budget_eur
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
     raw_origins = env.get(CORS_ALLOWED_ORIGINS, "").strip() or DEFAULT_ALLOWED_ORIGINS
@@ -102,6 +305,24 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         admin_email=env.get(ADMIN_EMAIL, "").strip() or None,
         # Not stripped: spaces are valid in a password. Empty means "not set".
         admin_password=env.get(ADMIN_PASSWORD, "") or None,
+        provider_config_file=env.get(PROVIDER_CONFIG_FILE, "").strip() or None,
+        price_table_file=env.get(PRICE_TABLE_FILE, "").strip() or None,
+        profile_definition_file=env.get(PROFILE_DEFINITION_FILE, "").strip() or None,
+        prompt_set_file=env.get(PROMPT_SET_FILE, "").strip() or None,
+        country_table_file=env.get(COUNTRY_TABLE_FILE, "").strip() or None,
+        pdf_disclaimer_file=env.get(PDF_DISCLAIMER_FILE, "").strip() or None,
+        criteria_max_chars=_parse_positive_int(env, CRITERIA_MAX_CHARS, DEFAULT_CRITERIA_MAX_CHARS),
+        buyer_notes_max_chars=_parse_positive_int(
+            env, BUYER_NOTES_MAX_CHARS, DEFAULT_BUYER_NOTES_MAX_CHARS
+        ),
+        buyer_text_max_chars=_parse_positive_int(
+            env, BUYER_TEXT_MAX_CHARS, DEFAULT_BUYER_TEXT_MAX_CHARS
+        ),
+        review_text_max_chars=_parse_positive_int(
+            env, REVIEW_TEXT_MAX_CHARS, DEFAULT_REVIEW_TEXT_MAX_CHARS
+        ),
+        comparison_max_profiles=_parse_comparison_max(env.get(COMPARISON_MAX_PROFILES, "")),
+        eur_per_usd=_parse_rate(env.get(EUR_PER_USD, "")),
         invitation_validity=timedelta(
             hours=_parse_positive_int(
                 env, INVITATION_VALIDITY_HOURS, DEFAULT_INVITATION_VALIDITY_HOURS
@@ -109,5 +330,23 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         ),
         password_min_length=_parse_positive_int(
             env, PASSWORD_MIN_LENGTH, DEFAULT_PASSWORD_MIN_LENGTH
+        ),
+        run_lease=timedelta(
+            seconds=_parse_positive_int(env, RUN_LEASE_SECONDS, DEFAULT_RUN_LEASE_SECONDS)
+        ),
+        worker_poll_seconds=_parse_positive_int(
+            env, WORKER_POLL_SECONDS, DEFAULT_WORKER_POLL_SECONDS
+        ),
+        crawler_contact_url=_parse_contact_url(env.get(CRAWLER_CONTACT_URL, "")),
+        monthly_spend_cap_eur=_parse_spend_cap(env.get(MONTHLY_SPEND_CAP_EUR, "")),
+        demo_organisation_id=_parse_demo_organisation(env.get(DEMO_ORGANISATION_ID, "")),
+        run_budget_eur=_parse_run_budget(env.get(RUN_BUDGET_EUR, "")),
+        provider_max_retries=_parse_max_retries(env.get(PROVIDER_MAX_RETRIES, "")),
+        telemetry_endpoint=_parse_telemetry_endpoint(env.get(OTEL_EXPORTER_OTLP_ENDPOINT, "")),
+        telemetry_export_timeout_seconds=_parse_positive_int(
+            env, TELEMETRY_EXPORT_TIMEOUT_SECONDS, DEFAULT_TELEMETRY_EXPORT_TIMEOUT_SECONDS
+        ),
+        database_statement_timeout_seconds=_parse_positive_int(
+            env, DATABASE_STATEMENT_TIMEOUT_SECONDS, DEFAULT_DATABASE_STATEMENT_TIMEOUT_SECONDS
         ),
     )

@@ -3,35 +3,122 @@
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine
 from sqlalchemy.exc import OperationalError
 
+from app.assessment.routes import router as assessment_router
+from app.auth.access import PUBLIC
 from app.auth.bootstrap import prepare_database
 from app.auth.routes import router as auth_router
-from app.config import ConfigurationError, Settings, load_settings
+from app.buyer.routes import router as buyer_router
+from app.comparison.routes import router as comparison_router
+from app.config import ConfigurationError, Settings, load_settings, require_run_budget
 from app.db import Database
+from app.demo.readonly import DemoReadOnlyMiddleware
+from app.demo.routes import router as demo_router
 from app.errors import install_error_handlers
+from app.financial.table import CountryTable, load_country_table
 from app.health import DatabaseCheck, HealthStatus, make_database_check
+from app.identity.routes import router as identity_router
 from app.invitations.log_redaction import install_access_log_redaction
 from app.invitations.routes import admin_router as admin_invitations_router
 from app.invitations.routes import public_router as invitations_router
+from app.limits.budget import RunBudget
+from app.organisations.member_routes import router as organisation_router
 from app.organisations.routes import router as admin_organisations_router
+from app.pdf.routes import router as pdf_router
+from app.profile_definition import ProfileDefinition, load_profile_definition
+from app.profile_routes import router as profile_router
+from app.prompts import PromptSet, load_prompt_set
+from app.providers import Providers, load_catalogue
+from app.providers.metering import UsageMeter
+from app.providers.pricing import check_prices, load_price_table
+from app.providers.store import sync_provider_configs
+from app.providers.usage import DbUsageSink
+from app.review.routes import router as review_router
+from app.runs.routes import router as runs_router
+from app.telemetry.middleware import TelemetryMiddleware
+from app.telemetry.setup import configure as configure_telemetry
 from app.users.routes import router as users_router
 
 logger = logging.getLogger(__name__)
+
+
+def load_providers(settings: Settings, database: Database) -> Providers:
+    """The approved provider configurations and their price table.
+
+    An invalid file, or an approved configuration whose model has no price, stops startup; so does
+    a missing, zero or negative `RUN_BUDGET_EUR` (the per-run budget always applies, #30).
+    """
+    path = Path(settings.provider_config_file) if settings.provider_config_file else None
+    price_path = Path(settings.price_table_file) if settings.price_table_file else None
+    try:
+        budget_eur = require_run_budget(settings)
+        catalogue = load_catalogue(path)
+        prices = load_price_table(price_path)
+        check_prices(catalogue, prices, settings.eur_per_usd)
+        budget = RunBudget(database, budget_eur, settings.provider_max_retries)
+        meter = UsageMeter(prices, settings.eur_per_usd, DbUsageSink(database))
+        return Providers(catalogue, meter=meter, budget=budget)
+    except ConfigurationError as error:
+        logger.error("Startup stopped: %s", error)
+        raise
+
+
+def load_definition(settings: Settings) -> ProfileDefinition:
+    """The profile definition. An invalid or missing file stops startup, naming it."""
+    path = Path(settings.profile_definition_file) if settings.profile_definition_file else None
+    try:
+        return load_profile_definition(path)
+    except ConfigurationError as error:
+        logger.error("Startup stopped: %s", error)
+        raise
+
+
+def load_prompts(settings: Settings) -> PromptSet:
+    """The prompt set. An invalid or missing file stops startup, naming it."""
+    path = Path(settings.prompt_set_file) if settings.prompt_set_file else None
+    try:
+        return load_prompt_set(path)
+    except ConfigurationError as error:
+        logger.error("Startup stopped: %s", error)
+        raise
+
+
+def load_countries(settings: Settings) -> CountryTable:
+    """The financial country table. An invalid or missing file stops startup, naming it."""
+    path = Path(settings.country_table_file) if settings.country_table_file else None
+    try:
+        return load_country_table(path)
+    except ConfigurationError as error:
+        logger.error("Startup stopped: %s", error)
+        raise
 
 
 def create_app(
     settings: Settings | None = None,
     database_check: DatabaseCheck | None = None,
     engine: Engine | None = None,
+    providers: Providers | None = None,
+    profile_definition: ProfileDefinition | None = None,
+    prompt_set: PromptSet | None = None,
+    country_table: CountryTable | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     check_database = database_check or make_database_check(settings.database_url)
-    database = Database(settings.database_url, engine)
+    database = Database(
+        settings.database_url,
+        engine,
+        statement_timeout_seconds=settings.database_statement_timeout_seconds,
+    )
+    providers = providers or load_providers(settings, database)
+    profile_definition = profile_definition or load_definition(settings)
+    prompt_set = prompt_set or load_prompts(settings)
+    country_table = country_table or load_countries(settings)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
@@ -41,6 +128,8 @@ def create_app(
         if settings.database_url:
             try:
                 prepare_database(database.engine, settings)
+                with database.session() as db:
+                    sync_provider_configs(db, providers.catalogue)
             except ConfigurationError as error:
                 logger.error("Startup stopped: %s", error)
                 raise
@@ -50,49 +139,87 @@ def create_app(
                 raise
         else:
             logger.warning("DATABASE_URL is not set: migrations and first-start setup skipped")
+        missing_settings = providers.missing_settings()
+        if missing_settings:
+            # Names only: the run cannot start until they are set (GET /health lists them too).
+            logger.warning("Provider settings not set: %s", ", ".join(missing_settings))
         yield
+        if app.state.identity_services is not None:
+            app.state.identity_services.close()
         database.dispose()
 
     # openapi.yaml is the only contract: no generated /openapi.json, no documentation pages.
     app = FastAPI(
         title="Supplier iScan API",
-        version="0.3.0",
+        version="0.7.0",
         openapi_url=None,
         docs_url=None,
         redoc_url=None,
         lifespan=lifespan,
     )
     app.state.database = database
+    app.state.providers = providers
+    app.state.profile_definition = profile_definition
+    app.state.prompt_set = prompt_set
+    app.state.country_table = country_table
     app.state.settings = settings
+    # Registries, outbound HTTP and their event loop, built on first use (app.identity.routes).
+    app.state.identity_services = None
     install_access_log_redaction()
     install_error_handlers(app)
+    # The demo is read-only on the server: any non-GET request under /demo is refused with 403
+    # (#50). Added before the CORS middleware, which therefore wraps it.
+    app.add_middleware(DemoReadOnlyMiddleware)
     # Exact origins from configuration, never a wildcard (load_settings rejects "*").
     # Credentials are allowed so that the frontend can send the session cookie.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.allowed_origins),
-        allow_methods=["GET", "POST", "PATCH", "DELETE"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Content-Type"],
         allow_credentials=True,
     )
+    # Outermost: every request, refusals included, is in a trace (#51).
+    app.add_middleware(TelemetryMiddleware)
 
     @app.get(
         "/health",
+        dependencies=[PUBLIC],
         response_model=HealthStatus,
         responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": HealthStatus}},
     )
     def get_health(response: Response) -> HealthStatus:
+        # Names only, never a value (spec F6: keys never leave configuration).
+        missing_settings = providers.missing_settings()
         if check_database():
-            return HealthStatus(api="available", database="available")
+            return HealthStatus(
+                api="available", database="available", missing_settings=missing_settings
+            )
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        return HealthStatus(api="available", database="unavailable")
+        return HealthStatus(
+            api="available", database="unavailable", missing_settings=missing_settings
+        )
 
     app.include_router(auth_router)
     app.include_router(users_router)
+    app.include_router(organisation_router)
+    app.include_router(profile_router)
+    app.include_router(identity_router)
+    app.include_router(runs_router)
+    app.include_router(pdf_router)
+    app.include_router(comparison_router)
+    app.include_router(buyer_router)
+    app.include_router(assessment_router)
+    app.include_router(review_router)
+    app.include_router(demo_router)
     app.include_router(admin_organisations_router)
     app.include_router(admin_invitations_router)
     app.include_router(invitations_router)
     return app
 
 
+# JSON logs and telemetry export for the API process, before the application is built (so that the
+# first-start administrator line is written in JSON). A test builds its own application with
+# `create_app` and leaves the process-wide telemetry alone.
+configure_telemetry("api", load_settings())
 app = create_app()

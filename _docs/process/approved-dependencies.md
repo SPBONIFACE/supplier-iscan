@@ -8,7 +8,7 @@ Versions come from the PyPI JSON API, the npm registry, GitHub releases and OSV 
 ## Owner decisions (27 Oct 2026)
 
 1. **LLM access:** the five official SDKs (`anthropic`, `openai`, `google-genai`, `mistralai`, `perplexityai`), versions as listed.
-2. **Name detection:** spaCy with `en-core-web-sm`, `de-core-news-sm`, `xx-ent-wiki-sm` and `zh-core-web-sm`. **French, Spanish and Italian are covered by `xx-ent-wiki-sm`** (WikiNER: en, fr, de, es, it, nl, pl, pt, ru; MIT). The language-specific Spanish, Italian and French models are rejected for their licences: `es_core_news_sm` GPL-3.0, `it_core_news_sm` CC BY-NC-SA 3.0 (non-commercial), `fr_core_news_sm` LGPL-LR. #19 includes evaluation cases with Spanish and Italian person names. Japanese and Korean names rely on the suppression list.
+2. **Name detection (revised 3 Nov 2026, owner decisions D-066 and D-068):** GLiNER `urchade/gliner_multi_pii-v1` (Apache-2.0) on CPU PyTorch plus the precise rules of the engine; spaCy stays only with `zh-core-web-sm`, for text with Han characters. `en-core-web-sm`, `de-core-news-sm` and `xx-ent-wiki-sm` are **removed**. Measured (issue #98, synthetic set, report part): spaCy baseline 66% of names hidden and 6.3% of ordinary lines altered; GLiNER plus rules 98 to 99% and 2.4%.
 3. **Version policy:** a SWE may take a newer patch or minor version of a listed package (at least 14 days old, no known advisory, no install script, no new direct dependency) and states it in the pull request; a new major version needs the owner.
 4. **Security exceptions to the 14-day rule:** `pypdf` 6.21.2, `pillow` 13.0.0, `undici` ≥ 8.12.2 (dev, transitive) are accepted.
 5. **Non-Latin text in the PDF:** IBM Plex Sans JP, KR and SC (SIL OFL 1.1), consistent with the design brief (#3), instead of Debian `fonts-noto-cjk`.
@@ -63,11 +63,13 @@ Versions come from the PyPI JSON API, the npm registry, GitHub releases and OSV 
 | `protego` | 0.7.0 | runtime | BSD-3-Clause | #17 | robots.txt per RFC 9309: `*` and `$` wildcards, longest-match, per-agent groups (needed to detect GPTBot/ClaudeBot/… blocks). `urllib.robotparser` has no wildcard support and uses first-match, so it would allow paths a site disallows | **Pre-1.0: audited.** Scrapy project (Zyte); used by every Scrapy install. Pure Python, 0 dependencies, wheel only, parses strings (no network, no file access), no `exec`/`eval` (verify with `grep` at install). |
 | `pypdf` | 6.21.2 **SEC** | runtime | BSD-3-Clause | #18 | PDF text and author extraction from untrusted PDFs | Released 21 Oct (6 days). **Security exception:** 6.20.1 has 7 advisories (3 HIGH: unbounded runtime on malformed xref; memory exhaustion), fixed in 6.21.0 to 6.21.2. Pure Python, 0 dependencies. Still enforce size and page caps and a time limit. |
 | `phonenumbers` | 9.0.41 | runtime | Apache-2.0 | #19 | Phone-number detection in free text (`PhoneNumberMatcher`, regions FR, DE, GB, US, …) with validity checks. A regex broad enough for "+33 1 23 45 67 89", "030.123.456" would also eat SIREN/LEI numbers, revenue figures and ISO references, destroying grounded quotes | Port of Google libphonenumber; pure Python, 0 dependencies, ~9 MB of metadata. |
-| `spacy` | 3.8.16 | runtime | MIT | #19 | Person-name detection (NER) for redaction; the lightest maintained multilingual option without PyTorch | ~25 transitive packages, all wheels: `thinc`, `numpy` 2.5.x, `blis`, `cymem`, `preshed`, `murmurhash`, `srsly`, `catalogue`, `confection`, `wasabi`, `weasel` (→ `typer`, `rich`, `cloudpathlib`, `smart-open`, `wrapt`, old `httpx`), `requests`, `tqdm`, `jinja2`, `setuptools` (runtime import). No network at run time when models are installed as packages; never call `spacy download`. Load with only the `ner` pipe. |
-| `en-core-web-sm` | 3.8.0 | runtime | MIT | #19 | English NER (PERSON F 0.88) | Not on PyPI: direct URL to the GitHub release wheel (`explosion/spacy-models`, published 30 Sep 2024, 12.8 MB); `uv.lock` records its sha256, so it is never fetched from an unpinned source. |
-| `de-core-news-sm` | 3.8.0 | runtime | MIT | #19 | German NER (PER F 0.87) | Same, 14.6 MB. |
-| `xx-ent-wiki-sm` | 3.8.0 | runtime | MIT | #19 | Multilingual NER (WikiNER: en, fr, de, es, it, nl, pl, pt, ru; PER F 0.89); covers French | Same, 11.1 MB. `fr_core_news_sm` rejected: LGPL-LR licence and no PER score in its published metrics. Detections of all Latin-script models are united (recall first). |
-| `zh-core-web-sm` | 3.8.0 | runtime | MIT | #19 | Chinese NER (PERSON F 0.75) for the "CJK name" criterion; run when text contains Han characters | Same, 48.5 MB. Requires `spacy-pkuseg` 1.0.1 (MIT, wheel, deps `numpy`, `srsly`). (owner decision 2). |
+| `spacy` | 3.8.16 | runtime | MIT | #19 | Chinese name detection only (`zh-core-web-sm`); the en, de and xx models were removed on 3 Nov 2026 | ~25 transitive packages, all wheels: `thinc`, `numpy` 2.5.x, `blis`, `cymem`, `preshed`, `murmurhash`, `srsly`, `catalogue`, `confection`, `wasabi`, `weasel` (→ `typer`, `rich`, `cloudpathlib`, `smart-open`, `wrapt`, old `httpx`), `requests`, `tqdm`, `jinja2`, `setuptools` (runtime import). No network at run time when models are installed as packages; never call `spacy download`. Load with only the `ner` pipe. |
+| `gliner` | 0.2.29 | runtime | Apache-2.0 | #19 | Person-name detection for redaction (D-066, D-068). With the rules: 98 to 99% of names hidden in en, fr, de, es, it in normal, all-caps and lower case (spaCy baseline 83, 81, 9%), plain lists 93% (spaCy 11%), ordinary lines altered 2.4% (spaCy 6.3%) | Loads `pytorch_model.bin` with `torch.load(weights_only=True)` (checked in its source; the application also forces it). Pulls `huggingface-hub`, `safetensors`, `tokenizers`, `sentencepiece`, `tqdm`. Released 8 Sep. |
+| `torch` | 2.14.1 (CPU build on Linux from `download.pytorch.org/whl/cpu`; PyPI wheel on macOS) | runtime | BSD-3-Clause | #19 | GLiNER runtime. The Linux CPU build avoids about 3 GB of CUDA libraries | Index declared `explicit` in `[tool.uv.sources]`; hashes in `uv.lock`. Pulls `sympy`, `networkx`, `mpmath`, `fsspec`, `filelock`. |
+| `transformers` | 5.16.1 | runtime | Apache-2.0 | #19 | Tokenizer and encoder of the GLiNER model (required by `gliner`) | `trust_remote_code` never set; offline (`TRANSFORMERS_OFFLINE=1`). |
+| `protobuf` | 7.36.2 | runtime | BSD-3-Clause | #19 | Required by `transformers` 5 to read the model's SentencePiece tokenizer (`spm.model`): without it the model does not load. Same version as already listed for the OTLP exporter (#51) | **Declared directly because no approved package pulls it in yet: flagged to the owner.** |
+| Model `urchade/gliner_multi_pii-v1` | revision `1fcf13e85f4eef5394e1fcd406cf2ca9ea82351d` | runtime data | Apache-2.0 | #19 | The name detector (1.16 GB checkpoint, sha256 `3003753fba99e40645cf088c7367a2c6211fc174897dc64f1f9c147c29d18d2d`) | Not a package: `backend/scripts/fetch_model.py` downloads it at image build and in `make install` (cached in `~/.cache/supplier-iscan`) and checks sha256; never at run time. Encoder config and tokenizer files from `microsoft/mdeberta-v3-base` @ `a0484667b22365f84929a935b5e50a51f71f159d` (MIT; three small files, no weights; digests in the script). |
+| `zh-core-web-sm` | 3.8.0 | runtime | MIT | #19 | Chinese NER (the only spaCy model left, united with GLiNER: Chinese 67% with GLiNER alone in the evaluation, 74% measured for the shipped union; names split over two lines are the gap) (PERSON F 0.75) for the "CJK name" criterion; run when text contains Han characters | Same, 48.5 MB. Requires `spacy-pkuseg` 1.0.1 (MIT, wheel, deps `numpy`, `srsly`). (owner decision 2). |
 | `jsonschema` | 4.26.0 | runtime (moved from dev) | MIT | #21 | Startup validation of profile definition, prompt set, country table; archive schema test | Already locked; brings `attrs`, `referencing`, `rpds-py` (wheel), `jsonschema-specifications` into the image. |
 | `anthropic` | 1.13.0 | runtime | MIT | #11 | Claude adapter (official SDK; spec F6 pins SDK versions) | Pulls `jiter`, `docstring-parser`, `sniffio`. 2.0.0 came out 21 Oct (too recent). Construct with `max_retries=0` so that #12 meters every attempt. |
 | `openai` | 3.29.0 | runtime | Apache-2.0 | #11 | OpenAI adapter | Pulls `jiter`, `sniffio`. `max_retries=0`. |
@@ -84,7 +86,7 @@ Versions come from the PyPI JSON API, the npm registry, GitHub releases and OSV 
 **System packages in the backend image (#39, Debian trixie, exact `apt` versions pinned in the Dockerfile at install
 time):** `libpango-1.0-0`, `libpangoft2-1.0-0`, `libharfbuzz-subset0` (brings `libharfbuzz0b`, `fontconfig`,
 `libfreetype6`), plus the font files approved in #3 copied into the image (fonts are assets, not data) and IBM Plex Sans JP, KR and SC
-(owner decision 5). The worker runs from the same image, so it carries spaCy and WeasyPrint too; expected image
+(owner decision 5). The worker runs from the same image, so it carries PyTorch, the name model (about 1.2 GB) and WeasyPrint too; expected image
 growth about 350 MB (spaCy + numpy + models ≈ 250 MB, Pango stack ≈ 60 MB, before any CJK font). Scale-to-zero cold
 start is accepted by the spec.
 
@@ -137,10 +139,32 @@ The hook uses the standard library only.
 | `google-github-actions/auth` | v3.0.0 (commit `7c6bc770dae815cd3e89ee6cdf493a5fab2cc093`) | Apache-2.0 | Workload Identity Federation to Google Cloud, no long-lived key | Released 28 Aug 2025 |
 | `google-github-actions/setup-gcloud` | v3.0.1 (commit `aa5489c8933f4cc7a4f7d45035b3b1440c9c10db`) | Apache-2.0 | `gcloud run deploy`, Artifact Registry push, Cloud Monitoring alert policy | `deploy-cloudrun` action not needed |
 | `anthropics/claude-code-action` | v1.0.248 (9 Oct; commit resolved at install) | MIT | On-call agent runtime (#53) | (owner decision 6). Daily releases: pin a commit ≥ 14 days old. |
+| Google Cloud CLI (`gcloud`, with the `beta` component) | 592.0.0 | Apache-2.0 | Deploy, jobs, secret checks and worker switching in the deploy workflows (installed by `setup-gcloud`) | Version pinned in the workflows; `beta` is needed for `run worker-pools`. Approved by the owner, 7 Nov 2026 |
+| `nginxinc/nginx-unprivileged` | 1.29.3-alpine, `sha256:5aea7cc516b419e3526f47dd1531be31a56a046cfe44754d94f9383e13e2ee99` | Apache-2.0 | Base of the frontend image: serves the app and forwards `/api/` as a non-root user | Image digest pinned in `frontend/Dockerfile.prod`. Approved by the owner, 7 Nov 2026 |
+| `otelcol-google` (Google-built OpenTelemetry Collector) | tag `latest` of 6 Nov 2026, `sha256:871b9e716d8749660c0e5fd7e7fd5a21b04d412919ab86792528ee4cfa258f89` | Apache-2.0 | Sidecar that sends traces to Cloud Trace and metrics to Cloud Monitoring | Pinned by digest in `deploy/collector/Dockerfile`. Approved by the owner, 7 Nov 2026 |
+
+
+## Already locked in the repository (recorded 3 Nov 2026 for `agent-pack/scripts/check_dependencies.py`)
+
+These direct dependencies were in the repository before the check existed; the "Already locked, no change" rule above
+named them without versions. The check compares exact versions, so they are listed here as they stand in
+`backend/pyproject.toml` and `frontend/package.json`. **`spacy-pkuseg` was in no earlier table: the owner is asked to
+confirm it** (Chinese word segmentation of the `zh-core-web-sm` model, direct pin added with #19).
+
+| Package | Exact version | Runtime/dev | Note |
+| :--- | :--- | :--- | :--- |
+| `fastapi` | 0.143.0 | runtime | Backend |
+| `uvicorn` | 0.54.0 | runtime | Backend |
+| `psycopg[binary]` | 3.3.6 | runtime | Database driver |
+| `spacy-pkuseg` | 1.0.1 | runtime | To confirm by the owner |
+| `react`, `react-dom` | 19.3.0, 19.3.0 | runtime (frontend) | |
+| `@types/react`, `@types/react-dom` | 19.3.0, 19.3.0 | dev (frontend) | |
+| `vite`, `@vitejs/plugin-react`, `vitest` | 8.3.4, 6.1.2, 5.0.3 | dev (frontend) | |
+| `typescript`, `@biomejs/biome` | 6.0.3, 2.5.15 | dev (frontend) | |
 
 ## Counts
 
-- Backend runtime: 22 new direct entries (17 PyPI packages + 4 spaCy model wheels + 1 security constraint), 1 moved
+- Backend runtime: 22 new direct entries (17 PyPI packages + 4 spaCy model wheels + 1 security constraint; on 3 Nov 2026 three spaCy models removed and `gliner`, `torch`, `transformers`, `protobuf` added), 1 moved
   from dev (`jsonschema`), 1 declared directly (`opentelemetry-api`); dev: 1 removed (`httpx`). About 60 new
   transitive packages, of which ~25 come from spaCy and ~17 from the five LLM SDKs.
 - Frontend: 4 runtime, 6 dev.

@@ -1,0 +1,405 @@
+{"id": 0, "lang": "en", "style": "normal", "ctx": "list", "text": "Attendees:\n- Peregrine Ashdown\n- Winifred Lockhart-Bray\n- Cuthbert Mossop\n- Georgina Fairweather", "spans": [[13, 30], [33, 55], [58, 73], [76, 96]]}
+{"id": 1, "lang": "en", "style": "normal", "ctx": "list", "text": "Attendees:\n- Ambrose Tilney\n- Philippa Garrowby\n- Lancelot Dunmore\n- Rosalind Hartnoll", "spans": [[13, 27], [30, 47], [50, 66], [69, 86]]}
+{"id": 2, "lang": "en", "style": "normal", "ctx": "list", "text": "Attendees:\n- Ewan MacAllister\n- Beatrix O'Sullivan-Reeve\n- Jasper Thornquist\n- Millicent Yarwood", "spans": [[13, 29], [32, 56], [59, 76], [79, 96]]}
+{"id": 3, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Peregrine\nAshdown before dispatch.", "spans": [[38, 55]]}
+{"id": 4, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Winifred\nLockhart-Bray before dispatch.", "spans": [[38, 60]]}
+{"id": 5, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Cuthbert\nMossop before dispatch.", "spans": [[38, 53]]}
+{"id": 6, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Georgina\nFairweather before dispatch.", "spans": [[38, 58]]}
+{"id": 7, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Ambrose\nTilney before dispatch.", "spans": [[38, 52]]}
+{"id": 8, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Philippa\nGarrowby before dispatch.", "spans": [[38, 55]]}
+{"id": 9, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Lancelot\nDunmore before dispatch.", "spans": [[38, 54]]}
+{"id": 10, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Rosalind\nHartnoll before dispatch.", "spans": [[38, 55]]}
+{"id": 11, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Ewan\nMacAllister before dispatch.", "spans": [[38, 54]]}
+{"id": 12, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Beatrix\nO'Sullivan-Reeve before dispatch.", "spans": [[38, 62]]}
+{"id": 13, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Jasper\nThornquist before dispatch.", "spans": [[38, 55]]}
+{"id": 14, "lang": "en", "style": "normal", "ctx": "split", "text": "On Tuesday the order was confirmed by Millicent\nYarwood before dispatch.", "spans": [[38, 55]]}
+{"id": 15, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Peregrine Ashdown reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 16, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Winifred Lockhart-Bray reviewed the supplier file with the quality team.", "spans": [[10, 32]]}
+{"id": 17, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Cuthbert Mossop reviewed the supplier file with the quality team.", "spans": [[10, 25]]}
+{"id": 18, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Georgina Fairweather reviewed the supplier file with the quality team.", "spans": [[10, 30]]}
+{"id": 19, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Ambrose Tilney reviewed the supplier file with the quality team.", "spans": [[10, 24]]}
+{"id": 20, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Philippa Garrowby reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 21, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Lancelot Dunmore reviewed the supplier file with the quality team.", "spans": [[10, 26]]}
+{"id": 22, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Rosalind Hartnoll reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 23, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Ewan MacAllister reviewed the supplier file with the quality team.", "spans": [[10, 26]]}
+{"id": 24, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Beatrix O'Sullivan-Reeve reviewed the supplier file with the quality team.", "spans": [[10, 34]]}
+{"id": 25, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Jasper Thornquist reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 26, "lang": "en", "style": "normal", "ctx": "prose", "text": "Last week Millicent Yarwood reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 27, "lang": "en", "style": "all_caps", "ctx": "list", "text": "Attendees:\n- PEREGRINE ASHDOWN\n- WINIFRED LOCKHART-BRAY\n- CUTHBERT MOSSOP\n- GEORGINA FAIRWEATHER", "spans": [[13, 30], [33, 55], [58, 73], [76, 96]]}
+{"id": 28, "lang": "en", "style": "all_caps", "ctx": "list", "text": "Attendees:\n- AMBROSE TILNEY\n- PHILIPPA GARROWBY\n- LANCELOT DUNMORE\n- ROSALIND HARTNOLL", "spans": [[13, 27], [30, 47], [50, 66], [69, 86]]}
+{"id": 29, "lang": "en", "style": "all_caps", "ctx": "list", "text": "Attendees:\n- EWAN MACALLISTER\n- BEATRIX O'SULLIVAN-REEVE\n- JASPER THORNQUIST\n- MILLICENT YARWOOD", "spans": [[13, 29], [32, 56], [59, 76], [79, 96]]}
+{"id": 30, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by PEREGRINE\nASHDOWN before dispatch.", "spans": [[38, 55]]}
+{"id": 31, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by WINIFRED\nLOCKHART-BRAY before dispatch.", "spans": [[38, 60]]}
+{"id": 32, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by CUTHBERT\nMOSSOP before dispatch.", "spans": [[38, 53]]}
+{"id": 33, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by GEORGINA\nFAIRWEATHER before dispatch.", "spans": [[38, 58]]}
+{"id": 34, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by AMBROSE\nTILNEY before dispatch.", "spans": [[38, 52]]}
+{"id": 35, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by PHILIPPA\nGARROWBY before dispatch.", "spans": [[38, 55]]}
+{"id": 36, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by LANCELOT\nDUNMORE before dispatch.", "spans": [[38, 54]]}
+{"id": 37, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by ROSALIND\nHARTNOLL before dispatch.", "spans": [[38, 55]]}
+{"id": 38, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by EWAN\nMACALLISTER before dispatch.", "spans": [[38, 54]]}
+{"id": 39, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by BEATRIX\nO'SULLIVAN-REEVE before dispatch.", "spans": [[38, 62]]}
+{"id": 40, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by JASPER\nTHORNQUIST before dispatch.", "spans": [[38, 55]]}
+{"id": 41, "lang": "en", "style": "all_caps", "ctx": "split", "text": "On Tuesday the order was confirmed by MILLICENT\nYARWOOD before dispatch.", "spans": [[38, 55]]}
+{"id": 42, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week PEREGRINE ASHDOWN reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 43, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week WINIFRED LOCKHART-BRAY reviewed the supplier file with the quality team.", "spans": [[10, 32]]}
+{"id": 44, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week CUTHBERT MOSSOP reviewed the supplier file with the quality team.", "spans": [[10, 25]]}
+{"id": 45, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week GEORGINA FAIRWEATHER reviewed the supplier file with the quality team.", "spans": [[10, 30]]}
+{"id": 46, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week AMBROSE TILNEY reviewed the supplier file with the quality team.", "spans": [[10, 24]]}
+{"id": 47, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week PHILIPPA GARROWBY reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 48, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week LANCELOT DUNMORE reviewed the supplier file with the quality team.", "spans": [[10, 26]]}
+{"id": 49, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week ROSALIND HARTNOLL reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 50, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week EWAN MACALLISTER reviewed the supplier file with the quality team.", "spans": [[10, 26]]}
+{"id": 51, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week BEATRIX O'SULLIVAN-REEVE reviewed the supplier file with the quality team.", "spans": [[10, 34]]}
+{"id": 52, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week JASPER THORNQUIST reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 53, "lang": "en", "style": "all_caps", "ctx": "prose", "text": "Last week MILLICENT YARWOOD reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 54, "lang": "en", "style": "lower", "ctx": "list", "text": "Attendees:\n- peregrine ashdown\n- winifred lockhart-bray\n- cuthbert mossop\n- georgina fairweather", "spans": [[13, 30], [33, 55], [58, 73], [76, 96]]}
+{"id": 55, "lang": "en", "style": "lower", "ctx": "list", "text": "Attendees:\n- ambrose tilney\n- philippa garrowby\n- lancelot dunmore\n- rosalind hartnoll", "spans": [[13, 27], [30, 47], [50, 66], [69, 86]]}
+{"id": 56, "lang": "en", "style": "lower", "ctx": "list", "text": "Attendees:\n- ewan macallister\n- beatrix o'sullivan-reeve\n- jasper thornquist\n- millicent yarwood", "spans": [[13, 29], [32, 56], [59, 76], [79, 96]]}
+{"id": 57, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by peregrine\nashdown before dispatch.", "spans": [[38, 55]]}
+{"id": 58, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by winifred\nlockhart-bray before dispatch.", "spans": [[38, 60]]}
+{"id": 59, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by cuthbert\nmossop before dispatch.", "spans": [[38, 53]]}
+{"id": 60, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by georgina\nfairweather before dispatch.", "spans": [[38, 58]]}
+{"id": 61, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by ambrose\ntilney before dispatch.", "spans": [[38, 52]]}
+{"id": 62, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by philippa\ngarrowby before dispatch.", "spans": [[38, 55]]}
+{"id": 63, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by lancelot\ndunmore before dispatch.", "spans": [[38, 54]]}
+{"id": 64, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by rosalind\nhartnoll before dispatch.", "spans": [[38, 55]]}
+{"id": 65, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by ewan\nmacallister before dispatch.", "spans": [[38, 54]]}
+{"id": 66, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by beatrix\no'sullivan-reeve before dispatch.", "spans": [[38, 62]]}
+{"id": 67, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by jasper\nthornquist before dispatch.", "spans": [[38, 55]]}
+{"id": 68, "lang": "en", "style": "lower", "ctx": "split", "text": "On Tuesday the order was confirmed by millicent\nyarwood before dispatch.", "spans": [[38, 55]]}
+{"id": 69, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week peregrine ashdown reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 70, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week winifred lockhart-bray reviewed the supplier file with the quality team.", "spans": [[10, 32]]}
+{"id": 71, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week cuthbert mossop reviewed the supplier file with the quality team.", "spans": [[10, 25]]}
+{"id": 72, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week georgina fairweather reviewed the supplier file with the quality team.", "spans": [[10, 30]]}
+{"id": 73, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week ambrose tilney reviewed the supplier file with the quality team.", "spans": [[10, 24]]}
+{"id": 74, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week philippa garrowby reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 75, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week lancelot dunmore reviewed the supplier file with the quality team.", "spans": [[10, 26]]}
+{"id": 76, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week rosalind hartnoll reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 77, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week ewan macallister reviewed the supplier file with the quality team.", "spans": [[10, 26]]}
+{"id": 78, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week beatrix o'sullivan-reeve reviewed the supplier file with the quality team.", "spans": [[10, 34]]}
+{"id": 79, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week jasper thornquist reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 80, "lang": "en", "style": "lower", "ctx": "prose", "text": "Last week millicent yarwood reviewed the supplier file with the quality team.", "spans": [[10, 27]]}
+{"id": 81, "lang": "fr", "style": "normal", "ctx": "list", "text": "Participants :\n- Gaspard Delaunoy\n- Apolline Beaucaire\n- Maxence de la Roquette\n- Solène Quintard", "spans": [[17, 33], [36, 54], [57, 79], [82, 97]]}
+{"id": 82, "lang": "fr", "style": "normal", "ctx": "list", "text": "Participants :\n- Aurélien Fauchereau\n- Marguerite d'Aubigny-Rousset\n- Théophile Brunetière\n- Clémence Valmorin", "spans": [[17, 36], [39, 67], [70, 90], [93, 110]]}
+{"id": 83, "lang": "fr", "style": "normal", "ctx": "list", "text": "Participants :\n- Octave Lacassagne\n- Éléonore Marchetot\n- Lucien Perrignon\n- Hortense Vaudrey", "spans": [[17, 34], [37, 55], [58, 74], [77, 93]]}
+{"id": 84, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Gaspard\nDelaunoy avant l'expédition.", "spans": [[39, 55]]}
+{"id": 85, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Apolline\nBeaucaire avant l'expédition.", "spans": [[39, 57]]}
+{"id": 86, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Maxence\nde la Roquette avant l'expédition.", "spans": [[39, 61]]}
+{"id": 87, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Solène\nQuintard avant l'expédition.", "spans": [[39, 54]]}
+{"id": 88, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Aurélien\nFauchereau avant l'expédition.", "spans": [[39, 58]]}
+{"id": 89, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Marguerite\nd'Aubigny-Rousset avant l'expédition.", "spans": [[39, 67]]}
+{"id": 90, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Théophile\nBrunetière avant l'expédition.", "spans": [[39, 59]]}
+{"id": 91, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Clémence\nValmorin avant l'expédition.", "spans": [[39, 56]]}
+{"id": 92, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Octave\nLacassagne avant l'expédition.", "spans": [[39, 56]]}
+{"id": 93, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Éléonore\nMarchetot avant l'expédition.", "spans": [[39, 57]]}
+{"id": 94, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Lucien\nPerrignon avant l'expédition.", "spans": [[39, 55]]}
+{"id": 95, "lang": "fr", "style": "normal", "ctx": "split", "text": "Mardi, la commande a été confirmée par Hortense\nVaudrey avant l'expédition.", "spans": [[39, 55]]}
+{"id": 96, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Gaspard Delaunoy a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 97, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Apolline Beaucaire a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 39]]}
+{"id": 98, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Maxence de la Roquette a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 43]]}
+{"id": 99, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Solène Quintard a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 36]]}
+{"id": 100, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Aurélien Fauchereau a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 40]]}
+{"id": 101, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Marguerite d'Aubigny-Rousset a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 49]]}
+{"id": 102, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Théophile Brunetière a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 41]]}
+{"id": 103, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Clémence Valmorin a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 38]]}
+{"id": 104, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Octave Lacassagne a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 38]]}
+{"id": 105, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Éléonore Marchetot a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 39]]}
+{"id": 106, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Lucien Perrignon a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 107, "lang": "fr", "style": "normal", "ctx": "prose", "text": "La semaine dernière, Hortense Vaudrey a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 108, "lang": "fr", "style": "all_caps", "ctx": "list", "text": "Participants :\n- GASPARD DELAUNOY\n- APOLLINE BEAUCAIRE\n- MAXENCE DE LA ROQUETTE\n- SOLÈNE QUINTARD", "spans": [[17, 33], [36, 54], [57, 79], [82, 97]]}
+{"id": 109, "lang": "fr", "style": "all_caps", "ctx": "list", "text": "Participants :\n- AURÉLIEN FAUCHEREAU\n- MARGUERITE D'AUBIGNY-ROUSSET\n- THÉOPHILE BRUNETIÈRE\n- CLÉMENCE VALMORIN", "spans": [[17, 36], [39, 67], [70, 90], [93, 110]]}
+{"id": 110, "lang": "fr", "style": "all_caps", "ctx": "list", "text": "Participants :\n- OCTAVE LACASSAGNE\n- ÉLÉONORE MARCHETOT\n- LUCIEN PERRIGNON\n- HORTENSE VAUDREY", "spans": [[17, 34], [37, 55], [58, 74], [77, 93]]}
+{"id": 111, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par GASPARD\nDELAUNOY avant l'expédition.", "spans": [[39, 55]]}
+{"id": 112, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par APOLLINE\nBEAUCAIRE avant l'expédition.", "spans": [[39, 57]]}
+{"id": 113, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par MAXENCE\nDE LA ROQUETTE avant l'expédition.", "spans": [[39, 61]]}
+{"id": 114, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par SOLÈNE\nQUINTARD avant l'expédition.", "spans": [[39, 54]]}
+{"id": 115, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par AURÉLIEN\nFAUCHEREAU avant l'expédition.", "spans": [[39, 58]]}
+{"id": 116, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par MARGUERITE\nD'AUBIGNY-ROUSSET avant l'expédition.", "spans": [[39, 67]]}
+{"id": 117, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par THÉOPHILE\nBRUNETIÈRE avant l'expédition.", "spans": [[39, 59]]}
+{"id": 118, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par CLÉMENCE\nVALMORIN avant l'expédition.", "spans": [[39, 56]]}
+{"id": 119, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par OCTAVE\nLACASSAGNE avant l'expédition.", "spans": [[39, 56]]}
+{"id": 120, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par ÉLÉONORE\nMARCHETOT avant l'expédition.", "spans": [[39, 57]]}
+{"id": 121, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par LUCIEN\nPERRIGNON avant l'expédition.", "spans": [[39, 55]]}
+{"id": 122, "lang": "fr", "style": "all_caps", "ctx": "split", "text": "Mardi, la commande a été confirmée par HORTENSE\nVAUDREY avant l'expédition.", "spans": [[39, 55]]}
+{"id": 123, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, GASPARD DELAUNOY a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 124, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, APOLLINE BEAUCAIRE a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 39]]}
+{"id": 125, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, MAXENCE DE LA ROQUETTE a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 43]]}
+{"id": 126, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, SOLÈNE QUINTARD a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 36]]}
+{"id": 127, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, AURÉLIEN FAUCHEREAU a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 40]]}
+{"id": 128, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, MARGUERITE D'AUBIGNY-ROUSSET a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 49]]}
+{"id": 129, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, THÉOPHILE BRUNETIÈRE a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 41]]}
+{"id": 130, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, CLÉMENCE VALMORIN a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 38]]}
+{"id": 131, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, OCTAVE LACASSAGNE a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 38]]}
+{"id": 132, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, ÉLÉONORE MARCHETOT a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 39]]}
+{"id": 133, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, LUCIEN PERRIGNON a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 134, "lang": "fr", "style": "all_caps", "ctx": "prose", "text": "La semaine dernière, HORTENSE VAUDREY a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 135, "lang": "fr", "style": "lower", "ctx": "list", "text": "Participants :\n- gaspard delaunoy\n- apolline beaucaire\n- maxence de la roquette\n- solène quintard", "spans": [[17, 33], [36, 54], [57, 79], [82, 97]]}
+{"id": 136, "lang": "fr", "style": "lower", "ctx": "list", "text": "Participants :\n- aurélien fauchereau\n- marguerite d'aubigny-rousset\n- théophile brunetière\n- clémence valmorin", "spans": [[17, 36], [39, 67], [70, 90], [93, 110]]}
+{"id": 137, "lang": "fr", "style": "lower", "ctx": "list", "text": "Participants :\n- octave lacassagne\n- éléonore marchetot\n- lucien perrignon\n- hortense vaudrey", "spans": [[17, 34], [37, 55], [58, 74], [77, 93]]}
+{"id": 138, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par gaspard\ndelaunoy avant l'expédition.", "spans": [[39, 55]]}
+{"id": 139, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par apolline\nbeaucaire avant l'expédition.", "spans": [[39, 57]]}
+{"id": 140, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par maxence\nde la roquette avant l'expédition.", "spans": [[39, 61]]}
+{"id": 141, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par solène\nquintard avant l'expédition.", "spans": [[39, 54]]}
+{"id": 142, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par aurélien\nfauchereau avant l'expédition.", "spans": [[39, 58]]}
+{"id": 143, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par marguerite\nd'aubigny-rousset avant l'expédition.", "spans": [[39, 67]]}
+{"id": 144, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par théophile\nbrunetière avant l'expédition.", "spans": [[39, 59]]}
+{"id": 145, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par clémence\nvalmorin avant l'expédition.", "spans": [[39, 56]]}
+{"id": 146, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par octave\nlacassagne avant l'expédition.", "spans": [[39, 56]]}
+{"id": 147, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par éléonore\nmarchetot avant l'expédition.", "spans": [[39, 57]]}
+{"id": 148, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par lucien\nperrignon avant l'expédition.", "spans": [[39, 55]]}
+{"id": 149, "lang": "fr", "style": "lower", "ctx": "split", "text": "Mardi, la commande a été confirmée par hortense\nvaudrey avant l'expédition.", "spans": [[39, 55]]}
+{"id": 150, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, gaspard delaunoy a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 151, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, apolline beaucaire a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 39]]}
+{"id": 152, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, maxence de la roquette a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 43]]}
+{"id": 153, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, solène quintard a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 36]]}
+{"id": 154, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, aurélien fauchereau a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 40]]}
+{"id": 155, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, marguerite d'aubigny-rousset a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 49]]}
+{"id": 156, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, théophile brunetière a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 41]]}
+{"id": 157, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, clémence valmorin a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 38]]}
+{"id": 158, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, octave lacassagne a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 38]]}
+{"id": 159, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, éléonore marchetot a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 39]]}
+{"id": 160, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, lucien perrignon a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 161, "lang": "fr", "style": "lower", "ctx": "prose", "text": "La semaine dernière, hortense vaudrey a examiné le dossier du fournisseur avec l'équipe qualité.", "spans": [[21, 37]]}
+{"id": 162, "lang": "de", "style": "normal", "ctx": "list", "text": "Teilnehmer:\n- Leopold Ehrenfeucht\n- Walburga Steinkamp\n- Gottfried von Reichenau\n- Irmtraud Falkenhagen", "spans": [[14, 33], [36, 54], [57, 80], [83, 103]]}
+{"id": 163, "lang": "de", "style": "normal", "ctx": "list", "text": "Teilnehmer:\n- Dietmar Rosenbaum\n- Kunigunde Schwarzenbach\n- Reinhold Ostermeier\n- Adelheid Brandstetter", "spans": [[14, 31], [34, 57], [60, 79], [82, 103]]}
+{"id": 164, "lang": "de", "style": "normal", "ctx": "list", "text": "Teilnehmer:\n- Bernhard Zielinski-Hahn\n- Hildegard Kronberger\n- Eckhard Löwenstein\n- Marlene Auerswald", "spans": [[14, 37], [40, 60], [63, 81], [84, 101]]}
+{"id": 165, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Leopold\nEhrenfeucht vor dem Versand bestätigt.", "spans": [[37, 56]]}
+{"id": 166, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Walburga\nSteinkamp vor dem Versand bestätigt.", "spans": [[37, 55]]}
+{"id": 167, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Gottfried\nvon Reichenau vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 168, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Irmtraud\nFalkenhagen vor dem Versand bestätigt.", "spans": [[37, 57]]}
+{"id": 169, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Dietmar\nRosenbaum vor dem Versand bestätigt.", "spans": [[37, 54]]}
+{"id": 170, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Kunigunde\nSchwarzenbach vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 171, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Reinhold\nOstermeier vor dem Versand bestätigt.", "spans": [[37, 56]]}
+{"id": 172, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Adelheid\nBrandstetter vor dem Versand bestätigt.", "spans": [[37, 58]]}
+{"id": 173, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Bernhard\nZielinski-Hahn vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 174, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Hildegard\nKronberger vor dem Versand bestätigt.", "spans": [[37, 57]]}
+{"id": 175, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Eckhard\nLöwenstein vor dem Versand bestätigt.", "spans": [[37, 55]]}
+{"id": 176, "lang": "de", "style": "normal", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von Marlene\nAuerswald vor dem Versand bestätigt.", "spans": [[37, 54]]}
+{"id": 177, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Leopold Ehrenfeucht die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 36]]}
+{"id": 178, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Walburga Steinkamp die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 35]]}
+{"id": 179, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Gottfried von Reichenau die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 180, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Irmtraud Falkenhagen die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 37]]}
+{"id": 181, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Dietmar Rosenbaum die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 34]]}
+{"id": 182, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Kunigunde Schwarzenbach die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 183, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Reinhold Ostermeier die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 36]]}
+{"id": 184, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Adelheid Brandstetter die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 38]]}
+{"id": 185, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Bernhard Zielinski-Hahn die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 186, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Hildegard Kronberger die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 37]]}
+{"id": 187, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Eckhard Löwenstein die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 35]]}
+{"id": 188, "lang": "de", "style": "normal", "ctx": "prose", "text": "Letzte Woche hat Marlene Auerswald die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 34]]}
+{"id": 189, "lang": "de", "style": "all_caps", "ctx": "list", "text": "Teilnehmer:\n- LEOPOLD EHRENFEUCHT\n- WALBURGA STEINKAMP\n- GOTTFRIED VON REICHENAU\n- IRMTRAUD FALKENHAGEN", "spans": [[14, 33], [36, 54], [57, 80], [83, 103]]}
+{"id": 190, "lang": "de", "style": "all_caps", "ctx": "list", "text": "Teilnehmer:\n- DIETMAR ROSENBAUM\n- KUNIGUNDE SCHWARZENBACH\n- REINHOLD OSTERMEIER\n- ADELHEID BRANDSTETTER", "spans": [[14, 31], [34, 57], [60, 79], [82, 103]]}
+{"id": 191, "lang": "de", "style": "all_caps", "ctx": "list", "text": "Teilnehmer:\n- BERNHARD ZIELINSKI-HAHN\n- HILDEGARD KRONBERGER\n- ECKHARD LÖWENSTEIN\n- MARLENE AUERSWALD", "spans": [[14, 37], [40, 60], [63, 81], [84, 101]]}
+{"id": 192, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von LEOPOLD\nEHRENFEUCHT vor dem Versand bestätigt.", "spans": [[37, 56]]}
+{"id": 193, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von WALBURGA\nSTEINKAMP vor dem Versand bestätigt.", "spans": [[37, 55]]}
+{"id": 194, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von GOTTFRIED\nVON REICHENAU vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 195, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von IRMTRAUD\nFALKENHAGEN vor dem Versand bestätigt.", "spans": [[37, 57]]}
+{"id": 196, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von DIETMAR\nROSENBAUM vor dem Versand bestätigt.", "spans": [[37, 54]]}
+{"id": 197, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von KUNIGUNDE\nSCHWARZENBACH vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 198, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von REINHOLD\nOSTERMEIER vor dem Versand bestätigt.", "spans": [[37, 56]]}
+{"id": 199, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von ADELHEID\nBRANDSTETTER vor dem Versand bestätigt.", "spans": [[37, 58]]}
+{"id": 200, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von BERNHARD\nZIELINSKI-HAHN vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 201, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von HILDEGARD\nKRONBERGER vor dem Versand bestätigt.", "spans": [[37, 57]]}
+{"id": 202, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von ECKHARD\nLÖWENSTEIN vor dem Versand bestätigt.", "spans": [[37, 55]]}
+{"id": 203, "lang": "de", "style": "all_caps", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von MARLENE\nAUERSWALD vor dem Versand bestätigt.", "spans": [[37, 54]]}
+{"id": 204, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat LEOPOLD EHRENFEUCHT die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 36]]}
+{"id": 205, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat WALBURGA STEINKAMP die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 35]]}
+{"id": 206, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat GOTTFRIED VON REICHENAU die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 207, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat IRMTRAUD FALKENHAGEN die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 37]]}
+{"id": 208, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat DIETMAR ROSENBAUM die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 34]]}
+{"id": 209, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat KUNIGUNDE SCHWARZENBACH die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 210, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat REINHOLD OSTERMEIER die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 36]]}
+{"id": 211, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat ADELHEID BRANDSTETTER die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 38]]}
+{"id": 212, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat BERNHARD ZIELINSKI-HAHN die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 213, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat HILDEGARD KRONBERGER die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 37]]}
+{"id": 214, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat ECKHARD LÖWENSTEIN die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 35]]}
+{"id": 215, "lang": "de", "style": "all_caps", "ctx": "prose", "text": "Letzte Woche hat MARLENE AUERSWALD die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 34]]}
+{"id": 216, "lang": "de", "style": "lower", "ctx": "list", "text": "Teilnehmer:\n- leopold ehrenfeucht\n- walburga steinkamp\n- gottfried von reichenau\n- irmtraud falkenhagen", "spans": [[14, 33], [36, 54], [57, 80], [83, 103]]}
+{"id": 217, "lang": "de", "style": "lower", "ctx": "list", "text": "Teilnehmer:\n- dietmar rosenbaum\n- kunigunde schwarzenbach\n- reinhold ostermeier\n- adelheid brandstetter", "spans": [[14, 31], [34, 57], [60, 79], [82, 103]]}
+{"id": 218, "lang": "de", "style": "lower", "ctx": "list", "text": "Teilnehmer:\n- bernhard zielinski-hahn\n- hildegard kronberger\n- eckhard löwenstein\n- marlene auerswald", "spans": [[14, 37], [40, 60], [63, 81], [84, 101]]}
+{"id": 219, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von leopold\nehrenfeucht vor dem Versand bestätigt.", "spans": [[37, 56]]}
+{"id": 220, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von walburga\nsteinkamp vor dem Versand bestätigt.", "spans": [[37, 55]]}
+{"id": 221, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von gottfried\nvon reichenau vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 222, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von irmtraud\nfalkenhagen vor dem Versand bestätigt.", "spans": [[37, 57]]}
+{"id": 223, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von dietmar\nrosenbaum vor dem Versand bestätigt.", "spans": [[37, 54]]}
+{"id": 224, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von kunigunde\nschwarzenbach vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 225, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von reinhold\nostermeier vor dem Versand bestätigt.", "spans": [[37, 56]]}
+{"id": 226, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von adelheid\nbrandstetter vor dem Versand bestätigt.", "spans": [[37, 58]]}
+{"id": 227, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von bernhard\nzielinski-hahn vor dem Versand bestätigt.", "spans": [[37, 60]]}
+{"id": 228, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von hildegard\nkronberger vor dem Versand bestätigt.", "spans": [[37, 57]]}
+{"id": 229, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von eckhard\nlöwenstein vor dem Versand bestätigt.", "spans": [[37, 55]]}
+{"id": 230, "lang": "de", "style": "lower", "ctx": "split", "text": "Am Dienstag wurde die Bestellung von marlene\nauerswald vor dem Versand bestätigt.", "spans": [[37, 54]]}
+{"id": 231, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat leopold ehrenfeucht die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 36]]}
+{"id": 232, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat walburga steinkamp die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 35]]}
+{"id": 233, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat gottfried von reichenau die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 234, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat irmtraud falkenhagen die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 37]]}
+{"id": 235, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat dietmar rosenbaum die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 34]]}
+{"id": 236, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat kunigunde schwarzenbach die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 237, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat reinhold ostermeier die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 36]]}
+{"id": 238, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat adelheid brandstetter die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 38]]}
+{"id": 239, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat bernhard zielinski-hahn die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 40]]}
+{"id": 240, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat hildegard kronberger die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 37]]}
+{"id": 241, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat eckhard löwenstein die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 35]]}
+{"id": 242, "lang": "de", "style": "lower", "ctx": "prose", "text": "Letzte Woche hat marlene auerswald die Lieferantenakte mit dem Qualitätsteam geprüft.", "spans": [[17, 34]]}
+{"id": 243, "lang": "es", "style": "normal", "ctx": "list", "text": "Asistentes:\n- Baltasar Quintanilla\n- Encarnación Villaverde\n- Rodrigo de la Cuadra\n- Nieves Amézaga", "spans": [[14, 34], [37, 59], [62, 82], [85, 99]]}
+{"id": 244, "lang": "es", "style": "normal", "ctx": "list", "text": "Asistentes:\n- Ignacio Torrecilla\n- Soledad Barragán\n- Anselmo Ocampo-Lisboa\n- Mercedes Iglesias", "spans": [[14, 32], [35, 51], [54, 75], [78, 95]]}
+{"id": 245, "lang": "es", "style": "normal", "ctx": "list", "text": "Asistentes:\n- Teodoro Casanueva\n- Remedios Altamirano\n- Fermín Zubiaurre\n- Purificación Mondéjar", "spans": [[14, 31], [34, 53], [56, 72], [75, 96]]}
+{"id": 246, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Baltasar\nQuintanilla antes del envío.", "spans": [[39, 59]]}
+{"id": 247, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Encarnación\nVillaverde antes del envío.", "spans": [[39, 61]]}
+{"id": 248, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Rodrigo\nde la Cuadra antes del envío.", "spans": [[39, 59]]}
+{"id": 249, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Nieves\nAmézaga antes del envío.", "spans": [[39, 53]]}
+{"id": 250, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Ignacio\nTorrecilla antes del envío.", "spans": [[39, 57]]}
+{"id": 251, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Soledad\nBarragán antes del envío.", "spans": [[39, 55]]}
+{"id": 252, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Anselmo\nOcampo-Lisboa antes del envío.", "spans": [[39, 60]]}
+{"id": 253, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Mercedes\nIglesias antes del envío.", "spans": [[39, 56]]}
+{"id": 254, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Teodoro\nCasanueva antes del envío.", "spans": [[39, 56]]}
+{"id": 255, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Remedios\nAltamirano antes del envío.", "spans": [[39, 58]]}
+{"id": 256, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Fermín\nZubiaurre antes del envío.", "spans": [[39, 55]]}
+{"id": 257, "lang": "es", "style": "normal", "ctx": "split", "text": "El martes el pedido fue confirmado por Purificación\nMondéjar antes del envío.", "spans": [[39, 60]]}
+{"id": 258, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Baltasar Quintanilla revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 37]]}
+{"id": 259, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Encarnación Villaverde revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 39]]}
+{"id": 260, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Rodrigo de la Cuadra revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 37]]}
+{"id": 261, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Nieves Amézaga revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 31]]}
+{"id": 262, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Ignacio Torrecilla revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 35]]}
+{"id": 263, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Soledad Barragán revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 33]]}
+{"id": 264, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Anselmo Ocampo-Lisboa revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 38]]}
+{"id": 265, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Mercedes Iglesias revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 34]]}
+{"id": 266, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Teodoro Casanueva revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 34]]}
+{"id": 267, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Remedios Altamirano revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 36]]}
+{"id": 268, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Fermín Zubiaurre revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 33]]}
+{"id": 269, "lang": "es", "style": "normal", "ctx": "prose", "text": "La semana pasada Purificación Mondéjar revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 38]]}
+{"id": 270, "lang": "es", "style": "all_caps", "ctx": "list", "text": "Asistentes:\n- BALTASAR QUINTANILLA\n- ENCARNACIÓN VILLAVERDE\n- RODRIGO DE LA CUADRA\n- NIEVES AMÉZAGA", "spans": [[14, 34], [37, 59], [62, 82], [85, 99]]}
+{"id": 271, "lang": "es", "style": "all_caps", "ctx": "list", "text": "Asistentes:\n- IGNACIO TORRECILLA\n- SOLEDAD BARRAGÁN\n- ANSELMO OCAMPO-LISBOA\n- MERCEDES IGLESIAS", "spans": [[14, 32], [35, 51], [54, 75], [78, 95]]}
+{"id": 272, "lang": "es", "style": "all_caps", "ctx": "list", "text": "Asistentes:\n- TEODORO CASANUEVA\n- REMEDIOS ALTAMIRANO\n- FERMÍN ZUBIAURRE\n- PURIFICACIÓN MONDÉJAR", "spans": [[14, 31], [34, 53], [56, 72], [75, 96]]}
+{"id": 273, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por BALTASAR\nQUINTANILLA antes del envío.", "spans": [[39, 59]]}
+{"id": 274, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por ENCARNACIÓN\nVILLAVERDE antes del envío.", "spans": [[39, 61]]}
+{"id": 275, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por RODRIGO\nDE LA CUADRA antes del envío.", "spans": [[39, 59]]}
+{"id": 276, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por NIEVES\nAMÉZAGA antes del envío.", "spans": [[39, 53]]}
+{"id": 277, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por IGNACIO\nTORRECILLA antes del envío.", "spans": [[39, 57]]}
+{"id": 278, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por SOLEDAD\nBARRAGÁN antes del envío.", "spans": [[39, 55]]}
+{"id": 279, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por ANSELMO\nOCAMPO-LISBOA antes del envío.", "spans": [[39, 60]]}
+{"id": 280, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por MERCEDES\nIGLESIAS antes del envío.", "spans": [[39, 56]]}
+{"id": 281, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por TEODORO\nCASANUEVA antes del envío.", "spans": [[39, 56]]}
+{"id": 282, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por REMEDIOS\nALTAMIRANO antes del envío.", "spans": [[39, 58]]}
+{"id": 283, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por FERMÍN\nZUBIAURRE antes del envío.", "spans": [[39, 55]]}
+{"id": 284, "lang": "es", "style": "all_caps", "ctx": "split", "text": "El martes el pedido fue confirmado por PURIFICACIÓN\nMONDÉJAR antes del envío.", "spans": [[39, 60]]}
+{"id": 285, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada BALTASAR QUINTANILLA revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 37]]}
+{"id": 286, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada ENCARNACIÓN VILLAVERDE revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 39]]}
+{"id": 287, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada RODRIGO DE LA CUADRA revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 37]]}
+{"id": 288, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada NIEVES AMÉZAGA revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 31]]}
+{"id": 289, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada IGNACIO TORRECILLA revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 35]]}
+{"id": 290, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada SOLEDAD BARRAGÁN revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 33]]}
+{"id": 291, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada ANSELMO OCAMPO-LISBOA revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 38]]}
+{"id": 292, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada MERCEDES IGLESIAS revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 34]]}
+{"id": 293, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada TEODORO CASANUEVA revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 34]]}
+{"id": 294, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada REMEDIOS ALTAMIRANO revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 36]]}
+{"id": 295, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada FERMÍN ZUBIAURRE revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 33]]}
+{"id": 296, "lang": "es", "style": "all_caps", "ctx": "prose", "text": "La semana pasada PURIFICACIÓN MONDÉJAR revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 38]]}
+{"id": 297, "lang": "es", "style": "lower", "ctx": "list", "text": "Asistentes:\n- baltasar quintanilla\n- encarnación villaverde\n- rodrigo de la cuadra\n- nieves amézaga", "spans": [[14, 34], [37, 59], [62, 82], [85, 99]]}
+{"id": 298, "lang": "es", "style": "lower", "ctx": "list", "text": "Asistentes:\n- ignacio torrecilla\n- soledad barragán\n- anselmo ocampo-lisboa\n- mercedes iglesias", "spans": [[14, 32], [35, 51], [54, 75], [78, 95]]}
+{"id": 299, "lang": "es", "style": "lower", "ctx": "list", "text": "Asistentes:\n- teodoro casanueva\n- remedios altamirano\n- fermín zubiaurre\n- purificación mondéjar", "spans": [[14, 31], [34, 53], [56, 72], [75, 96]]}
+{"id": 300, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por baltasar\nquintanilla antes del envío.", "spans": [[39, 59]]}
+{"id": 301, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por encarnación\nvillaverde antes del envío.", "spans": [[39, 61]]}
+{"id": 302, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por rodrigo\nde la cuadra antes del envío.", "spans": [[39, 59]]}
+{"id": 303, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por nieves\namézaga antes del envío.", "spans": [[39, 53]]}
+{"id": 304, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por ignacio\ntorrecilla antes del envío.", "spans": [[39, 57]]}
+{"id": 305, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por soledad\nbarragán antes del envío.", "spans": [[39, 55]]}
+{"id": 306, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por anselmo\nocampo-lisboa antes del envío.", "spans": [[39, 60]]}
+{"id": 307, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por mercedes\niglesias antes del envío.", "spans": [[39, 56]]}
+{"id": 308, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por teodoro\ncasanueva antes del envío.", "spans": [[39, 56]]}
+{"id": 309, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por remedios\naltamirano antes del envío.", "spans": [[39, 58]]}
+{"id": 310, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por fermín\nzubiaurre antes del envío.", "spans": [[39, 55]]}
+{"id": 311, "lang": "es", "style": "lower", "ctx": "split", "text": "El martes el pedido fue confirmado por purificación\nmondéjar antes del envío.", "spans": [[39, 60]]}
+{"id": 312, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada baltasar quintanilla revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 37]]}
+{"id": 313, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada encarnación villaverde revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 39]]}
+{"id": 314, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada rodrigo de la cuadra revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 37]]}
+{"id": 315, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada nieves amézaga revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 31]]}
+{"id": 316, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada ignacio torrecilla revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 35]]}
+{"id": 317, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada soledad barragán revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 33]]}
+{"id": 318, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada anselmo ocampo-lisboa revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 38]]}
+{"id": 319, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada mercedes iglesias revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 34]]}
+{"id": 320, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada teodoro casanueva revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 34]]}
+{"id": 321, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada remedios altamirano revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 36]]}
+{"id": 322, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada fermín zubiaurre revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 33]]}
+{"id": 323, "lang": "es", "style": "lower", "ctx": "prose", "text": "La semana pasada purificación mondéjar revisó el expediente del proveedor con el equipo de calidad.", "spans": [[17, 38]]}
+{"id": 324, "lang": "it", "style": "normal", "ctx": "list", "text": "Partecipanti:\n- Ottavio Brancaleoni\n- Fiammetta Sansoni\n- Leonardo dell'Orto-Valli\n- Annunziata Ferrabosco", "spans": [[16, 35], [38, 55], [58, 82], [85, 106]]}
+{"id": 325, "lang": "it", "style": "normal", "ctx": "list", "text": "Partecipanti:\n- Gualtiero Mancinelli\n- Costanza Pierpaoli\n- Ermanno Santarelli\n- Vittoria De Angelis Ruspoli", "spans": [[16, 36], [39, 57], [60, 78], [81, 108]]}
+{"id": 326, "lang": "it", "style": "normal", "ctx": "list", "text": "Partecipanti:\n- Riccardo Lombardozzi\n- Domitilla Cavallini\n- Tancredi Bellomo\n- Graziella Pucciarelli", "spans": [[16, 36], [39, 58], [61, 77], [80, 101]]}
+{"id": 327, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Ottavio\nBrancaleoni prima della spedizione.", "spans": [[39, 58]]}
+{"id": 328, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Fiammetta\nSansoni prima della spedizione.", "spans": [[39, 56]]}
+{"id": 329, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Leonardo\ndell'Orto-Valli prima della spedizione.", "spans": [[39, 63]]}
+{"id": 330, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Annunziata\nFerrabosco prima della spedizione.", "spans": [[39, 60]]}
+{"id": 331, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Gualtiero\nMancinelli prima della spedizione.", "spans": [[39, 59]]}
+{"id": 332, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Costanza\nPierpaoli prima della spedizione.", "spans": [[39, 57]]}
+{"id": 333, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Ermanno\nSantarelli prima della spedizione.", "spans": [[39, 57]]}
+{"id": 334, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Vittoria\nDe Angelis Ruspoli prima della spedizione.", "spans": [[39, 66]]}
+{"id": 335, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Riccardo\nLombardozzi prima della spedizione.", "spans": [[39, 59]]}
+{"id": 336, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Domitilla\nCavallini prima della spedizione.", "spans": [[39, 58]]}
+{"id": 337, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Tancredi\nBellomo prima della spedizione.", "spans": [[39, 55]]}
+{"id": 338, "lang": "it", "style": "normal", "ctx": "split", "text": "Martedì l'ordine è stato confermato da Graziella\nPucciarelli prima della spedizione.", "spans": [[39, 60]]}
+{"id": 339, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Ottavio Brancaleoni ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 39]]}
+{"id": 340, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Fiammetta Sansoni ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 37]]}
+{"id": 341, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Leonardo dell'Orto-Valli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 44]]}
+{"id": 342, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Annunziata Ferrabosco ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 41]]}
+{"id": 343, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Gualtiero Mancinelli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 40]]}
+{"id": 344, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Costanza Pierpaoli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 38]]}
+{"id": 345, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Ermanno Santarelli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 38]]}
+{"id": 346, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Vittoria De Angelis Ruspoli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 47]]}
+{"id": 347, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Riccardo Lombardozzi ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 40]]}
+{"id": 348, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Domitilla Cavallini ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 39]]}
+{"id": 349, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Tancredi Bellomo ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 36]]}
+{"id": 350, "lang": "it", "style": "normal", "ctx": "prose", "text": "La settimana scorsa Graziella Pucciarelli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 41]]}
+{"id": 351, "lang": "it", "style": "all_caps", "ctx": "list", "text": "Partecipanti:\n- OTTAVIO BRANCALEONI\n- FIAMMETTA SANSONI\n- LEONARDO DELL'ORTO-VALLI\n- ANNUNZIATA FERRABOSCO", "spans": [[16, 35], [38, 55], [58, 82], [85, 106]]}
+{"id": 352, "lang": "it", "style": "all_caps", "ctx": "list", "text": "Partecipanti:\n- GUALTIERO MANCINELLI\n- COSTANZA PIERPAOLI\n- ERMANNO SANTARELLI\n- VITTORIA DE ANGELIS RUSPOLI", "spans": [[16, 36], [39, 57], [60, 78], [81, 108]]}
+{"id": 353, "lang": "it", "style": "all_caps", "ctx": "list", "text": "Partecipanti:\n- RICCARDO LOMBARDOZZI\n- DOMITILLA CAVALLINI\n- TANCREDI BELLOMO\n- GRAZIELLA PUCCIARELLI", "spans": [[16, 36], [39, 58], [61, 77], [80, 101]]}
+{"id": 354, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da OTTAVIO\nBRANCALEONI prima della spedizione.", "spans": [[39, 58]]}
+{"id": 355, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da FIAMMETTA\nSANSONI prima della spedizione.", "spans": [[39, 56]]}
+{"id": 356, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da LEONARDO\nDELL'ORTO-VALLI prima della spedizione.", "spans": [[39, 63]]}
+{"id": 357, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da ANNUNZIATA\nFERRABOSCO prima della spedizione.", "spans": [[39, 60]]}
+{"id": 358, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da GUALTIERO\nMANCINELLI prima della spedizione.", "spans": [[39, 59]]}
+{"id": 359, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da COSTANZA\nPIERPAOLI prima della spedizione.", "spans": [[39, 57]]}
+{"id": 360, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da ERMANNO\nSANTARELLI prima della spedizione.", "spans": [[39, 57]]}
+{"id": 361, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da VITTORIA\nDE ANGELIS RUSPOLI prima della spedizione.", "spans": [[39, 66]]}
+{"id": 362, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da RICCARDO\nLOMBARDOZZI prima della spedizione.", "spans": [[39, 59]]}
+{"id": 363, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da DOMITILLA\nCAVALLINI prima della spedizione.", "spans": [[39, 58]]}
+{"id": 364, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da TANCREDI\nBELLOMO prima della spedizione.", "spans": [[39, 55]]}
+{"id": 365, "lang": "it", "style": "all_caps", "ctx": "split", "text": "Martedì l'ordine è stato confermato da GRAZIELLA\nPUCCIARELLI prima della spedizione.", "spans": [[39, 60]]}
+{"id": 366, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa OTTAVIO BRANCALEONI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 39]]}
+{"id": 367, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa FIAMMETTA SANSONI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 37]]}
+{"id": 368, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa LEONARDO DELL'ORTO-VALLI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 44]]}
+{"id": 369, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa ANNUNZIATA FERRABOSCO ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 41]]}
+{"id": 370, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa GUALTIERO MANCINELLI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 40]]}
+{"id": 371, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa COSTANZA PIERPAOLI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 38]]}
+{"id": 372, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa ERMANNO SANTARELLI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 38]]}
+{"id": 373, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa VITTORIA DE ANGELIS RUSPOLI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 47]]}
+{"id": 374, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa RICCARDO LOMBARDOZZI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 40]]}
+{"id": 375, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa DOMITILLA CAVALLINI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 39]]}
+{"id": 376, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa TANCREDI BELLOMO ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 36]]}
+{"id": 377, "lang": "it", "style": "all_caps", "ctx": "prose", "text": "La settimana scorsa GRAZIELLA PUCCIARELLI ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 41]]}
+{"id": 378, "lang": "it", "style": "lower", "ctx": "list", "text": "Partecipanti:\n- ottavio brancaleoni\n- fiammetta sansoni\n- leonardo dell'orto-valli\n- annunziata ferrabosco", "spans": [[16, 35], [38, 55], [58, 82], [85, 106]]}
+{"id": 379, "lang": "it", "style": "lower", "ctx": "list", "text": "Partecipanti:\n- gualtiero mancinelli\n- costanza pierpaoli\n- ermanno santarelli\n- vittoria de angelis ruspoli", "spans": [[16, 36], [39, 57], [60, 78], [81, 108]]}
+{"id": 380, "lang": "it", "style": "lower", "ctx": "list", "text": "Partecipanti:\n- riccardo lombardozzi\n- domitilla cavallini\n- tancredi bellomo\n- graziella pucciarelli", "spans": [[16, 36], [39, 58], [61, 77], [80, 101]]}
+{"id": 381, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da ottavio\nbrancaleoni prima della spedizione.", "spans": [[39, 58]]}
+{"id": 382, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da fiammetta\nsansoni prima della spedizione.", "spans": [[39, 56]]}
+{"id": 383, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da leonardo\ndell'orto-valli prima della spedizione.", "spans": [[39, 63]]}
+{"id": 384, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da annunziata\nferrabosco prima della spedizione.", "spans": [[39, 60]]}
+{"id": 385, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da gualtiero\nmancinelli prima della spedizione.", "spans": [[39, 59]]}
+{"id": 386, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da costanza\npierpaoli prima della spedizione.", "spans": [[39, 57]]}
+{"id": 387, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da ermanno\nsantarelli prima della spedizione.", "spans": [[39, 57]]}
+{"id": 388, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da vittoria\nde angelis ruspoli prima della spedizione.", "spans": [[39, 66]]}
+{"id": 389, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da riccardo\nlombardozzi prima della spedizione.", "spans": [[39, 59]]}
+{"id": 390, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da domitilla\ncavallini prima della spedizione.", "spans": [[39, 58]]}
+{"id": 391, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da tancredi\nbellomo prima della spedizione.", "spans": [[39, 55]]}
+{"id": 392, "lang": "it", "style": "lower", "ctx": "split", "text": "Martedì l'ordine è stato confermato da graziella\npucciarelli prima della spedizione.", "spans": [[39, 60]]}
+{"id": 393, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa ottavio brancaleoni ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 39]]}
+{"id": 394, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa fiammetta sansoni ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 37]]}
+{"id": 395, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa leonardo dell'orto-valli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 44]]}
+{"id": 396, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa annunziata ferrabosco ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 41]]}
+{"id": 397, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa gualtiero mancinelli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 40]]}
+{"id": 398, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa costanza pierpaoli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 38]]}
+{"id": 399, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa ermanno santarelli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 38]]}
+{"id": 400, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa vittoria de angelis ruspoli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 47]]}
+{"id": 401, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa riccardo lombardozzi ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 40]]}
+{"id": 402, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa domitilla cavallini ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 39]]}
+{"id": 403, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa tancredi bellomo ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 36]]}
+{"id": 404, "lang": "it", "style": "lower", "ctx": "prose", "text": "La settimana scorsa graziella pucciarelli ha esaminato il fascicolo del fornitore con il team qualità.", "spans": [[20, 41]]}
