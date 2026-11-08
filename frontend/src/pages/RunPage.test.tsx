@@ -28,7 +28,7 @@ const run = (changes: Partial<Run> = {}): Run => ({
   identity_id: "55555555-5555-4555-8555-555555555555",
   supplier_name: "Ardentis France SAS",
   supplier_website: "https://ardentis-france.example",
-  supplier_country: "France",
+  supplier_country: "FR",
   supplier_sector: "Industrial automation",
   natural_person: false,
   status: "running",

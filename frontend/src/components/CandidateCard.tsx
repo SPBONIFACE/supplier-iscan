@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { IdentityCandidate } from "../lib/api";
+import { countryName } from "../lib/format";
 
 /** A candidate as in the approved mock-up: name, website, country, sector, description, sources. */
 export function CandidateCard({
@@ -12,7 +13,7 @@ export function CandidateCard({
   /** The identity record shown before confirmation: adds legal form and registry identifiers. */
   record?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const none = t("identity.notGiven");
   return (
     <section className="cand" aria-label={title ?? candidate.legal_name}>
@@ -29,7 +30,7 @@ export function CandidateCard({
         <dt>{t("identity.website")}</dt>
         <dd className="mono">{candidate.website ?? none}</dd>
         <dt>{t("identity.country")}</dt>
-        <dd>{candidate.country ?? none}</dd>
+        <dd>{candidate.country ? countryName(candidate.country, i18n.language) : none}</dd>
         <dt>{t("identity.sector")}</dt>
         <dd>{candidate.sector ?? none}</dd>
         {record ? null : (

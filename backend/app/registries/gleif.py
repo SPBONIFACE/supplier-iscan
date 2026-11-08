@@ -7,6 +7,7 @@ names and transliterated names), throttled below 60 requests per minute by the H
 from collections.abc import Mapping
 from typing import Any
 
+from app.countries import normalise_code
 from app.registries.http import PoliteHttpClient, RegistryUnavailable
 from app.registries.models import RegistryCandidate, RegistryName
 from app.registries.text import normalise_text
@@ -57,7 +58,7 @@ def _candidate(record: Any) -> RegistryCandidate | None:
     return RegistryCandidate(
         name=legal_name,
         legal_name=legal_name,
-        country=country.upper() if country else None,
+        country=normalise_code(country),
         legal_form=form_other,
         legal_form_code=form_code,
         registered_address=_address(legal_address),

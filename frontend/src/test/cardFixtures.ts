@@ -20,7 +20,7 @@ export const makeRun = (changes: Partial<Run> = {}): Run =>
     identity_id: "55555555-5555-4555-8555-555555555555",
     supplier_name: "Corvane Précision SAS",
     supplier_website: "https://corvane-precision.example/",
-    supplier_country: "France",
+    supplier_country: "FR",
     supplier_sector: "Precision machining for aerospace",
     natural_person: false,
     status: "completed",

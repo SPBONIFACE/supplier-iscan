@@ -55,7 +55,7 @@ def test_a_stated_country_equal_to_the_registry_one_changes_nothing(
     )
 
     with Session(engine) as db:
-        assert db.scalars(select(SupplierIdentity)).one().country == "France"
+        assert db.scalars(select(SupplierIdentity)).one().country == "FR"
 
 
 def test_without_a_stated_country_the_registry_country_is_kept(
@@ -74,4 +74,4 @@ def test_without_a_stated_country_the_registry_country_is_kept(
     )
 
     with Session(engine) as db:
-        assert db.scalars(select(SupplierIdentity)).one().country == "France"
+        assert db.scalars(select(SupplierIdentity)).one().country == "FR"

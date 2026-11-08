@@ -39,7 +39,7 @@ const demoRun = (n: number, changes: Partial<DemoRun> = {}): DemoRun => ({
   id: ID(n),
   supplier_name: `Forgeline ${n}`,
   supplier_website: "https://forgeline.example",
-  supplier_country: "France",
+  supplier_country: "FR",
   supplier_sector: "Precision forging",
   natural_person: false,
   status: "completed",

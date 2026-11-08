@@ -27,3 +27,19 @@ export function formatDateTime(value: string | Date, language: string): string {
 export function formatNumber(value: number, language: string): string {
   return new Intl.NumberFormat(locale(language)).format(value);
 }
+
+/**
+ * The full country name for an ISO 3166-1 alpha-2 code in the interface language ("Germany",
+ * "Allemagne"), from the browser's built-in `Intl.DisplayNames`. An unknown code, or a value that
+ * is not a code, is shown as it is.
+ */
+export function countryName(code: string, language: string): string {
+  if (!/^[A-Za-z]{2}$/.test(code)) return code;
+  const upper = code.toUpperCase();
+  try {
+    const name = new Intl.DisplayNames([locale(language)], { type: "region" }).of(upper);
+    return name && name !== upper ? name : upper;
+  } catch {
+    return upper;
+  }
+}

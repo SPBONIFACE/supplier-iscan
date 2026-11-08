@@ -10,6 +10,7 @@ import {
   type IdentitySession,
   type IdentityTurn,
 } from "../lib/api";
+import { countryName } from "../lib/format";
 import { useTitle } from "../lib/useTitle";
 import { NotFoundPage } from "./Simple";
 
@@ -112,7 +113,8 @@ export function IdentityChatPage() {
   const rejection = last?.kind === "website_rejected" ? last.text : null;
   const hints = [
     current.hints.sector ? t("chat.hintSector", { value: current.hints.sector }) : null,
-    current.hints.country ? t("chat.hintCountry", { value: current.hints.country }) : null,
+    current.hints.country
+      ? t("chat.hintCountry", { value: countryName(current.hints.country, i18n.language) }) : null,
     current.hints.website ? t("chat.hintWebsite", { value: current.hints.website }) : null,
   ].filter(Boolean);
 

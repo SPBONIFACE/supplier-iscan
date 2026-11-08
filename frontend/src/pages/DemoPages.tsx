@@ -21,7 +21,7 @@ import {
   type ProfileDefinition,
   type Run,
 } from "../lib/api";
-import { formatDate } from "../lib/format";
+import { countryName, formatDate } from "../lib/format";
 import { hostOf, safeHttpUrl, websiteUrl } from "../lib/safeUrl";
 import { useTitle } from "../lib/useTitle";
 import { ComparisonTable } from "./ComparisonPage";
@@ -328,7 +328,9 @@ function DemoListPage() {
                     </Link>
                   </td>
                   <td data-label={t("card.country")}>
-                    {profile.supplier_country ?? t("identity.notGiven")}
+                    {profile.supplier_country
+                      ? countryName(profile.supplier_country, i18n.language)
+                      : t("identity.notGiven")}
                   </td>
                   <td data-label={t("card.sector")}>
                     {profile.supplier_sector ?? t("identity.notGiven")}
@@ -523,7 +525,11 @@ function DemoMeta({ run, language }: { run: DemoRun; language: string }) {
       </div>
       <div>
         <dt>{t("card.country")}</dt>
-        <dd>{run.supplier_country ?? t("identity.notGiven")}</dd>
+        <dd>
+          {run.supplier_country
+            ? countryName(run.supplier_country, language)
+            : t("identity.notGiven")}
+        </dd>
       </div>
       <div>
         <dt>{t("card.sector")}</dt>
