@@ -167,24 +167,34 @@ deploy)
   done
 
   # --- API (with the telemetry sidecar). The new revision gets no traffic until /health passes. ---
+  # --no-traffic is not supported when creating a new service; skip it and the candidate tag on first deploy.
+  if "${gc[@]}" run services describe "$api_service" --region "$GCP_REGION" > /dev/null 2>&1; then
+    _api_traffic_flags=(--no-traffic --tag candidate)
+  else
+    _api_traffic_flags=()
+  fi
   "${gc[@]}" run deploy "$api_service" --region "$GCP_REGION" \
     --service-account "$runtime_sa" --allow-unauthenticated \
     --min-instances "$API_MIN_INSTANCES" --max-instances "$API_MAX_INSTANCES" \
     --concurrency "$API_CONCURRENCY" --timeout "$API_TIMEOUT_SECONDS" --cpu-boost \
-    --no-traffic --tag candidate --labels "$labels" \
+    "${_api_traffic_flags[@]}" --labels "$labels" \
     --container api --image "$IMAGE_API" --port 8000 --cpu "$API_CPU" --memory "$API_MEMORY" \
     --env-vars-file "$work/app.yaml" --set-secrets "$api_secrets$extra" \
     --container collector --image "$IMAGE_COLLECTOR" --cpu "$COLLECTOR_CPU" --memory "$COLLECTOR_MEMORY"
 
-  candidate="$(service_json "$api_service" | python3 -c '
+  if [ "${#_api_traffic_flags[@]}" -gt 0 ]; then
+    candidate="$(service_json "$api_service" | python3 -c '
 import json, sys
 for t in json.load(sys.stdin).get("status", {}).get("traffic", []):
     if t.get("tag") == "candidate":
         print(t["url"])
 ')"
-  [ -n "$candidate" ] || { echo "The candidate revision has no address" >&2; exit 1; }
-  check_api "$candidate" || { echo "The new API revision failed its health check; traffic was not moved." >&2; exit 1; }
-  "${gc[@]}" run services update-traffic "$api_service" --region "$GCP_REGION" --to-latest --remove-tags candidate
+    [ -n "$candidate" ] || { echo "The candidate revision has no address" >&2; exit 1; }
+    check_api "$candidate" || { echo "The new API revision failed its health check; traffic was not moved." >&2; exit 1; }
+    "${gc[@]}" run services update-traffic "$api_service" --region "$GCP_REGION" --to-latest --remove-tags candidate
+  else
+    check_api "$(run_app_url "$api_service")" || { echo "The new API revision failed its health check." >&2; exit 1; }
+  fi
 
   # --- Frontend. One image for every environment; the API address is set here, at run time. ---
   "${gc[@]}" run deploy "$web_service" --region "$GCP_REGION" \
