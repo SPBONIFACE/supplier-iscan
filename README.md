@@ -215,6 +215,32 @@ A call the provider rejects is logged by the application, for every provider, wi
 Every port is published on `127.0.0.1` only. The API accepts browser requests from the origin set in
 `CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`). The API contract is [`openapi.yaml`](openapi.yaml).
 
+### In a browser (GitHub Codespaces)
+
+For a machine where Docker or the toolchain cannot be installed. The dev container in `.devcontainer/` provides
+Python 3.13.16 with uv, Node.js 24.22.1 with pnpm (through Corepack), Docker and a PostgreSQL 16 database for the
+tests. Nothing to install by hand.
+
+1. On the repository page on GitHub: **Code** > **Codespaces** > **Create codespace on main**. The first creation
+   takes a few minutes; it ends by running `make install`.
+2. In the codespace terminal, the same commands as on a laptop: `make lint`, `make test`, `make run`. The database
+   used by the tests starts with the codespace; after `make stop`, start it again with
+   `docker compose up -d --wait db`. To check it: `docker compose exec db psql -U supplier_iscan -c 'select version()'`.
+3. After `make run`, open the **Ports** tab and open the forwarded address of port **5173** (Frontend). Port 8000
+   is the API (`/health`). The database port is not forwarded. Forwarded ports are private to the account that
+   opened the codespace: keep them private.
+
+The API accepts browser requests from the codespace's own frontend address and from `http://localhost:5173`:
+`devcontainer.json` sets `CORS_ALLOWED_ORIGINS` to these two origins, no wildcard. The database and administrator
+credentials are the local-only defaults of `docker-compose.yml`.
+
+No key is needed to install, lint, test or run. To use an LLM provider, add its key as a Codespaces secret under
+the same name as in `.env.example` (for example `ANTHROPIC_API_KEY`): GitHub **Settings** > **Codespaces** >
+**Secrets** > **New secret**, select this repository, then restart the codespace. Do not create a `.env` file in
+the codespace.
+
+Codespaces usage counts against the free monthly allowance (core hours and storage) of the GitHub account that opens
+the codespace; stop or delete the codespace when you are done.
 ## Deployment
 
 The hosted instance runs on Google Cloud Run (EU) with a Neon PostgreSQL database (EU). Setup is done once by the
