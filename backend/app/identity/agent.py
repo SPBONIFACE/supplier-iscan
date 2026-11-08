@@ -26,7 +26,7 @@ from app.http_client import (
     is_public_address,
     normalise_url,
 )
-from app.identity.candidates import entry_from_registry, entry_from_website
+from app.identity.candidates import STATED_COUNTRY, entry_from_registry, entry_from_website
 from app.identity.services import IdentityServices
 from app.identity.strings import disclosure_text, message
 from app.llm_schemas import IdentityProposal
@@ -243,6 +243,9 @@ class IdentityAgent:
         question = proposal.question_to_user
         wanted_name = (proposal.search_name or "").strip()
         wanted_country = (proposal.country_hint or "").strip().upper()
+        if len(wanted_country) == 2 and wanted_country.isascii() and wanted_country.isalpha():
+            # The buyer stated the country in the chat: it wins over a registry's at confirmation.
+            session.hints = {**session.hints, STATED_COUNTRY: wanted_country}
         if wanted_name and wanted_name.casefold() != session.name.casefold():
             hints = {**session.hints, "country": wanted_country or session.hints.get("country")}
             self._search(session, wanted_name, hints)

@@ -17,6 +17,7 @@ from app.db import DbSession, utc_now
 from app.errors import InvalidField
 from app.http_client import FetchError, normalise_url
 from app.identity.agent import IdentityAgent, hint_url
+from app.identity.candidates import STATED_COUNTRY
 from app.identity.services import IdentityServices, build_identity_services
 from app.identity.strings import disclosure_text
 from app.models import IdentitySession, SupplierIdentity
@@ -152,7 +153,8 @@ class IdentityConfirmedOut(BaseModel):
 
 def _session_out(session: IdentitySession) -> IdentitySessionOut:
     registries = {"gleif": "ok", "wikidata": "ok", **session.registries}
-    hints = {"website": None, "country": None, "sector": None, **session.hints}
+    hints = {"website": None, "country": None, "sector": None}
+    hints.update({key: session.hints[key] for key in hints if key in session.hints})
     return IdentitySessionOut.model_validate(
         {
             "id": session.id,
@@ -313,11 +315,15 @@ def confirm_identity(
         raise InvalidField("candidate_id", "Choose one of the candidates of this session.")
     candidate = entry["candidate"]
     now = utc_now()
+    country = candidate["country"]
+    stated = session.hints.get(STATED_COUNTRY)
+    if stated and stated != entry.get("country_code"):
+        country = stated  # the buyer's word, not the registry's
     identity = scope.new(
         SupplierIdentity,
         legal_name=candidate["legal_name"][:300],
         website=candidate["website"],
-        country=(candidate["country"] or None) and candidate["country"][:100],
+        country=(country or None) and country[:100],
         sector=(candidate["sector"] or None) and candidate["sector"][:200],
         registry_ids={key: entry[key] for key in ("lei", "wikidata_id") if entry.get(key)},
         natural_person=bool(entry["natural_person"]),

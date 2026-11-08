@@ -352,7 +352,10 @@ def collected_documents(facts: list[FactView]) -> frozenset[str]:
     return frozenset(
         FINANCIAL_FIELDS[fact.field]
         for fact in facts
-        if fact.usable and fact.field in FINANCIAL_FIELDS
+        if fact.usable
+        and fact.field in FINANCIAL_FIELDS
+        # The supplier's own claim is not a filed statement (#134): it does not clear the gap.
+        and fact.source_type != "supplier_claim"
     )
 
 
@@ -406,6 +409,7 @@ def load_run(database: Database, run_id: uuid.UUID, people: set[str]) -> RunData
                 value=row.value,
                 quote=row.quote,
                 concerns_people=row.field in people,
+                source_type=row.source_type,
             )
             for row in rows
         ]

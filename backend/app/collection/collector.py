@@ -42,7 +42,8 @@ RETRYABLE: tuple[type[Exception], ...] = (*NETWORK_ERRORS, FetchTimeoutError)
 PER_KIND = 2  # pages kept per kind (for example two sustainability pages)
 RETRY_STATUSES = (429, 500, 502, 503, 504)
 MAX_BACKOFF_SECONDS = 60.0
-# The lacking page kinds in, the addresses the retrieval provider cited (best first) out.
+# The lacking page kinds in (empty when the website gave every kind: independent sources are then
+# asked for), the addresses the retrieval provider cited (best first) out.
 RetrieveFn = Callable[[list[str]], list[str]]
 HTML_TYPES = ("text/html", "application/xhtml+xml", "text/plain")
 SKIPPED_EXTENSIONS = (
@@ -100,6 +101,7 @@ class Collector:
         self._domains_refused: set[str] = set()
         self._website_texts: list[str] = []
         self._kinds_found: set[str] = set()
+        self._website_host = ""
 
     # -- failures ---------------------------------------------------------------------------
 
@@ -261,6 +263,7 @@ class Collector:
         provider's addresses (`retrieve`), all under one cap of attempts. `website` is None when
         the identity has none."""
         if website:
+            self._website_host = _host(website)
             self._crawl_website(website)
         website_texts = list(self._website_texts)
         website_sources = len(self.result.sources)
@@ -283,8 +286,7 @@ class Collector:
         addresses are used: the provider's answer text and snippets are never stored."""
         self._strategy = "retrieval"
         lacking = [kind for kind in PAGE_KINDS if kind not in self._kinds_found]
-        if not lacking:
-            return
+        # Also when nothing is lacking: the provider is then asked for independent sources.
         self._check_stop()
         try:
             urls = retrieve(lacking)
@@ -292,7 +294,7 @@ class Collector:
             self._fail(None, error.kind, message=error.message)
             return
         stored = {record.url for record in self.result.sources}
-        for url in urls[: self._settings.max_retrieval_urls]:
+        for url in self._independent_first(urls)[: self._settings.max_retrieval_urls]:
             if url in stored or urlsplit(url).scheme not in ("http", "https"):
                 if url not in stored:
                     self._skip(url, "refused")
@@ -301,6 +303,26 @@ class Collector:
                 self._take_pdf(url)
             else:
                 self._take_page(url)
+
+    def _independent_first(self, urls: list[str]) -> list[str]:
+        """The addresses with at most one on the supplier's own domain when the website crawl
+        already produced sources; the others keep their order and take the remaining slots."""
+        own = self._website_host
+        if not own or not any(_host(r.url) == own for r in self.result.sources):
+            return urls
+        kept: list[str] = []
+        own_taken = 0
+        for url in urls:
+            try:
+                host = _host(url)
+            except ValueError:
+                host = ""
+            if host == own or host.endswith("." + own):
+                own_taken += 1
+                if own_taken > 1:
+                    continue
+            kept.append(url)
+        return kept
 
     def _crawl_website(self, website: str) -> None:
         settings = self._settings
