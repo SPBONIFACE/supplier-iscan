@@ -16,6 +16,7 @@ from app.financial.guidance import build_guidance
 from app.financial.table import EXAMPLE_FILE, load_country_table
 from app.migrate import alembic_config
 from app.models import SupplierIdentity
+from app.models.identity import IdentitySession
 from app.pdf.render import render_html
 from app.registries import RegistryCandidate
 from tests.factories import create_user
@@ -125,6 +126,32 @@ def test_a_german_supplier_confirmed_from_a_wikidata_candidate_gets_the_de_row(
     guidance = build_guidance(table, stored, "en", 2025, natural_person=False)
 
     assert guidance is not None and guidance.configured is True and guidance.country == "DE"
+
+
+def test_a_chat_opened_before_the_change_still_stores_the_code(
+    engine: Engine, settings: Settings
+) -> None:
+    german = candidate(
+        "Beispiel GmbH", country="DE", country_name="Germany", lei=None, registries=("wikidata",)
+    )
+    _harness, member = setup(engine, settings, found(german), model=[proposal("wd:Q1")])
+    session = member.open()
+    with Session(engine) as db:
+        row = db.scalars(select(IdentitySession)).one()
+        old = copy.deepcopy(row.candidates)
+        old[0]["candidate"]["country"] = "Germany"  # what a chat stored before #136 holds
+        row.candidates = old
+        db.commit()
+
+    response = member.call(
+        "POST",
+        f"/identity-sessions/{session['id']}/confirm",
+        json={"candidate_id": "wd:Q1"},
+    )
+
+    assert response.status_code == 200, response.text
+    with Session(engine) as db:
+        assert db.scalars(select(SupplierIdentity)).one().country == "DE"
 
 
 # --- display ------------------------------------------------------------------------------------

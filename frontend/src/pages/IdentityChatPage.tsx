@@ -114,7 +114,8 @@ export function IdentityChatPage() {
   const hints = [
     current.hints.sector ? t("chat.hintSector", { value: current.hints.sector }) : null,
     current.hints.country
-      ? t("chat.hintCountry", { value: countryName(current.hints.country, i18n.language) }) : null,
+      ? t("chat.hintCountry", { value: countryName(current.hints.country, i18n.language) })
+      : null,
     current.hints.website ? t("chat.hintWebsite", { value: current.hints.website }) : null,
   ].filter(Boolean);
 
