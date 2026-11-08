@@ -37,8 +37,10 @@ export function countryName(code: string, language: string): string {
   if (!/^[A-Za-z]{2}$/.test(code)) return code;
   const upper = code.toUpperCase();
   try {
-    const name = new Intl.DisplayNames([locale(language)], { type: "region" }).of(upper);
-    return name && name !== upper ? name : upper;
+    const names = new Intl.DisplayNames([locale(language)], { type: "region" });
+    const name = names.of(upper);
+    // Some runtimes answer a placeholder ("Unknown Region") for a code they do not know.
+    return name && name !== upper && name !== names.of("ZZ") ? name : upper;
   } catch {
     return upper;
   }
