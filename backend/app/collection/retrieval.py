@@ -36,6 +36,14 @@ logger = logging.getLogger(__name__)
 PROMPT_ID = "retrieval"
 
 
+# Asked when the website gave every page kind: sources other than the supplier's own pages.
+INDEPENDENT_REQUEST = (
+    "No field group lacks evidence on the supplier's own website. Return independent sources "
+    "only: official registers, certification bodies, news and trade press. Not further pages "
+    "of the supplier's own website."
+)
+
+
 @dataclass(frozen=True)
 class IdentityRecord:
     legal_name: str
@@ -49,7 +57,10 @@ def _supplier_text(identity: IdentityRecord, lacking: list[str]) -> str:
         lines.append(f"Website: {identity.website}")
     if identity.country:
         lines.append(f"Country: {identity.country}")
-    lines.append("Field groups lacking evidence: " + ", ".join(lacking))
+    if lacking:
+        lines.append("Field groups lacking evidence: " + ", ".join(lacking))
+    else:
+        lines.append(INDEPENDENT_REQUEST)
     return "\n".join(lines)
 
 

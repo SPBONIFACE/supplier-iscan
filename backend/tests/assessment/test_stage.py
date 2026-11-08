@@ -289,3 +289,13 @@ def test_only_kept_financial_facts_count_as_collected_documents() -> None:
     )
 
     assert collected == frozenset({"income_statement"})
+
+
+def test_a_supplier_claim_is_not_a_collected_financial_document() -> None:
+    def fact(field: str, source_type: str) -> FactView:
+        return FactView("f", field, "proposed", "v", "q", False, source_type)
+
+    assert collected_documents([fact("revenue", "supplier_claim")]) == frozenset()
+    assert collected_documents([fact("revenue", "third_party")]) == frozenset({"income_statement"})
+    mixed = [fact("revenue", "supplier_claim"), fact("equity", "third_party")]
+    assert collected_documents(mixed) == frozenset({"balance_sheet"})

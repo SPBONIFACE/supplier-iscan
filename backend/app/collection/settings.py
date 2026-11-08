@@ -16,7 +16,7 @@
 - `COLLECT_MAX_REQUESTS` (200): ALL outbound requests per run, permission checks, redirect hops
   and retries included; none is sent beyond it and the run continues with what it has.
 - `COLLECT_MAX_DOMAINS` (10): distinct domains contacted per run; a further one is refused.
-- `COLLECT_MAX_RETRIEVAL_URLS` (5): addresses of the retrieval provider fetched per run.
+- `COLLECT_MAX_RETRIEVAL_URLS` (8): addresses of the retrieval provider fetched per run.
 The request timeout is `FETCH_TIMEOUT_SECONDS` of the HTTP client (#15).
 """
 
@@ -41,7 +41,7 @@ class CollectionSettings:
     max_sitemap_urls: int = 2000
     max_sitemap_bytes: int = 2_000_000
     max_attempts: int = 60
-    max_retrieval_urls: int = 5
+    max_retrieval_urls: int = 8
     max_requests: int = 200
     max_domains: int = 10
 

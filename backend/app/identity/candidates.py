@@ -46,6 +46,11 @@ def is_natural_person(legal_form: str | None) -> bool:
     return bool(_SHORT_FORMS.search(text)) and not _COMPANY_FORMS.search(text)
 
 
+# Key of `IdentitySession.hints` where the country the buyer stated in the chat is kept (never in a
+# response: the contract's hints are website, country, sector).
+STATED_COUNTRY = "stated_country"
+
+
 def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
     """The stored form: the public candidate, plus what only the server needs."""
     identifiers = []
@@ -70,6 +75,7 @@ def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
         "natural_person": natural_person,
         "wikidata_id": candidate.wikidata_id,
         "lei": candidate.lei,
+        "country_code": candidate.country,  # ISO alpha-2, server-only (public one may be a name)
         # Server-only, never in `candidate` (the public part): a sole trader's registry address is
         # personal data, kept for redaction. A company's address is not kept.
         "registered_address": candidate.registered_address if natural_person else None,

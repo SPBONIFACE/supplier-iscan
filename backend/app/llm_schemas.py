@@ -7,9 +7,24 @@ that the quote really is in the source is #23; the provider contract tests (#12)
 recorded fixtures with exact matching.
 """
 
+import re
 from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+# Leaked output structure (#134): an output-schema field name, or a run of JSON punctuation such as
+# `}]` or `','`, never belongs in a value, a statement or a gap. A guard on the shape of the text,
+# not on its meaning: an item that matches is invalid and is counted as such by its stage.
+_STRUCTURE = re.compile(
+    r"cites_buyer_context|cited_fact_ids|gap_evidence|[}\]]\s*[}\]]|[{\[]\s*[{\[]\s*[\"']|"
+    r"','|\",\"|['\"]\s*:\s*(?:true|false|null)\b|[{\[]\s*['\"]\w+['\"]\s*:",
+    re.IGNORECASE,
+)
+
+
+def leaks_structure(text: str | None) -> bool:
+    """The text holds a fragment of the model's output structure."""
+    return bool(text) and _STRUCTURE.search(text or "") is not None
 
 
 class FieldExtraction(BaseModel):
@@ -28,6 +43,8 @@ class FieldExtraction(BaseModel):
             raise ValueError("a found field needs a value, a quote and a source_id")
         if self.status == "not_found" and any(part is not None for part in parts):
             raise ValueError("a not_found field has no value, quote or source_id")
+        if leaks_structure(self.value):
+            raise ValueError("the value holds a fragment of the output structure")
         return self
 
 
@@ -133,6 +150,8 @@ class AssessmentStatement(BaseModel):
     def _text(self) -> Self:
         if not self.text.strip():
             raise ValueError("a statement has a text")
+        if leaks_structure(self.text) or leaks_structure(self.gap_evidence):
+            raise ValueError("the statement holds a fragment of the output structure")
         return self
 
 

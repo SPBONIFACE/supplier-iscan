@@ -95,6 +95,7 @@ class FactView:
     value: str | None
     quote: str | None
     concerns_people: bool = False
+    source_type: str | None = None  # "supplier_claim" or "third_party" (spec F3)
 
     @property
     def usable(self) -> bool:
