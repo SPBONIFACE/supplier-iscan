@@ -14,6 +14,7 @@ import asyncio
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
+from app.countries import normalise_code
 from app.registries.cache import RegistryCache
 from app.registries.http import PoliteHttpClient, RegistryUnavailable
 from app.registries.models import RegistryCandidate, RegistryName
@@ -235,7 +236,7 @@ class WikidataRegistry:
             {"action": "wbgetclaims", "entity": country_id, "property": P_ISO_ALPHA_2}
         )
         codes = _strings(answer, P_ISO_ALPHA_2)
-        code = codes[0].upper() if codes else ""
+        code = (normalise_code(codes[0]) if codes else None) or ""
         self._cache.set(key, code)
         return code or None
 

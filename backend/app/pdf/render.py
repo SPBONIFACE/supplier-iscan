@@ -19,6 +19,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 
+from app.countries import country_name
 from app.pdf.strings import STRINGS, Lang, format_date, format_datetime
 from app.profile_definition import ProfileDefinition
 from app.profile_routes import render as render_definition
@@ -395,6 +396,7 @@ def build_context(card: CardInput) -> dict[str, Any]:
         "name": name,
         "organisation": card.organisation_name,
         "run": run,
+        "country": country_name(run.supplier_country, lang),
         "website": run.supplier_website,
         "last_refresh": format_date(
             _utc(run.finished_at or run.started_at or run.created_at), lang

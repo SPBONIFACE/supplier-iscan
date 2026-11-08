@@ -909,7 +909,7 @@ export interface components {
             legal_name: string;
             legal_form: string | null;
             website: string | null;
-            /** @description Country name in the session's UI language. */
+            /** @description ISO 3166-1 alpha-2 code, upper-case (never a name); null when the registry gives none. The interface shows the full name in its language. */
             country: string | null;
             sector: string | null;
             /** @description One line. */
@@ -1035,7 +1035,7 @@ export interface components {
             supplier_name: string | null;
             /** @description The website of the confirmed identity, as given or found. Null when there is none, and for an administrator of a hosted instance. */
             supplier_website: string | null;
-            /** @description The country of the confirmed identity. Null when unknown, and for an administrator of a hosted instance. */
+            /** @description The country of the confirmed identity, as an ISO 3166-1 alpha-2 code (upper-case). Null when unknown, and for an administrator of a hosted instance. The interface shows the full name in its language. */
             supplier_country: string | null;
             /** @description The sector of the confirmed identity. Null when unknown, and for an administrator of a hosted instance. */
             supplier_sector: string | null;

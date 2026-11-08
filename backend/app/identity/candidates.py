@@ -4,6 +4,7 @@ import re
 import unicodedata
 from typing import Any
 
+from app.countries import normalise_code
 from app.registries import RegistryCandidate
 
 # Legal forms of a sole trader or another natural-person business (spec F1, F8 excluded uses).
@@ -63,7 +64,7 @@ def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
         "legal_name": candidate.legal_name or candidate.name,
         "legal_form": candidate.legal_form,
         "website": candidate.website,
-        "country": candidate.country_name or candidate.country,
+        "country": normalise_code(candidate.country),  # ISO alpha-2 code; the UI shows the name
         "sector": ", ".join(candidate.industries[:3]) or None,
         "description": candidate.description,
         "found_in": list(candidate.registries),
@@ -75,7 +76,9 @@ def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
         "natural_person": natural_person,
         "wikidata_id": candidate.wikidata_id,
         "lei": candidate.lei,
-        "country_code": candidate.country,  # ISO alpha-2, server-only (public one may be a name)
+        "country_code": normalise_code(
+            candidate.country
+        ),  # same as the public one; kept for #135 rows
         # Server-only, never in `candidate` (the public part): a sole trader's registry address is
         # personal data, kept for redaction. A company's address is not kept.
         "registered_address": candidate.registered_address if natural_person else None,

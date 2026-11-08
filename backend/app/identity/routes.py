@@ -13,6 +13,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.countries import code_for_name, normalise_code
 from app.db import DbSession, utc_now
 from app.errors import InvalidField
 from app.http_client import FetchError, normalise_url
@@ -315,7 +316,8 @@ def confirm_identity(
         raise InvalidField("candidate_id", "Choose one of the candidates of this session.")
     candidate = entry["candidate"]
     now = utc_now()
-    country = candidate["country"]
+    # A session opened before #136 may hold a country name instead of a code.
+    country = normalise_code(candidate["country"]) or code_for_name(candidate["country"])
     stated = session.hints.get(STATED_COUNTRY)
     if stated and stated != entry.get("country_code"):
         country = stated  # the buyer's word, not the registry's
@@ -323,7 +325,7 @@ def confirm_identity(
         SupplierIdentity,
         legal_name=candidate["legal_name"][:300],
         website=candidate["website"],
-        country=(country or None) and country[:100],
+        country=country,
         sector=(candidate["sector"] or None) and candidate["sector"][:200],
         registry_ids={key: entry[key] for key in ("lei", "wikidata_id") if entry.get(key)},
         natural_person=bool(entry["natural_person"]),

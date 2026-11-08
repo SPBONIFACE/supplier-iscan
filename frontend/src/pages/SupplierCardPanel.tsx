@@ -20,7 +20,7 @@ import type { ReviewBody, ReviewControls, ReviewOutcome } from "../components/Fa
 import { FlagBanner } from "../components/FlagBanner";
 import { LoadingIndicator, MessageBanner } from "../components/ui";
 import { api, type Fact, type ProfileField, type Run } from "../lib/api";
-import { formatDate } from "../lib/format";
+import { countryName, formatDate } from "../lib/format";
 import { hostOf, safeHttpUrl, websiteUrl } from "../lib/safeUrl";
 import { useAssessment } from "../lib/useAssessment";
 import { hasProfile, useRunCard } from "../lib/useRunCard";
@@ -271,7 +271,11 @@ function CardBody({
           </div>
           <div>
             <dt>{t("card.country")}</dt>
-            <dd>{run.supplier_country ?? t("identity.notGiven")}</dd>
+            <dd>
+              {run.supplier_country
+                ? countryName(run.supplier_country, i18n.language)
+                : t("identity.notGiven")}
+            </dd>
           </div>
           <div>
             <dt>{t("card.sector")}</dt>

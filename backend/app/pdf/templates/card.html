@@ -30,7 +30,7 @@
 <main>
 <p class="micro cover-k">{{ s.kicker }} · {{ s.prepared_for.format(organisation=organisation) }}</p>
 <h1>{{ name }}</h1>
-<p class="deck">{{ [run.supplier_country, run.supplier_sector] | select | join(' · ') }}</p>
+<p class="deck">{{ [country, run.supplier_sector] | select | join(' · ') }}</p>
 
 <div class="two">
   <div>
@@ -38,7 +38,7 @@
     <dl class="pdl">
       <dt>{{ s.legal_name }}</dt><dd>{{ name }}</dd>
       {% if website %}<dt>{{ s.website }}</dt><dd class="mono">{{ website }}</dd>{% endif %}
-      {% if run.supplier_country %}<dt>{{ s.country }}</dt><dd>{{ run.supplier_country }}</dd>{% endif %}
+      {% if run.supplier_country %}<dt>{{ s.country }}</dt><dd>{{ country }}</dd>{% endif %}
       {% if run.supplier_sector %}<dt>{{ s.sector }}</dt><dd>{{ run.supplier_sector }}</dd>{% endif %}
     </dl>
   </div>

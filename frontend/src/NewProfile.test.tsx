@@ -30,7 +30,7 @@ const candidate = (id: string, legal_name: string, extra = {}) => ({
   legal_name,
   legal_form: "SE",
   website: "ardentis-group.example",
-  country: "Germany",
+  country: "DE",
   sector: "Industrial automation",
   description: "Maker of drives.",
   found_in: ["gleif", "website"],
@@ -137,7 +137,7 @@ describe("identity chat", () => {
   it("shows the disclosure, the candidate, other candidates, then confirms once and starts the run", async () => {
     mocks.getIdentitySession.mockResolvedValue(ok(session([proposal])));
     mocks.listIdentityCandidates.mockResolvedValue(
-      ok({ candidates: [candidate("c2", "Ardentis France SAS", { country: "France" })] }),
+      ok({ candidates: [candidate("c2", "Ardentis France SAS", { country: "FR" })] }),
     );
     mocks.confirmIdentity.mockResolvedValue(
       ok({ identity_id: "44444444-4444-4444-8444-444444444444" }),

@@ -4,6 +4,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.countries import normalise_code
 from app.registries.text import has_visible_text, normalise_text
 
 RegistryName = Literal["wikidata", "gleif"]
@@ -51,6 +52,13 @@ class RegistryCandidate(BaseModel):
     # ISO 3166-1 alpha-2 code, and the country's label when Wikidata provides it.
     country: str | None = None
     country_name: str | None = None
+
+    @field_validator("country")
+    @classmethod
+    def _country_is_a_code(cls, value: str | None) -> str | None:
+        """Always an upper-case code; anything else (a free-text name) is no country (#136)."""
+        return normalise_code(value)
+
     industries: tuple[str, ...] = ()
     legal_form: str | None = None
     # ISO 20275 Entity Legal Form code, from GLEIF.

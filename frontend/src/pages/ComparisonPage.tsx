@@ -17,7 +17,7 @@ import {
 } from "../components/evidence";
 import { LoadingIndicator, MessageBanner } from "../components/ui";
 import type { ComparisonRun, Fact, ProfileField, Run } from "../lib/api";
-import { formatDate } from "../lib/format";
+import { countryName, formatDate } from "../lib/format";
 import { safeHttpUrl } from "../lib/safeUrl";
 import { parseRunIds, useComparison } from "../lib/useComparison";
 import { useTitle } from "../lib/useTitle";
@@ -356,7 +356,10 @@ function ColumnHead({
   const { t, i18n } = useTranslation();
   const running = IN_PROGRESS.includes(run.status);
   const hasProfile = run.status === "completed" || run.status === "partial";
-  const where = [run.supplier_country, compact ? null : run.supplier_sector].filter(Boolean);
+  const where = [
+    run.supplier_country ? countryName(run.supplier_country, i18n.language) : null,
+    compact ? null : run.supplier_sector,
+  ].filter(Boolean);
   return (
     <div className="colhead">
       <h2>{name}</h2>

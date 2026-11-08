@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import en from "../i18n/locales/en.json";
 import fr from "../i18n/locales/fr.json";
 import { api, setUnauthorizedHandler } from "./api";
-import { formatDate, formatDateTime, formatNumber } from "./format";
+import { countryName, formatDate, formatDateTime, formatNumber } from "./format";
 
 // Every application source file by path, as text (Vite glob import; no Node API needed).
 const files = import.meta.glob<string>("/src/**/*.{ts,tsx}", {
@@ -61,6 +61,18 @@ describe("locale formatting", () => {
     expect(formatDateTime("2026-11-04T18:00:00Z", "fr")).toBe("04/11/2026 18:00 UTC");
     expect(formatNumber(1234.5, "en")).toBe("1,234.5");
     expect(formatNumber(1234.5, "fr").replace(/\s/g, " ")).toBe("1 234,5");
+  });
+});
+
+describe("country names", () => {
+  it("shows a code as the full name in the interface language", () => {
+    expect(countryName("DE", "en")).toBe("Germany");
+    expect(countryName("de", "fr")).toBe("Allemagne");
+  });
+
+  it("shows an unknown code, or a value that is not a code, as it is", () => {
+    expect(countryName("ZZ", "en")).toBe("ZZ");
+    expect(countryName("Narnia", "en")).toBe("Narnia");
   });
 });
 

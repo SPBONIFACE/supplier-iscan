@@ -18,6 +18,7 @@ from app.collection.collector import RetrieveFn
 from app.collection.failures import RetrievalFailed
 from app.collection.pages import classify
 from app.collection.source_store import IdentityRedaction
+from app.countries import country_name
 from app.prompts import PromptSet
 from app.providers import (
     ProviderCallError,
@@ -56,7 +57,12 @@ def _supplier_text(identity: IdentityRecord, lacking: list[str]) -> str:
     if identity.website:
         lines.append(f"Website: {identity.website}")
     if identity.country:
-        lines.append(f"Country: {identity.country}")
+        name = country_name(identity.country)
+        lines.append(
+            f"Country: {name} ({identity.country})"
+            if name != identity.country
+            else f"Country: {name}"
+        )
     if lacking:
         lines.append("Field groups lacking evidence: " + ", ".join(lacking))
     else:
