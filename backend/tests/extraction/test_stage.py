@@ -3,6 +3,7 @@ pause on an outage, and the resume without duplicates. Fake provider, synthetic 
 
 import logging
 import uuid
+from dataclasses import replace
 from typing import Any
 
 import pytest
@@ -10,7 +11,10 @@ from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
 from app.db import Database
+from app.extraction.settings import ExtractionSettings
+from app.extraction.stage import make_extraction_stage
 from app.models import Fact, SuppressionEntry
+from app.prompts import PromptSet
 from app.providers import Providers
 from app.redaction import RedactionGate, RedactionUnavailable
 from app.runs.executor import RunEnvironment, execute_run
@@ -48,7 +52,7 @@ def setup(
 ) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
     organisation_id = create_organisation(engine)
     run_id = create_run(engine, organisation_id, stage="extraction", enqueue=False)
-    set_identity(engine, run_id, website=SITE, **identity)
+    set_identity(engine, run_id, **{"website": SITE, **identity})
     source_id = add_source(engine, organisation_id, run_id, url, text)
     return organisation_id, run_id, source_id
 
@@ -194,7 +198,7 @@ def test_each_fact_carries_its_attribution(engine: Engine) -> None:
         organisation_id,
         run_id,
         "https://registry.example/files/report.pdf",
-        "Annual report. The company has 250 employees.",
+        "Acme Supplies annual report. The company has 250 employees.",
         content_type="application/pdf",
         author="A. Writer",
     )
@@ -689,13 +693,13 @@ def test_source_types_follow_the_domain_rules(engine: Engine) -> None:
     ids = {}
     for name, (url, _expected) in pages.items():
         ids[name] = add_source(
-            engine, organisation_id, run_id, url, f"Field {name} is stated here."
+            engine, organisation_id, run_id, url, f"Acme Supplies: field {name} is stated here."
         )
 
     def respond(asked: Asked) -> list[dict[str, Any]]:
         for name, source_id in ids.items():
             if name in asked.fields and asked.source_id == str(source_id):
-                return [item(name, "stated", f"Field {name} is stated here", asked.source_id)]
+                return [item(name, "stated", f"field {name} is stated here", asked.source_id)]
         return []
 
     run_stage(engine, organisation_id, run_id, scripted(respond))
@@ -721,7 +725,7 @@ def test_a_pdf_linked_from_the_website_is_the_suppliers_claim_on_any_domain(engi
         organisation_id,
         run_id,
         "https://files-host.example/other.pdf",
-        "The founding year was 2005.",
+        "Acme Supplies: the founding year was 2005.",
         content_type="application/pdf",
     )
 
@@ -761,3 +765,188 @@ def test_a_domain_in_the_registry_identifiers_is_the_suppliers_claim(engine: Eng
 
 def test_the_stage_is_the_real_one_in_default_stages() -> None:
     assert DEFAULT_STAGES["extraction"].__name__ == "extraction_stage"
+
+
+# --- the extraction knows the supplier (#140) ---
+
+DIRECTORY = (
+    "Top suppliers. Acme Supplies SA, Lyon, makes valves. "
+    "Borel Industries was founded in 1987 in Lille. Borel Industries employs 40 people."
+)
+
+
+def only(field_id: str, value: str, quote: str, **extra: Any) -> Any:
+    """A responder that finds `field_id` and answers not_found for the others."""
+
+    def respond(asked: Asked) -> list[dict[str, Any]]:
+        return [
+            {**item(name, value, quote, asked.source_id), **extra}
+            if name == field_id
+            else not_found(name)
+            for name in asked.fields
+        ]
+
+    return respond
+
+
+def test_the_supplier_goes_into_the_prompt(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine, country="FR", legal_name="Acme Supplies SA")
+    adapter = scripted(lambda asked: [])
+
+    run_stage(engine, organisation_id, run_id, adapter)
+
+    assert adapter.asked
+    for asked in adapter.asked:
+        assert "Legal name: Acme Supplies SA" in asked.data
+        assert f"Website: {SITE}" in asked.data
+        assert "Country: France (FR)" in asked.data
+
+
+def test_the_supplier_text_goes_through_the_gate(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(
+        engine, "Jean Dupont, plombier à Lyon.", natural_person=True, legal_name="Jean Dupont"
+    )
+    adapter = scripted(lambda asked: [])
+
+    run_stage(engine, organisation_id, run_id, adapter)
+
+    assert adapter.asked and all("Jean Dupont" not in a.data for a in adapter.asked)
+    assert all("Legal name: " in a.data for a in adapter.asked)
+
+
+def test_a_prompt_set_without_the_supplier_placeholder_still_runs(engine: Engine) -> None:
+    base = PROMPTS
+    old = base.prompts["extraction"]
+    template = "Fields:\n{fields}\n\nSource id: {source_id}\n\nSource text:\n{source_text}"
+    changed = replace(old, data_template=template)
+    prompts = PromptSet({**base.prompts, "extraction": changed}, base.content_hash)
+    assert "supplier" not in prompts.placeholders("extraction")
+    organisation_id, run_id, _source = setup(engine)
+    adapter = scripted(answer_about)
+
+    context = context_for(engine, organisation_id, run_id, providers_with(adapter))
+    make_extraction_stage(DEFINITION, prompts, ExtractionSettings())(context)
+
+    assert all("Legal name" not in a.data for a in adapter.asked)
+    assert facts_of(engine, run_id)["founding_year"].value == "2005"
+
+
+def test_the_example_prompt_set_uses_the_supplier_placeholder() -> None:
+    assert "supplier" in PROMPTS.placeholders("extraction")
+    instructions = PROMPTS.prompts["extraction"].instructions
+    assert "only statements about the supplier" in instructions
+    assert "not_found" in instructions
+
+
+def test_a_passage_about_another_company_marked_not_about_the_supplier_is_discarded(
+    engine: Engine,
+) -> None:
+    organisation_id, run_id, _source = setup(
+        engine, DIRECTORY, url="https://directory.example/top", legal_name="Acme Supplies SA"
+    )
+    respond = only(
+        "founding_year",
+        "1987",
+        "Borel Industries was founded in 1987",
+        about_supplier=False,
+    )
+
+    run_stage(engine, organisation_id, run_id, scripted(respond))
+
+    assert facts_of(engine, run_id)["founding_year"].status == "not_found"
+    assert run_row(engine, run_id).grounding_failures == 1
+
+
+def test_an_item_without_about_supplier_is_taken_as_about_the_supplier(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine, url="https://news.example/acme")
+
+    run_stage(engine, organisation_id, run_id, scripted(answer_about))
+
+    assert facts_of(engine, run_id)["founding_year"].status == "proposed"
+    assert run_row(engine, run_id).grounding_failures == 0
+
+
+def test_a_third_party_page_that_never_names_the_supplier_yields_no_fact(engine: Engine) -> None:
+    text = "Borel Industries was founded in 1987 in Lille. It employs 40 people."
+    organisation_id, run_id, _source = setup(
+        engine, text, url="https://directory.example/borel", legal_name="Acme Supplies SA"
+    )
+    respond = only("founding_year", "1987", "was founded in 1987 in Lille")
+
+    run_stage(engine, organisation_id, run_id, scripted(respond))
+
+    assert facts_of(engine, run_id)["founding_year"].status == "not_found"
+    assert run_row(engine, run_id).grounding_failures == 1
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "ACME SUPPLIES was founded in 2005 in Lyon.",  # case, no legal form
+        "Acmé Supplies SA was founded in 2005 in Lyon.",  # accent
+        "See acme.example: founded in 2005 in Lyon.",  # website host
+    ],
+)
+def test_a_third_party_page_naming_the_supplier_keeps_its_facts(engine: Engine, text: str) -> None:
+    organisation_id, run_id, _source = setup(
+        engine, text, url="https://directory.example/acme", legal_name="Acme Supplies SA"
+    )
+    respond = only("founding_year", "2005", "founded in 2005 in Lyon")
+
+    run_stage(engine, organisation_id, run_id, scripted(respond))
+
+    assert facts_of(engine, run_id)["founding_year"].status == "proposed"
+
+
+def test_the_suppliers_own_page_without_its_name_still_yields_facts(engine: Engine) -> None:
+    text = "We were founded in 2005 in Lyon. We employ 250 people."
+    organisation_id, run_id, _source = setup(
+        engine, text, url=f"{BASE}/about", legal_name="Acme Supplies SA"
+    )
+    respond = only("founding_year", "2005", "founded in 2005 in Lyon")
+
+    run_stage(engine, organisation_id, run_id, scripted(respond))
+
+    fact = facts_of(engine, run_id)["founding_year"]
+    assert fact.status == "proposed" and fact.source_type == "supplier_claim"
+
+
+@pytest.mark.parametrize(
+    ("legal_name", "website", "text", "kept"),
+    [
+        ("BERICAP HOLDING GMBH", None, "Bericap opened a plant. Founded in 2005 in Lyon.", True),
+        ("BERICAP GmbH & Co. KG", None, "Bericap opened a plant. Founded in 2005 in Lyon.", True),
+        ("Foo S.A.S.", None, "Foo opened a plant. Founded in 2005 in Lyon.", False),  # < 4 chars
+        (
+            "Zeta Industries",
+            "https://www.acme-supplies.co.uk",
+            "ACME Supplies: Founded in 2005 in Lyon.",
+            True,
+        ),
+        (
+            "Zeta Industries",
+            "https://www.acme-supplies.co.uk",
+            "acme-supplies grew. Founded in 2005 in Lyon.",
+            True,
+        ),
+        ("Zeta Industries", "https://abc.com", "ABC makes caps. Founded in 2005 in Lyon.", False),
+        (
+            "Zeta Industries",
+            "https://bericap.com",
+            "The bericaps are sold. Founded in 2005 in Lyon.",
+            False,
+        ),
+    ],
+)
+def test_a_third_party_page_may_use_the_trade_name_or_the_website_label(
+    engine: Engine, legal_name: str, website: str | None, text: str, kept: bool
+) -> None:
+    organisation_id, run_id, _source = setup(
+        engine, text, url="https://press.example/a", legal_name=legal_name, website=website
+    )
+    respond = only("founding_year", "2005", "Founded in 2005 in Lyon")
+
+    run_stage(engine, organisation_id, run_id, scripted(respond))
+
+    status = facts_of(engine, run_id)["founding_year"].status
+    assert status == ("proposed" if kept else "not_found")

@@ -48,6 +48,61 @@ def normalise(text: str) -> str:
     return " ".join(_INVISIBLE.sub("", text).split())
 
 
+_LEGAL_FORMS = frozenset(
+    "sa sas sarl sl spa srl gmbh ag kg bv nv ab as oy ltd limited plc inc llc lp corp corporation "
+    "co company pty pte kgaa ug ohg eurl snc se cv & and".split()
+)
+_GROUP_WORDS = frozenset("holding holdings group groupe gruppe international".split())
+_MIN_SHORT_NAME = 4
+_SECOND_LEVEL = frozenset("co com org net gov ac edu".split())
+
+
+def fold(text: str) -> str:
+    """`normalise`, then lower-cased and without accents: for the comparison of names."""
+    decomposed = unicodedata.normalize("NFKD", normalise(text).casefold())
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
+
+
+def supplier_names(legal_name: str) -> list[str]:
+    """The folded legal name, and the same without its trailing legal forms ("GmbH & Co. KG",
+    "S.A.S.", "Pty Ltd") and group words ("Holding", "Group"), as pages seldom print them. The
+    shortened form must keep at least four characters."""
+    words = fold(legal_name).replace(".", "").replace(",", " ").split()
+    names = [" ".join(words)] if words else []
+    while len(words) > 1 and words[-1] in _LEGAL_FORMS | _GROUP_WORDS:
+        words = words[:-1]
+    short = " ".join(words)
+    if short not in names and len(short) >= _MIN_SHORT_NAME:
+        names.append(short)
+    return names
+
+
+def website_labels(host: str | None) -> list[str]:
+    """The registrable label of the website host (acme-supplies.co.uk gives "acme-supplies" and
+    "acme supplies"), when it has at least four characters. Matched as a whole word."""
+    parts = fold(host or "").split(".")
+    if len(parts) < 2:
+        return []
+    label = parts[-2]
+    if len(parts) >= 3 and len(parts[-1]) == 2 and label in _SECOND_LEVEL:
+        label = parts[-3]
+    if len(label) < _MIN_SHORT_NAME:
+        return []
+    return list(dict.fromkeys([label, label.replace("-", " ")]))
+
+
+def names_supplier(
+    folded_text: str, names: list[str], host: str | None, labels: list[str] | None = None
+) -> bool:
+    """Whether the (folded) text holds one of the supplier's names, its website host or its
+    website label as a whole word."""
+    if any(name in folded_text for name in names) or bool(host and host in folded_text):
+        return True
+    return any(
+        re.search(rf"(?<!\w){re.escape(label)}(?!\w)", folded_text) for label in labels or []
+    )
+
+
 def quote_in_text(quote: str, normalised_text: str) -> bool:
     """Whether the quote is in the text (given already normalised, once per source)."""
     needle = normalise(quote)

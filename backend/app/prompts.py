@@ -58,7 +58,9 @@ SPECS: dict[str, _Spec] = {
         "IdentityProposal", "language conversation candidates", "language conversation"
     ),
     "retrieval": _spec("RetrievalResult", "supplier", "supplier"),
-    "extraction": _spec("FieldExtraction", "fields source_id source_text", "fields source_text"),
+    "extraction": _spec(
+        "FieldExtraction", "supplier fields source_id source_text", "fields source_text"
+    ),
     "assessment": _spec("AssessmentStatement", _JUDGEMENT, "language facts"),
     "fit": _spec("AssessmentStatement", _JUDGEMENT, "language facts buyer_criteria"),
     "recommendations": _spec("AssessmentStatement", _JUDGEMENT + " assessment", "language facts"),

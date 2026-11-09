@@ -29,14 +29,19 @@ from pydantic import ValidationError
 from sqlalchemy import select
 
 from app.collection.source_store import IdentityRedaction, identity_redaction
+from app.countries import country_name
 from app.db import Database
 from app.extraction.grounding import (
     MAX_QUOTE_CHARS,
+    fold,
     is_redacted_quote,
+    names_supplier,
     normalise,
     quote_in_text,
     quote_long_enough,
+    supplier_names,
     value_supported,
+    website_labels,
 )
 from app.extraction.settings import ExtractionSettings, load_extraction_settings
 from app.extraction.source_type import classify_source, host_of, registry_domains
@@ -72,6 +77,35 @@ class SourceText:
     source_type: str
     publisher: str
     normalised: str = field(repr=False)
+    folded: str = field(repr=False, default="")
+
+
+@dataclass(frozen=True)
+class Supplier:
+    """The confirmed identity, as far as extraction uses it (#140)."""
+
+    name: str
+    website: str | None
+    country: str | None
+    # A natural person's name is redacted from the stored text: the check cannot look for it.
+    natural_person: bool = False
+
+    def text(self) -> str:
+        lines = [f"Legal name: {self.name}"]
+        if self.website:
+            lines.append(f"Website: {self.website}")
+        if self.country:
+            name = country_name(self.country)
+            lines.append(
+                f"Country: {name} ({self.country})" if name != self.country else f"Country: {name}"
+            )
+        return "\n".join(lines)
+
+    def named_in(self, source: SourceText) -> bool:
+        if self.natural_person:
+            return True
+        host = host_of(self.website) if self.website else None
+        return names_supplier(source.folded, supplier_names(self.name), host, website_labels(host))
 
 
 @dataclass(frozen=True)
@@ -122,8 +156,12 @@ def judge(
     tally: Tally,
     requested: dict[str, FieldDefinition],
     limits: ExtractionSettings | None = None,
+    supplier: Supplier | None = None,
 ) -> Kept | None:
-    """The grounding check of one `found` item, counted on `tally` when it is discarded."""
+    """The grounding check of one `found` item, counted on `tally` when it is discarded.
+
+    An item the model marks as not about the supplier is discarded, and so is any item of a
+    third-party source whose text never names the supplier (#140)."""
     if (
         item.field not in requested
         or item.value is None
@@ -134,6 +172,13 @@ def judge(
         return None
     quote = item.quote.strip()
     limits = limits or ExtractionSettings()
+    if not item.about_supplier or (
+        supplier is not None
+        and source.source_type == "third_party"
+        and not supplier.named_in(source)
+    ):
+        tally.grounding_failures += 1
+        return None
     if (
         item.source_id.strip() != str(source.id)  # a source that is not the one given
         or len(quote) > MAX_QUOTE_CHARS
@@ -157,6 +202,7 @@ def ask(
     source: SourceText,
     chunk: str,
     requested: list[FieldDefinition],
+    supplier: Supplier | None = None,
 ) -> tuple[list[FieldExtraction], int]:
     """The single call site of the model for extraction: the validated items of the answer, and
     the number of items dropped as invalid (after one retry).
@@ -166,10 +212,12 @@ def ask(
     gate is the only way to obtain the `RedactedText` the provider interface accepts, and it is
     idempotent on `[…]`. It also applies a suppression-list entry added after collection.
     """
-    rendered = prompts.render(
-        PROMPT_ID,
-        {"fields": fields_text(requested), "source_id": str(source.id), "source_text": chunk},
-    )
+    values = {"fields": fields_text(requested), "source_id": str(source.id), "source_text": chunk}
+    if "supplier" in prompts.placeholders(PROMPT_ID):
+        # Passes the gate below with the rest of the data. A caller without an identity (the
+        # reference-set harness) gets a neutral line, never a missing value.
+        values["supplier"] = supplier.text() if supplier else "Legal name: not given"
+    rendered = prompts.render(PROMPT_ID, values)
     log_render(rendered)
     data = gate.redact(
         rendered.data,
@@ -190,7 +238,10 @@ def ask(
         valid, invalid = [], 0
         for raw in answer.extractions:
             try:
-                valid.append(FieldExtraction.model_validate(raw.model_dump()))
+                fields = raw.model_dump()
+                if fields["about_supplier"] is None:
+                    del fields["about_supplier"]  # absent means true
+                valid.append(FieldExtraction.model_validate(fields))
             except ValidationError:
                 invalid += 1
         if invalid == 0:
@@ -208,7 +259,7 @@ def make_extraction_stage(
 
     def stage(context: StageContext) -> StageOutcome | None:
         database = context.database
-        sources, redaction = _load(database, context.run_id)
+        sources, redaction, supplier = _load(database, context.run_id)
         with database.session() as db:
             stored = set(db.scalars(select(Fact.field).where(Fact.run_id == context.run_id)))
         todo = [(name, items) for name, items in groups if any(i.id not in stored for i in items)]
@@ -231,13 +282,21 @@ def make_extraction_stage(
                             client = _client(context.providers)
                         wanted = {item.id: item for item in pending}
                         answered, dropped = _ask_safely(
-                            context, client, gate, redaction, prompts, source, chunk, pending
+                            context,
+                            client,
+                            gate,
+                            redaction,
+                            prompts,
+                            source,
+                            chunk,
+                            pending,
+                            supplier,
                         )
                         tally.invalid_items += dropped
                         for item in answered:
                             if item.status != "found" or item.field in kept:
                                 continue
-                            result = judge(item, source, tally, wanted, limits)
+                            result = judge(item, source, tally, wanted, limits, supplier)
                             if result is not None:
                                 kept[item.field] = result
                         pending = [i for i in pending if i.id not in kept]
@@ -272,16 +331,19 @@ def _ask_safely(
     source: SourceText,
     chunk: str,
     pending: list[FieldDefinition],
+    supplier: Supplier | None = None,
 ) -> tuple[list[FieldExtraction], int]:
     try:
-        return ask(context, client, gate, redaction, prompts, source, chunk, pending)
+        return ask(context, client, gate, redaction, prompts, source, chunk, pending, supplier)
     except ProviderError as error:
         # An outage (StructuredOutputInvalid is handled in `ask`): the run pauses and resumes.
         logger.warning("Structuring provider call failed: %s", type(error).__name__)
         raise DependencyUnavailable("structuring_provider") from None
 
 
-def _load(database: Database, run_id: uuid.UUID) -> tuple[list[SourceText], IdentityRedaction]:
+def _load(
+    database: Database, run_id: uuid.UUID
+) -> tuple[list[SourceText], IdentityRedaction, Supplier | None]:
     with database.session() as db:
         run = db.get(ProfileRun, run_id)
         identity = (
@@ -314,10 +376,18 @@ def _load(database: Database, run_id: uuid.UUID) -> tuple[list[SourceText], Iden
                 ),
                 publisher=host_of(row.url) or row.url[:300],
                 normalised=normalise(row.redacted_text),
+                folded=fold(row.redacted_text),
             )
             for row in rows
         ]
-        return sources, identity_redaction(db, run_id)
+        supplier = (
+            Supplier(
+                identity.legal_name, identity.website, identity.country, identity.natural_person
+            )
+            if identity
+            else None
+        )
+        return sources, identity_redaction(db, run_id), supplier
 
 
 def _store(

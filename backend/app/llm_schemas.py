@@ -35,6 +35,9 @@ class FieldExtraction(BaseModel):
     value: str | None = Field(default=None, max_length=4000)
     quote: str | None = Field(default=None, max_length=4000)
     source_id: str | None = Field(default=None, max_length=200)
+    # False when the passage is about another company than the supplier (#140). Absent means true,
+    # so answers written before the field existed stay valid.
+    about_supplier: bool = True
 
     @model_validator(mode="after")
     def _complete(self) -> Self:
@@ -88,6 +91,7 @@ class RawFieldExtraction(BaseModel):
     value: str | None = None
     quote: str | None = None
     source_id: str | None = None
+    about_supplier: bool | None = None
 
 
 class FieldExtractionAnswer(BaseModel):
