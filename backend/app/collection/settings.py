@@ -17,6 +17,7 @@
   and retries included; none is sent beyond it and the run continues with what it has.
 - `COLLECT_MAX_DOMAINS` (10): distinct domains contacted per run; a further one is refused.
 - `COLLECT_MAX_RETRIEVAL_URLS` (8): addresses of the retrieval provider fetched per run.
+- `COLLECT_MAX_LINKED_PDFS` (3): PDFs followed per run from retrieved pages of other sites.
 The request timeout is `FETCH_TIMEOUT_SECONDS` of the HTTP client (#15).
 """
 
@@ -44,6 +45,7 @@ class CollectionSettings:
     max_retrieval_urls: int = 8
     max_requests: int = 200
     max_domains: int = 10
+    max_linked_pdfs: int = 3
 
 
 def _number(env: Mapping[str, str], name: str, default: float, *, whole: bool) -> float:
@@ -84,4 +86,5 @@ def load_collection_settings(environ: Mapping[str, str] | None = None) -> Collec
         max_retrieval_urls=whole("COLLECT_MAX_RETRIEVAL_URLS", d.max_retrieval_urls),
         max_requests=whole("COLLECT_MAX_REQUESTS", d.max_requests),
         max_domains=whole("COLLECT_MAX_DOMAINS", d.max_domains),
+        max_linked_pdfs=whole("COLLECT_MAX_LINKED_PDFS", d.max_linked_pdfs),
     )

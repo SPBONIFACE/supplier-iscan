@@ -6,12 +6,13 @@ function; this module never writes a source itself.
 """
 
 import logging
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
-from urllib.parse import urldefrag, urljoin, urlsplit
+from urllib.parse import unquote, urldefrag, urljoin, urlsplit
 
 from app.collection.budget import DomainLimitReached, RequestLimitReached
 from app.collection.failures import (
@@ -50,6 +51,14 @@ SKIPPED_EXTENSIONS = (
     ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".zip", ".mp4", ".mp3", ".css", ".js",
     ".xml", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
 )  # fmt: skip
+PER_PAGE_LINKED_PDFS = 2  # PDFs followed from one retrieved third-party page
+FINANCIAL_WORDS = (
+    "annual report", "annual accounts", "financial statements", "accounts", "jahresabschluss",
+    "geschäftsbericht", "geschaeftsbericht", "bilanz", "comptes annuels", "rapport annuel",
+    "bilan",
+)  # fmt: skip
+FINANCIAL_WORDS_HYPHENATED = tuple(w.replace(" ", "-") for w in FINANCIAL_WORDS if " " in w)
+FILED_ACCOUNTS_NAME = re.compile(r"(?<![a-z])ea[-_]?\d{4}")  # a file name such as EA2025.pdf
 
 
 @dataclass
@@ -68,6 +77,16 @@ def _host(url: str) -> str:
 
 def _is_pdf(url: str) -> bool:
     return url.lower().split("?", 1)[0].endswith(".pdf")
+
+
+def _is_financial(url: str, anchor: str) -> bool:
+    """The address or the anchor text names a financial document (English, French, German)."""
+    address = unquote(url).lower()
+    text = f"{address} {anchor.lower()}"
+    if any(word in text for word in (*FINANCIAL_WORDS, *FINANCIAL_WORDS_HYPHENATED)):
+        return True
+    name = urlsplit(address).path.rsplit("/", 1)[-1]
+    return bool(FILED_ACCOUNTS_NAME.search(name))
 
 
 def _content_type(response: Any) -> str:
@@ -102,6 +121,7 @@ class Collector:
         self._website_texts: list[str] = []
         self._kinds_found: set[str] = set()
         self._website_host = ""
+        self._linked_pdfs = 0  # PDFs followed from retrieved third-party pages in this run
 
     # -- failures ---------------------------------------------------------------------------
 
@@ -302,7 +322,39 @@ class Collector:
             if url.lower().split("?", 1)[0].endswith(".pdf"):
                 self._take_pdf(url)
             else:
-                self._take_page(url)
+                links = self._take_page(url)
+                if links and self._third_party(self._final_url or url):
+                    self._follow_linked_pdfs(self._final_url or url, links)
+
+    def _third_party(self, url: str) -> bool:
+        own = self._website_host
+        host = _host(url)
+        return not (own and (host == own or host.endswith("." + own)))
+
+    def _follow_linked_pdfs(self, page: str, links: list[tuple[str, str]]) -> None:
+        """The PDFs a retrieved third-party page links and hosts itself, financial documents
+        first (at most 2 per page and `max_linked_pdfs` per run). Each is stored as linked from
+        the page; its source type is decided by its own address."""
+        host = _host(page)
+        candidates: list[tuple[str, str]] = []
+        for href, anchor in links:
+            try:
+                url, _fragment = urldefrag(urljoin(page, href.strip()))
+                ok = urlsplit(url).scheme in ("http", "https") and _host(url) == host
+            except ValueError:
+                continue
+            if ok and _is_pdf(url) and all(url != c[0] for c in candidates):
+                candidates.append((url, anchor))
+        candidates.sort(key=lambda c: not _is_financial(*c))  # stable: page order inside a rank
+        taken = 0
+        for url, _anchor in candidates:
+            if taken >= PER_PAGE_LINKED_PDFS or self._linked_pdfs >= self._settings.max_linked_pdfs:
+                break
+            if self._requests_exhausted or self._already_kept(url):
+                continue
+            if self._take_pdf(url, page) is not None:
+                taken += 1
+                self._linked_pdfs += 1
 
     def _independent_first(self, urls: list[str]) -> list[str]:
         """The addresses with at most one on the supplier's own domain when the website crawl
