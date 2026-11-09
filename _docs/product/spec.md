@@ -77,6 +77,7 @@ criterion below is meant to be verifiable by looking at the running application.
 **Acceptance criteria**
 - [ ] Every extracted value conforms to the `FieldExtraction` schema: value, quote, source id, or the explicit status `not_found`.
 - [ ] A value is kept only if its quote is found in the stored text of the cited source (after whitespace and typography normalisation); otherwise it is discarded and counted as a grounding failure.
+- [ ] The extraction knows the supplier (name, website, country): a passage about another company is never a fact. An item the model marks as not about the supplier is discarded, and so is any item from a third-party source whose text never names the supplier; both are counted as grounding failures.
 - [ ] Quotes are stored and shown in their source language; field labels follow the UI language.
 - [ ] "Not found" is displayed as "No public evidence found", never as a negative statement about the supplier.
 - [ ] Each fact shows "Found in <source> on <date>".

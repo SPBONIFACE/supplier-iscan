@@ -48,6 +48,35 @@ def normalise(text: str) -> str:
     return " ".join(_INVISIBLE.sub("", text).split())
 
 
+_LEGAL_FORMS = frozenset(
+    "sa sas sarl sl spa srl gmbh ag kg bv nv ab as oy ltd limited plc inc llc lp corp corporation "
+    "co company".split()
+)
+
+
+def fold(text: str) -> str:
+    """`normalise`, then lower-cased and without accents: for the comparison of names."""
+    decomposed = unicodedata.normalize("NFKD", normalise(text).casefold())
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
+
+
+def supplier_names(legal_name: str) -> list[str]:
+    """The folded name of the supplier, and the same without its trailing legal form ("Acme
+    Supplies SA" and "Acme Supplies"), as pages seldom print the legal form."""
+    words = fold(legal_name).replace(".", "").replace(",", " ").split()
+    names = [" ".join(words)] if words else []
+    while len(words) > 1 and words[-1] in _LEGAL_FORMS:
+        words = words[:-1]
+    if words and " ".join(words) not in names:
+        names.append(" ".join(words))
+    return names
+
+
+def names_supplier(folded_text: str, names: list[str], host: str | None) -> bool:
+    """Whether the (folded) text holds one of the supplier's names or its website host."""
+    return any(name in folded_text for name in names) or bool(host and host in folded_text)
+
+
 def quote_in_text(quote: str, normalised_text: str) -> bool:
     """Whether the quote is in the text (given already normalised, once per source)."""
     needle = normalise(quote)

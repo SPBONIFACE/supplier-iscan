@@ -250,7 +250,8 @@ def test_prompt_text_and_completions_appear_in_no_log_and_no_api_response(
     structuring = providers_with(sink, FakeStructuringAdapter([bad, good])).structuring()
 
     rendered = load_prompt_set().render(
-        "extraction", {"fields": "f", "source_id": "s1", "source_text": prompt_side}
+        "extraction",
+        {"supplier": "s", "fields": "f", "source_id": "s1", "source_text": prompt_side},
     )
     log_render(rendered)
     request = StructuringRequest(instructions=rendered.instructions, data=redacted(rendered.data))
@@ -263,7 +264,7 @@ def test_prompt_text_and_completions_appear_in_no_log_and_no_api_response(
     api = send_with_session(client, "POST", "/runs", token, json={"identity_id": str(identity_id)})
 
     logged = "\n".join(r.getMessage() for r in caplog.records)
-    assert "Prompt rendered: id=extraction version=example-1" in logged
+    assert "Prompt rendered: id=extraction version=example-2" in logged
     records = json.dumps([vars(e) for e in sink.entries], default=str)
     for sentinel in (prompt_side, completion_side):
         assert sentinel not in logged
