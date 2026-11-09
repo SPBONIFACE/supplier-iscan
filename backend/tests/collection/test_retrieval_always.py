@@ -80,8 +80,8 @@ def test_own_domain_addresses_are_not_capped_when_the_website_gave_no_source() -
     assert len(stored) == 2
 
 
-def test_the_default_number_of_retrieval_addresses_is_eight() -> None:
-    assert CollectionSettings().max_retrieval_urls == 8
+def test_the_default_number_of_retrieval_addresses_is_twelve() -> None:
+    assert CollectionSettings().max_retrieval_urls == 12
 
 
 def test_a_failing_retrieval_with_nothing_lacking_keeps_the_website_sources() -> None:

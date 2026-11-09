@@ -46,6 +46,19 @@ MAX_BACKOFF_SECONDS = 60.0
 # The lacking page kinds in (empty when the website gave every kind: independent sources are then
 # asked for), the addresses the retrieval provider cited (best first) out.
 RetrieveFn = Callable[[list[str]], list[str]]
+
+
+class RetrievedAddresses(list[str]):
+    """The merged addresses of a retrieval step made of several requests. `failures` are the
+    requests that failed (each recorded like a failed retrieval, the others still ran);
+    `budget_exhausted` is set when the run's cost budget stopped the remaining requests."""
+
+    def __init__(self, urls: list[str]) -> None:
+        super().__init__(urls)
+        self.failures: list[RetrievalFailed] = []
+        self.budget_exhausted = False
+
+
 HTML_TYPES = ("text/html", "application/xhtml+xml", "text/plain")
 SKIPPED_EXTENSIONS = (
     ".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".zip", ".mp4", ".mp3", ".css", ".js",
@@ -313,11 +326,18 @@ class Collector:
         except RetrievalFailed as error:
             self._fail(None, error.kind, message=error.message)
             return
+        for failed in getattr(urls, "failures", []):
+            self._fail(None, failed.kind, message=failed.message)
+        crawl_full = len(self.result.sources) >= self._settings.crawl_pages
         stored = {record.url for record in self.result.sources}
         for url in self._independent_first(urls)[: self._settings.max_retrieval_urls]:
             if url in stored or urlsplit(url).scheme not in ("http", "https"):
                 if url not in stored:
                     self._skip(url, "refused")
+                continue
+            if crawl_full and not self._third_party(url):
+                # The reserved slots are for addresses outside the supplier's website.
+                self._skip(url, "refused")
                 continue
             if url.lower().split("?", 1)[0].endswith(".pdf"):
                 self._take_pdf(url)
@@ -411,7 +431,7 @@ class Collector:
                 add_candidate(checked)
         self._strategy = "website"
 
-        budget = settings.max_pages - len(self.result.sources)
+        budget = settings.crawl_pages - len(self.result.sources)
         chosen: list[str] = []
         for rank in range(PER_KIND):  # first one of each kind, then the second ones
             for kind in PAGE_KINDS[1:]:
@@ -423,7 +443,9 @@ class Collector:
                 if absolute and _is_pdf(absolute):
                     add_candidate(absolute, page=url)
 
-        for url in pdf_links[: settings.max_pdfs]:
+        for url in pdf_links[
+            : min(settings.max_pdfs, max(settings.crawl_pages - len(self.result.sources), 0))
+        ]:
             self._take_pdf(url, linked_from.get(url))
 
     def _take_page(self, url: str) -> list[tuple[str, str]] | None:
