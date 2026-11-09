@@ -10,6 +10,8 @@ A provider outage or an unusable answer raises `RetrievalFailed` (logged, the ru
 """
 
 import logging
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from pydantic import ValidationError
@@ -25,6 +27,7 @@ from app.providers import (
     ProviderCallError,
     ProviderError,
     Providers,
+    RetrievalClient,
     RetrievalRequest,
     RetrievedUrl,
     StructuredOutputInvalid,
@@ -118,7 +121,8 @@ def make_retriever(
     """One request per focus (none: a single request without focus). A focus whose request fails
     is reported in `failures` of the result (each with its own kind) and the others still run."""
 
-    def retrieve(lacking: list[str], focus: str | None) -> list[str]:
+    def prepare(lacking: list[str], focus: str | None) -> RetrievalRequest:
+        """On the caller's thread: the redaction gate may read the database."""
         text = _supplier_text(identity, lacking, focus)
         rendered = prompts.render(PROMPT_ID, {"supplier": text})
         # Redacted before the call; a failure raises RedactionUnavailable and nothing is sent.
@@ -128,9 +132,12 @@ def make_retriever(
             addresses=redaction.addresses,
             company_names=redaction.company_names,
         )
+        return RetrievalRequest(rendered.instructions, query)
+
+    def send(client: RetrievalClient, request: RetrievalRequest, lacking: list[str]) -> list[str]:
+        """The provider call alone (it runs in a pool thread): no database session of the stage."""
         try:
-            client = providers.retrieval()
-            result = client.retrieve(RetrievalRequest(rendered.instructions, query), context)
+            result = client.retrieve(request, context)
         except StructuredOutputInvalid:
             raise RetrievalFailed("invalid_response") from None
         except ProviderCallError as error:
@@ -146,23 +153,50 @@ def make_retriever(
             raise RetrievalFailed("invalid_response") from None
         return rank(result.urls, lacking)
 
+    def retrieve(lacking: list[str], focus: str | None) -> list[str]:
+        request = prepare(lacking, focus)
+        try:
+            client = providers.retrieval()
+        except ProviderError:
+            logger.warning("Retrieval provider not usable")
+            raise RetrievalFailed("provider_unavailable") from None
+        return send(client, request, lacking)
+
     def retrieve_focused(lacking: list[str]) -> list[str]:
         if not focuses:
             return retrieve(lacking, None)
+        # Prepared in order on this thread; only the provider calls run at the same time.
+        prepared: list[RetrievalRequest] = [prepare(lacking, focus) for focus in focuses]
+        try:
+            client = providers.retrieval()
+        except ProviderError:
+            logger.warning("Retrieval provider not usable")
+            raise RetrievalFailed("provider_unavailable") from None
+        budget_ended = threading.Event()
+
+        def run(request: RetrievalRequest) -> list[str]:
+            if budget_ended.is_set():
+                raise RunBudgetExhausted  # no request starts once the budget is exhausted (#30)
+            try:
+                return send(client, request, lacking)
+            except RunBudgetExhausted:
+                budget_ended.set()
+                raise
+
         answers: list[list[str]] = []
         failures: list[RetrievalFailed] = []
         exhausted = False
-        for focus in focuses:
+        with ThreadPoolExecutor(max_workers=len(prepared)) as pool:
+            futures = [pool.submit(run, request) for request in prepared]
+        for future in futures:  # in the configured order, whatever the order of arrival
             try:
-                answers.append(retrieve(lacking, focus))
+                answers.append(future.result())
             except RetrievalFailed as error:
                 failures.append(error)
             except RunBudgetExhausted:
-                # The remaining requests are not made (#30); what was found is kept.
-                if not answers:
-                    raise
-                exhausted = True
-                break
+                exhausted = True  # what was found is kept
+        if exhausted and not answers:
+            raise RunBudgetExhausted
         merged = RetrievedAddresses(_round_robin(answers))
         merged.failures = failures
         merged.budget_exhausted = exhausted

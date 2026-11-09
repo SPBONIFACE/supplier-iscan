@@ -950,3 +950,134 @@ def test_a_third_party_page_may_use_the_trade_name_or_the_website_label(
 
     status = facts_of(engine, run_id)["founding_year"].status
     assert status == ("proposed" if kept else "not_found")
+
+
+# --- several field groups in one call (#147) ---
+
+
+def run_batched(
+    engine: Engine,
+    organisation_id: uuid.UUID,
+    run_id: uuid.UUID,
+    adapter: Any,
+    groups_per_call: int,
+    check_stop: Any = None,
+) -> Any:
+    context = context_for(engine, organisation_id, run_id, providers_with(adapter))
+    if check_stop is not None:
+        context = replace(context, check_stop=check_stop)
+    return stage(groups_per_call=groups_per_call)(context)
+
+
+def fact_sections() -> list[Any]:
+    return [s for s in DEFINITION.sections if any(f.kind == "fact" for f in s.fields)]
+
+
+def test_all_groups_in_one_call_per_chunk_and_facts_stored_per_section(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine)
+    adapter = scripted(answer_about)
+
+    run_batched(engine, organisation_id, run_id, adapter, 0)
+
+    assert len(adapter.asked) == 1
+    assert sorted(adapter.asked[0].fields) == sorted(FACT_FIELDS)
+    facts = facts_of(engine, run_id)
+    assert set(facts) == set(FACT_FIELDS)
+    for section in DEFINITION.sections:
+        for definition in section.fields:
+            if definition.kind == "fact":
+                assert facts[definition.id].section == section.id
+    assert facts["founding_year"].status == "proposed"
+    assert facts["founding_year"].value == "2005"
+
+
+def test_one_group_per_call_is_one_call_per_section(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine)
+    adapter = scripted(lambda asked: [])
+
+    run_batched(engine, organisation_id, run_id, adapter, 1)
+
+    assert len(adapter.asked) == len(fact_sections())
+
+
+def test_two_groups_per_call_make_batches_of_consecutive_groups(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine)
+    adapter = scripted(lambda asked: [])
+
+    run_batched(engine, organisation_id, run_id, adapter, 2)
+
+    sections = fact_sections()
+    assert len(adapter.asked) == (len(sections) + 1) // 2
+    first_two = [f.id for s in sections[:2] for f in s.fields if f.kind == "fact"]
+    assert adapter.asked[0].fields == first_two
+
+
+def test_a_field_found_in_the_first_source_is_not_asked_of_the_second_in_one_call(
+    engine: Engine,
+) -> None:
+    organisation_id, run_id, _source = setup(engine)
+    add_source(engine, organisation_id, run_id, "https://zeta.example/acme", "Other page.")
+    adapter = scripted(answer_about)
+
+    run_batched(engine, organisation_id, run_id, adapter, 0)
+
+    second = [a for a in adapter.asked if a.text.startswith("Other page")]
+    assert len(second) == 1
+    for name in ("founding_year", "employee_count", "quality_management"):
+        assert name not in second[0].fields
+    assert len(second[0].fields) == len(FACT_FIELDS) - 3
+
+
+def test_an_unusable_answer_in_a_multi_section_call_counts_every_field(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine)
+    adapter = scripted(lambda asked: "this is not json")
+
+    run_batched(engine, organisation_id, run_id, adapter, 0)
+
+    assert all(f.status == "not_found" for f in facts_of(engine, run_id).values())
+    assert run_row(engine, run_id).invalid_items == len(FACT_FIELDS)
+
+
+def test_the_budget_ending_part_way_in_a_multi_section_call_keeps_values_and_ends_partial(
+    engine: Engine,
+) -> None:
+    from app.limits.budget import RunBudgetExhausted
+
+    organisation_id, run_id, _source = setup(engine)
+    add_source(engine, organisation_id, run_id, "https://zeta.example/acme", "Other page.")
+    adapter = scripted(answer_about)
+    calls = {"n": 0}
+
+    def check_stop() -> None:
+        calls["n"] += 1
+        if calls["n"] > 1:  # the first call is made, the second is refused
+            raise RunBudgetExhausted
+
+    with pytest.raises(RunBudgetExhausted):
+        run_batched(engine, organisation_id, run_id, adapter, 0, check_stop)
+
+    facts = facts_of(engine, run_id)
+    assert set(facts) == {"founding_year", "employee_count", "quality_management"}
+    assert all(f.status == "proposed" for f in facts.values())
+    assert len(adapter.asked) == 1
+
+
+def test_groups_per_call_setting() -> None:
+    from app.config import ConfigurationError
+    from app.extraction.settings import load_extraction_settings
+
+    assert load_extraction_settings({}).groups_per_call == 0
+    assert load_extraction_settings({"EXTRACT_GROUPS_PER_CALL": "1"}).groups_per_call == 1
+    with pytest.raises(ConfigurationError):
+        load_extraction_settings({"EXTRACT_GROUPS_PER_CALL": "-1"})
+    with pytest.raises(ConfigurationError):
+        load_extraction_settings({"EXTRACT_GROUPS_PER_CALL": "all"})
+
+
+def test_the_request_allows_enough_output_for_every_field(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine)
+    adapter = scripted(lambda asked: [])
+
+    run_batched(engine, organisation_id, run_id, adapter, 0)
+
+    assert adapter.calls[0].max_output_tokens >= 16_384

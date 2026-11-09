@@ -2,6 +2,9 @@
 
 - `EXTRACT_MAX_INPUT_CHARS` (20000): the most source text sent to the structuring provider in one
   call. A longer source is cut at a line or word boundary into several calls.
+- `EXTRACT_GROUPS_PER_CALL` (0): how many consecutive field groups (sections of the definition)
+  one call asks for. 0 = all groups in one call per chunk; 1 = one call per section and chunk;
+  n = batches of n groups. Facts are stored per section whatever the value.
 - `EXTRACT_MIN_QUOTE_CHARS` (12): the shortest quote kept, in characters after normalisation.
 - `EXTRACT_MIN_QUOTE_CHARS_CJK` (4): the same for a quote with Han, Hiragana, Katakana or Hangul.
 - `IAF_CERTSEARCH_URL` (https://www.iafcertsearch.org/): where a buyer verifies a certificate; the
@@ -17,6 +20,7 @@ from urllib.parse import urlsplit
 from app.config import ConfigurationError
 
 MAX_INPUT_CHARS = "EXTRACT_MAX_INPUT_CHARS"
+GROUPS_PER_CALL = "EXTRACT_GROUPS_PER_CALL"
 MIN_QUOTE_CHARS = "EXTRACT_MIN_QUOTE_CHARS"
 MIN_QUOTE_CHARS_CJK = "EXTRACT_MIN_QUOTE_CHARS_CJK"
 IAF_CERTSEARCH_URL = "IAF_CERTSEARCH_URL"
@@ -29,6 +33,7 @@ class ExtractionSettings:
     certsearch_url: str = DEFAULT_CERTSEARCH_URL
     min_quote_chars: int = 12
     min_quote_chars_cjk: int = 4
+    groups_per_call: int = 0
 
 
 def _whole_number(env: Mapping[str, str], name: str, default: int) -> int:
@@ -51,6 +56,12 @@ def load_extraction_settings(environ: Mapping[str, str] | None = None) -> Extrac
                 f"{MAX_INPUT_CHARS} must be a whole number between 500 and 1000000"
             )
         size = int(raw)
+    raw = env.get(GROUPS_PER_CALL, "").strip()
+    per_call = defaults.groups_per_call
+    if raw:
+        if not (raw.isascii() and raw.isdigit()) or int(raw) > 100:
+            raise ConfigurationError(f"{GROUPS_PER_CALL} must be a whole number between 0 and 100")
+        per_call = int(raw)
     url = env.get(IAF_CERTSEARCH_URL, "").strip() or defaults.certsearch_url
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.hostname or parts.username:
@@ -58,6 +69,7 @@ def load_extraction_settings(environ: Mapping[str, str] | None = None) -> Extrac
     return ExtractionSettings(
         max_input_chars=size,
         certsearch_url=url,
+        groups_per_call=per_call,
         min_quote_chars=_whole_number(env, MIN_QUOTE_CHARS, defaults.min_quote_chars),
         min_quote_chars_cjk=_whole_number(env, MIN_QUOTE_CHARS_CJK, defaults.min_quote_chars_cjk),
     )

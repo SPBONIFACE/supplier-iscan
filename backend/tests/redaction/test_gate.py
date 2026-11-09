@@ -203,18 +203,26 @@ def test_every_request_is_built_from_a_gate_result_never_from_a_literal() -> Non
 
 def test_the_retrieval_step_redacts_before_it_builds_the_request() -> None:
     source = (APP / "collection" / "retrieval.py").read_text(encoding="utf-8")
-    function = next(
-        node
-        for node in ast.walk(ast.parse(source))
-        if isinstance(node, ast.FunctionDef) and node.name == "retrieve"
-    )
-    found = sorted(
-        (node.lineno, node.func.attr if isinstance(node.func, ast.Attribute) else node.func.id)  # type: ignore[attr-defined]
-        for node in ast.walk(function)
-        if isinstance(node, ast.Call)
-    )
-    calls = [name for _line, name in found]  # in source order
-    assert calls.index("redact") < calls.index("RetrievalRequest") < calls.index("retrieve")
+    tree = ast.parse(source)
+
+    def calls_in(name: str) -> list[str]:
+        function = next(
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef) and node.name == name
+        )
+        found = sorted(
+            (node.lineno, node.func.attr if isinstance(node.func, ast.Attribute) else node.func.id)  # type: ignore[attr-defined]
+            for node in ast.walk(function)
+            if isinstance(node, ast.Call)
+        )
+        return [call for _line, call in found]  # in source order
+
+    # The request is built only in `prepare`, after the gate; the provider call is in `send`,
+    # which receives that request.
+    prepare = calls_in("prepare")
+    assert prepare.index("redact") < prepare.index("RetrievalRequest")
+    assert "retrieve" in calls_in("send") and "RetrievalRequest" not in calls_in("send")
 
 
 def test_the_identity_agent_redacts_before_it_builds_the_request() -> None:
