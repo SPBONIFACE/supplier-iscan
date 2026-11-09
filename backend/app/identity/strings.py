@@ -83,6 +83,10 @@ MESSAGES: dict[str, dict[Language, str]] = {
         "en": "This website cannot be used: {reason}",
         "fr": "Ce site web ne peut pas être utilisé : {reason}",
     },
+    "group_line": {
+        "en": "Part of group: {name}, {place}",
+        "fr": "Fait partie du groupe : {name}, {place}",
+    },
     "link_ignored": {
         "en": "A link in your message was ignored because it is not a valid public web address.",
         "fr": (

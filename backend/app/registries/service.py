@@ -12,6 +12,7 @@ from typing import Protocol
 
 from app.registries.cache import InMemoryRegistryCache, JsonValue, RegistryCache
 from app.registries.gleif import GleifRegistry
+from app.registries.gleif_group import GleifGroupClient
 from app.registries.http import Clock, Fetch, PoliteHttpClient, Sleep, SlidingWindowRateLimiter
 from app.registries.models import (
     RegistryCandidate,
@@ -48,7 +49,10 @@ class RegistrySearchService:
         gleif: RegistrySource,
         cache: RegistryCache,
         registry_timeout_seconds: float,
+        gleif_group: GleifGroupClient | None = None,
     ) -> None:
+        # Entity and group lookups of #142, on the same polite GLEIF client as the search.
+        self.gleif_group = gleif_group
         self._wikidata = wikidata
         self._gleif = gleif
         self._cache = cache
@@ -132,4 +136,27 @@ def build_registry_service(
         GleifRegistry(gleif_http),
         registry_cache,
         registry_timeout_seconds=settings.timeout_seconds * REGISTRY_SEARCH_TIMEOUT_FACTOR,
+        gleif_group=GleifGroupClient(gleif_http, registry_cache),
     )
+
+
+def build_gleif_group_client(
+    settings: RegistrySettings,
+    fetch: Fetch,
+    cache: RegistryCache,
+    *,
+    clock: Clock = time.monotonic,
+    sleep: Sleep = asyncio.sleep,
+) -> GleifGroupClient:
+    """The GLEIF entity and group lookups alone (collection), on the polite GLEIF client."""
+    http = PoliteHttpClient(
+        "gleif",
+        fetch,
+        {"User-Agent": settings.user_agent, "Accept": "application/vnd.api+json"},
+        rate_limiter=SlidingWindowRateLimiter(
+            settings.gleif_requests_per_minute, 60.0, clock=clock, sleep=sleep
+        ),
+        clock=clock,
+        sleep=sleep,
+    )
+    return GleifGroupClient(http, cache)

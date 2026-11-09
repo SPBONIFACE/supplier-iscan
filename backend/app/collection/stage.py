@@ -18,6 +18,7 @@ from app.collection import source_store
 from app.collection.budget import RequestBudget
 from app.collection.collector import Collector
 from app.collection.failures import RetrievalFailed
+from app.collection.gleif_source import store_gleif_source
 from app.collection.retrieval import IdentityRecord, make_retriever
 from app.collection.settings import CollectionSettings, load_collection_settings
 from app.collection.source_store import SourceRecord, identity_redaction, store_source
@@ -27,6 +28,7 @@ from app.limits.budget import RunBudgetExhausted
 from app.models import ProfileRun, RunFailure, SupplierIdentity
 from app.prompts import PromptSet, load_prompt_set
 from app.redaction import gate_for
+from app.registries.http import Fetch
 from app.runs.stages import Stage, StageContext, StageOutcome
 
 logger = logging.getLogger(__name__)
@@ -53,6 +55,7 @@ def make_collection_stage(
     allow_unredacted: bool = False,
     client_factory: Callable[..., GuardedClient] | None = None,
     prompt_set: PromptSet | None = None,
+    gleif_fetch: Fetch | None = None,
 ) -> Stage:
     """The `collection` stage. `client_factory` is for tests (a client over a mock transport).
 
@@ -74,6 +77,7 @@ def make_collection_stage(
             if identity is None:
                 return None
             record = IdentityRecord(identity.legal_name, identity.website, identity.country)
+            lei = (identity.registry_ids or {}).get("lei")
             redaction = identity_redaction(db, context.run_id)
             # Owner decision (3 Nov 2026): a natural person's name and address are hidden from the
             # provider, so with no website to anchor it the query would identify nobody.
@@ -112,6 +116,14 @@ def make_collection_stage(
 
             retriever = budgeted
 
+        # The GLEIF source first (#142): stored before anything else, so the extraction reads it
+        # first. GLEIF unavailable: the run goes on, and the failure log says so.
+        def store_gleif(source: SourceRecord) -> None:
+            store_source(database, context.run_id, context.organisation_id, source)
+
+        gleif_failure = store_gleif_source(
+            lei if isinstance(lei, str) else None, store_gleif, gleif_fetch
+        )
         # Every outbound request of the run, permission checks included, passes this budget.
         budget = RequestBudget(limits.max_requests, limits.max_domains)
         client = (
@@ -137,7 +149,8 @@ def make_collection_stage(
                 run.identity_to_verify = result.identity_to_verify
             # A stage executed again replaces its log instead of doubling it.
             db.execute(delete(RunFailure).where(RunFailure.run_id == context.run_id))
-            for position, failure in enumerate(result.failures):
+            failures = [gleif_failure, *result.failures] if gleif_failure else result.failures
+            for position, failure in enumerate(failures):
                 db.add(
                     RunFailure(
                         organisation_id=context.organisation_id,
