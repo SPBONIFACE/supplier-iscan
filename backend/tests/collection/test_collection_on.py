@@ -239,7 +239,7 @@ def test_a_natural_person_with_a_website_is_still_searched(engine: Engine) -> No
     organisation_id = create_organisation(engine)
     run_id = create_run(engine, organisation_id, stage="collection")
     set_identity(engine, run_id, natural_person=True, website=f"https://{HOST}")
-    adapter = FakeRetrievalAdapter([[]])
+    adapter = FakeRetrievalAdapter([[] for _ in range(4)])  # one per focus
     context = StageContext(
         run_id,
         organisation_id,
@@ -251,7 +251,7 @@ def test_a_natural_person_with_a_website_is_still_searched(engine: Engine) -> No
 
     stage_over(MockSite({(HOST, "/"): html("<p>Home</p>")}))(context)
 
-    assert len(adapter.calls) == 1
+    assert len(adapter.calls) == 4
 
 
 # --- the ceilings on all outbound requests ---------------------------------------------------

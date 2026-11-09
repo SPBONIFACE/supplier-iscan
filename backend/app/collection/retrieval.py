@@ -116,8 +116,7 @@ def make_retriever(
     focuses: tuple[str, ...] = (),
 ) -> RetrieveFn:
     """One request per focus (none: a single request without focus). A focus whose request fails
-    is reported in `failures` of the result and the others still run; when all fail, the last
-    failure is raised."""
+    is reported in `failures` of the result (each with its own kind) and the others still run."""
 
     def retrieve(lacking: list[str], focus: str | None) -> list[str]:
         text = _supplier_text(identity, lacking, focus)
@@ -164,8 +163,6 @@ def make_retriever(
                     raise
                 exhausted = True
                 break
-        if not answers and failures:
-            raise failures[-1]
         merged = RetrievedAddresses(_round_robin(answers))
         merged.failures = failures
         merged.budget_exhausted = exhausted

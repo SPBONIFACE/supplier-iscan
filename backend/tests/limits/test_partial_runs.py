@@ -164,14 +164,14 @@ def test_without_a_budget_problem_a_run_with_no_source_is_still_insufficient_sou
     engine: Engine,
 ) -> None:
     _organisation_id, run_id = start(engine, website=None)
-    adapter = FakeRetrievalAdapter([[]])
+    adapter = FakeRetrievalAdapter([[] for _ in range(4)])  # one per focus
     providers = providers_for(engine, retrieval=adapter, budget=Decimal("5"))
 
     execute_run(environment(engine, pipeline(collection=make_stage({})), providers), run_id)
 
     run = get_run(engine, run_id)
     assert run.status == "insufficient_sources" and run.counts_against_quota is False
-    assert len(adapter.calls) == 1
+    assert len(adapter.calls) == 4
     assert run.uncovered_sections == [] and run.partial_explanation is None
 
 

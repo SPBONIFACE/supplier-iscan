@@ -115,10 +115,13 @@ def test_the_collector_records_a_failed_focus_and_fetches_the_rest() -> None:
     assert len(result.sources) == 1
 
 
-def test_all_focuses_failing_raises_retrieval_failed() -> None:
+def test_all_focuses_failing_gives_no_address_and_one_failure_per_focus() -> None:
     client = FakeClient({"": ProviderCallError(provider="p", config_id="c", kind="timeout")})
-    with pytest.raises(RetrievalFailed):
-        retriever(client, FOCUSES[:2])([])
+
+    urls = retriever(client, FOCUSES[:2])([])
+
+    assert isinstance(urls, RetrievedAddresses) and list(urls) == []
+    assert len(urls.failures) == 2
 
 
 def test_no_focus_keeps_a_single_request_without_focus_line() -> None:
