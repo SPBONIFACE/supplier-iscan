@@ -62,7 +62,7 @@ from app.providers import (
     StructuringRequest,
 )
 from app.redaction import RedactionGate, gate_for
-from app.runs.stages import DependencyUnavailable, Stage, StageContext, StageOutcome
+from app.runs.stages import DependencyUnavailable, RunStopped, Stage, StageContext, StageOutcome
 
 logger = logging.getLogger(__name__)
 
@@ -418,10 +418,11 @@ def _fill_concurrent(
             except BaseException as exc:
                 if first_exc is None:
                     first_exc = exc
-                # Cancel queued futures (running futures cannot be cancelled and will finish or
-                # raise RunBudgetExhausted / stop themselves when they check the budget).
-                for f in future_to_idx:
-                    f.cancel()
+                # Cancel queued futures only on budget/stop signals; a provider error on one
+                # call must not prevent other already-queued calls from running.
+                if isinstance(exc, (RunBudgetExhausted, RunStopped)):
+                    for f in future_to_idx:
+                        f.cancel()
 
     # Merge in canonical order. `pairs` is in source/chunk order, so iterating it in index order
     # gives the canonical merge sequence: first found per field wins.

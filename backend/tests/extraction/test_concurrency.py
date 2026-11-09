@@ -253,18 +253,23 @@ def test_stop_request_keeps_facts_from_already_completed_calls(engine: Engine) -
 
 def test_provider_error_on_one_call_keeps_other_facts(engine: Engine) -> None:
     """With concurrency > 1, a ProviderError on one source does not discard the other sources'
-    facts; they are stored before DependencyUnavailable is re-raised."""
+    facts; they are stored before DependencyUnavailable is re-raised.
+
+    Uses 5 sources with max_workers=2 so that sources 3-5 are queued when the error on src1
+    fires: the fix must NOT cancel those queued futures."""
     organisation_id = create_organisation(engine)
     run_id = create_run(engine, organisation_id, stage="extraction", enqueue=False)
     set_identity(engine, run_id, website=SITE)
     src1 = add_source(engine, organisation_id, run_id, f"{SITE}/about", ABOUT)
-    add_source(
-        engine,
-        organisation_id,
-        run_id,
-        "https://registry.example/acme",
-        "Acme Supplies SA. Main products: industrial valves.",
-    )
+    # Four more sources — with max_workers=2, sources 3-5 are queued when src1 raises.
+    for i in range(2, 6):
+        add_source(
+            engine,
+            organisation_id,
+            run_id,
+            f"https://registry{i}.example/acme",
+            f"Acme source {i}. Main products: industrial valves.",
+        )
 
     def answer(asked: Asked) -> Any:
         if asked.source_id == str(src1):
@@ -285,7 +290,7 @@ def test_provider_error_on_one_call_keeps_other_facts(engine: Engine) -> None:
             organisation_id,
             run_id,
             adapter,
-            concurrency=4,
+            concurrency=2,  # 5 sources → sources 3-5 queued; fix keeps them running
             groups_per_call=0,
         )
 
