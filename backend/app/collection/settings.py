@@ -16,7 +16,12 @@
 - `COLLECT_MAX_REQUESTS` (200): ALL outbound requests per run, permission checks, redirect hops
   and retries included; none is sent beyond it and the run continues with what it has.
 - `COLLECT_MAX_DOMAINS` (10): distinct domains contacted per run; a further one is refused.
-- `COLLECT_MAX_RETRIEVAL_URLS` (8): addresses of the retrieval provider fetched per run.
+- `COLLECT_MAX_RETRIEVAL_URLS` (12): addresses of the retrieval provider fetched per run.
+- `COLLECT_RETRIEVAL_FOCUSES` (`registers,certifications,news,customers`): the focuses of the
+  retrieval step, one provider request each, in this order (only these four names are known).
+  Set to an empty value, it keeps a single, unfocused request.
+- `COLLECT_RESERVED_INDEPENDENT` (6): page slots of `COLLECT_MAX_PAGES` kept for addresses outside
+  the supplier's website; the website crawl stores at most `max_pages` minus this (never below 1).
 - `COLLECT_MAX_LINKED_PDFS` (3): PDFs followed per run from retrieved pages of other sites.
 The request timeout is `FETCH_TIMEOUT_SECONDS` of the HTTP client (#15).
 """
@@ -26,6 +31,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from app.config import ConfigurationError
+
+FOCUSES = ("registers", "certifications", "news", "customers")
 
 
 @dataclass(frozen=True)
@@ -42,10 +49,17 @@ class CollectionSettings:
     max_sitemap_urls: int = 2000
     max_sitemap_bytes: int = 2_000_000
     max_attempts: int = 60
-    max_retrieval_urls: int = 8
+    max_retrieval_urls: int = 12
     max_requests: int = 200
     max_domains: int = 10
     max_linked_pdfs: int = 3
+    reserved_independent: int = 6
+    retrieval_focuses: tuple[str, ...] = FOCUSES
+
+    @property
+    def crawl_pages(self) -> int:
+        """Pages the website crawl may store; the rest of `max_pages` is reserved."""
+        return max(self.max_pages - self.reserved_independent, 1)
 
 
 def _number(env: Mapping[str, str], name: str, default: float, *, whole: bool) -> float:
@@ -59,6 +73,18 @@ def _number(env: Mapping[str, str], name: str, default: float, *, whole: bool) -
     if value < 0 or value > 10_000_000_000:
         raise ConfigurationError(f"{name} is out of range")
     return value
+
+
+def _focuses(env: Mapping[str, str], default: tuple[str, ...]) -> tuple[str, ...]:
+    if "COLLECT_RETRIEVAL_FOCUSES" not in env:
+        return default
+    names = tuple(
+        n.strip().lower() for n in env["COLLECT_RETRIEVAL_FOCUSES"].split(",") if n.strip()
+    )
+    unknown = [n for n in names if n not in FOCUSES]
+    if unknown:
+        raise ConfigurationError("COLLECT_RETRIEVAL_FOCUSES has an unknown focus")
+    return tuple(dict.fromkeys(names))
 
 
 def load_collection_settings(environ: Mapping[str, str] | None = None) -> CollectionSettings:
@@ -87,4 +113,6 @@ def load_collection_settings(environ: Mapping[str, str] | None = None) -> Collec
         max_requests=whole("COLLECT_MAX_REQUESTS", d.max_requests),
         max_domains=whole("COLLECT_MAX_DOMAINS", d.max_domains),
         max_linked_pdfs=whole("COLLECT_MAX_LINKED_PDFS", d.max_linked_pdfs),
+        reserved_independent=whole("COLLECT_RESERVED_INDEPENDENT", d.reserved_independent),
+        retrieval_focuses=_focuses(env, d.retrieval_focuses),
     )
