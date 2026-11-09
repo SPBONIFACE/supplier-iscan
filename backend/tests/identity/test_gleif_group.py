@@ -215,6 +215,19 @@ def test_a_candidate_that_has_an_lei_keeps_it(engine: Engine, settings: Settings
     assert ids["lei"] == "5299000OWN0000000001"
 
 
+def test_a_wikidata_proposal_shows_the_group_of_its_gleif_twin(
+    engine: Engine, settings: Settings
+) -> None:
+    group = FakeGroup(PARENT)
+    harness, member = setup(engine, settings, found(WIKIDATA, TWIN), model=[proposal("wd:Q5")])
+    harness.services.group = group
+
+    session = member.open()
+
+    assert "Part of group: Acme Holding GmbH, Munich, DE" in proposal_turn(session)["text"]
+    assert group.asked == ["5299000TWIN000000001"]
+
+
 def test_names_compare_without_case_accents_punctuation_and_form() -> None:
     assert comparable_name("Société Acme S.A.S.") == comparable_name("SOCIETE ACME")
     assert comparable_name("Acme GmbH & Co. KG") == "acme"

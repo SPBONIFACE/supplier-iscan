@@ -26,7 +26,12 @@ from app.http_client import (
     is_public_address,
     normalise_url,
 )
-from app.identity.candidates import STATED_COUNTRY, entry_from_registry, entry_from_website
+from app.identity.candidates import (
+    STATED_COUNTRY,
+    entry_from_registry,
+    entry_from_website,
+    unique_active_lei,
+)
 from app.identity.services import IdentityServices
 from app.identity.strings import disclosure_text, message
 from app.llm_schemas import IdentityProposal
@@ -230,8 +235,9 @@ class IdentityAgent:
     def _group_line(self, session: IdentitySession, chosen: dict[str, Any]) -> str | None:
         """The group of the proposed candidate (#142): its ultimate (else direct) parent from
         GLEIF, when it is another entity. The parent joins the session's candidates so the buyer
-        can choose it. A GLEIF failure or a missing relation changes nothing."""
-        lei = chosen.get("lei")
+        can choose it. A GLEIF failure or a missing relation changes nothing. A candidate without
+        an LEI uses the one it would get at confirmation."""
+        lei = chosen.get("lei") or unique_active_lei(chosen, session.candidates)
         group = self._services.group
         if not lei or group is None:
             return None
