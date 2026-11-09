@@ -18,7 +18,8 @@
 - `COLLECT_MAX_DOMAINS` (10): distinct domains contacted per run; a further one is refused.
 - `COLLECT_MAX_RETRIEVAL_URLS` (12): addresses of the retrieval provider fetched per run.
 - `COLLECT_RETRIEVAL_FOCUSES` (`registers,certifications,news,customers`): the focuses of the
-  retrieval step, one provider request each, in this order (only these four names are known).
+  retrieval step, one provider request each, sent at the same time (a thread pool, one worker per
+  focus) and merged in this order whatever the order of arrival (only these four names are known).
   Set to an empty value, it keeps a single, unfocused request.
 - `COLLECT_RESERVED_INDEPENDENT` (6): page slots of `COLLECT_MAX_PAGES` kept for addresses outside
   the supplier's website; the website crawl stores at most `max_pages` minus this (never below 1).

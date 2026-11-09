@@ -1,5 +1,7 @@
 """#141: focused retrieval requests and a reserved budget for independent sources."""
 
+import threading
+import time
 from types import SimpleNamespace
 from typing import Any
 
@@ -11,6 +13,7 @@ from app.collection.retrieval import IdentityRecord, make_retriever
 from app.collection.settings import FOCUSES, CollectionSettings, load_collection_settings
 from app.collection.source_store import IdentityRedaction
 from app.config import ConfigurationError
+from app.limits.budget import RunBudgetExhausted
 from app.prompts import load_prompt_set
 from app.providers import ProviderCallError, RetrievedUrl
 from app.redaction.text import mint
@@ -27,12 +30,20 @@ class FakeGate:
 
 
 class FakeClient:
-    def __init__(self, answers: dict[str, list[str] | Exception]) -> None:
+    def __init__(
+        self, answers: dict[str, list[str] | Exception], delays: dict[str, float] | None = None
+    ) -> None:
         self.answers = answers
+        self.delays = delays or {}
         self.queries: list[str] = []
+        self.threads: set[int] = set()
 
     def retrieve(self, request: Any, _context: Any) -> Any:
-        self.queries.append(request.query.text)
+        self.queries.append(request.query.text)  # list.append is atomic
+        self.threads.add(threading.get_ident())
+        for focus, delay in self.delays.items():
+            if f"Focus: {focus}" in request.query.text:
+                time.sleep(delay)
         for focus, answer in self.answers.items():
             if focus and f"Focus: {focus}" in request.query.text:
                 if isinstance(answer, Exception):
@@ -71,12 +82,8 @@ def test_four_focuses_four_requests_in_order_merged_round_robin_without_duplicat
     urls = retriever(client, FOCUSES)([])
 
     assert len(client.queries) == 4
-    for query, word in zip(
-        client.queries,
-        ("official registers", "certification bodies", "news and trade", "pages naming"),
-        strict=True,
-    ):
-        assert f"Focus: {word}" in query
+    for word in ("official registers", "certification bodies", "news and trade", "pages naming"):
+        assert sum(f"Focus: {word}" in query for query in client.queries) == 1
     assert list(urls) == [
         "https://r.example/1",
         "https://c.example/1",
@@ -198,3 +205,62 @@ def test_settings_defaults_and_environment() -> None:
     assert load_collection_settings({"COLLECT_RETRIEVAL_FOCUSES": ""}).retrieval_focuses == ()
     with pytest.raises(ConfigurationError):
         load_collection_settings({"COLLECT_RETRIEVAL_FOCUSES": "bogus"})
+
+
+def test_answers_arriving_in_reverse_order_are_merged_in_the_configured_order() -> None:
+    delays = {"official registers": 0.4, "certification bodies": 0.3, "news and trade": 0.2}
+    client = FakeClient(dict(ANSWERS), delays)
+
+    started = time.monotonic()
+    urls = retriever(client, FOCUSES)([])
+    elapsed = time.monotonic() - started
+
+    assert elapsed < 0.85  # at the same time: not 0.9 s one after another
+    assert len(client.threads) > 1
+    assert list(urls)[:4] == [
+        "https://r.example/1",
+        "https://c.example/1",
+        "https://n.example/1",
+        "https://u.example/1",
+    ]
+
+
+def test_a_budget_ending_with_answers_in_hand_keeps_them() -> None:
+    answers = dict(ANSWERS)
+    answers["certification bodies"] = RunBudgetExhausted()
+    client = FakeClient(answers)
+
+    urls = retriever(client, FOCUSES)([])
+
+    assert isinstance(urls, RetrievedAddresses) and urls.budget_exhausted
+    assert "https://r.example/1" in urls and "https://c.example/1" not in urls
+
+
+def test_the_budget_exhausted_with_no_answer_raises() -> None:
+    client = FakeClient({"": RunBudgetExhausted()})
+
+    with pytest.raises(RunBudgetExhausted):
+        retriever(client, FOCUSES)([])
+
+
+def test_no_request_starts_once_the_budget_is_exhausted() -> None:
+    # The first call to run signals the end of the budget; later ones must not reach the client.
+    class Client(FakeClient):
+        def retrieve(self, request: Any, _context: Any) -> Any:
+            super().retrieve(request, _context)
+            raise RunBudgetExhausted
+
+    client = Client({})
+    providers = SimpleNamespace(retrieval=lambda: client)
+    retr = make_retriever(
+        providers,  # type: ignore[arg-type]
+        load_prompt_set(),
+        FakeGate(),  # type: ignore[arg-type]
+        IdentityRedaction(),
+        IDENTITY,
+        None,  # type: ignore[arg-type]
+        FOCUSES,
+    )
+    with pytest.raises(RunBudgetExhausted):
+        retr([])
+    assert 1 <= len(client.queries) <= 4

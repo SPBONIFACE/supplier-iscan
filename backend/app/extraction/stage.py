@@ -63,6 +63,10 @@ from app.runs.stages import DependencyUnavailable, Stage, StageContext, StageOut
 logger = logging.getLogger(__name__)
 
 PROMPT_ID: Final = "extraction"
+# One call may answer for every fact field (46 today): up to about 160 tokens per found item (a
+# quote of 300 characters, a value, a source id), so 46 items need about 7400; twice the default
+# of the interface leaves room for a longer profile definition.
+MAX_OUTPUT_TOKENS: Final = 16_384
 
 
 @dataclass(frozen=True)
@@ -225,7 +229,9 @@ def ask(
         addresses=redaction.addresses,
         company_names=redaction.company_names,
     )
-    request = StructuringRequest(instructions=rendered.instructions, data=data)
+    request = StructuringRequest(
+        instructions=rendered.instructions, data=data, max_output_tokens=MAX_OUTPUT_TOKENS
+    )
     valid: list[FieldExtraction] = []
     invalid = 0
     for _ in range(1 + client.max_retries):  # a retry is a call: it counts against the budget
@@ -267,10 +273,11 @@ def make_extraction_stage(
             return None
         client: StructuringClient | None = None
         gate = gate_for(database)
-        for section_id, items in todo:
-            tally = Tally()
+        for batch in _batches(todo, limits.groups_per_call):
+            section_of = {item.id: name for name, items in batch for item in items}
+            tallies = {name: Tally() for name, _items in batch}
             kept: dict[str, Kept] = {}
-            pending = list(items)
+            pending = [item for _name, items in batch for item in items]
             try:
                 for source in sources:
                     if not pending:
@@ -292,24 +299,54 @@ def make_extraction_stage(
                             pending,
                             supplier,
                         )
-                        tally.invalid_items += dropped
+                        _count_dropped(tallies, section_of, pending, answered, dropped)
                         for item in answered:
                             if item.status != "found" or item.field in kept:
                                 continue
+                            tally = tallies[section_of.get(item.field, batch[0][0])]
                             result = judge(item, source, tally, wanted, limits, supplier)
                             if result is not None:
                                 kept[item.field] = result
                         pending = [i for i in pending if i.id not in kept]
             except RunBudgetExhausted:
-                # The budget ended this section part-way (#30): keep the values already found and
+                # The budget ended this batch part-way (#30): keep the values already found and
                 # store nothing for the fields not examined (a `not_found` there would say "No
                 # public evidence found" of text that was never read). The run ends `partial`.
-                _store(context, section_id, items, kept, tally, complete=False)
+                for name, items in batch:
+                    _store(context, name, items, kept, tallies[name], complete=False)
                 raise
-            _store(context, section_id, items, kept, tally)
+            for name, items in batch:
+                _store(context, name, items, kept, tallies[name])
         return None
 
     return stage
+
+
+def _batches(
+    todo: list[tuple[str, list[FieldDefinition]]], per_call: int
+) -> list[list[tuple[str, list[FieldDefinition]]]]:
+    """The groups in batches of `per_call` consecutive groups (0: all in one batch)."""
+    size = per_call if per_call > 0 else max(len(todo), 1)
+    return [todo[start : start + size] for start in range(0, len(todo), size)]
+
+
+def _count_dropped(
+    tallies: dict[str, Tally],
+    section_of: dict[str, str],
+    pending: list[FieldDefinition],
+    answered: list[FieldExtraction],
+    dropped: int,
+) -> None:
+    """Items dropped as invalid, counted on the sections of the call. An unusable answer loses
+    every field of the call: each section is charged its own pending fields. Otherwise the
+    dropped items name no known field and go to the first section of the call."""
+    if dropped == 0:
+        return
+    if not answered and dropped == len(pending):
+        for item in pending:
+            tallies[section_of[item.id]].invalid_items += 1
+        return
+    tallies[section_of[pending[0].id]].invalid_items += dropped
 
 
 def _client(providers: Providers | None) -> StructuringClient:
