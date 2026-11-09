@@ -93,7 +93,9 @@ def sources_of(engine: Engine) -> list[Source]:
 
 def test_retrieved_urls_are_stored_like_sources_and_the_snippet_never_is(engine: Engine) -> None:
     _org, run_id = start(engine, country="FR")
-    adapter = FakeRetrievalAdapter([[RetrievedUrl(url=f"https://{OTHER}/iso", snippet=SNIPPET)]])
+    adapter = FakeRetrievalAdapter(
+        [[RetrievedUrl(url=f"https://{OTHER}/iso", snippet=SNIPPET)], [], [], []]
+    )
     sink = ListSink()
     stage = make_stage(
         {
@@ -109,12 +111,13 @@ def test_retrieved_urls_are_stored_like_sources_and_the_snippet_never_is(engine:
     assert all(SNIPPET not in s.redacted_text for s in sources_of(engine))
     assert all(SNIPPET not in f.message for f in failures_of(engine, run_id))
     assert get_run(engine, run_id).status == "completed"
-    (call,) = adapter.calls  # identity record and lacking groups, through the gate
-    text = call.query.text
-    assert "Acme Supplies SA" in text and "FR" in text and f"https://{HOST}" in text
-    assert "about" in text and "certifications" in text
-    # metered through #12 against the run
-    assert [(e.role, e.run_id) for e in sink.entries] == [("retrieval", run_id)]
+    assert len(adapter.calls) == 4  # one request per focus
+    for call in adapter.calls:  # identity record and lacking groups, through the gate
+        text = call.query.text
+        assert "Acme Supplies SA" in text and "FR" in text and f"https://{HOST}" in text
+        assert "about" in text and "certifications" in text
+    # metered through #12 against the run, once per request
+    assert [(e.role, e.run_id) for e in sink.entries] == [("retrieval", run_id)] * 4
 
 
 def test_a_natural_persons_name_and_address_are_redacted_before_the_provider(
@@ -126,14 +129,15 @@ def test_a_natural_persons_name_and_address_are_redacted_before_the_provider(
         legal_name="Zoe Brandstetter",
         registered_address="12 Rue des Lilas, 69003 Lyon",
     )
-    adapter = FakeRetrievalAdapter([[]])
+    adapter = FakeRetrievalAdapter([[] for _ in range(4)])
     stage = make_stage({})
 
     execute_run(environment(engine, stage, providers_with(adapter)), run_id)
 
-    (call,) = adapter.calls
-    assert "Brandstetter" not in call.query.text and "Zoe" not in call.query.text
-    assert "Lilas" not in call.query.text and "[…]" in call.query.text
+    assert len(adapter.calls) == 4  # every focus's request passes the gate
+    for call in adapter.calls:
+        assert "Brandstetter" not in call.query.text and "Zoe" not in call.query.text
+        assert "Lilas" not in call.query.text and "[…]" in call.query.text
 
 
 def test_a_provider_outage_is_logged_and_the_run_continues_with_its_other_sources(
@@ -143,7 +147,10 @@ def test_a_provider_outage_is_logged_and_the_run_continues_with_its_other_source
     outage = ProviderCallError(provider="google", config_id="primary", kind="unavailable")
     stage = make_stage({(HOST, "/"): html("<p>Acme Supplies SA</p>")})
 
-    execute_run(environment(engine, stage, providers_with(FakeRetrievalAdapter([outage]))), run_id)
+    execute_run(
+        environment(engine, stage, providers_with(FakeRetrievalAdapter([outage, [], [], []]))),
+        run_id,
+    )
 
     run = get_run(engine, run_id)
     assert run.status == "completed"
@@ -157,10 +164,14 @@ def test_an_unusable_provider_answer_is_logged_and_the_run_continues(engine: Eng
     bad = ProviderCallError(provider="google", config_id="primary", kind="invalid_response")
     stage = make_stage({(HOST, "/"): html("<p>Acme Supplies SA</p>")})
 
-    execute_run(environment(engine, stage, providers_with(FakeRetrievalAdapter([bad]))), run_id)
+    adapter = FakeRetrievalAdapter([bad, [], bad, []])
 
-    kinds = [f.kind for f in failures_of(engine, run_id)]
-    assert "invalid_response" in kinds and get_run(engine, run_id).status == "completed"
+    execute_run(environment(engine, stage, providers_with(adapter)), run_id)
+
+    # each focus's failure keeps its own kind; the other focuses still ran
+    kinds = [f.kind for f in failures_of(engine, run_id) if f.strategy == "retrieval"]
+    assert kinds == ["invalid_response", "invalid_response"] and len(adapter.calls) == 4
+    assert get_run(engine, run_id).status == "completed"
 
 
 def test_when_every_strategy_fails_the_run_ends_insufficient_sources_without_quota(
