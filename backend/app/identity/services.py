@@ -19,11 +19,16 @@ from app.registries import (
     build_registry_service,
     load_registry_settings,
 )
+from app.registries.gleif_group import GleifEntity
 from app.registries.guarded_fetch import GuardedFetch
 
 
 class RegistrySearcher(Protocol):
     async def search(self, query: RegistrySearchQuery) -> RegistrySearchResult: ...
+
+
+class GroupLookup(Protocol):
+    async def parent_of(self, lei: str) -> GleifEntity | None: ...
 
 
 class AsyncRunner:
@@ -46,6 +51,8 @@ class IdentityServices:
     runner: AsyncRunner
     # The guarded client of #15: the only way the identity chat reaches a supplier's website.
     http: GuardedClient
+    # The parent company of a candidate with an LEI (#142); None: no group lookup.
+    group: GroupLookup | None = None
 
     def close(self) -> None:
         self.runner.close()
@@ -56,8 +63,10 @@ def build_identity_services() -> IdentityServices:
     registry_settings = load_registry_settings()
     client = GuardedClient()
     fetch = GuardedFetch(client, registry_settings.timeout_seconds)
+    registries = build_registry_service(registry_settings, fetch)
     return IdentityServices(
-        registries=build_registry_service(registry_settings, fetch),
+        registries=registries,
         runner=AsyncRunner(),
         http=client,
+        group=registries.gleif_group,
     )

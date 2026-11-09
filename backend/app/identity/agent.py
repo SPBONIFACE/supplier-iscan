@@ -227,6 +227,28 @@ class IdentityAgent:
             logger.warning("Identity agent call failed: %s", type(error).__name__)
             return None
 
+    def _group_line(self, session: IdentitySession, chosen: dict[str, Any]) -> str | None:
+        """The group of the proposed candidate (#142): its ultimate (else direct) parent from
+        GLEIF, when it is another entity. The parent joins the session's candidates so the buyer
+        can choose it. A GLEIF failure or a missing relation changes nothing."""
+        lei = chosen.get("lei")
+        group = self._services.group
+        if not lei or group is None:
+            return None
+        try:
+            parent = self._services.runner.run(group.parent_of(lei))
+        except Exception as error:  # noqa: BLE001 - the group is a courtesy, never an error
+            logger.warning("GLEIF parent lookup failed: %s", type(error).__name__)
+            return None
+        if parent is None or parent.lei == lei:
+            return None
+        entry = entry_from_registry(parent.candidate)
+        if all(_public(known)["id"] != _public(entry)["id"] for known in session.candidates):
+            session.candidates = [*session.candidates, entry]
+        return message(
+            "group_line", session.ui_language, name=parent.legal_name, place=parent.place()
+        )
+
     def _propose(self, session: IdentitySession, turns: list[dict[str, Any]]) -> None:
         """Ask the model about the current candidates and append its turn(s)."""
         if not session.candidates:
@@ -258,6 +280,9 @@ class IdentityAgent:
         chosen = by_id.get(proposal.candidate_id or "") or session.candidates[0]
         session.current_candidate_id = _public(chosen)["id"]
         text = question or message("confirm_question", language)
+        group_line = self._group_line(session, chosen)
+        if group_line:
+            text = f"{text}\n{group_line}"
         turns.append(new_turn("assistant", "proposal", text, _public(chosen)))
 
     # --- operations --------------------------------------------------------------------------

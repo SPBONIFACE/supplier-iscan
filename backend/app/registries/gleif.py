@@ -68,6 +68,12 @@ def _candidate(record: Any) -> RegistryCandidate | None:
     )
 
 
+# Public names of the helpers above, for the group lookups of ``app.registries.gleif_group``.
+address_text = _address
+candidate_from_record = _candidate
+clean_text = _text
+
+
 class GleifRegistry:
     name: RegistryName = "gleif"
 

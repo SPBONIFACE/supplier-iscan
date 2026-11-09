@@ -18,7 +18,7 @@ from app.db import DbSession, utc_now
 from app.errors import InvalidField
 from app.http_client import FetchError, normalise_url
 from app.identity.agent import IdentityAgent, hint_url
-from app.identity.candidates import STATED_COUNTRY
+from app.identity.candidates import STATED_COUNTRY, unique_active_lei
 from app.identity.services import IdentityServices, build_identity_services
 from app.identity.strings import disclosure_text
 from app.models import IdentitySession, SupplierIdentity
@@ -321,6 +321,9 @@ def confirm_identity(
     stated = session.hints.get(STATED_COUNTRY)
     if stated and stated != entry.get("country_code"):
         country = stated  # the buyer's word, not the registry's
+    if not entry.get("lei"):
+        # A candidate without an LEI gets the one of its unique active GLEIF twin (#142).
+        entry = {**entry, "lei": unique_active_lei(entry, session.candidates)}
     identity = scope.new(
         SupplierIdentity,
         legal_name=candidate["legal_name"][:300],

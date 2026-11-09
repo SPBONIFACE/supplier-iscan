@@ -6,6 +6,7 @@ from typing import Any
 
 from app.countries import normalise_code
 from app.registries import RegistryCandidate
+from app.registries.text import match_key
 
 # Legal forms of a sole trader or another natural-person business (spec F1, F8 excluded uses).
 # Matched on the legal-form label published by the registry; a form not listed is not flagged.
@@ -76,6 +77,7 @@ def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
         "natural_person": natural_person,
         "wikidata_id": candidate.wikidata_id,
         "lei": candidate.lei,
+        "lei_status": candidate.lei_status,
         "country_code": normalise_code(
             candidate.country
         ),  # same as the public one; kept for #135 rows
@@ -83,6 +85,43 @@ def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
         # personal data, kept for redaction. A company's address is not kept.
         "registered_address": candidate.registered_address if natural_person else None,
     }
+
+
+# Legal-form words dropped from the end of a legal name before two names are compared (#142).
+_FORM_WORDS = frozenset(
+    "sa sas sasu sarl eurl sca snc gmbh ag se kg ohg ug mbh co ltd limited llc llp lp inc corp "
+    "corporation incorporated company plc bv nv spa srl sl slu ab as asa oy oyj aps sp zoo "
+    "pty pte".split()
+)
+
+
+def comparable_name(name: str) -> str:
+    """A legal name without case, accents, punctuation and trailing legal-form words."""
+    words = match_key(name.replace(".", "")).split()
+    while len(words) > 1 and words[-1] in _FORM_WORDS:
+        words.pop()
+    return " ".join(words)
+
+
+def unique_active_lei(entry: dict[str, Any], entries: list[dict[str, Any]]) -> str | None:
+    """The LEI an LEI-less candidate gets at confirmation (#142): the LEI of the one active GLEIF
+    candidate of the session with the same comparable legal name and the same country; None
+    when there is none, or more than one."""
+    country = entry["candidate"].get("country")
+    name = comparable_name(entry["candidate"]["legal_name"])
+    if not country or not name:
+        return None
+    leis = {
+        other["lei"]
+        for other in entries
+        if other is not entry
+        and other.get("lei")
+        and str(other.get("lei_status") or "").upper() == "ACTIVE"
+        and "gleif" in other["candidate"].get("found_in", [])
+        and other["candidate"].get("country") == country
+        and comparable_name(other["candidate"]["legal_name"]) == name
+    }
+    return leis.pop() if len(leis) == 1 else None
 
 
 def entry_from_website(name: str, final_url: str, domain: str) -> dict[str, Any]:

@@ -29,6 +29,17 @@ def host_of(url: str) -> str | None:
     return host or None
 
 
+# Official registers whose pages are built by the collection itself (#142): the public GLEIF
+# record page. Their sources are independent of the supplier, so `classify_source` types them
+# `third_party` (the contract has no third value); `is_official_register` tells them apart.
+OFFICIAL_REGISTER_HOSTS = frozenset({"search.gleif.org"})
+
+
+def is_official_register(url: str) -> bool:
+    host = host_of(url)
+    return host is not None and host in OFFICIAL_REGISTER_HOSTS
+
+
 def _is_own(host: str, own: str) -> bool:
     return host == own or host.endswith("." + own)
 
