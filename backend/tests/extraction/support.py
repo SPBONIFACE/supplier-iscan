@@ -173,12 +173,20 @@ def context_for(
     )
 
 
-def stage(max_input_chars: int = 20_000, groups_per_call: int = 1) -> Stage:
+def stage(
+    max_input_chars: int = 20_000,
+    groups_per_call: int = 1,
+    extract_concurrency: int = 1,
+) -> Stage:
     """The stage; one call per section by default, which most tests are written for (#147)."""
     return make_extraction_stage(
         DEFINITION,
         PROMPTS,
-        ExtractionSettings(max_input_chars=max_input_chars, groups_per_call=groups_per_call),
+        ExtractionSettings(
+            max_input_chars=max_input_chars,
+            groups_per_call=groups_per_call,
+            extract_concurrency=extract_concurrency,
+        ),
     )
 
 

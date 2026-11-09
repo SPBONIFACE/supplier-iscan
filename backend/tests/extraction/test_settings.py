@@ -1,4 +1,4 @@
-"""Extraction settings (#23): the input size and the IAF CertSearch link."""
+"""Extraction settings (#23, #150): the input size, the IAF CertSearch link, and concurrency."""
 
 import pytest
 
@@ -51,3 +51,22 @@ def test_the_minimum_quote_has_defaults_and_can_be_set() -> None:
 
     assert (default.min_quote_chars, default.min_quote_chars_cjk) == (12, 4)
     assert (custom.min_quote_chars, custom.min_quote_chars_cjk) == (20, 6)
+
+
+# --- EXTRACT_CONCURRENCY (#150) ---
+
+
+def test_extract_concurrency_defaults_to_1() -> None:
+    assert load_extraction_settings({}).extract_concurrency == 1
+
+
+def test_extract_concurrency_can_be_set_to_any_valid_value() -> None:
+    for n in ("1", "2", "4", "8"):
+        assert load_extraction_settings({"EXTRACT_CONCURRENCY": n}).extract_concurrency == int(n)
+
+
+@pytest.mark.parametrize("value", ["0", "9", "abc", "-1", "10"])
+def test_invalid_extract_concurrency_raises_configuration_error(value: str) -> None:
+    with pytest.raises(ConfigurationError) as caught:
+        load_extraction_settings({"EXTRACT_CONCURRENCY": value})
+    assert "EXTRACT_CONCURRENCY" in str(caught.value) and value not in str(caught.value)
