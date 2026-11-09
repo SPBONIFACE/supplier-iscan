@@ -52,7 +52,7 @@ def setup(
 ) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
     organisation_id = create_organisation(engine)
     run_id = create_run(engine, organisation_id, stage="extraction", enqueue=False)
-    set_identity(engine, run_id, website=SITE, **identity)
+    set_identity(engine, run_id, **{"website": SITE, **identity})
     source_id = add_source(engine, organisation_id, run_id, url, text)
     return organisation_id, run_id, source_id
 
@@ -909,3 +909,44 @@ def test_the_suppliers_own_page_without_its_name_still_yields_facts(engine: Engi
 
     fact = facts_of(engine, run_id)["founding_year"]
     assert fact.status == "proposed" and fact.source_type == "supplier_claim"
+
+
+@pytest.mark.parametrize(
+    ("legal_name", "website", "text", "kept"),
+    [
+        ("BERICAP HOLDING GMBH", None, "Bericap opened a plant. Founded in 2005 in Lyon.", True),
+        ("BERICAP GmbH & Co. KG", None, "Bericap opened a plant. Founded in 2005 in Lyon.", True),
+        ("Foo S.A.S.", None, "Foo opened a plant. Founded in 2005 in Lyon.", False),  # < 4 chars
+        (
+            "Zeta Industries",
+            "https://www.acme-supplies.co.uk",
+            "ACME Supplies: Founded in 2005 in Lyon.",
+            True,
+        ),
+        (
+            "Zeta Industries",
+            "https://www.acme-supplies.co.uk",
+            "acme-supplies grew. Founded in 2005 in Lyon.",
+            True,
+        ),
+        ("Zeta Industries", "https://abc.com", "ABC makes caps. Founded in 2005 in Lyon.", False),
+        (
+            "Zeta Industries",
+            "https://bericap.com",
+            "The bericaps are sold. Founded in 2005 in Lyon.",
+            False,
+        ),
+    ],
+)
+def test_a_third_party_page_may_use_the_trade_name_or_the_website_label(
+    engine: Engine, legal_name: str, website: str | None, text: str, kept: bool
+) -> None:
+    organisation_id, run_id, _source = setup(
+        engine, text, url="https://press.example/a", legal_name=legal_name, website=website
+    )
+    respond = only("founding_year", "2005", "Founded in 2005 in Lyon")
+
+    run_stage(engine, organisation_id, run_id, scripted(respond))
+
+    status = facts_of(engine, run_id)["founding_year"].status
+    assert status == ("proposed" if kept else "not_found")

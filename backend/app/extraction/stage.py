@@ -41,6 +41,7 @@ from app.extraction.grounding import (
     quote_long_enough,
     supplier_names,
     value_supported,
+    website_labels,
 )
 from app.extraction.settings import ExtractionSettings, load_extraction_settings
 from app.extraction.source_type import classify_source, host_of, registry_domains
@@ -104,7 +105,7 @@ class Supplier:
         if self.natural_person:
             return True
         host = host_of(self.website) if self.website else None
-        return names_supplier(source.folded, supplier_names(self.name), host)
+        return names_supplier(source.folded, supplier_names(self.name), host, website_labels(host))
 
 
 @dataclass(frozen=True)
