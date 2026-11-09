@@ -177,8 +177,13 @@ def test_budget_exhausted_stops_new_calls_keeps_found_facts_run_ends_partial(
     adapter = scripted(answer)
     with pytest.raises(RunBudgetExhausted):
         run_concurrent(
-            engine, organisation_id, run_id, adapter,
-            concurrency=4, groups_per_call=1, check_stop=check_stop,
+            engine,
+            organisation_id,
+            run_id,
+            adapter,
+            concurrency=4,
+            groups_per_call=1,
+            check_stop=check_stop,
         )
 
     facts = facts_of(engine, run_id)
@@ -229,8 +234,13 @@ def test_stop_request_keeps_facts_from_already_completed_calls(engine: Engine) -
     adapter = scripted(answer)
     with pytest.raises(_StopRequest):
         run_concurrent(
-            engine, organisation_id, run_id, adapter,
-            concurrency=4, groups_per_call=1, check_stop=check_stop,
+            engine,
+            organisation_id,
+            run_id,
+            adapter,
+            concurrency=4,
+            groups_per_call=1,
+            check_stop=check_stop,
         )
 
     facts = facts_of(engine, run_id)
@@ -271,8 +281,12 @@ def test_provider_error_on_one_call_keeps_other_facts(engine: Engine) -> None:
     adapter = scripted(answer)
     with pytest.raises(DependencyUnavailable):
         run_concurrent(
-            engine, organisation_id, run_id, adapter,
-            concurrency=4, groups_per_call=0,
+            engine,
+            organisation_id,
+            run_id,
+            adapter,
+            concurrency=4,
+            groups_per_call=0,
         )
 
     facts = facts_of(engine, run_id)
