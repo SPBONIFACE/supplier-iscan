@@ -47,7 +47,8 @@ def open_with(
 
 
 def proposal_turn(session: dict[str, Any]) -> dict[str, Any]:
-    (turn,) = [t for t in session["turns"] if t["kind"] == "proposal"]
+    turns: list[dict[str, Any]] = [t for t in session["turns"] if t["kind"] == "proposal"]
+    (turn,) = turns
     return turn
 
 
