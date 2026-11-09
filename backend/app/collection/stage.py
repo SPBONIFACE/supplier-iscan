@@ -94,12 +94,16 @@ def make_collection_stage(
                 redaction,
                 record,
                 context.call_context,
+                limits.retrieval_focuses,
             )
 
             def budgeted(lacking: list[str]) -> list[str]:
                 nonlocal budget_reached
                 try:
-                    return search(lacking)
+                    found = search(lacking)
+                    if getattr(found, "budget_exhausted", False):
+                        budget_reached = True
+                    return found
                 except RunBudgetExhausted:
                     # The call was not made (#30). The failure log says so, the collected
                     # sources are kept, and the run ends `partial` once they are stored.

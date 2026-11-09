@@ -68,7 +68,9 @@ def test_pages_come_from_links_and_sitemap_indexes_and_pdfs_are_collected() -> N
 
 
 def test_the_number_of_pages_per_run_is_capped() -> None:
-    settings = CollectionSettings(max_pages=3, min_delay_seconds=0, backoff_seconds=0)
+    settings = CollectionSettings(
+        max_pages=3, reserved_independent=0, min_delay_seconds=0, backoff_seconds=0
+    )
     collector, _site, stored, _s, _ = make_collector(site_pages(), settings)
 
     collector.collect(SITE, NAME)
