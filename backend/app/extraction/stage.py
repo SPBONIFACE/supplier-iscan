@@ -596,7 +596,7 @@ def _store(
         "%d invalid items",
         context.run_id,
         section_id,
-        len(kept),
+        sum(1 for item in items if item.id in kept),
         len(items),
         tally.grounding_failures,
         tally.invalid_items,

@@ -18,9 +18,10 @@
 - `COLLECT_MAX_DOMAINS` (10): distinct domains contacted per run; a further one is refused.
 - `COLLECT_MAX_RETRIEVAL_URLS` (12): addresses of the retrieval provider fetched per run.
 - `COLLECT_RETRIEVAL_FOCUSES` (`registers,certifications,news,customers`): the focuses of the
-  retrieval step, one provider request each, sent at the same time (a thread pool, one worker per
-  focus) and merged in this order whatever the order of arrival (only these four names are known).
-  Set to an empty value, it keeps a single, unfocused request.
+  retrieval step, one provider request each, merged in this order whatever the order of arrival
+  (only these four names are known). Set to an empty value, it keeps a single, unfocused request.
+- `COLLECT_RETRIEVAL_CONCURRENCY` (2): focused requests in flight at the same time (at least 1;
+  1 sends them one after another; above the number of focuses, that number is used).
 - `COLLECT_RESERVED_INDEPENDENT` (6): page slots of `COLLECT_MAX_PAGES` kept for addresses outside
   the supplier's website; the website crawl stores at most `max_pages` minus this (never below 1).
 - `COLLECT_MAX_LINKED_PDFS` (3): PDFs followed per run from retrieved pages of other sites.
@@ -56,6 +57,7 @@ class CollectionSettings:
     max_linked_pdfs: int = 3
     reserved_independent: int = 6
     retrieval_focuses: tuple[str, ...] = FOCUSES
+    retrieval_concurrency: int = 2
 
     @property
     def crawl_pages(self) -> int:
@@ -88,6 +90,13 @@ def _focuses(env: Mapping[str, str], default: tuple[str, ...]) -> tuple[str, ...
     return tuple(dict.fromkeys(names))
 
 
+def _concurrency(env: Mapping[str, str], default: int) -> int:
+    value = int(_number(env, "COLLECT_RETRIEVAL_CONCURRENCY", default, whole=True))
+    if value < 1:
+        raise ConfigurationError("COLLECT_RETRIEVAL_CONCURRENCY must be at least 1")
+    return value
+
+
 def load_collection_settings(environ: Mapping[str, str] | None = None) -> CollectionSettings:
     env = os.environ if environ is None else environ
     d = CollectionSettings()
@@ -116,4 +125,5 @@ def load_collection_settings(environ: Mapping[str, str] | None = None) -> Collec
         max_linked_pdfs=whole("COLLECT_MAX_LINKED_PDFS", d.max_linked_pdfs),
         reserved_independent=whole("COLLECT_RESERVED_INDEPENDENT", d.reserved_independent),
         retrieval_focuses=_focuses(env, d.retrieval_focuses),
+        retrieval_concurrency=_concurrency(env, d.retrieval_concurrency),
     )

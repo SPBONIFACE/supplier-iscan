@@ -99,6 +99,8 @@ def make_collection_stage(
                 record,
                 context.call_context,
                 limits.retrieval_focuses,
+                concurrency=limits.retrieval_concurrency,
+                check_stop=context.check_stop,
             )
 
             def budgeted(lacking: list[str]) -> list[str]:

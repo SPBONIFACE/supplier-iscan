@@ -10,6 +10,8 @@ Scenarios tested:
 - Concurrency 1 with two sources → sequential pruning (second source not asked for found fields).
 """
 
+import logging
+import re
 import threading
 import uuid
 from dataclasses import replace
@@ -329,3 +331,28 @@ def test_concurrency_1_prunes_pending_between_sources(engine: Engine) -> None:
 
     asked_of_second = [a for a in adapter.asked if a.text.startswith("Other page")]
     assert all("founding_year" not in a.fields for a in asked_of_second)
+
+
+# --- the log line counts per section (#152) ---
+
+
+def test_log_counts_kept_fields_per_section_with_one_call_for_all_sections(
+    engine: Engine, caplog: pytest.LogCaptureFixture
+) -> None:
+    organisation_id, run_id, _src1, _src2 = setup_two_sources(engine)
+
+    def answer(asked: Asked) -> list[dict[str, Any]]:
+        return [
+            item(name, "2005", "was founded in 2005 in Lyon", asked.source_id)
+            if name == "founding_year"
+            else not_found(name)
+            for name in asked.fields
+        ]
+
+    with caplog.at_level(logging.INFO):
+        run_concurrent(engine, organisation_id, run_id, scripted(answer), 1, groups_per_call=0)
+
+    counts = re.findall(r"section (\S+): (\d+) of (\d+) fields kept", caplog.text)
+    assert counts
+    assert all(int(kept) <= int(total) for _name, kept, total in counts)
+    assert sum(int(kept) for _name, kept, _total in counts) == 1
