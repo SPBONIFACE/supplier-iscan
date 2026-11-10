@@ -102,7 +102,7 @@ def test_concurrency_4_reverse_arrival_gives_same_facts_as_concurrency_1(engine:
     seq_adapter = scripted(answer)
     run_concurrent(engine, organisation_id, run_id, seq_adapter, concurrency=1)
     seq_source_ids = {
-        f: facts_of(engine, run_id)[f].source_id
+        f: str(facts_of(engine, run_id)[f].source_id)
         for f in facts_of(engine, run_id)
         if facts_of(engine, run_id)[f].status == "proposed"
     }
@@ -130,7 +130,7 @@ def test_concurrency_4_reverse_arrival_gives_same_facts_as_concurrency_1(engine:
     con_adapter = scripted(answer_delayed)
     run_concurrent(engine, organisation_id2, run_id2, con_adapter, concurrency=4)
     con_source_ids = {
-        f: facts_of(engine, run_id2)[f].source_id
+        f: str(facts_of(engine, run_id2)[f].source_id)
         for f in facts_of(engine, run_id2)
         if facts_of(engine, run_id2)[f].status == "proposed"
     }
@@ -309,8 +309,13 @@ def test_concurrency_1_prunes_pending_between_sources(engine: Engine) -> None:
     run_id = create_run(engine, organisation_id, stage="extraction", enqueue=False)
     set_identity(engine, run_id, website=SITE)
     add_source(engine, organisation_id, run_id, f"{SITE}/about", ABOUT)
+    # URL sorts after SITE/about ("www.acme" < "www.external") so ABOUT source is processed first.
     add_source(
-        engine, organisation_id, run_id, "https://registry.example/acme", "Other page about Acme."
+        engine,
+        organisation_id,
+        run_id,
+        "https://www.external-registry.example/acme",
+        "Other page about Acme.",
     )
 
     adapter = scripted(
