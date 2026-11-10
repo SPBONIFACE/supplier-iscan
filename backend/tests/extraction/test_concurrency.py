@@ -91,7 +91,7 @@ def test_concurrency_4_reverse_arrival_gives_same_facts_as_concurrency_1(engine:
                 out.append(item(name, "250", "It employs 250 people", asked.source_id))
             elif name == "quality_management":
                 out.append(item(name, "ISO 9001", "We are certified ISO 9001", asked.source_id))
-            elif name == "main_products" and asked.source_id == str(src2):
+            elif name == "main_products" and "industrial valves" in asked.text:
                 quote = "Main products: industrial valves"
                 out.append(item(name, "industrial valves", quote, asked.source_id))
             else:
