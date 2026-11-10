@@ -330,11 +330,15 @@ class Collector:
             self._fail(None, failed.kind, message=failed.message)
         crawl_full = len(self.result.sources) >= self._settings.crawl_pages
         stored = {record.url for record in self.result.sources}
-        for url in self._independent_first(urls)[: self._settings.max_retrieval_urls]:
-            if url in stored or urlsplit(url).scheme not in ("http", "https"):
-                if url not in stored:
-                    self._skip(url, "refused")
+        usable: list[str] = []
+        for url in urls:
+            if url in stored:
                 continue
+            if urlsplit(url).scheme not in ("http", "https"):
+                self._skip(url, "refused")
+                continue
+            usable.append(url)
+        for url in self._independent_first(usable)[: self._settings.max_retrieval_urls]:
             if crawl_full and not self._third_party(url):
                 # The reserved slots are for addresses outside the supplier's website.
                 self._skip(url, "refused")

@@ -375,3 +375,18 @@ def test_a_concurrency_above_the_focus_count_is_clamped() -> None:
     client = CountingClient(dict(ANSWERS))
     retriever(client, FOCUSES, concurrency=50)([])
     assert client.peak <= 4 and len(client.queries) == 4
+
+
+def test_each_focused_request_asks_for_the_candidate_count() -> None:
+    from app.collection.retrieval import RETRIEVAL_CANDIDATES
+
+    seen: list[int] = []
+
+    class Client:
+        def retrieve(self, request: Any, _context: Any) -> Any:
+            seen.append(request.max_results)
+            return SimpleNamespace(urls=[])
+
+    retriever(Client(), ("registers", "news"))(["about"])  # type: ignore[arg-type]
+
+    assert seen == [RETRIEVAL_CANDIDATES] * 2 and RETRIEVAL_CANDIDATES > 10
