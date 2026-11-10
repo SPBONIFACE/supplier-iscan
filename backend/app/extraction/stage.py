@@ -16,8 +16,12 @@ Boundaries that hold here:
   transaction together with its counts, and a section with stored facts is skipped, so there is
   one fact per run and field and the counts are never counted twice.
 - A provider outage raises `DependencyUnavailable("structuring_provider")`: the run pauses (#13).
+- When `EXTRACT_CONCURRENCY` > 1, all source-chunk calls for a batch run in a bounded
+  `ThreadPoolExecutor`. Database writes stay on the stage thread. Results are merged in canonical
+  source order after all futures settle; first found per field wins.
 """
 
+import concurrent.futures
 import logging
 import uuid
 from collections.abc import Iterator
@@ -58,7 +62,7 @@ from app.providers import (
     StructuringRequest,
 )
 from app.redaction import RedactionGate, gate_for
-from app.runs.stages import DependencyUnavailable, Stage, StageContext, StageOutcome
+from app.runs.stages import DependencyUnavailable, RunStopped, Stage, StageContext, StageOutcome
 
 logger = logging.getLogger(__name__)
 
@@ -271,55 +275,174 @@ def make_extraction_stage(
         todo = [(name, items) for name, items in groups if any(i.id not in stored for i in items)]
         if not todo:
             return None
-        client: StructuringClient | None = None
         gate = gate_for(database)
+        # Create the client once before the batch loop; if there are no sources, no call will be
+        # made and the client is not needed.
+        client: StructuringClient | None = _client(context.providers) if sources else None
         for batch in _batches(todo, limits.groups_per_call):
             section_of = {item.id: name for name, items in batch for item in items}
             tallies = {name: Tally() for name, _items in batch}
             kept: dict[str, Kept] = {}
             pending = [item for _name, items in batch for item in items]
-            try:
-                for source in sources:
-                    if not pending:
-                        break
-                    for chunk in chunks(source.text, limits.max_input_chars):
+            if limits.extract_concurrency == 1:
+                # Sequential path: identical to #147.
+                try:
+                    for source in sources:
                         if not pending:
                             break
-                        if client is None:
-                            client = _client(context.providers)
-                        wanted = {item.id: item for item in pending}
-                        answered, dropped = _ask_safely(
-                            context,
-                            client,
-                            gate,
-                            redaction,
-                            prompts,
-                            source,
-                            chunk,
-                            pending,
-                            supplier,
-                        )
-                        _count_dropped(tallies, section_of, pending, answered, dropped)
-                        for item in answered:
-                            if item.status != "found" or item.field in kept:
-                                continue
-                            tally = tallies[section_of.get(item.field, batch[0][0])]
-                            result = judge(item, source, tally, wanted, limits, supplier)
-                            if result is not None:
-                                kept[item.field] = result
-                        pending = [i for i in pending if i.id not in kept]
-            except RunBudgetExhausted:
-                # The budget ended this batch part-way (#30): keep the values already found and
-                # store nothing for the fields not examined (a `not_found` there would say "No
-                # public evidence found" of text that was never read). The run ends `partial`.
-                for name, items in batch:
-                    _store(context, name, items, kept, tallies[name], complete=False)
-                raise
+                        for chunk in chunks(source.text, limits.max_input_chars):
+                            if not pending:
+                                break
+                            wanted = {item.id: item for item in pending}
+                            answered, dropped = _ask_safely(
+                                context,
+                                client,  # type: ignore[arg-type]  # non-None when sources exist
+                                gate,
+                                redaction,
+                                prompts,
+                                source,
+                                chunk,
+                                pending,
+                                supplier,
+                            )
+                            _count_dropped(tallies, section_of, pending, answered, dropped)
+                            for item in answered:
+                                if item.status != "found" or item.field in kept:
+                                    continue
+                                tally = tallies[section_of.get(item.field, batch[0][0])]
+                                result = judge(item, source, tally, wanted, limits, supplier)
+                                if result is not None:
+                                    kept[item.field] = result
+                            pending = [i for i in pending if i.id not in kept]
+                except RunBudgetExhausted:
+                    # The budget ended this batch part-way (#30): keep the values already found and
+                    # store nothing for the fields not examined (a `not_found` there would say "No
+                    # public evidence found" of text that was never read). The run ends `partial`.
+                    for name, items in batch:
+                        _store(context, name, items, kept, tallies[name], complete=False)
+                    raise
+            else:
+                # Concurrent path: all (source, chunk) pairs submitted to a ThreadPoolExecutor.
+                try:
+                    if client is None:
+                        raise DependencyUnavailable("structuring_provider")
+                    _fill_concurrent(
+                        sources,
+                        pending,
+                        kept,
+                        tallies,
+                        section_of,
+                        batch,
+                        limits,
+                        context,
+                        client,
+                        gate,
+                        redaction,
+                        prompts,
+                        supplier,
+                    )
+                except BaseException:
+                    # Budget exhausted, stop signal, or provider dependency error: store the facts
+                    # that arrived before the interruption (complete=False leaves unexamined fields
+                    # unrecorded, identical to the sequential partial-run behaviour).
+                    for name, items in batch:
+                        _store(context, name, items, kept, tallies[name], complete=False)
+                    raise
             for name, items in batch:
                 _store(context, name, items, kept, tallies[name])
         return None
 
     return stage
+
+
+def _fill_concurrent(
+    sources: list[SourceText],
+    pending: list[FieldDefinition],
+    kept: dict[str, Kept],
+    tallies: dict[str, Tally],
+    section_of: dict[str, str],
+    batch: list[tuple[str, list[FieldDefinition]]],
+    limits: ExtractionSettings,
+    context: StageContext,
+    client: StructuringClient,
+    gate: RedactionGate,
+    redaction: IdentityRedaction,
+    prompts: PromptSet,
+    supplier: Supplier | None,
+) -> None:
+    """Submit all (source, chunk) calls for the batch to a ThreadPoolExecutor and merge results.
+
+    Results are merged into `kept` and `tallies` in canonical order: sources in `(fetched_at,
+    url)` order (the order of `sources`), chunks in position order within each source. First found
+    per field wins. If any future raises, the exception is re-raised after merging completed
+    results so that callers can store the partial facts before propagating it.
+    """
+    # Build all pairs in canonical order. `sources` is already in (fetched_at, url) order from
+    # `_load`; chunks are yielded in position order by `chunks`.
+    pairs: list[tuple[SourceText, str]] = [
+        (source, chunk)
+        for source in sources
+        for chunk in chunks(source.text, limits.max_input_chars)
+    ]
+    if not pairs:
+        return
+
+    n = limits.extract_concurrency
+    # results[i] = (answered, dropped) for pair i, or None if the future did not complete.
+    results: list[tuple[list[FieldExtraction], int] | None] = [None] * len(pairs)
+    first_exc: BaseException | None = None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n) as executor:
+        future_to_idx: dict[concurrent.futures.Future[tuple[list[FieldExtraction], int]], int] = {}
+        for i, (source, chunk) in enumerate(pairs):
+            future = executor.submit(
+                _ask_safely,
+                context,
+                client,
+                gate,
+                redaction,
+                prompts,
+                source,
+                chunk,
+                pending,
+                supplier,
+            )
+            future_to_idx[future] = i
+
+        for future in concurrent.futures.as_completed(future_to_idx):
+            i = future_to_idx[future]
+            try:
+                results[i] = future.result()
+            except concurrent.futures.CancelledError:
+                pass  # cancelled after a budget/stop/dependency signal; skip
+            except BaseException as exc:
+                if first_exc is None:
+                    first_exc = exc
+                # Cancel queued futures only on budget/stop signals; a provider error on one
+                # call must not prevent other already-queued calls from running.
+                if isinstance(exc, (RunBudgetExhausted, RunStopped)):
+                    for f in future_to_idx:
+                        f.cancel()
+
+    # Merge in canonical order. `pairs` is in source/chunk order, so iterating it in index order
+    # gives the canonical merge sequence: first found per field wins.
+    wanted = {item.id: item for item in pending}
+    for i, (source, _chunk) in enumerate(pairs):
+        result_i = results[i]
+        if result_i is None:
+            continue
+        answered, dropped = result_i
+        _count_dropped(tallies, section_of, pending, answered, dropped)
+        for extr in answered:
+            if extr.status != "found" or extr.field in kept:
+                continue
+            tally = tallies[section_of.get(extr.field, batch[0][0])]
+            result = judge(extr, source, tally, wanted, limits, supplier)
+            if result is not None:
+                kept[extr.field] = result
+
+    if first_exc is not None:
+        raise first_exc
 
 
 def _batches(

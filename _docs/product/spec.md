@@ -78,6 +78,7 @@ criterion below is meant to be verifiable by looking at the running application.
 
 **Acceptance criteria**
 - [ ] One extraction call asks for the fields of several sections at once (`EXTRACT_GROUPS_PER_CALL`, default 0 = all sections in one call per source chunk, 1 = one call per section); facts, counts and `not_found` are still kept per section.
+- [ ] `EXTRACT_CONCURRENCY` (default 1, maximum 8) controls how many source-chunk calls run in parallel per batch inside a bounded `ThreadPoolExecutor`; results are merged in source order (`fetched_at`, `url`) and chunk order, so the stored facts are identical to those at concurrency 1 for the same model answers. The overrun guarantee holds: at most one call may be in flight when the budget is exhausted at concurrency 1; at most n calls when `EXTRACT_CONCURRENCY` is n.
 - [ ] Every extracted value conforms to the `FieldExtraction` schema: value, quote, source id, or the explicit status `not_found`.
 - [ ] A value is kept only if its quote is found in the stored text of the cited source (after whitespace and typography normalisation); otherwise it is discarded and counted as a grounding failure.
 - [ ] The extraction knows the supplier (name, website, country): a passage about another company is never a fact. An item the model marks as not about the supplier is discarded, and so is any item from a third-party source whose text never names the supplier; both are counted as grounding failures.

@@ -5,6 +5,9 @@
 - `EXTRACT_GROUPS_PER_CALL` (0): how many consecutive field groups (sections of the definition)
   one call asks for. 0 = all groups in one call per chunk; 1 = one call per section and chunk;
   n = batches of n groups. Facts are stored per section whatever the value.
+- `EXTRACT_CONCURRENCY` (1): how many source-chunk calls to run in parallel per batch, using a
+  bounded `ThreadPoolExecutor`. 1 = sequential (default); 2–8 = parallel. Database writes stay on
+  the stage thread; results are merged in source order after all futures settle.
 - `EXTRACT_MIN_QUOTE_CHARS` (12): the shortest quote kept, in characters after normalisation.
 - `EXTRACT_MIN_QUOTE_CHARS_CJK` (4): the same for a quote with Han, Hiragana, Katakana or Hangul.
 - `IAF_CERTSEARCH_URL` (https://www.iafcertsearch.org/): where a buyer verifies a certificate; the
@@ -21,6 +24,7 @@ from app.config import ConfigurationError
 
 MAX_INPUT_CHARS = "EXTRACT_MAX_INPUT_CHARS"
 GROUPS_PER_CALL = "EXTRACT_GROUPS_PER_CALL"
+CONCURRENCY = "EXTRACT_CONCURRENCY"
 MIN_QUOTE_CHARS = "EXTRACT_MIN_QUOTE_CHARS"
 MIN_QUOTE_CHARS_CJK = "EXTRACT_MIN_QUOTE_CHARS_CJK"
 IAF_CERTSEARCH_URL = "IAF_CERTSEARCH_URL"
@@ -34,6 +38,7 @@ class ExtractionSettings:
     min_quote_chars: int = 12
     min_quote_chars_cjk: int = 4
     groups_per_call: int = 0
+    extract_concurrency: int = 1
 
 
 def _whole_number(env: Mapping[str, str], name: str, default: int) -> int:
@@ -42,6 +47,15 @@ def _whole_number(env: Mapping[str, str], name: str, default: int) -> int:
         return default
     if not (raw.isascii() and raw.isdigit()) or not 1 <= int(raw) <= 300:
         raise ConfigurationError(f"{name} must be a whole number between 1 and 300")
+    return int(raw)
+
+
+def _concurrency(env: Mapping[str, str]) -> int:
+    raw = env.get(CONCURRENCY, "").strip()
+    if not raw:
+        return 1
+    if not (raw.isascii() and raw.isdigit()) or not 1 <= int(raw) <= 8:
+        raise ConfigurationError(f"{CONCURRENCY} must be a whole number between 1 and 8")
     return int(raw)
 
 
@@ -70,6 +84,7 @@ def load_extraction_settings(environ: Mapping[str, str] | None = None) -> Extrac
         max_input_chars=size,
         certsearch_url=url,
         groups_per_call=per_call,
+        extract_concurrency=_concurrency(env),
         min_quote_chars=_whole_number(env, MIN_QUOTE_CHARS, defaults.min_quote_chars),
         min_quote_chars_cjk=_whole_number(env, MIN_QUOTE_CHARS_CJK, defaults.min_quote_chars_cjk),
     )
