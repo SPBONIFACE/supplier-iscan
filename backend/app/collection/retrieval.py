@@ -11,6 +11,8 @@ A provider outage or an unusable answer raises `RetrievalFailed` (logged, the ru
 
 import logging
 import threading
+import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
@@ -35,10 +37,15 @@ from app.providers import (
 from app.providers.failures import validation_detail
 from app.providers.metering import CallContext
 from app.redaction import RedactionGate
+from app.runs.stages import RunStopped
 
 logger = logging.getLogger(__name__)
 
 PROMPT_ID = "retrieval"
+
+# Waits before the first and the second retry of a rate-limited request (`Retry-After` is not
+# exposed by the provider errors).
+RATE_LIMIT_WAITS = (2.0, 4.0)
 
 
 # Asked when the website gave every page kind: sources other than the supplier's own pages.
@@ -117,9 +124,15 @@ def make_retriever(
     identity: IdentityRecord,
     context: CallContext,
     focuses: tuple[str, ...] = (),
+    *,
+    concurrency: int = 2,
+    wait: Callable[[float], None] = time.sleep,
+    check_stop: Callable[[], None] = lambda: None,
 ) -> RetrieveFn:
-    """One request per focus (none: a single request without focus). A focus whose request fails
-    is reported in `failures` of the result (each with its own kind) and the others still run."""
+    """One request per focus (none: a single request without focus), at most `concurrency` at the
+    same time. A request refused as rate-limited is retried twice, after 2 s then 4 s (`wait`);
+    `check_stop` is called after each wait. A focus whose request fails is reported in `failures`
+    of the result (each with its own kind) and the others still run."""
 
     def prepare(lacking: list[str], focus: str | None) -> RetrievalRequest:
         """On the caller's thread: the redaction gate may read the database."""
@@ -136,22 +149,31 @@ def make_retriever(
 
     def send(client: RetrievalClient, request: RetrievalRequest, lacking: list[str]) -> list[str]:
         """The provider call alone (it runs in a pool thread): no database session of the stage."""
-        try:
-            result = client.retrieve(request, context)
-        except StructuredOutputInvalid:
-            raise RetrievalFailed("invalid_response") from None
-        except ProviderCallError as error:
-            logger.warning("Retrieval provider call failed (%s)", error.kind)
-            raise RetrievalFailed(
-                "invalid_response" if error.kind == "invalid_response" else "provider_unavailable"
-            ) from None
-        except ProviderError:
-            logger.warning("Retrieval provider not usable")
-            raise RetrievalFailed("provider_unavailable") from None
-        except ValidationError as error:
-            logger.warning("Retrieval answer invalid: fields=[%s]", validation_detail(error))
-            raise RetrievalFailed("invalid_response") from None
-        return rank(result.urls, lacking)
+        retries = 0
+        while True:
+            try:
+                result = client.retrieve(request, context)
+            except StructuredOutputInvalid:
+                raise RetrievalFailed("invalid_response") from None
+            except ProviderCallError as error:
+                logger.warning("Retrieval provider call failed (%s)", error.kind)
+                if error.kind == "rate_limited" and retries < len(RATE_LIMIT_WAITS):
+                    wait(RATE_LIMIT_WAITS[retries])
+                    retries += 1
+                    check_stop()  # RunStopped propagates: no retry after a stop request
+                    continue
+                raise RetrievalFailed(
+                    "invalid_response"
+                    if error.kind == "invalid_response"
+                    else "provider_unavailable"
+                ) from None
+            except ProviderError:
+                logger.warning("Retrieval provider not usable")
+                raise RetrievalFailed("provider_unavailable") from None
+            except ValidationError as error:
+                logger.warning("Retrieval answer invalid: fields=[%s]", validation_detail(error))
+                raise RetrievalFailed("invalid_response") from None
+            return rank(result.urls, lacking)
 
     def retrieve(lacking: list[str], focus: str | None) -> list[str]:
         request = prepare(lacking, focus)
@@ -173,20 +195,26 @@ def make_retriever(
             logger.warning("Retrieval provider not usable")
             raise RetrievalFailed("provider_unavailable") from None
         budget_ended = threading.Event()
+        stopped = threading.Event()
 
         def run(request: RetrievalRequest) -> list[str]:
             if budget_ended.is_set():
                 raise RunBudgetExhausted  # no request starts once the budget is exhausted (#30)
+            if stopped.is_set():
+                raise RunStopped
             try:
                 return send(client, request, lacking)
             except RunBudgetExhausted:
                 budget_ended.set()
                 raise
+            except RunStopped:
+                stopped.set()
+                raise
 
         answers: list[list[str]] = []
         failures: list[RetrievalFailed] = []
         exhausted = False
-        with ThreadPoolExecutor(max_workers=len(prepared)) as pool:
+        with ThreadPoolExecutor(max_workers=max(1, min(concurrency, len(prepared)))) as pool:
             futures = [pool.submit(run, request) for request in prepared]
         for future in futures:  # in the configured order, whatever the order of arrival
             try:
@@ -195,6 +223,7 @@ def make_retriever(
                 failures.append(error)
             except RunBudgetExhausted:
                 exhausted = True  # what was found is kept
+            # RunStopped propagates
         if exhausted and not answers:
             raise RunBudgetExhausted
         merged = RetrievedAddresses(_round_robin(answers))

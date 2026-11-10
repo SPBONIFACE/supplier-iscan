@@ -17,6 +17,7 @@ from app.limits.budget import RunBudgetExhausted
 from app.prompts import load_prompt_set
 from app.providers import ProviderCallError, RetrievedUrl
 from app.redaction.text import mint
+from app.runs.stages import RunStopped
 from tests.collection.support import HOST, OTHER, html, make_collector
 
 NAME = "Acme Supplies SA"
@@ -55,7 +56,7 @@ class FakeClient:
         return SimpleNamespace(urls=[RetrievedUrl(url=u) for u in fallback or []])
 
 
-def retriever(client: FakeClient, focuses: tuple[str, ...]) -> Any:
+def retriever(client: FakeClient, focuses: tuple[str, ...], **options: Any) -> Any:
     providers = SimpleNamespace(retrieval=lambda: client)
     return make_retriever(
         providers,  # type: ignore[arg-type]
@@ -65,6 +66,7 @@ def retriever(client: FakeClient, focuses: tuple[str, ...]) -> Any:
         IDENTITY,
         None,  # type: ignore[arg-type]
         focuses,
+        **options,
     )
 
 
@@ -264,3 +266,112 @@ def test_no_request_starts_once_the_budget_is_exhausted() -> None:
     with pytest.raises(RunBudgetExhausted):
         retr([])
     assert 1 <= len(client.queries) <= 4
+
+
+# --- #152: concurrency limit and retry on rate limit ---
+
+
+def limited() -> ProviderCallError:
+    return ProviderCallError(provider="p", config_id="c", kind="rate_limited", status_code=429)
+
+
+class CountingClient(FakeClient):
+    def __init__(self, answers: Any, script: dict[str, list[Exception]] | None = None) -> None:
+        super().__init__(answers)
+        self.script = script or {}  # focus text -> errors raised before the answer
+        self.in_flight = 0
+        self.peak = 0
+        self.lock = threading.Lock()
+
+    def retrieve(self, request: Any, _context: Any) -> Any:
+        with self.lock:
+            self.in_flight += 1
+            self.peak = max(self.peak, self.in_flight)
+        try:
+            time.sleep(0.05)
+            for focus, errors in self.script.items():
+                if f"Focus: {focus}" in request.query.text and errors:
+                    raise errors.pop(0)
+            return super().retrieve(request, _context)
+        finally:
+            with self.lock:
+                self.in_flight -= 1
+
+
+def test_concurrency_2_with_4_focuses_has_at_most_2_requests_in_flight() -> None:
+    client = CountingClient(dict(ANSWERS))
+    urls = retriever(client, FOCUSES, concurrency=2)([])
+    assert client.peak == 2 and len(client.queries) == 4 and len(urls) > 0
+
+
+def test_concurrency_1_sends_requests_one_after_another() -> None:
+    client = CountingClient(dict(ANSWERS))
+    retriever(client, FOCUSES, concurrency=1)([])
+    assert client.peak == 1 and len(client.queries) == 4
+
+
+def test_a_rate_limited_focus_is_retried_and_merged_in_focus_order() -> None:
+    waits: list[float] = []
+    client = CountingClient(dict(ANSWERS), {"official registers": [limited()]})
+    urls = retriever(client, FOCUSES, concurrency=2, wait=waits.append)([])
+    assert waits == [2.0]
+    assert not urls.failures
+    assert list(urls)[:4] == [
+        "https://r.example/1",
+        "https://c.example/1",
+        "https://n.example/1",
+        "https://u.example/1",
+    ]
+
+
+def test_a_focus_rate_limited_three_times_fails_and_the_others_are_kept() -> None:
+    waits: list[float] = []
+    client = CountingClient(
+        dict(ANSWERS), {"official registers": [limited(), limited(), limited()]}
+    )
+    urls = retriever(client, FOCUSES, concurrency=2, wait=waits.append)([])
+    assert waits == [2.0, 4.0]  # two retries, then recorded as failed
+    assert [f.kind for f in urls.failures] == ["provider_unavailable"]
+    assert "https://c.example/1" in urls and "https://r.example/1" not in urls
+
+
+def test_another_provider_error_is_not_retried() -> None:
+    waits: list[float] = []
+    error = ProviderCallError(provider="p", config_id="c", kind="unavailable", status_code=503)
+    client = CountingClient(dict(ANSWERS), {"official registers": [error]})
+    urls = retriever(client, FOCUSES, wait=waits.append)([])
+    assert waits == [] and len(urls.failures) == 1
+
+
+def test_a_stop_request_during_the_wait_prevents_the_retry() -> None:
+    def stop() -> None:
+        raise RunStopped
+
+    client = CountingClient({"": ["https://x.example/"]}, {"": [limited()]})
+    with pytest.raises(RunStopped):
+        retriever(client, ("registers",), wait=lambda _s: None, check_stop=stop)([])
+    assert len(client.queries) == 0  # the failed attempt raised before recording; no retry
+
+
+def test_the_budget_exhausted_at_a_retry_prevents_it() -> None:
+    waits: list[float] = []
+    client = CountingClient({}, {"official registers": [limited(), RunBudgetExhausted()]})
+    with pytest.raises(RunBudgetExhausted):
+        retriever(client, ("registers",), wait=waits.append)([])
+    assert waits == [2.0] and len(client.queries) == 0
+
+
+def test_concurrency_setting() -> None:
+    assert load_collection_settings({}).retrieval_concurrency == 2
+    assert (
+        load_collection_settings({"COLLECT_RETRIEVAL_CONCURRENCY": "3"}).retrieval_concurrency == 3
+    )
+    for bad in ("0", "-1", "two"):
+        with pytest.raises(ConfigurationError):
+            load_collection_settings({"COLLECT_RETRIEVAL_CONCURRENCY": bad})
+
+
+def test_a_concurrency_above_the_focus_count_is_clamped() -> None:
+    client = CountingClient(dict(ANSWERS))
+    retriever(client, FOCUSES, concurrency=50)([])
+    assert client.peak <= 4 and len(client.queries) == 4
