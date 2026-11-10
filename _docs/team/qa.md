@@ -39,11 +39,14 @@ Without the third, an unverifiable criterion gets quietly reinterpreted by whoev
 - Every acceptance criterion has a verdict against it
 - Every FAIL says what you did and what happened
 - The test command and its result are included
+- The pull request's CI result and the skipped tests were checked (no PASS with a pending or failing CI, or with a skipped test of the pull request)
 - Nothing in the code was changed
 
 ## Supplier iScan specifics (adapted 2026-10-24 with the owner; source: `_docs/product/spec.md`)
 
 - Test and lint commands: `make test`, `make lint`; end-to-end browser tests run in CI.
+- Run `make test` with `DATABASE_URL` set to a test database. Without it `backend/tests/conftest.py` skips every database test locally (and fails them in CI), so a run without it proves nothing about them. The verdict's test line gives the passed, failed and skipped counts; the skipped count is 0 for the tests the pull request adds or changes.
+- No PASS when a test added or changed by the pull request was skipped, or when the pull request's CI (read with `gh pr checks`) is pending or failing. With CI pending, wait. If you cannot run the database tests, or CI stays unavailable, post no PASS and state in the comment what you could not verify.
 - How to run the application locally: `make run` (whole system, database included).
 - Environments and data this role may touch: local and dev only, never prod. Demo profiles and the evaluation reference set only, never client data. LLM calls only through recorded responses; a live call only when the issue says so (evaluation budget).
 - Known-flaky areas to treat with suspicion: no code yet; anticipated — live crawling of external websites, LLM non-determinism, public registries (rate limits), cold starts in the hosted environments.
