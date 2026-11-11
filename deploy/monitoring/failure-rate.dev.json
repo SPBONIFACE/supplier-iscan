@@ -1,0 +1,14 @@
+{
+  "_comment": "Alert on the profile-run failure rate in DEV (#53). Every value is configuration (owner-approved suggested values, 11 Nov 2026). Applied by `make alert-apply ENV=dev`; runbook: _docs/operations/oncall-runbook.md",
+  "environment": "dev",
+  "display_name": "iscan-dev profile-run failure rate",
+  "threshold": 0.5,
+  "window_minutes": 15,
+  "min_finished_runs": 3,
+  "duration_minutes": 5,
+  "evaluation_interval_seconds": 60,
+  "auto_close_minutes": 30,
+  "label_selector": "",
+  "runbook_url": "https://github.com/SPBONIFACE/supplier-iscan/blob/main/_docs/operations/oncall-runbook.md",
+  "channels": ["iscan-dev-email", "iscan-dev-alert-relay"]
+}
