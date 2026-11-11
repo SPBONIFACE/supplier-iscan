@@ -1999,7 +1999,7 @@ components:
     ProfileField:
       type: object
       additionalProperties: false
-      required: [id, label, kind, certification, concerns_people, key_figure]
+      required: [id, label, kind, certification, concerns_people, key_figure, header_detail, timeline]
       properties:
         id:
           type: string
@@ -2016,6 +2016,16 @@ components:
           description: >-
             True when the supplier card repeats this field in its band of key figures, under the
             header (the definition file chooses which).
+          type: boolean
+        header_detail:
+          description: >-
+            True when the supplier card shows this field as a label and value under the band of key
+            figures (for example head office, group, latest strategic move). False by default.
+          type: boolean
+        timeline:
+          description: >-
+            True when the supplier card lists this field's fact among its recent events. False by
+            default.
           type: boolean
     ProfileSection:
       type: object
