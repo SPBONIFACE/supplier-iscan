@@ -84,6 +84,7 @@ criterion below is meant to be verifiable by looking at the running application.
 - [ ] A value is kept only if its quote is found in the stored text of the cited source (after whitespace and typography normalisation); otherwise it is discarded and counted as a grounding failure.
 - [ ] The extraction knows the supplier (name, website, country): a passage about another company is never a fact. An item the model marks as not about the supplier is discarded, and so is any item from a third-party source whose text never names the supplier; both are counted as grounding failures.
 - [ ] Quotes are stored and shown in their source language; field labels follow the UI language.
+- [ ] A `website` fact field is not sent to the model: it is proposed from the confirmed identity once a page on that domain was fetched, with the address of the first such source as its quote; otherwise it is not found.
 - [ ] "Not found" is displayed as "No public evidence found", never as a negative statement about the supplier.
 - [ ] Each fact shows "Found in <source> on <date>".
 - [ ] Each fact carries a source type, `supplier_claim` or `third_party`, derived from the source's domain relative to the confirmed supplier website and its registry identifiers; the card labels it "Supplier's own claim" or "Third-party source".

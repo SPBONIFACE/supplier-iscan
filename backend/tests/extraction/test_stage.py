@@ -1081,3 +1081,115 @@ def test_the_request_allows_enough_output_for_every_field(engine: Engine) -> Non
     run_batched(engine, organisation_id, run_id, adapter, 0)
 
     assert adapter.calls[0].max_output_tokens >= 16_384
+
+
+# --- the website fact comes from the confirmed identity (#158) ---
+
+
+def website_definition() -> Any:
+    first = DEFINITION.sections[0]
+    extra = replace(first.fields[0], id="website")
+    sections = (replace(first, fields=(extra, *first.fields)), *DEFINITION.sections[1:])
+    return replace(DEFINITION, sections=sections)
+
+
+def website_stage(groups_per_call: int = 1) -> Any:
+    return make_extraction_stage(
+        website_definition(),
+        PROMPTS,
+        ExtractionSettings(max_input_chars=20_000, groups_per_call=groups_per_call),
+    )
+
+
+def run_website(engine: Engine, organisation_id: uuid.UUID, run_id: uuid.UUID, adapter: Any) -> Any:
+    context = context_for(engine, organisation_id, run_id, providers_with(adapter))
+    return website_stage()(context)
+
+
+def test_the_website_is_proposed_from_the_identity_with_the_page_address_as_quote(
+    engine: Engine,
+) -> None:
+    organisation_id, run_id, source_id = setup(engine, url="https://www.acme.example/home")
+    adapter = scripted(answer_about)
+
+    run_website(engine, organisation_id, run_id, adapter)
+
+    fact = facts_of(engine, run_id)["website"]
+    assert (fact.status, fact.value, fact.quote) == (
+        "proposed",
+        SITE,
+        "https://www.acme.example/home",
+    )
+    assert (fact.source_id, fact.source_url) == (source_id, "https://www.acme.example/home")
+    assert fact.source_type == "supplier_claim"
+    assert fact.publisher == "acme.example"
+    assert fact.fetched_at is not None
+    assert all("website" not in asked.fields for asked in adapter.asked)
+
+
+def test_the_first_source_on_the_domain_in_canonical_order_is_the_source(engine: Engine) -> None:
+    organisation_id, run_id, _first = setup(engine, url="https://other.example/x")
+    add_source(engine, organisation_id, run_id, "https://shop.acme.example/b", "b text")
+    add_source(engine, organisation_id, run_id, "https://acme.example/a", "a text")
+
+    run_website(engine, organisation_id, run_id, scripted(lambda a: []))
+
+    assert facts_of(engine, run_id)["website"].source_url == "https://acme.example/a"
+
+
+def test_the_website_is_not_found_without_a_source_on_its_domain(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine, url="https://third.example/about")
+
+    run_website(engine, organisation_id, run_id, scripted(answer_about))
+
+    fact = facts_of(engine, run_id)["website"]
+    assert (fact.status, fact.quote, fact.source_id) == ("not_found", None, None)
+
+
+def test_the_website_is_not_found_when_the_identity_has_none(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine, website=None)
+
+    run_website(engine, organisation_id, run_id, scripted(answer_about))
+
+    assert facts_of(engine, run_id)["website"].status == "not_found"
+
+
+def test_the_website_fact_is_stored_once_and_counts_like_a_fact(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine)
+    adapter = scripted(answer_about)
+    run_website(engine, organisation_id, run_id, adapter)
+    run_website(engine, organisation_id, run_id, adapter)
+
+    with Session(engine) as db:
+        rows = list(db.scalars(select(Fact).where(Fact.run_id == run_id, Fact.field == "website")))
+    assert len(rows) == 1
+
+
+def test_a_definition_without_website_changes_nothing(engine: Engine) -> None:
+    organisation_id, run_id, _source = setup(engine)
+
+    run_stage(engine, organisation_id, run_id, scripted(answer_about))
+
+    assert "website" not in facts_of(engine, run_id)
+
+
+def test_the_website_is_stored_when_the_section_is_partial(engine: Engine) -> None:
+    from app.limits.budget import RunBudgetExhausted
+
+    organisation_id, run_id, _source = setup(engine)
+    add_source(engine, organisation_id, run_id, "https://zeta.example/acme", "Other page.")
+    calls = {"n": 0}
+
+    def check_stop() -> None:
+        calls["n"] += 1
+        if calls["n"] > 1:  # the first call is made, the second is refused
+            raise RunBudgetExhausted
+
+    context = replace(
+        context_for(engine, organisation_id, run_id, providers_with(scripted(answer_about))),
+        check_stop=check_stop,
+    )
+    with pytest.raises(RunBudgetExhausted):
+        website_stage(groups_per_call=0)(context)
+
+    assert facts_of(engine, run_id)["website"].status == "proposed"
