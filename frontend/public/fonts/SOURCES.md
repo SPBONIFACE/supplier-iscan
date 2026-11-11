@@ -14,3 +14,17 @@ by us).
 - `src/styles/fonts.css` holds the `@font-face` rules (IBM's `unicode-range` values, URLs under `/fonts/`).
 - U+202F (French narrow no-break space) is in the `Pi` subset of each family.
 - No third-party CDN at run time.
+
+# Fonts: supplier card (self-hosted, #163)
+
+Piazzolla (copyright 2018 The Piazzolla Project Authors) and Barlow Semi Condensed (copyright 2017 The Barlow
+Project Authors), SIL Open Font License 1.1 (`card/OFL-piazzolla.txt`, `card/OFL-barlowsemicondensed.txt`).
+Used by the supplier card page only (tearsheet redesign, mock-up `05-supplier-card-tearsheet.html`). Approved by
+the owner on 11 Nov 2026 (owner decision 7 of the approved list in `_docs/process/`).
+
+- Source: Google Fonts web fonts as served by `fonts.gstatic.com`, downloaded on 11 Nov 2026, unmodified;
+  licences from the google/fonts repository (`ofl/piazzolla/OFL.txt`, `ofl/barlowsemicondensed/OFL.txt`).
+- Subsets: Latin and Latin Extended (`unicode-range` as served by Google Fonts); Piazzolla 400, 600, italic 400;
+  Barlow Semi Condensed 500, 700, 800.
+- Checksums: in `SHA256SUMS`. `src/styles/card.css` holds the `@font-face` rules (URLs under `/fonts/card/`).
+- No third-party CDN at run time.

@@ -1,0 +1,787 @@
+/* The supplier card page, tearsheet style (mock-up 05-supplier-card-tearsheet, #163).
+   Scope: the card page only (`.tearsheet`, and `body.ts-page` while it is open). Paper, ink and one green
+   accent; rules, no boxes, no rounded corners, no bold values. The shared tokens are re-mapped inside the
+   scope so that the shared components (buttons, banners, forms, statements) take the same look. */
+
+/* ---- Fonts: Piazzolla and Barlow Semi Condensed, SIL OFL 1.1, self-hosted (public/fonts/card/, see
+   public/fonts/SOURCES.md); approved by the owner on 11 Nov 2026 (owner decision 7 of the approved list).
+   Latin and Latin Extended only; other scripts fall back to the stacks. */
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-500-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-500-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-700-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-700-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-800-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-800-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-400-Italic-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-400-Italic-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-400-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-400-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-600-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-600-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --ts-bg: #f7f8f6;
+  --ts-surface: #eceeeb;
+  --ts-ink: #15191c;
+  --ts-muted: #545d64;
+  --ts-rule: #c9cfcc;
+  --ts-green: #1f5c48;
+  --ts-green-hover: #164536;
+  --ts-on-green: #ffffff;
+  --ts-missing: #8a3324;
+  --ts-body: "Piazzolla", Georgia, serif;
+  --ts-head: "Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --ts-wide: 72rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ts-bg: #121614;
+    --ts-surface: #1b211e;
+    --ts-ink: #e7ebe8;
+    --ts-muted: #9ba6a1;
+    --ts-rule: #343d39;
+    --ts-green: #7cc3a5;
+    --ts-green-hover: #a3d8c0;
+    --ts-on-green: #121614;
+    --ts-missing: #e59a8a;
+  }
+}
+
+body.ts-page {
+  background: var(--ts-bg);
+}
+body.ts-page .wrap {
+  max-width: none;
+  padding: 0;
+}
+
+.tearsheet {
+  --isc-color-ink: var(--ts-ink);
+  --isc-color-ink-secondary: var(--ts-muted);
+  --isc-color-ink-tertiary: var(--ts-muted);
+  --isc-color-ink-disabled: var(--ts-muted);
+  --isc-color-rule: var(--ts-rule);
+  --isc-color-paper: var(--ts-bg);
+  --isc-color-paper-margin: var(--ts-surface);
+  --isc-color-field: var(--ts-bg);
+  --isc-color-border-control: var(--ts-muted);
+  --isc-color-cobalt: var(--ts-green);
+  --isc-color-cobalt-strong: var(--ts-green-hover);
+  --isc-color-cobalt-tint: var(--ts-surface);
+  --isc-color-on-cobalt: var(--ts-on-green);
+  --isc-color-brick: var(--ts-missing);
+  --isc-color-skeleton: var(--ts-surface);
+  --isc-focus-color: var(--ts-green);
+  --isc-font-family-sans: var(--ts-body);
+  --isc-font-family-serif: var(--ts-head);
+  --isc-font-size-base: 1.0625rem;
+  --isc-font-size-sm: 0.875rem;
+  --isc-font-size-micro: 0.75rem;
+  --isc-font-size-quote: 1rem;
+  --isc-radius-control: 0;
+  --isc-font-line-height-compact: 1.45;
+
+  max-width: var(--ts-wide);
+  margin: 0 auto;
+  padding: 0 1rem 4rem;
+  background: var(--ts-bg);
+  color: var(--ts-ink);
+  font-family: var(--ts-body);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+.tearsheet h1,
+.tearsheet h2,
+.tearsheet h3,
+.tearsheet h4 {
+  font-family: var(--ts-head);
+  text-wrap: balance;
+}
+.tearsheet a {
+  color: inherit;
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
+}
+.tearsheet a:hover {
+  color: var(--ts-green);
+}
+.tearsheet .vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.tearsheet .link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--ts-green);
+  font: 500 1rem var(--ts-head);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  min-height: 2.5rem;
+}
+.tearsheet .btn {
+  font-family: var(--ts-head);
+  font-weight: 500;
+  font-size: 1rem;
+  min-height: 2.5rem;
+  border-radius: 0;
+}
+.tearsheet .btn-secondary {
+  border-color: var(--ts-ink);
+  color: var(--ts-ink);
+}
+.tearsheet .btn--primary {
+  background: var(--ts-green);
+  border-color: var(--ts-green);
+  color: var(--ts-on-green);
+}
+.tearsheet .btn--primary:hover {
+  background: var(--ts-green-hover);
+  border-color: var(--ts-green-hover);
+  color: var(--ts-on-green);
+}
+.tearsheet .btn-text {
+  font-family: var(--ts-head);
+  font-weight: 500;
+}
+.tearsheet .card-state {
+  padding: 2rem 0;
+}
+
+/* masthead */
+.tearsheet .mast {
+  padding-top: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--ts-ink);
+}
+.tearsheet .kick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font: 700 0.8125rem / 1.3 var(--ts-head);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ts-muted);
+}
+.tearsheet .kick .num {
+  color: var(--ts-green);
+}
+.tearsheet .mast h1 {
+  margin-top: 0.5rem;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.tearsheet .mast h1:focus-visible {
+  outline-offset: 4px;
+}
+.tearsheet .deck {
+  margin-top: 0.75rem;
+  max-width: 46rem;
+  font-size: 1.1875rem;
+  line-height: 1.5;
+  color: var(--ts-muted);
+}
+.tearsheet .deck strong {
+  font-weight: 400;
+  color: var(--ts-ink);
+}
+.tearsheet .deck .url {
+  font-family: var(--ts-body);
+  font-size: inherit;
+}
+.tearsheet .mast-actions {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  font-family: var(--ts-head);
+  font-weight: 500;
+}
+.tearsheet .pdf-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+/* note numbers: a superscript button (on a value) or link (on a statement) */
+.tearsheet sup {
+  line-height: 0;
+  font-family: var(--ts-head);
+  font-weight: 700;
+  font-size: 0.7em;
+}
+.tearsheet sup a,
+.tearsheet sup button {
+  color: var(--ts-green);
+  text-decoration: none;
+  padding: 0 0.15em;
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  /* a target of at least 24px without moving the line */
+  display: inline-block;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  margin: -0.5rem -0.35rem;
+  line-height: 1.5rem;
+  text-align: center;
+}
+.tearsheet sup a:hover,
+.tearsheet sup button:hover {
+  text-decoration: underline;
+  color: var(--ts-green-hover);
+}
+.tearsheet sup button[aria-expanded="true"] {
+  text-decoration: underline;
+}
+.tearsheet .note-ref + .note-ref {
+  margin-left: 0.1em;
+}
+
+/* the quote, open under a value */
+.tearsheet .note {
+  grid-column: 1 / -1;
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.9rem;
+  border-left: 3px solid var(--ts-ink);
+  background: var(--ts-surface);
+  font-size: 0.9375rem;
+}
+.tearsheet .note-title {
+  font: 700 0.75rem / 1.3 var(--ts-head);
+}
+.tearsheet .quote {
+  border-left: 0;
+  padding-left: 0;
+  font-family: var(--ts-body);
+  font-style: italic;
+}
+.tearsheet .note-link {
+  font: 500 0.875rem / 1.4 var(--ts-head);
+}
+.tearsheet .disclosure {
+  color: var(--ts-green);
+  font-family: var(--ts-head);
+  font-weight: 500;
+}
+
+/* figures band */
+.tearsheet .kf {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border-top: 0;
+  border-bottom: 1px solid var(--ts-rule);
+}
+.tearsheet .kf > div {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  margin: 0 1rem 0 0;
+  padding: 1rem 1rem 1rem 0;
+  border-top: 0;
+  border-right: 1px solid var(--ts-rule);
+}
+.tearsheet .kf > div:last-child {
+  border-right: 0;
+  margin-right: 0;
+}
+.tearsheet .kf dt {
+  margin-top: 0.4rem;
+  font: 700 0.8125rem / 1.3 var(--ts-head);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ts-muted);
+}
+.tearsheet .kf dd {
+  margin: 0;
+}
+.tearsheet .kf .v {
+  font: 700 2.25rem / 1 var(--ts-head);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.tearsheet .kf .v.sm {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+.tearsheet .kf .v .missing {
+  padding-left: 0;
+  border-left: 0;
+  font: italic 400 1.0625rem / 1.3 var(--ts-body);
+  color: var(--ts-missing);
+}
+.tearsheet .kf .sub {
+  display: block;
+  margin-top: 0.2rem;
+  font: 500 0.875rem / 1.35 var(--ts-head);
+  color: var(--ts-muted);
+}
+
+/* header details: a row of three */
+.tearsheet .trio {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0 2rem;
+  margin: 0;
+  border-bottom: 1px solid var(--ts-rule);
+}
+.tearsheet .trio > div {
+  padding: 1rem 0;
+  min-width: 0;
+}
+.tearsheet .trio dd {
+  margin: 0.3rem 0 0;
+}
+.tearsheet .lab,
+.tearsheet .reco-kind {
+  display: block;
+  font: 700 0.8125rem / 1.3 var(--ts-head);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ts-muted);
+}
+
+/* flags and body */
+.tearsheet .card-body {
+  padding: 0;
+}
+.tearsheet .flags {
+  margin-top: 1.5rem;
+}
+
+/* section heads */
+.tearsheet .section {
+  margin-top: 3rem;
+}
+.tearsheet .section-title {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--ts-ink);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.tearsheet .section-title .count {
+  font: 500 0.9375rem var(--ts-head);
+  color: var(--ts-muted);
+  white-space: normal;
+  text-align: right;
+}
+.tearsheet .section-lede {
+  max-width: 40rem;
+  font-size: 1rem;
+}
+
+/* assessment: four blocks in two columns */
+.tearsheet .swot {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 2.5rem;
+}
+.tearsheet .swot-block {
+  min-width: 0;
+  padding: 0.5rem 0 1.25rem;
+  border-top: 1px solid var(--ts-rule);
+}
+.tearsheet .swot-block .sub-title {
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.tearsheet .sub-title {
+  font-weight: 700;
+}
+.tearsheet .sub-title .meta {
+  font: 500 0.9375rem var(--ts-head);
+  color: var(--ts-muted);
+}
+.tearsheet .stmt {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--ts-rule);
+}
+.tearsheet .swot .stmt {
+  border-bottom: 0;
+  padding: 0.4rem 0;
+}
+.tearsheet .stmt-text {
+  max-width: 52rem;
+}
+.tearsheet .stmt-meta,
+.tearsheet .stmt-foot,
+.tearsheet .byline {
+  font-family: var(--ts-head);
+  font-weight: 500;
+}
+.tearsheet .gap-label,
+.tearsheet .gap .stmt-text {
+  color: var(--ts-missing);
+}
+.tearsheet .gap-label {
+  font: 700 0.75rem / 1.3 var(--ts-head);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tearsheet .assume {
+  font-style: italic;
+  color: var(--ts-muted);
+}
+.tearsheet .cites sup {
+  margin-left: 0.1em;
+}
+
+/* procurement implication, contract approach, volume share, next actions */
+.tearsheet .reco-block {
+  margin-top: 1.5rem;
+}
+.tearsheet .impl {
+  border-top: 3px solid var(--ts-ink);
+  border-bottom: 3px solid var(--ts-ink);
+}
+.tearsheet .impl .stmt {
+  border-bottom: 0;
+  padding: 1rem 0;
+}
+.tearsheet .impl .stmt-text {
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+.tearsheet .reco {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0 2rem;
+  border-bottom: 1px solid var(--ts-rule);
+}
+.tearsheet .reco:empty {
+  display: none;
+}
+.tearsheet .reco .stmt {
+  border-bottom: 0;
+  padding: 1rem 0 0.25rem;
+}
+.tearsheet .reco .stmt-text {
+  font-size: 1rem;
+}
+.tearsheet .reco .reco-kind {
+  margin-bottom: 0.3rem;
+}
+
+/* recent events */
+.tearsheet .tl {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+.tearsheet .tl li {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--ts-rule);
+}
+.tearsheet .tl .d {
+  font: 700 1rem / 1.5 var(--ts-head);
+}
+.tearsheet .tl .d.u {
+  font-weight: 500;
+  color: var(--ts-muted);
+}
+.tearsheet .tl .k {
+  display: block;
+  font: 700 0.75rem / 1.3 var(--ts-head);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ts-muted);
+}
+
+/* the profile as ruled ledgers */
+.tearsheet .ledger-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  border-bottom: 3px solid var(--ts-ink);
+}
+.tearsheet .ledger-title .count {
+  font: 500 0.875rem var(--ts-head);
+  color: var(--ts-muted);
+}
+.tearsheet .fact {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr) minmax(11rem, 16rem);
+  column-gap: 1rem;
+  padding: 0.55rem 0;
+  min-height: 0;
+  border-bottom: 1px solid var(--ts-rule);
+}
+.tearsheet .fact:hover {
+  background: transparent;
+}
+.tearsheet .f-label {
+  grid-column: 1;
+  grid-row: 1;
+  padding-top: 0;
+  font: 500 1rem / 1.5 var(--ts-head);
+  color: var(--ts-muted);
+}
+.tearsheet .f-main {
+  grid-column: 2;
+  grid-row: 1;
+}
+.tearsheet .f-rev {
+  grid-column: 3;
+  grid-row: 1;
+  min-width: 0;
+  font: 500 0.875rem / 1.4 var(--ts-head);
+  color: var(--ts-muted);
+}
+.tearsheet .f-rev .badge {
+  border: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ts-muted);
+}
+.tearsheet .f-rev .f-review {
+  margin-top: 0.15rem;
+}
+.tearsheet .f-rev .f-actions {
+  margin-left: 0;
+}
+.tearsheet .f-src,
+.tearsheet .f-original {
+  display: block;
+  margin-top: 0.1rem;
+  padding-top: 0;
+  border-top: 0;
+  font: 500 0.8125rem / 1.3 var(--ts-head);
+  color: var(--ts-muted);
+}
+.tearsheet .f-src .ev {
+  margin-right: 0.5rem;
+}
+.tearsheet .missing {
+  padding-left: 0;
+  border-left: 0;
+  font-style: italic;
+  color: var(--ts-missing);
+}
+.tearsheet .f-hint {
+  font-family: var(--ts-head);
+}
+.tearsheet .fact > .note {
+  grid-column: 2 / -1;
+  grid-row: auto;
+  margin: 0.5rem 0 0;
+}
+.tearsheet .fact:focus-visible {
+  outline-offset: -2px;
+}
+
+/* financial evidence guidance, buyer sections */
+.tearsheet .docs caption,
+.tearsheet .docs th {
+  font-family: var(--ts-head);
+}
+.tearsheet .docs th {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ts-muted);
+}
+
+/* sources */
+.tearsheet .notes {
+  margin: 1rem 0 0;
+  padding-left: 1.75rem;
+  font-size: 0.9375rem;
+  color: var(--ts-muted);
+}
+.tearsheet .notes > li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--ts-rule);
+  scroll-margin-top: 1rem;
+}
+.tearsheet .notes > li::marker {
+  font: 700 0.9375rem var(--ts-head);
+  color: var(--ts-green);
+}
+.tearsheet .notes .t {
+  color: var(--ts-ink);
+}
+.tearsheet .notes .ev {
+  margin-left: 0.35rem;
+}
+.tearsheet .notes q {
+  font-style: italic;
+}
+.tearsheet .notes ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0;
+}
+.tearsheet .notes ul li {
+  padding: 0.1rem 0;
+  border: 0;
+}
+.tearsheet .url {
+  font-family: var(--ts-body);
+  font-size: inherit;
+}
+
+@media (max-width: 640px) {
+  .tearsheet .swot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tearsheet .kf > div {
+    margin-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--ts-rule);
+  }
+  .tearsheet .kf > div:last-child {
+    border-bottom: 0;
+  }
+  .tearsheet .tl li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.1rem;
+  }
+  .tearsheet .fact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tearsheet .f-label,
+  .tearsheet .f-main,
+  .tearsheet .f-rev,
+  .tearsheet .fact > .note {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .tearsheet .f-rev {
+    margin-top: 0.15rem;
+  }
+}

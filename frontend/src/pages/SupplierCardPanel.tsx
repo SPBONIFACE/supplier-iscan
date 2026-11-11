@@ -1,26 +1,45 @@
-// The supplier card (spec F5, F3 display rules; mock-ups 05-supplier-card-*): a side panel over the
-// workspace with its own URL. Header, key figures, flags, then one row per fact field of the profile
-// definition; each row can be approved or corrected by a member (#36). Below the facts: the assessment
-// section (#37). The deletion date (#45) is not here.
-import { type RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+// The supplier card (spec F5, F3 display rules; mock-up 05-supplier-card-tearsheet, #163): a full page in
+// the tearsheet style at /profiles/:profileId. Masthead, key figures, header details, the assessment (#37),
+// recent events, then the profile as ruled ledgers (one row per fact field of the profile definition; a
+// member can approve or correct each, #36), the buyer's inputs and the numbered sources. Every shown fact
+// value carries the number of its source; the quote opens under the value. The deletion date (#45) is not
+// here.
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { Link, Outlet, useMatch, useNavigate, useParams } from "react-router";
+import { Link, Outlet, useNavigate, useParams } from "react-router";
 import { DownloadPdf } from "../components/DownloadPdf";
 import {
   ExternalLink,
   FactList,
   FactRow,
   IAF_CERTSEARCH_URL,
-  QuoteBlock,
   Redacted,
-  SourceChip,
+  SourceTypeLabel,
   StatusBadge,
 } from "../components/evidence";
 import type { ReviewBody, ReviewControls, ReviewOutcome } from "../components/FactReview";
 import { FlagBanner } from "../components/FlagBanner";
+import { NotePanel, NoteRef, NotesProvider } from "../components/notes";
 import { LoadingIndicator, MessageBanner } from "../components/ui";
-import { api, type Fact, type ProfileField, type Run } from "../lib/api";
+import { type AssessmentStatement, api, type Fact, type ProfileField, type Run } from "../lib/api";
 import { countryName, formatDate } from "../lib/format";
+import {
+  buildNoteIndex,
+  formatEventDate,
+  readEventDate,
+  type SourceEntry,
+  sortTimeline,
+  type TimelineEntry,
+} from "../lib/notes";
 import { hostOf, safeHttpUrl, websiteUrl } from "../lib/safeUrl";
 import { useAssessment } from "../lib/useAssessment";
 import { hasProfile, useRunCard } from "../lib/useRunCard";
@@ -30,11 +49,10 @@ import { BuyerContextForm } from "./BuyerContextForm";
 import { NotFoundPage } from "./Simple";
 import { WorkspacePage } from "./WorkspacePage";
 
-/** The workspace, with the supplier card beside it when a card is open (route /profiles/:profileId). */
+/** The workspace list (route /workspace). The supplier card is its own page. */
 export function WorkspaceShell() {
-  const open = useMatch("/profiles/:profileId") !== null;
   return (
-    <div className={open ? "app app-open" : "app"}>
+    <div className="app">
       <div className="workspace">
         <WorkspacePage />
       </div>
@@ -48,7 +66,24 @@ const IN_PROGRESS = "The run is still in progress.";
 
 const lastRefresh = (run: Run): string => run.finished_at ?? run.started_at ?? run.created_at;
 
-export function SupplierCardPanel() {
+/** The order in which the assessment shows its statements, to number the sources as the page reads. */
+const STATEMENT_ORDER: AssessmentStatement["kind"][] = [
+  "strength",
+  "threat",
+  "opportunity",
+  "evidence_gap",
+  "weakness",
+  "risk_indicator",
+  "procurement_implication",
+  "contract_approach",
+  "volume_share",
+  "next_action",
+  "relationship_level",
+  "procurement_priority",
+  "fit",
+];
+
+export function SupplierCardPage() {
   const { t, i18n } = useTranslation();
   const { profileId = "" } = useParams();
   const navigate = useNavigate();
@@ -61,15 +96,30 @@ export function SupplierCardPanel() {
 
   useTitle(run?.supplier_name ? `${run.supplier_name} · ${t("card.kicker")}` : t("card.kicker"));
 
+  // The card has its own look (the tearsheet theme); the page behind it takes its paper colour.
+  useEffect(() => {
+    document.body.classList.add("ts-page");
+    return () => document.body.classList.remove("ts-page");
+  }, []);
+
   const close = useCallback(() => {
     navigate("/workspace");
-    window.setTimeout(() => {
+    // The list is loaded again: wait for the supplier link to be there, then give it the focus.
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
       const target =
         opener instanceof HTMLElement && opener.isConnected && opener !== document.body
           ? opener
           : document.querySelector<HTMLElement>(`a[data-run-id="${CSS.escape(profileId)}"]`);
-      (target ?? document.getElementById("content"))?.focus();
-    }, 0);
+      if (target) {
+        target.focus();
+        window.clearInterval(timer);
+      } else if (attempts >= 40) {
+        document.getElementById("content")?.focus();
+        window.clearInterval(timer);
+      }
+    }, 50);
   }, [navigate, opener, profileId]);
 
   // When the card has loaded, focus moves to the supplier name.
@@ -81,12 +131,16 @@ export function SupplierCardPanel() {
   }, [load]);
 
   const name = run?.supplier_name ?? t("workspace.nameHidden");
+  const closeButton = (
+    <button type="button" className="link" onClick={close}>
+      {t("card.close")}
+      <span className="vh"> {t("card.closeKey")}</span>
+    </button>
+  );
   return (
-    <aside
-      className="panel"
-      id="panel"
-      role="dialog"
-      aria-modal="false"
+    <article
+      className="tearsheet"
+      id="card"
       aria-label={load === "ready" && run ? undefined : t("card.kicker")}
       aria-labelledby={load === "ready" && run ? "card-name" : undefined}
       onKeyDown={(event) => {
@@ -96,13 +150,6 @@ export function SupplierCardPanel() {
         }
       }}
     >
-      <div className="card-bar">
-        <span className="kicker">{t("card.kicker")}</span>
-        <button type="button" className="btn btn-text" onClick={close}>
-          {t("card.close")}
-          <span className="vh"> {t("card.closeKey")}</span>
-        </button>
-      </div>
       {load === "loading" ? <LoadingIndicator /> : null}
       {load === "not_found" ? <NotFoundPage /> : null}
       {load === "error" ? (
@@ -115,6 +162,7 @@ export function SupplierCardPanel() {
               </button>
             </p>
           </MessageBanner>
+          <p>{closeButton}</p>
         </div>
       ) : null}
       {load === "ready" && run && !data ? (
@@ -135,6 +183,7 @@ export function SupplierCardPanel() {
           {run.status === "queued" || run.status === "running" || run.status === "paused" ? (
             <DownloadPdf runId={run.id} unavailableReason={t("pdf.unavailableInProgress")} />
           ) : null}
+          <p>{closeButton}</p>
         </div>
       ) : null}
       {load === "ready" && run && data ? (
@@ -146,13 +195,16 @@ export function SupplierCardPanel() {
           applyFact={applyFact}
           refreshRun={refreshRun}
           reload={retry}
+          closeButton={closeButton}
         />
       ) : null}
-    </aside>
+    </article>
   );
 }
 
 type Definition = NonNullable<ReturnType<typeof useRunCard>["data"]>["definition"];
+
+type FieldOf = { field: ProfileField; sectionId: string };
 
 function CardBody({
   run,
@@ -162,6 +214,7 @@ function CardBody({
   applyFact,
   refreshRun,
   reload,
+  closeButton,
 }: {
   run: Run;
   facts: Fact[];
@@ -170,6 +223,7 @@ function CardBody({
   applyFact: (fact: Fact) => void;
   refreshRun: () => Promise<void>;
   reload: () => void;
+  closeButton: ReactNode;
 }) {
   const { t, i18n } = useTranslation();
   const lockedId = useId();
@@ -237,7 +291,7 @@ function CardBody({
     [inProgress, lockedId, reload, submit, t],
   );
   const nextProposed = facts.find((item) => item.status === "proposed");
-  const byField = new Map(facts.map((fact) => [fact.field, fact]));
+  const byField = useMemo(() => new Map(facts.map((fact) => [fact.field, fact])), [facts]);
   const uncovered = new Set(run.uncovered_sections);
   const partial = run.status === "partial";
   const sectionLabel = (id: string): string =>
@@ -245,66 +299,120 @@ function CardBody({
       ? t("card.recommendations")
       : (definition.sections.find((section) => section.id === id)?.label ?? id);
   const site = websiteUrl(run.supplier_website);
-  const figures = definition.sections.flatMap((section) =>
-    section.fields
-      .filter((field) => field.kind === "fact" && field.key_figure)
-      .map((field) => ({ field, covered: !uncovered.has(section.id) || byField.has(field.id) })),
+
+  const factFields: FieldOf[] = useMemo(
+    () =>
+      definition.sections.flatMap((section) =>
+        section.fields
+          .filter((field) => field.kind === "fact")
+          .map((field) => ({ field, sectionId: section.id })),
+      ),
+    [definition],
   );
+  const figures = factFields
+    .filter(({ field }) => field.key_figure)
+    .map(({ field, sectionId }) => ({
+      field,
+      covered: !uncovered.has(sectionId) || byField.has(field.id),
+    }));
+  const details = factFields
+    .filter(({ field }) => field.header_detail)
+    .map(({ field, sectionId }) => ({
+      field,
+      covered: !uncovered.has(sectionId) || byField.has(field.id),
+    }));
+  // Recent events: the facts of the timeline fields, newest dated first, undated last.
+  const events = useMemo(
+    () =>
+      sortTimeline(
+        factFields
+          .filter(({ field }) => field.timeline)
+          .flatMap(({ field }) => {
+            const fact = byField.get(field.id);
+            return fact && fact.status !== "not_found" && fact.value
+              ? [{ item: { field, fact }, date: readEventDate(fact.value) }]
+              : [];
+          }),
+      ),
+    [factFields, byField],
+  );
+
+  // The sources are numbered in the order they first appear on the page.
+  const index = useMemo(() => {
+    const byId = new Map(facts.map((fact) => [fact.id, fact]));
+    const items = [...(assessment.assessment?.items ?? [])].sort(
+      (a, b) => STATEMENT_ORDER.indexOf(a.kind) - STATEMENT_ORDER.indexOf(b.kind),
+    );
+    return buildNoteIndex([
+      ...factFields
+        .filter(({ field }) => field.key_figure)
+        .map(({ field }) => byField.get(field.id)),
+      ...factFields
+        .filter(({ field }) => field.header_detail)
+        .map(({ field }) => byField.get(field.id)),
+      ...items.flatMap((item) => item.cited_fact_ids.map((id) => byId.get(id))),
+      ...events.map((entry) => entry.item.fact),
+      ...factFields.map(({ field }) => byField.get(field.id)),
+    ]);
+  }, [facts, assessment.assessment, events, factFields, byField]);
+
   if (!hasProfile(run)) return null;
+  const found = factFields.filter(({ field }) => {
+    const fact = byField.get(field.id);
+    return fact && fact.status !== "not_found";
+  }).length;
 
   return (
-    <>
-      <div className="card-head">
+    <NotesProvider index={index}>
+      <header className="mast">
+        <p className="kick">
+          <span>{t("card.kicker")}</span>
+          {run.supplier_sector ? <span>{run.supplier_sector}</span> : null}
+          <span>
+            {t("card.lastRefresh")} {formatDate(lastRefresh(run), i18n.language)}
+          </span>
+          <span className="num">
+            {proposedLeft === 0
+              ? t("card.review.countNone")
+              : t("card.kickerProposed", { count: proposedLeft })}
+          </span>
+        </p>
         <h1 className="card-name" id="card-name" ref={heading} tabIndex={-1}>
           {run.supplier_name ?? t("workspace.nameHidden")}
         </h1>
-        <dl className="card-meta">
-          <div>
-            <dt>{t("card.website")}</dt>
-            <dd>
-              {site ? (
-                <ExternalLink href={site}>{hostOf(site)}</ExternalLink>
-              ) : (
-                (run.supplier_website ?? t("identity.notGiven"))
-              )}
-            </dd>
-          </div>
-          <div>
-            <dt>{t("card.country")}</dt>
-            <dd>
-              {run.supplier_country
-                ? countryName(run.supplier_country, i18n.language)
-                : t("identity.notGiven")}
-            </dd>
-          </div>
-          <div>
-            <dt>{t("card.sector")}</dt>
-            <dd>{run.supplier_sector ?? t("identity.notGiven")}</dd>
-          </div>
-          <div>
-            <dt>{t("card.lastRefresh")}</dt>
-            <dd>{formatDate(lastRefresh(run), i18n.language)}</dd>
-          </div>
-          {/* The place of "Source content deletion" (mock-up 05-supplier-card-flags): #45 fills it. */}
-        </dl>
-        {figures.length > 0 ? <KeyFigures figures={figures} byField={byField} /> : null}
-        <div className="card-count">
-          <strong>{countText(proposedLeft)}</strong>
+        <p className="deck">
+          <strong>{run.supplier_name ?? t("workspace.nameHidden")}</strong>
+          {" · "}
+          {run.supplier_country
+            ? countryName(run.supplier_country, i18n.language)
+            : t("identity.notGiven")}
+          {" · "}
+          {site ? (
+            <ExternalLink href={site}>{hostOf(site)}</ExternalLink>
+          ) : (
+            (run.supplier_website ?? t("identity.notGiven"))
+          )}
+        </p>
+        <div className="mast-actions">
           {nextProposed ? (
             <button
               type="button"
-              className="btn btn-text"
+              className="btn btn--primary"
               onClick={() => document.getElementById(`fact-${nextProposed.id}`)?.focus()}
             >
               {t("card.review.nextProposed")}
             </button>
           ) : null}
+          <DownloadPdf runId={run.id} />
+          {closeButton}
         </div>
-        <DownloadPdf runId={run.id} />
+        {/* The place of "Source content deletion" (mock-up 05-supplier-card-flags): #45 fills it. */}
         <p className="vh" role="status">
           {announcement}
         </p>
-      </div>
+      </header>
+      {figures.length > 0 ? <KeyFigures figures={figures} byField={byField} /> : null}
+      {details.length > 0 ? <HeaderDetails details={details} byField={byField} /> : null}
       {editingContext ? (
         <BuyerContextForm
           runId={run.id}
@@ -350,44 +458,6 @@ function CardBody({
             </div>
           ) : null}
 
-          {definition.sections.map((section) => {
-            const fields = section.fields.filter((field) => field.kind === "fact");
-            if (fields.length === 0) return null;
-            const headingId = `section-${section.id}`;
-            const sectionUncovered = uncovered.has(section.id);
-            const none = !fields.some((field) => byField.has(field.id));
-            return (
-              <section className="section" key={section.id} aria-labelledby={headingId}>
-                <h2 className="section-title" id={headingId}>
-                  {section.label}
-                  {sectionUncovered && none ? null : (
-                    <span className="count">{t("card.fields", { count: fields.length })}</span>
-                  )}
-                </h2>
-                {sectionUncovered && none ? (
-                  <p className="not-covered">{t("card.notCoveredSection")}</p>
-                ) : (
-                  <FactList label={section.label}>
-                    {(nav) =>
-                      fields.map((field, index) => (
-                        <FactRow
-                          key={field.id}
-                          label={field.label}
-                          fact={byField.get(field.id) ?? null}
-                          notCovered={sectionUncovered && !byField.has(field.id)}
-                          concernsPeople={field.concerns_people}
-                          certification={field.certification}
-                          nav={nav(index)}
-                          review={review}
-                        />
-                      ))
-                    }
-                  </FactList>
-                )}
-              </section>
-            );
-          })}
-
           <AssessmentSection
             run={run}
             facts={facts}
@@ -396,35 +466,71 @@ function CardBody({
             onEditContext={() => setEditingContext(true)}
             contextButton={contextButton}
             announce={setAnnouncement}
+            between={
+              <>
+                {events.length > 0 ? <RecentEvents events={events} /> : null}
+                <section className="section" id="profile" aria-labelledby="profile-h">
+                  <h2 className="section-title" id="profile-h">
+                    {t("card.profile")}
+                    <span className="count">
+                      {t("card.profileMeta", { count: factFields.length, found })}
+                    </span>
+                  </h2>
+                  {definition.sections.map((section) => {
+                    const fields = section.fields.filter((field) => field.kind === "fact");
+                    if (fields.length === 0) return null;
+                    const headingId = `section-${section.id}`;
+                    const sectionUncovered = uncovered.has(section.id);
+                    const none = !fields.some((field) => byField.has(field.id));
+                    return (
+                      <div className="ledger" key={section.id}>
+                        <h3 className="ledger-title" id={headingId}>
+                          {section.label}
+                          {sectionUncovered && none ? null : (
+                            <span className="count">
+                              {t("card.fields", { count: fields.length })}
+                            </span>
+                          )}
+                        </h3>
+                        {sectionUncovered && none ? (
+                          <p className="not-covered">{t("card.notCoveredSection")}</p>
+                        ) : (
+                          <FactList label={section.label}>
+                            {(nav) =>
+                              fields.map((field, position) => (
+                                <FactRow
+                                  key={field.id}
+                                  label={field.label}
+                                  fact={byField.get(field.id) ?? null}
+                                  notCovered={sectionUncovered && !byField.has(field.id)}
+                                  concernsPeople={field.concerns_people}
+                                  certification={field.certification}
+                                  nav={nav(position)}
+                                  review={review}
+                                />
+                              ))
+                            }
+                          </FactList>
+                        )}
+                      </div>
+                    );
+                  })}
+                </section>
+              </>
+            }
           />
+          <SourcesSection sources={index.sources} />
         </div>
       )}
-    </>
+    </NotesProvider>
   );
 }
 
 type Figure = { field: ProfileField; covered: boolean };
 
-/** The key figures: a ruled line of selected facts, each with its status and its source chip. */
+/** The key figures: a ruled band of selected facts, each with its status and its note number. */
 function KeyFigures({ figures, byField }: { figures: Figure[]; byField: Map<string, Fact> }) {
   const { t } = useTranslation();
-  const [openId, setOpenId] = useState<string | null>(null);
-  const chips = useRef(new Map<string, HTMLButtonElement>());
-  const noteHeading = useRef<HTMLHeadingElement>(null);
-  const last = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (openId) {
-      last.current = openId;
-      noteHeading.current?.focus();
-    } else if (last.current) {
-      chips.current.get(last.current)?.focus();
-      last.current = null;
-    }
-  }, [openId]);
-
-  const open = figures.find(({ field }) => field.id === openId)?.field ?? null;
-  const openFact = open ? byField.get(open.id) : undefined;
   return (
     <>
       <h2 className="vh">{t("card.keyFigures")}</h2>
@@ -432,12 +538,12 @@ function KeyFigures({ figures, byField }: { figures: Figure[]; byField: Map<stri
         {figures.map(({ field, covered }) => {
           const fact = byField.get(field.id);
           const evidence = fact && fact.status !== "not_found" ? fact : null;
-          const noteId = `kf-note-${field.id}`;
+          const slot = `fig-${field.id}`;
           const verify = field.certification
             ? (safeHttpUrl(fact?.verification_url ?? null) ?? IAF_CERTSEARCH_URL)
             : null;
           return (
-            <div key={field.id}>
+            <div key={field.id} className="fig">
               <dt>{field.label}</dt>
               <dd>
                 {!covered ? (
@@ -448,25 +554,13 @@ function KeyFigures({ figures, byField }: { figures: Figure[]; byField: Map<stri
                   <>
                     <span className={(evidence.value ?? "").length > 24 ? "v sm" : "v"}>
                       <Redacted text={evidence.value ?? ""} />
+                      <NoteRef fact={evidence} slot={slot} field={field.label} />
                     </span>
                     <span className="sub">
                       <StatusBadge
                         status={evidence.status as "proposed" | "approved" | "corrected"}
                       />
                     </span>
-                    {evidence.quote ? (
-                      <SourceChip
-                        fact={evidence}
-                        compact
-                        noteId={noteId}
-                        open={openId === field.id}
-                        onToggle={() => setOpenId(openId === field.id ? null : field.id)}
-                        chipRef={(node) => {
-                          if (node) chips.current.set(field.id, node);
-                          else chips.current.delete(field.id);
-                        }}
-                      />
-                    ) : null}
                   </>
                 ) : (
                   <span className="v sm">
@@ -483,16 +577,117 @@ function KeyFigures({ figures, byField }: { figures: Figure[]; byField: Map<stri
           );
         })}
       </dl>
-      {open && openFact?.quote ? (
-        <QuoteBlock
-          band
-          fact={openFact}
-          fieldLabel={open.label}
-          noteId={`kf-note-${open.id}`}
-          onClose={() => setOpenId(null)}
-          headingRef={noteHeading}
-        />
-      ) : null}
+      {figures.map(({ field }) => {
+        const fact = byField.get(field.id);
+        return fact && fact.status !== "not_found" ? (
+          <NotePanel key={field.id} fact={fact} slot={`fig-${field.id}`} field={field.label} />
+        ) : null;
+      })}
     </>
+  );
+}
+
+/** Fields flagged `header_detail`, as label and value under the band (head office, group, ...). */
+function HeaderDetails({ details, byField }: { details: Figure[]; byField: Map<string, Fact> }) {
+  const { t } = useTranslation();
+  return (
+    <dl className="trio">
+      {details.map(({ field, covered }) => {
+        const fact = byField.get(field.id);
+        const evidence = fact && fact.status !== "not_found" ? fact : null;
+        const slot = `hd-${field.id}`;
+        return (
+          <div key={field.id}>
+            <dt className="lab">{field.label}</dt>
+            <dd>
+              {!covered ? (
+                <span className="not-covered-field">{t("card.notCoveredField")}</span>
+              ) : evidence ? (
+                <>
+                  <Redacted text={evidence.value ?? ""} />
+                  <NoteRef fact={evidence} slot={slot} field={field.label} />
+                  {evidence ? <NotePanel fact={evidence} slot={slot} field={field.label} /> : null}
+                </>
+              ) : (
+                <span className="missing">{t("card.noEvidence")}</span>
+              )}
+            </dd>
+          </div>
+        );
+      })}
+    </dl>
+  );
+}
+
+type EventItem = { field: ProfileField; fact: Fact };
+
+/** Recent events: one line per fact of a timeline field; a date only when the value states one. */
+function RecentEvents({ events }: { events: TimelineEntry<EventItem>[] }) {
+  const { t, i18n } = useTranslation();
+  return (
+    <section className="section" id="events" aria-labelledby="events-h">
+      <h2 className="section-title" id="events-h">
+        {t("card.events")}
+        <span className="count">{t("card.eventsMeta")}</span>
+      </h2>
+      <ol className="tl">
+        {events.map(({ item, date }) => {
+          const slot = `ev-${item.fact.id}`;
+          return (
+            <li key={item.fact.id}>
+              <span className={date ? "d" : "d u"}>
+                {date ? formatEventDate(date, i18n.language) : t("card.dateNotStated")}
+              </span>
+              <span>
+                <span className="k">{item.field.label}</span>
+                <Redacted text={item.fact.value ?? ""} />
+                <NoteRef fact={item.fact} slot={slot} field={item.field.label} />
+                <NotePanel fact={item.fact} slot={slot} field={item.field.label} />
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/** The numbered sources, each listed once with the quotes it supports. */
+function SourcesSection({ sources }: { sources: SourceEntry[] }) {
+  const { t, i18n } = useTranslation();
+  if (sources.length === 0) return null;
+  return (
+    <section className="section" id="sources" aria-labelledby="sources-h">
+      <h2 className="section-title" id="sources-h">
+        {t("card.sources")}
+        <span className="count">{t("card.sourcesMeta", { count: sources.length })}</span>
+      </h2>
+      <ol className="notes">
+        {sources.map((source) => (
+          <li key={source.key} id={`n${source.number}`}>
+            <span className="t">{source.title}</span>
+            {source.type ? <SourceTypeLabel type={source.type} /> : null}
+            {source.url ? (
+              <>
+                {" · "}
+                <ExternalLink href={source.url}>{hostOf(source.url) ?? source.url}</ExternalLink>
+              </>
+            ) : null}
+            {source.fetchedAt ? <> · {formatDate(source.fetchedAt, i18n.language)}</> : null}
+            {source.quotes.length > 0 ? (
+              <ul>
+                {source.quotes.map((quote) => (
+                  <li key={quote}>
+                    <q>
+                      <Redacted text={quote} />
+                    </q>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

@@ -3,10 +3,20 @@
 // financial evidence guidance, the procurement recommendations, the fit against the member's criteria, and
 // the buyer's own inputs. No aggregate score appears anywhere. For a natural-person business the whole
 // section is replaced by neutral wording (owner decision D-073).
-import { type RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { ExternalLink } from "../components/evidence";
 import { FlagBanner } from "../components/FlagBanner";
+import { useNotes } from "../components/notes";
 import {
   type CitedFact,
   type StatementBody,
@@ -51,6 +61,8 @@ type Props = {
   onEditContext: () => void;
   contextButton: RefObject<HTMLButtonElement | null>;
   announce: (message: string) => void;
+  /** Content shown after the assessment and before the fit and buyer sections (events, profile). */
+  between?: ReactNode;
 };
 
 /** Why a drafting request was refused, in plain words (409 and 403 on the two POST endpoints). */
@@ -73,6 +85,7 @@ export function AssessmentSection({
   onEditContext,
   contextButton,
   announce,
+  between = null,
 }: Props) {
   const { t, i18n } = useTranslation();
   const lockedId = useId();
@@ -81,6 +94,7 @@ export function AssessmentSection({
   const [asking, setAsking] = useState<DraftingPart | null>(null);
   const criteriaField = useRef<HTMLTextAreaElement>(null);
   const { assessment, inputs, applyStatement, reload } = state;
+  const notes = useNotes();
 
   // A drafting that ended is announced; the new statements appear in the lists.
   useEffect(() => {
@@ -179,24 +193,40 @@ export function AssessmentSection({
           </h2>
           <p className="not-assessed">{t("card.naturalPerson")}</p>
         </section>
+        {between}
         {state.load === "ready" ? (
           <BuyerSection run={run} fields={buyerFields} state={state} announce={announce} />
         ) : null}
       </>
     );
   }
-  if (state.load === "loading") return <LoadingIndicator />;
-  if (state.load === "not_found") return <NotFoundPage />;
+  if (state.load === "loading")
+    return (
+      <>
+        <LoadingIndicator />
+        {between}
+      </>
+    );
+  if (state.load === "not_found")
+    return (
+      <>
+        <NotFoundPage />
+        {between}
+      </>
+    );
   if (state.load === "error" || !assessment) {
     return (
-      <MessageBanner kind="error">
-        <p>{t("assessment.loadError")}</p>
-        <p>
-          <button type="button" className="btn btn-secondary" onClick={reload}>
-            {t("common.retry")}
-          </button>
-        </p>
-      </MessageBanner>
+      <>
+        <MessageBanner kind="error">
+          <p>{t("assessment.loadError")}</p>
+          <p>
+            <button type="button" className="btn btn-secondary" onClick={reload}>
+              {t("common.retry")}
+            </button>
+          </p>
+        </MessageBanner>
+        {between}
+      </>
     );
   }
 
@@ -213,6 +243,7 @@ export function AssessmentSection({
         {
           id,
           label: labelOf.get(fact.field) ?? fact.field,
+          note: notes?.index.numberOf(fact) ?? null,
           correctedAfterDraft:
             fact.status === "corrected" &&
             !!fact.reviewed_at &&
@@ -236,13 +267,32 @@ export function AssessmentSection({
   );
   const group = (title: string, list: AssessmentStatement[], key: string) =>
     list.length === 0 ? null : (
-      <div key={key}>
+      <div key={key} className="swot-block">
         <h3 className="sub-title" tabIndex={-1}>
           {title}
         </h3>
         <ul className="stmts">{list.map((item) => statement(item))}</ul>
       </div>
     );
+  const recoList = (kinds: AssessmentStatement["kind"][], key: string) => {
+    const list = ofKind(...kinds);
+    return list.length === 0 ? null : (
+      <ul className="stmts" key={key}>
+        {list.map((item) =>
+          statement(item, {
+            kindLabel: t(`assessment.kinds.${item.kind}`),
+            redraftNote: outdated
+              ? item.provenance.status === "ai_draft"
+                ? "replaces"
+                : "keeps"
+              : null,
+            onRedraft: () => void draft("recommendations"),
+            redraftDisabled: partial || inProgress || drafting("recommendations"),
+          }),
+        )}
+      </ul>
+    );
+  };
 
   const gaps = ofKind("evidence_gap").filter((item) => !isRules(item));
   const financial = ofKind("evidence_gap").filter(isRules);
@@ -286,12 +336,14 @@ export function AssessmentSection({
           </MessageBanner>
         ) : (
           <>
-            {group(t("assessment.groups.strength"), ofKind("strength"), "s")}
-            {group(t("assessment.groups.weakness"), ofKind("weakness"), "w")}
-            {group(t("assessment.groups.opportunity"), ofKind("opportunity"), "o")}
-            {group(t("assessment.groups.threat"), ofKind("threat"), "t")}
-            {group(t("assessment.groups.risk_indicator"), ofKind("risk_indicator"), "r")}
-            {group(t("assessment.groups.evidence_gap"), gaps, "g")}
+            <div className="swot">
+              {group(t("assessment.groups.strength"), ofKind("strength"), "s")}
+              {group(t("assessment.groups.threat"), ofKind("threat"), "t")}
+              {group(t("assessment.groups.opportunity"), ofKind("opportunity"), "o")}
+              {group(t("assessment.groups.evidence_gap"), gaps, "g")}
+              {group(t("assessment.groups.weakness"), ofKind("weakness"), "w")}
+              {group(t("assessment.groups.risk_indicator"), ofKind("risk_indicator"), "r")}
+            </div>
             {guidance || financial.length > 0 ? (
               <div>
                 <h3 className="sub-title" tabIndex={-1}>
@@ -408,26 +460,30 @@ export function AssessmentSection({
               </div>
             )}
             {recoItems.length > 0 ? (
-              <ul className="stmts" style={{ marginTop: "var(--isc-space-4)" }}>
-                {recoItems.map((item) =>
-                  statement(item, {
-                    kindLabel: t(`assessment.kinds.${item.kind}`),
-                    redraftNote: outdated
-                      ? item.provenance.status === "ai_draft"
-                        ? "replaces"
-                        : "keeps"
-                      : null,
-                    onRedraft: () => void draft("recommendations"),
-                    redraftDisabled: partial || inProgress || drafting("recommendations"),
-                  }),
-                )}
-              </ul>
+              <div className="reco-block">
+                {ofKind("procurement_implication").length > 0 ? (
+                  <div className="impl">{recoList(["procurement_implication"], "pi")}</div>
+                ) : null}
+                <div className="reco">
+                  {recoList(["contract_approach"], "ca")}
+                  {recoList(["volume_share"], "vs")}
+                  {recoList(["next_action"], "na")}
+                </div>
+                {ofKind("relationship_level", "procurement_priority").length > 0 ? (
+                  <div className="reco">
+                    {recoList(["relationship_level"], "rl")}
+                    {recoList(["procurement_priority"], "pp")}
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <p className="empty-fit">{t("assessment.noRecommendations")}</p>
             )}
           </>
         )}
       </section>
+
+      {between}
 
       {assessment.status === "pending" ? null : (
         <section className="section" id="sec-fit" aria-labelledby="fit-h">

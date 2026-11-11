@@ -422,10 +422,23 @@
       "count_one": "{{count}} fait encore proposé",
       "count_other": "{{count}} faits encore proposés",
       "countNone": "Aucun fait n’attend de révision.",
-      "nextProposed": "Aller au prochain fait proposé",
+      "nextProposed": "Examiner le prochain fait proposé",
       "announceApproved": "{{field}} approuvé.",
       "announceCorrected": "{{field}} corrigé."
-    }
+    },
+    "kickerProposed_one": "{{count}} fait proposé",
+    "kickerProposed_other": "{{count}} faits proposés",
+    "noteRef": "Note {{number}} : citation pour {{field}}",
+    "noteLink": "Note {{number}}, voir Sources",
+    "noteInSources": "Note {{number}} dans les sources",
+    "events": "Événements récents",
+    "eventsMeta": "les plus récents datés d’abord · sans date à la fin",
+    "dateNotStated": "Date non indiquée",
+    "profile": "Profil",
+    "profileMeta": "{{count}} champs · {{found}} trouvés",
+    "sources": "Sources",
+    "sourcesMeta_one": "{{count}} source",
+    "sourcesMeta_other": "{{count}} sources"
   },
   "assessment": {
     "aiDraft": "Brouillon IA, en attente de votre validation",

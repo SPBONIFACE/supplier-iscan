@@ -974,6 +974,10 @@ export interface components {
             concerns_people: boolean;
             /** @description True when the supplier card repeats this field in its band of key figures, under the header (the definition file chooses which). */
             key_figure: boolean;
+            /** @description True when the supplier card shows this field as a label and value under the band of key figures (for example head office, group, latest strategic move). False by default. */
+            header_detail: boolean;
+            /** @description True when the supplier card lists this field's fact among its recent events. False by default. */
+            timeline: boolean;
         };
         ProfileSection: {
             id: string;

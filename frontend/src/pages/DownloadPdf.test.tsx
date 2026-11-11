@@ -66,7 +66,7 @@ describe("Download PDF on the supplier card", () => {
       ok({ blob, filename: "supplier-card-corvane-20261105.pdf" }),
     );
     const { container } = renderApp(CARD_PATH);
-    const panel = await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    const panel = await screen.findByRole("article", { name: "Corvane Précision SAS" });
 
     await user.click(within(panel).getByRole("button", { name: "Download PDF" }));
 
@@ -83,7 +83,7 @@ describe("Download PDF on the supplier card", () => {
     await i18n.changeLanguage("fr");
     mocks.downloadRunPdf.mockResolvedValue(ok({ blob, filename: "supplier-card-x.pdf" }));
     renderApp(CARD_PATH);
-    const panel = await screen.findByRole("dialog");
+    const panel = await screen.findByRole("article");
 
     await user.click(await within(panel).findByRole("button", { name: "Télécharger le PDF" }));
 
@@ -97,7 +97,7 @@ describe("Download PDF on the supplier card", () => {
     let finish: (value: unknown) => void = () => {};
     mocks.downloadRunPdf.mockReturnValue(new Promise((resolve) => (finish = resolve)));
     renderApp(CARD_PATH);
-    const panel = await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    const panel = await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const button = within(panel).getByRole("button", { name: "Download PDF" });
 
     button.focus();
@@ -119,7 +119,7 @@ describe("Download PDF on the supplier card", () => {
     mocks.downloadRunPdf.mockResolvedValueOnce(fail("unavailable", 503));
     mocks.downloadRunPdf.mockResolvedValue(ok({ blob, filename: "a.pdf" }));
     renderApp(CARD_PATH);
-    const panel = await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    const panel = await screen.findByRole("article", { name: "Corvane Précision SAS" });
 
     await user.click(within(panel).getByRole("button", { name: "Download PDF" }));
     expect((await within(panel).findByRole("alert")).textContent).toMatch(
@@ -135,7 +135,7 @@ describe("Download PDF on the supplier card", () => {
   it("is unavailable, with the reason shown, while the run is in progress", async () => {
     mocks.getRun.mockResolvedValue(ok(makeRun({ status: "running", finished_at: null })));
     renderApp(CARD_PATH);
-    const panel = await screen.findByRole("dialog");
+    const panel = await screen.findByRole("article");
 
     const button = await within(panel).findByRole("button", { name: "Download PDF" });
     expect((button as HTMLButtonElement).disabled).toBe(true);

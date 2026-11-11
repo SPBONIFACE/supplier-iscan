@@ -68,7 +68,7 @@ const reviewed = (fact: Fact, changes: Partial<Fact>): Fact => ({
 
 async function openCard() {
   renderApp(CARD_PATH);
-  return screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+  return screen.findByRole("article", { name: "Corvane Précision SAS" });
 }
 
 beforeEach(async () => {
@@ -94,7 +94,7 @@ describe("approve", () => {
   it("approves a fact, shows who and when, lowers the count and announces it", async () => {
     const user = userEvent.setup();
     const panel = await openCard();
-    expect(within(panel).getByText("3 facts still proposed")).toBeTruthy();
+    expect(within(panel).getByText("3 facts proposed")).toBeTruthy();
     const year = row("Founding year");
     mocks.reviewFact.mockResolvedValue(ok(reviewed(facts()[1] as Fact, { status: "approved" })));
     mocks.getRun.mockResolvedValue(ok(makeRun({ proposed_facts: 2 })));
@@ -110,7 +110,7 @@ describe("approve", () => {
       within(year).getByText(/Approved by marie@example\.org on Nov 5, 2026, 09:15 UTC/),
     ).toBeTruthy();
     expect(within(year).queryByRole("button", { name: /Approve/ })).toBeNull();
-    expect(within(panel).getByText("2 facts still proposed")).toBeTruthy();
+    expect(within(panel).getByText("2 facts proposed")).toBeTruthy();
     expect(
       within(panel).getByText("Founding year approved. 2 facts still proposed", {
         selector: "p[role=status]",
@@ -128,7 +128,7 @@ describe("approve", () => {
     expect(
       within(legal).getByText(/Approuvé par claire@example\.org le 27\/10\/2026 10:38 UTC/),
     ).toBeTruthy();
-    expect(within(panel).getByText("3 faits encore proposés")).toBeTruthy();
+    expect(within(panel).getByText("3 faits proposés")).toBeTruthy();
     expect(within(legal).getByRole("button", { name: "Corriger Forme juridique" })).toBeTruthy();
     expect(
       within(row("Année de création")).getByRole("button", { name: "Approuver Année de création" }),
@@ -200,7 +200,7 @@ describe("correct", () => {
     expect(document.activeElement).toBe(employees);
 
     // The quote stays reachable and is said to support the original AI value.
-    await user.click(within(employees).getByRole("button", { name: /Found in/ }));
+    await user.click(within(employees).getByRole("button", { name: /^Note \d+/ }));
     expect(
       within(employees).getByRole("heading", {
         name: "Quote for the original AI value · Number of employees",
@@ -249,7 +249,7 @@ describe("correct", () => {
 
     expect(within(year).queryByLabelText("Corrected value")).toBeNull();
     expect(document.activeElement).toBe(year);
-    expect(screen.getByRole("dialog", { name: "Corvane Précision SAS" })).toBeTruthy();
+    expect(screen.getByRole("article", { name: "Corvane Précision SAS" })).toBeTruthy();
     expect(mocks.reviewFact).not.toHaveBeenCalled();
   });
 });
@@ -416,7 +416,7 @@ describe("keyboard", () => {
   it("approves from the keyboard alone and goes to the next proposed fact", async () => {
     const user = userEvent.setup();
     const panel = await openCard();
-    await user.click(within(panel).getByRole("button", { name: "Go to the next proposed fact" }));
+    await user.click(within(panel).getByRole("button", { name: "Review the next proposed fact" }));
     const year = row("Founding year");
     expect(document.activeElement).toBe(year);
     mocks.reviewFact.mockResolvedValue(ok(reviewed(facts()[1] as Fact, { status: "approved" })));

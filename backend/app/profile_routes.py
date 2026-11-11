@@ -23,6 +23,8 @@ class FieldOut(BaseModel):
     certification: bool
     concerns_people: bool
     key_figure: bool
+    header_detail: bool
+    timeline: bool
 
 
 class SectionOut(BaseModel):
@@ -57,6 +59,8 @@ def render(definition: ProfileDefinition, language: Language) -> ProfileDefiniti
                         certification=field.certification,
                         concerns_people=field.concerns_people,
                         key_figure=field.key_figure,
+                        header_detail=field.header_detail,
+                        timeline=field.timeline,
                     )
                     for field in section.fields
                 ],

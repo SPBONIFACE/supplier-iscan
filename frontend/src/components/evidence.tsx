@@ -16,6 +16,7 @@ import type { Fact } from "../lib/api";
 import { formatDate } from "../lib/format";
 import { hostOf, safeHttpUrl } from "../lib/safeUrl";
 import { FactReviewBar, type ReviewControls } from "./FactReview";
+import { NotePanel, NoteRef, useNotes } from "./notes";
 
 /** Where the buyer can check a certificate when the API gives no more precise address. */
 export const IAF_CERTSEARCH_URL = "https://www.iafcertsearch.org/";
@@ -148,6 +149,8 @@ type QuoteProps = {
   headingRef: Ref<HTMLHeadingElement>;
   /** Marks the note under the key-figures band rather than under a row. */
   band?: boolean;
+  /** The note number of the source on the card page; the quote then links to its entry in Sources. */
+  noteNumber?: number | null;
 };
 
 /** The Quote of a fact, verbatim and in its source language, with its attribution. */
@@ -158,6 +161,7 @@ export function QuoteBlock({
   onClose,
   headingRef,
   band = false,
+  noteNumber = null,
 }: QuoteProps) {
   const { t, i18n } = useTranslation();
   const headingId = useId();
@@ -201,6 +205,11 @@ export function QuoteBlock({
             components={{ cite: <cite className="src-name" /> }}
           />
         </p>
+        {noteNumber ? (
+          <p className="note-link">
+            <a href={`#n${noteNumber}`}>{t("card.noteInSources", { number: noteNumber })}</a>
+          </p>
+        ) : null}
         <div className="labels">
           <SourceTypeLabel type={fact.source_type} />
           {fact.quote_redacted ? <span className="ev">{t("card.redactedExtract")}</span> : null}
@@ -333,11 +342,73 @@ export function FactRow({
   const labelId = `${base}-label`;
   const noteId = `${base}-note`;
   const quote = useQuoteToggle();
+  const notes = useNotes();
   const row = useRef<HTMLLIElement>(null);
   const evidence = fact && fact.status !== "not_found" ? fact : null;
   const verify = certification
     ? (safeHttpUrl(fact?.verification_url ?? null) ?? IAF_CERTSEARCH_URL)
     : null;
+  if (notes) {
+    // The card page: a ledger line, field, value with its note number, then the review column.
+    const slot = `row-${fact?.id ?? base}`;
+    return (
+      <li
+        className="fact fact-ledger"
+        id={fact ? `fact-${fact.id}` : undefined}
+        aria-labelledby={labelId}
+        ref={row}
+        tabIndex={nav?.tabIndex}
+        onFocus={nav?.onFocus}
+      >
+        <span className="f-label" id={labelId}>
+          {label}
+          {concernsPeople ? <span className="f-hint">{t("card.aboutPeople")}</span> : null}
+        </span>
+        <div className="f-main">
+          {notCovered ? (
+            <span className="not-covered-field">{t("card.notCoveredField")}</span>
+          ) : evidence ? (
+            <>
+              <span className="f-value">
+                <Redacted text={evidence.value ?? ""} />
+              </span>
+              <NoteRef fact={evidence} slot={slot} field={label} />
+              {evidence.status === "corrected" && evidence.original_value ? (
+                <span className="f-original">
+                  {t("card.originalValue")} <Redacted text={evidence.original_value} />
+                </span>
+              ) : null}
+              <span className="f-src">
+                <SourceTypeLabel type={evidence.source_type} />
+                {evidence.quote_redacted ? <RedactedLabel /> : null}
+              </span>
+            </>
+          ) : (
+            <span className="missing">{t("card.noEvidence")}</span>
+          )}
+          {verify ? (
+            <p className="f-cert">
+              <ExternalLink href={verify}>{t("card.verifyIaf")}</ExternalLink>
+            </p>
+          ) : null}
+        </div>
+        {evidence ? (
+          <div className="f-rev">
+            <StatusBadge status={evidence.status as BadgeStatus} />
+            {review ? (
+              <FactReviewBar
+                fact={evidence}
+                label={label}
+                review={review}
+                focusRow={() => row.current?.focus()}
+              />
+            ) : null}
+          </div>
+        ) : null}
+        {evidence ? <NotePanel fact={evidence} slot={slot} field={label} /> : null}
+      </li>
+    );
+  }
   return (
     <li
       className="fact"

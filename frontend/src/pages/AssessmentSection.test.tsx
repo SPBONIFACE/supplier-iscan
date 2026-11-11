@@ -131,7 +131,7 @@ const statementEl = (id: string) => {
 
 async function openCard() {
   renderApp(CARD_PATH);
-  return screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+  return screen.findByRole("article", { name: "Corvane Précision SAS" });
 }
 
 const withItems = (items: AssessmentStatement[], more: Parameters<typeof makeAssessment>[0] = {}) =>
