@@ -48,6 +48,12 @@ PROMPT_ID = "retrieval"
 RATE_LIMIT_WAITS = (2.0, 4.0)
 
 
+# Addresses asked of the provider client per request. The collector's own selection (one own-domain
+# address, `max_retrieval_urls`) runs afterwards, so the client must not cut the answer to its
+# default of 10 in raw search order, where the supplier's own pages come first (#156).
+RETRIEVAL_CANDIDATES = 40
+
+
 # Asked when the website gave every page kind: sources other than the supplier's own pages.
 INDEPENDENT_REQUEST = (
     "No field group lacks evidence on the supplier's own website. Return independent sources "
@@ -145,7 +151,7 @@ def make_retriever(
             addresses=redaction.addresses,
             company_names=redaction.company_names,
         )
-        return RetrievalRequest(rendered.instructions, query)
+        return RetrievalRequest(rendered.instructions, query, max_results=RETRIEVAL_CANDIDATES)
 
     def send(client: RetrievalClient, request: RetrievalRequest, lacking: list[str]) -> list[str]:
         """The provider call alone (it runs in a pool thread): no database session of the stage."""
