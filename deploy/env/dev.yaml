@@ -16,3 +16,6 @@ DATABASE_STATEMENT_TIMEOUT_SECONDS: "30"
 # Worker: how long a job is held before another worker may take it, and how often it looks for work.
 RUN_LEASE_SECONDS: "300"
 WORKER_POLL_SECONDS: "5"
+# Alert drill switch (#53): "false" here, always. The drill switches it on and off on the running
+# worker (_docs/operations/oncall-runbook.md). The application accepts it only in dev.
+FAULT_INJECTION_FAIL_RUNS: "false"

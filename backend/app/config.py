@@ -84,6 +84,14 @@ TELEMETRY_EXPORT_TIMEOUT_SECONDS = "TELEMETRY_EXPORT_TIMEOUT_SECONDS"
 # The longest a database statement may run (seconds): a database that accepts connections but does
 # not answer then yields a 503, not a hanging request (#8 QA note).
 DATABASE_STATEMENT_TIMEOUT_SECONDS = "DATABASE_STATEMENT_TIMEOUT_SECONDS"
+# The deployed environment the instance runs in ("dev" or "prod"), written by deploy/deploy.sh from
+# its ENV argument (never from a committed file). Empty locally and on a self-hosted instance.
+DEPLOYMENT_ENVIRONMENT = "DEPLOYMENT_ENVIRONMENT"
+# Drill switch of the alert (#53), dev only: every profile run fails at the start of the collection
+# stage with a named synthetic error. Accepted only when DEPLOYMENT_ENVIRONMENT is "dev"; anywhere
+# else, a true value stops startup (and deploy/deploy.sh refuses to deploy prod with it).
+FAULT_INJECTION_FAIL_RUNS = "FAULT_INJECTION_FAIL_RUNS"
+FAULT_INJECTION_ENVIRONMENTS = ("dev",)
 
 # Local defaults when the setting is empty, so that a self-hosted instance starts without them.
 # They are configuration, not product terms: every operator sets their own.
@@ -151,6 +159,9 @@ class Settings:
     telemetry_endpoint: str | None = None
     telemetry_export_timeout_seconds: int = DEFAULT_TELEMETRY_EXPORT_TIMEOUT_SECONDS
     database_statement_timeout_seconds: int = DEFAULT_DATABASE_STATEMENT_TIMEOUT_SECONDS
+    deployment_environment: str | None = None
+    # Off unless the instance is dev and the switch is on (see FAULT_INJECTION_FAIL_RUNS).
+    fault_injection_fail_runs: bool = False
 
     @property
     def organisations_skip_activation(self) -> bool:
@@ -286,6 +297,19 @@ def _parse_max_retries(raw: str) -> int:
     return int(value)
 
 
+def _parse_fault_injection(raw: str, environment: str | None) -> bool:
+    value = raw.strip().lower()
+    if value in ("", "false"):
+        return False
+    if value != "true":
+        raise ConfigurationError(f"{FAULT_INJECTION_FAIL_RUNS} must be true or false")
+    if environment not in FAULT_INJECTION_ENVIRONMENTS:
+        raise ConfigurationError(
+            f"{FAULT_INJECTION_FAIL_RUNS} may be true only when {DEPLOYMENT_ENVIRONMENT} is dev"
+        )
+    return True
+
+
 def require_run_budget(settings: "Settings") -> Decimal:
     """The per-run budget in EUR; a missing one stops startup (owner decision, 27 Oct 2026: the
     budget always applies, on a self-hosted instance too)."""
@@ -296,6 +320,7 @@ def require_run_budget(settings: "Settings") -> Decimal:
 
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
+    deployment_environment = env.get(DEPLOYMENT_ENVIRONMENT, "").strip() or None
     raw_origins = env.get(CORS_ALLOWED_ORIGINS, "").strip() or DEFAULT_ALLOWED_ORIGINS
     database_url = env.get(DATABASE_URL, "").strip() or None
     return Settings(
@@ -348,5 +373,9 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         ),
         database_statement_timeout_seconds=_parse_positive_int(
             env, DATABASE_STATEMENT_TIMEOUT_SECONDS, DEFAULT_DATABASE_STATEMENT_TIMEOUT_SECONDS
+        ),
+        deployment_environment=deployment_environment,
+        fault_injection_fail_runs=_parse_fault_injection(
+            env.get(FAULT_INJECTION_FAIL_RUNS, ""), deployment_environment
         ),
     )

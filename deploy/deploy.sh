@@ -5,6 +5,7 @@
 #   deploy/deploy.sh ENV migrate    apply the database migrations (a Cloud Run job, run and awaited)
 #   deploy/deploy.sh ENV deploy     deploy API, worker and frontend, check /health, then send traffic
 #   deploy/deploy.sh ENV health     check the API and the frontend of ENV
+#   deploy/deploy.sh dev relay      deploy the alert relay (#53, dev only; IMAGE_RELAY by digest)
 #
 # ENV is dev or prod. Settings come from the environment (names only; the workflows read them from
 # GitHub variables), never from a file with a secret:
@@ -12,6 +13,9 @@
 #   IMAGE_API, IMAGE_WEB, IMAGE_COLLECTOR         images, pinned by digest (name@sha256:...)
 #   CRAWLER_CONTACT_URL                           public contact page named in the crawler's User-Agent
 #   EUR_PER_USD                                   optional: EUR for 1 USD, for costs in EUR
+#   FAULT_INJECTION_FAIL_RUNS                     optional, dev only: the alert drill switch (#53);
+#                                                 prod refuses to deploy when it is set to anything
+#                                                 but false, here or in deploy/env/prod.yaml
 # Secrets are referenced by NAME from Secret Manager (iscan-ENV-<name>, see the owner guide); this
 # script never reads a secret value. Sizing: deploy/env/ENV.conf; container settings: deploy/env/ENV.yaml.
 set -euo pipefail
@@ -19,7 +23,21 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 env_name="${1:-}"
 action="${2:-}"
-case "$env_name" in dev | prod) ;; *) echo "usage: deploy.sh dev|prod images|migrate|deploy|health" >&2; exit 2 ;; esac
+case "$env_name" in dev | prod) ;; *) echo "usage: deploy.sh dev|prod images|migrate|deploy|health|relay" >&2; exit 2 ;; esac
+
+# The alert drill switch (#53) never reaches production: checked before anything else is done.
+fault_switch_on() {
+  local value="${FAULT_INJECTION_FAIL_RUNS:-}"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+  if [ -n "$value" ] && [ "$value" != "false" ]; then return 0; fi
+  # In the committed settings file: any value other than "false" counts as on.
+  grep -E '^[[:space:]]*FAULT_INJECTION_FAIL_RUNS[[:space:]]*:' "$here/env/$env_name.yaml" \
+    | grep -Eiv ':[[:space:]]*"?false"?[[:space:]]*(#.*)?$' > /dev/null
+}
+if [ "$env_name" = prod ] && fault_switch_on; then
+  echo "Refused: FAULT_INJECTION_FAIL_RUNS is set for prod. The alert drill switch is for dev only." >&2
+  exit 2
+fi
 
 need() { for name in "$@"; do [ -n "${!name:-}" ] || { echo "Missing setting: $name" >&2; exit 2; }; done; }
 need GCP_PROJECT_ID GCP_REGION
@@ -144,6 +162,8 @@ deploy)
     echo "CORS_ALLOWED_ORIGINS: \"$web_origin\""
     # The conversion rate used for costs in EUR (needed when a USD-priced provider is selected).
     [ -z "${EUR_PER_USD:-}" ] || echo "EUR_PER_USD: \"$EUR_PER_USD\""
+    # The environment the instance runs in: the application accepts the drill switch only in dev.
+    echo "DEPLOYMENT_ENVIRONMENT: \"$env_name\""
   } >> "$work/app.yaml"
 
   # Secrets by name. Required ones must exist; the others are passed on when they exist.
@@ -225,8 +245,27 @@ health)
   echo "Frontend answers at $web"
   ;;
 
+relay)
+  # The alert relay (#53): Cloud Monitoring webhook in, GitHub workflow_dispatch out. Dev only.
+  # Public address (a Cloud Monitoring webhook cannot sign in to Google), protected by the channel's
+  # basic-auth password. Its own service account reads only its two secrets (runbook). One instance.
+  [ "$env_name" = dev ] || { echo "The alert relay is deployed in dev only (#53)" >&2; exit 2; }
+  need IMAGE_RELAY GITHUB_REPOSITORY
+  case "$IMAGE_RELAY" in *@sha256:*) ;; *) echo "IMAGE_RELAY must be pinned by digest" >&2; exit 2 ;; esac
+  for required in alert-webhook-token github-dispatch-token; do
+    secret_exists "$required" || { echo "Secret iscan-$env_name-$required does not exist" >&2; exit 1; }
+  done
+  "${gc[@]}" run deploy iscan-alert-relay --region "$GCP_REGION" --image "$IMAGE_RELAY" \
+    --service-account "iscan-alert-relay@${GCP_PROJECT_ID}.iam.gserviceaccount.com" \
+    --allow-unauthenticated --min-instances 0 --max-instances 1 --concurrency 4 \
+    --cpu 1 --memory 256Mi --timeout 30 --labels "$labels" \
+    --set-env-vars "GITHUB_REPOSITORY=$GITHUB_REPOSITORY,ONCALL_ENVIRONMENT=$env_name" \
+    --set-secrets "WEBHOOK_PASSWORD=iscan-$env_name-alert-webhook-token:latest,GITHUB_DISPATCH_TOKEN=iscan-$env_name-github-dispatch-token:latest"
+  echo "Relay address (URL of the webhook channel): $(run_app_url iscan-alert-relay)/"
+  ;;
+
 *)
-  echo "usage: deploy.sh dev|prod images|migrate|deploy|health" >&2
+  echo "usage: deploy.sh dev|prod images|migrate|deploy|health|relay" >&2
   exit 2
   ;;
 esac
