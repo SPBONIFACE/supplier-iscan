@@ -1,0 +1,249 @@
+# On-call agent (#53, dev only). Woken by the alert relay (deploy/alert-relay) through workflow_dispatch
+# when the failure-rate alert of dev opens an incident, or started by hand from the Actions tab with the
+# same fields (the documented fallback). Runbook: _docs/operations/oncall-runbook.md
+#
+#   triage   one incident, one issue: a second run of the same incident, or a new incident of the same
+#            policy within the cooldown (alert flapping), only comments; the agent is not run again
+#   collect  telemetry with the read-only account iscan-oncall-reader (no LLM here), or a fixture
+#   agent    Claude Code reads the telemetry as data and writes a schema-checked report; it has no cloud
+#            credential and contents: read only
+#   report   (no LLM) validates the report, opens or updates the issue labelled `incident`, and pushes a
+#            proposed change to oncall/<incident-id> with a pull request for the owner. It never pushes
+#            to main, never merges, never deploys. Runs always, so a failure is reported too.
+#
+# Inputs reach the shell only through `env:`. Actions are pinned to full commit SHAs; the comment gives
+# the release. Secrets by name only: ONCALL_ANTHROPIC_API_KEY (GitHub environment `oncall`).
+name: On-call
+
+on:
+  workflow_dispatch:
+    inputs:
+      incident_id:
+        description: Cloud Monitoring incident ID
+        required: true
+        type: string
+      policy_name:
+        description: Alert policy name
+        required: true
+        type: string
+      environment:
+        description: Environment (dev only)
+        required: true
+        type: choice
+        options: [dev]
+        default: dev
+      started_at:
+        description: Start time of the incident, UTC (2026-11-12T10:00:00Z)
+        required: true
+        type: string
+      console_url:
+        description: Incident link in the Google Cloud console (optional)
+        required: false
+        type: string
+        default: ""
+      fixture:
+        description: Replay a fixture of ops/oncall/fixtures instead of live telemetry (e.g. provider-error)
+        required: false
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: oncall-${{ inputs.incident_id }}
+  cancel-in-progress: false
+
+env:
+  INCIDENT_ID: ${{ inputs.incident_id }}
+  POLICY_NAME: ${{ inputs.policy_name }}
+  ONCALL_ENVIRONMENT: ${{ inputs.environment }}
+  STARTED_AT: ${{ inputs.started_at }}
+  CONSOLE_URL: ${{ inputs.console_url }}
+  FIXTURE: ${{ inputs.fixture }}
+
+jobs:
+  triage:
+    name: one incident, one issue
+    # Only from main: the reader account trusts main only, and the relay dispatches on main.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      action: ${{ steps.triage.outputs.action }}
+      issue: ${{ steps.triage.outputs.issue }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Find an open issue of this incident, or of this policy within the cooldown
+        id: triage
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COOLDOWN_MINUTES: ${{ vars.ONCALL_COOLDOWN_MINUTES }}
+        run: python3 ops/oncall/oncall.py triage
+
+  collect:
+    name: collect telemetry (read-only, no LLM)
+    needs: triage
+    if: github.ref == 'refs/heads/main' && needs.triage.outputs.action == 'new'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write # the OpenID Connect token exchanged for the read-only account
+    outputs:
+      telemetry: ${{ steps.collect.outputs.telemetry }}
+      reason: ${{ steps.config.outputs.reason }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the reader configuration
+        id: config
+        if: inputs.fixture == ''
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          ONCALL_READER_SERVICE_ACCOUNT: ${{ vars.ONCALL_READER_SERVICE_ACCOUNT }}
+        run: |
+          for name in GCP_PROJECT_ID GCP_WORKLOAD_IDENTITY_PROVIDER ONCALL_READER_SERVICE_ACCOUNT; do
+            if [ -z "${!name}" ]; then
+              echo "reason=missing reader configuration $name" >> "$GITHUB_OUTPUT"
+              echo "::error::Missing repository variable $name (runbook, set-up)"
+              exit 1
+            fi
+          done
+      - name: Sign in as the read-only account (Workload Identity Federation, no key)
+        if: inputs.fixture == ''
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.ONCALL_READER_SERVICE_ACCOUNT }}
+      - name: Set up the gcloud command line
+        if: inputs.fixture == ''
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+        with:
+          version: "592.0.0"
+      - name: Collect (allow-listed fields, capped) or load the fixture
+        id: collect
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+        run: python3 ops/oncall/oncall.py collect telemetry.json
+
+  agent:
+    name: diagnose (Claude Code, no cloud credential)
+    needs: [triage, collect]
+    if: github.ref == 'refs/heads/main' && needs.collect.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: oncall
+    permissions:
+      contents: read
+    outputs:
+      report: ${{ steps.out.outputs.report }}
+      patch: ${{ steps.out.outputs.patch }}
+      reason: ${{ steps.key.outputs.reason || steps.out.outputs.reason }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the key
+        id: key
+        env:
+          KEY_SET: ${{ secrets.ONCALL_ANTHROPIC_API_KEY != '' }}
+        run: |
+          if [ "$KEY_SET" != "true" ]; then
+            echo "reason=ONCALL_ANTHROPIC_API_KEY is not set" >> "$GITHUB_OUTPUT"
+            echo "::error::The secret ONCALL_ANTHROPIC_API_KEY of the environment oncall is not set (runbook)"
+            exit 1
+          fi
+      - name: Write the agent's input (data files)
+        env:
+          TELEMETRY: ${{ needs.collect.outputs.telemetry }}
+        run: |
+          mkdir -p oncall-input oncall-output
+          printf '%s' "$TELEMETRY" | base64 --decode > oncall-input/telemetry.json
+          python3 -c 'import json, os; json.dump({k.lower(): os.environ[k] for k in ("INCIDENT_ID", "POLICY_NAME", "ONCALL_ENVIRONMENT", "STARTED_AT", "CONSOLE_URL")}, open("oncall-input/alert.json", "w"))'
+      - name: Diagnose
+        id: claude
+        timeout-minutes: 15
+        uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
+        with:
+          anthropic_api_key: ${{ secrets.ONCALL_ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Read ops/oncall/instructions.md and follow it exactly. Your input is the two data files
+            oncall-input/alert.json and oncall-input/telemetry.json; your output is
+            oncall-output/report.json, valid against ops/oncall/report.schema.json.
+          claude_args: >-
+            --max-turns 30
+            --allowedTools Read,Glob,Grep,Edit,Write
+            --disallowedTools Bash,WebFetch,WebSearch,NotebookEdit,Task
+      - name: Hand the report and the change to the final step
+        id: out
+        if: always() && steps.key.outcome == 'success'
+        env:
+          CLAUDE_OUTCOME: ${{ steps.claude.outcome }}
+        run: |
+          if [ "$CLAUDE_OUTCOME" != "success" ]; then
+            echo "reason=model error, turn limit or timeout" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -f oncall-output/report.json ]; then
+            echo "report=$(head -c 20000 oncall-output/report.json | base64 --wrap=0)" >> "$GITHUB_OUTPUT"
+          fi
+          git add --intent-to-add -- backend frontend
+          git diff --binary -- backend frontend > change.patch
+          if [ -s change.patch ] && [ "$(wc -c < change.patch)" -le 102400 ]; then
+            echo "patch=$(base64 --wrap=0 < change.patch)" >> "$GITHUB_OUTPUT"
+          fi
+
+  report:
+    name: issue and fix proposal (no LLM)
+    needs: [triage, collect, agent]
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # the branch oncall/<incident-id> only (never main)
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Write the report and the change
+        env:
+          REPORT: ${{ needs.agent.outputs.report }}
+          PATCH: ${{ needs.agent.outputs.patch }}
+        run: |
+          mkdir -p oncall-output
+          if [ -n "$REPORT" ]; then printf '%s' "$REPORT" | base64 --decode > oncall-output/report.json; fi
+          if [ -n "$PATCH" ]; then printf '%s' "$PATCH" | base64 --decode > oncall-output/change.patch; fi
+      - name: Set up uv (version from backend/pyproject.toml)
+        if: needs.agent.result == 'success'
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          working-directory: backend
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Validate the report (jsonschema, locked)
+        if: needs.agent.result == 'success'
+        working-directory: backend
+        run: uv run --locked python ../ops/oncall/oncall.py validate ../oncall-output/report.json
+      - name: Open or update the incident issue; open the fix pull request
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TRIAGE_RESULT: ${{ needs.triage.result }}
+          TRIAGE_ACTION: ${{ needs.triage.outputs.action }}
+          TRIAGE_ISSUE: ${{ needs.triage.outputs.issue }}
+          COLLECT_RESULT: ${{ needs.collect.result }}
+          AGENT_RESULT: ${{ needs.agent.result }}
+          FAILURE_REASON: ${{ needs.collect.outputs.reason || needs.agent.outputs.reason }}
+          ONCALL_OUTPUT: oncall-output
+        run: python3 ops/oncall/oncall.py finish
