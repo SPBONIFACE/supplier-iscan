@@ -120,12 +120,22 @@ def test_a_uuid_is_not_taken_for_a_phone_number(identifier: str, template: str) 
     assert redact(text) == text
 
 
-def test_a_phone_number_next_to_a_uuid_is_still_removed() -> None:
-    text = "id 6a8ac4ba-0580-4975-ad2f-89d94a2f20aa, call 01 42 68 53 00 or +33 1 23 45 67 89."
-
-    assert (
-        redact(text) == f"id 6a8ac4ba-0580-4975-ad2f-89d94a2f20aa, call {OMISSION} or {OMISSION}."
-    )
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (
+            "id 6a8ac4ba-0580-4975-ad2f-89d94a2f20aa, call 01 42 68 53 00 or +33 1 23 45 67 89.",
+            f"id 6a8ac4ba-0580-4975-ad2f-89d94a2f20aa, call {OMISSION} or {OMISSION}.",
+        ),
+        (
+            "f3ace47a-3a78-4cac-b6dc-081755611568 01 42 68 53 00",
+            f"f3ace47a-3a78-4cac-b6dc-081755611568 {OMISSION}",
+        ),
+        ("call 0580-4975 today", f"call {OMISSION} today"),  # the same groups, not in a UUID
+    ],
+)
+def test_a_phone_number_next_to_a_uuid_is_still_removed(text: str, expected: str) -> None:
+    assert redact(text) == expected
 
 
 def test_a_name_in_a_suppression_entry_is_redacted_ignoring_case_and_accents() -> None:
