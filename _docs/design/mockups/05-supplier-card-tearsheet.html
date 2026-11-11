@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supplier card · tearsheet · Supplier iScan mock-up</title>
+<!-- Mock-up only: fonts from Google Fonts so the file opens without a build step. The app would self-host them.
+     Look adapted from the MIT-licensed astro-theme-tearsheet (ondelva): colours, Piazzolla body, Barlow Semi Condensed headings,
+     rules not cards, notes at the end. Data: Bericap run of 11 Nov 2026 (public sources). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;700;800&family=Piazzolla:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f7f8f6, #121614);
+  --surface: light-dark(#eceeeb, #1b211e);
+  --ink: light-dark(#15191c, #e7ebe8);
+  --muted: light-dark(#545d64, #9ba6a1);
+  --rule: light-dark(#c9cfcc, #343d39);
+  --green: light-dark(#1f5c48, #7cc3a5);
+  --green-hover: light-dark(#164536, #a3d8c0);
+  --on-green: light-dark(#ffffff, #121614);
+  --missing: light-dark(#8a3324, #e59a8a);
+  --body: 'Piazzolla', Georgia, serif;
+  --head: 'Barlow Semi Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --wide: 72rem;
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 1.0625rem; line-height: 1.55; font-variant-numeric: tabular-nums; overflow-wrap: break-word; }
+h1, h2, h3, p, dl, dd, ul, ol, figure { margin: 0; }
+h1, h2, h3 { font-family: var(--head); text-wrap: balance; }
+a { color: inherit; text-decoration: underline; text-underline-offset: .15em; text-decoration-thickness: 1px; }
+a:hover { color: var(--green); }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* mock-up chrome, not part of the product */
+.mock { padding: .5rem 1rem; background: var(--ink); color: var(--bg); font: 500 .875rem/1.4 var(--head); display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; }
+.mock a { color: var(--bg); }
+.mock-notes { margin-top: 4rem; padding: 2rem 1rem 4rem; border-top: 3px solid var(--ink); background: var(--surface); font: 400 .9375rem/1.5 var(--head); }
+.mock-notes .in { max-width: var(--wide); margin: 0 auto; display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); }
+.mock-notes h2 { font-size: 1.125rem; margin-bottom: .5rem; }
+.mock-notes ol, .mock-notes ul { padding-left: 1.25rem; }
+.mock-notes li + li { margin-top: .35rem; }
+
+/* app bar */
+.bar { border-bottom: 1px solid var(--rule); }
+.bar .in { max-width: var(--wide); margin: 0 auto; padding: .75rem 1rem; display: flex; align-items: baseline; gap: 1.5rem; font-family: var(--head); font-weight: 500; }
+.brand { font-weight: 800; font-size: 1.25rem; text-decoration: none; letter-spacing: -.01em; }
+.bar nav { display: flex; gap: 1.25rem; }
+.bar nav a { text-decoration: none; color: var(--muted); }
+.bar nav a[aria-current] { color: var(--ink); }
+.bar .who { margin-left: auto; color: var(--muted); font-size: .875rem; }
+
+.page { max-width: var(--wide); margin: 0 auto; padding: 0 1rem; }
+
+/* masthead */
+.mast { padding-top: 2rem; border-bottom: 3px solid var(--ink); padding-bottom: 1rem; }
+.kick { display: flex; flex-wrap: wrap; gap: .25rem 1rem; font: 700 .8125rem/1.3 var(--head); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.kick .num { color: var(--green); }
+.mast h1 { margin-top: .5rem; font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+.deck { margin-top: .75rem; max-width: 46rem; font-size: 1.1875rem; line-height: 1.5; color: var(--muted); }
+.deck strong { font-weight: 400; color: var(--ink); }
+.mast-actions { margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.25rem; font-family: var(--head); font-weight: 500; }
+.btn { display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 1rem; border: 1px solid var(--ink); background: transparent; color: var(--ink); font: 500 1rem var(--head); cursor: pointer; border-radius: 0; text-decoration: none; }
+.btn--primary { background: var(--green); border-color: var(--green); color: var(--on-green); }
+.btn--primary:hover { background: var(--green-hover); color: var(--on-green); }
+.link { background: none; border: 0; padding: 0; color: var(--green); font: 500 1rem var(--head); cursor: pointer; text-decoration: underline; text-underline-offset: .15em; }
+
+/* superscript note numbers */
+sup { line-height: 0; font-family: var(--head); font-weight: 700; font-size: .7em; }
+sup a { text-decoration: none; color: var(--green); padding: 0 .1em; }
+sup a:hover { text-decoration: underline; }
+
+/* figures band */
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); border-bottom: 1px solid var(--rule); }
+.fig { padding: 1rem 1rem 1rem 0; border-right: 1px solid var(--rule); margin-right: 1rem; }
+.fig:last-child { border-right: 0; }
+.fig .v { font: 700 2.25rem/1 var(--head); letter-spacing: -.01em; }
+.fig .l { margin-top: .4rem; font: 700 .8125rem/1.3 var(--head); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fig .s { margin-top: .2rem; font: 500 .875rem/1.35 var(--head); color: var(--muted); }
+.fig .miss { font: italic 400 1.0625rem/1.3 var(--body); color: var(--missing); }
+.scope { display: inline-block; padding: 0 .3rem; border: 1px solid currentColor; font: 700 .6875rem/1.4 var(--head); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); vertical-align: .1em; margin-right: .3rem; }
+.scope--unk { border-style: dashed; color: var(--muted); }
+
+/* three facts row */
+.trio { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0 2rem; border-bottom: 1px solid var(--rule); }
+.trio > div { padding: 1rem 0; }
+.lab { font: 700 .8125rem/1.3 var(--head); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.trio p { margin-top: .3rem; }
+.when { font-family: var(--head); font-weight: 500; color: var(--muted); }
+
+/* section heads */
+.sec { margin-top: 3rem; }
+.sec > h2 { padding-top: .5rem; border-top: 1px solid var(--ink); font-size: 1.5rem; font-weight: 700; line-height: 1.15; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.sec > h2 .meta { font: 500 .9375rem var(--head); color: var(--muted); }
+.lede { margin-top: .5rem; max-width: 40rem; color: var(--muted); font-size: 1rem; }
+
+/* assessment two-by-two */
+.swot { margin-top: 1rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.5rem; }
+.swot > div { padding: 1rem 0 1.25rem; border-top: 1px solid var(--rule); }
+.swot h3 { font-size: 1.125rem; font-weight: 700; }
+.swot ul { list-style: square; padding-left: 1.1rem; margin-top: .5rem; }
+.swot li { margin-top: .6rem; }
+.swot li::marker { color: var(--muted); }
+.stmt-foot { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-top: .35rem; font: 500 .875rem/1.4 var(--head); color: var(--muted); }
+.ai { letter-spacing: .06em; text-transform: uppercase; font-weight: 700; font-size: .75rem; border: 1px dashed var(--muted); padding: 0 .3rem; }
+.stmt-foot .link { font-size: .875rem; }
+.gap-t { color: var(--missing); }
+
+/* implication bar */
+.impl { margin-top: 1.5rem; padding: 1rem 0; border-top: 3px solid var(--ink); border-bottom: 3px solid var(--ink); }
+.impl p { margin-top: .4rem; font-size: 1.25rem; line-height: 1.5; max-width: 52rem; }
+.reco { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0 2rem; border-bottom: 1px solid var(--rule); }
+.reco > div { padding: 1rem 0; }
+.reco p, .reco ol { margin-top: .3rem; font-size: 1rem; }
+.reco ol { padding-left: 1.1rem; }
+.reco li + li { margin-top: .4rem; }
+.assume { font-style: italic; color: var(--muted); }
+
+/* timeline */
+.tl { list-style: none; padding: 0; margin-top: 1rem; }
+.tl li { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 1rem; padding: .6rem 0; border-bottom: 1px solid var(--rule); }
+.tl .d { font: 700 1rem/1.5 var(--head); }
+.tl .d.u { font-weight: 500; color: var(--muted); }
+.tl .k { font: 700 .75rem/1.3 var(--head); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; }
+
+/* ledger tables */
+.ledger { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 1rem; }
+.ledger caption { text-align: left; font: 700 1.125rem var(--head); padding: 1.25rem 0 .25rem; }
+.ledger thead { border-bottom: 3px solid var(--ink); }
+.ledger th { font: 700 .8125rem/1.3 var(--head); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: left; padding: .4rem 1rem .4rem 0; }
+.ledger td { padding: .55rem 1rem .55rem 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
+.ledger td:first-child { width: 13rem; font-family: var(--head); font-weight: 500; color: var(--muted); }
+.ledger td.st { width: 11rem; font: 500 .875rem/1.4 var(--head); color: var(--muted); white-space: nowrap; }
+.ledger td.st .link { font-size: .875rem; margin-left: .5rem; }
+.ledger .miss { font-style: italic; color: var(--missing); }
+.ledger .src { display: block; margin-top: .1rem; font: 500 .8125rem/1.3 var(--head); color: var(--muted); letter-spacing: .02em; }
+.note-open { margin-top: .5rem; padding: .6rem .9rem; border-left: 3px solid var(--ink); background: var(--surface); font-size: .9375rem; }
+.note-open q { font-style: italic; }
+.note-open .src { display: block; margin-top: .3rem; }
+
+/* financial evidence */
+.fe-t { margin-top: .75rem; color: var(--missing); max-width: 46rem; }
+
+/* sources */
+.notes { margin-top: 1rem; padding-left: 1.75rem; font-size: .9375rem; color: var(--muted); }
+.notes li { padding: .5rem 0; border-bottom: 1px solid var(--rule); }
+.notes li::marker { font: 700 .9375rem var(--head); color: var(--green); }
+.notes .t { color: var(--ink); }
+.notes .ty { font: 700 .75rem var(--head); letter-spacing: .06em; text-transform: uppercase; margin-left: .35rem; }
+.notes q { font-style: italic; }
+.notes ul { list-style: none; padding: 0; margin-top: .25rem; }
+.notes ul li { padding: .1rem 0; border: 0; }
+
+.foot { margin-top: 3rem; padding: 1rem 0 2rem; border-top: 3px solid var(--ink); font: 500 .875rem/1.5 var(--head); color: var(--muted); display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 2rem; }
+
+@media (max-width: 640px) {
+  .swot { grid-template-columns: minmax(0, 1fr); }
+  .fig { border-right: 0; margin-right: 0; border-bottom: 1px solid var(--rule); }
+  .tl li { grid-template-columns: minmax(0, 1fr); gap: .1rem; }
+  .ledger thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .ledger tr { display: block; padding: .5rem 0; border-bottom: 1px solid var(--rule); }
+  .ledger td { display: block; border: 0; padding: .15rem 0; width: auto !important; }
+  .bar .who { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="mock" role="note">Supplier iScan · mock-up · Supplier card in the tearsheet style · Bericap, run of 11 Nov 2026 · <a href="05-index.html">All screens</a></div>
+
+<header class="bar"><div class="in">
+  <a class="brand" href="#">Supplier iScan</a>
+  <nav aria-label="Main"><a href="#" aria-current="page">Profiles</a><a href="#">Administration</a></nav>
+  <span class="who">EN · FR · member@example.org</span>
+</div></header>
+
+<main class="page">
+<header class="mast">
+  <p class="kick"><span>Supplier card</span><span>Plastic closures</span><span>Last refresh Nov 11, 2026</span><span class="num">24 facts proposed · 0 reviewed</span></p>
+  <h1>Bericap</h1>
+  <p class="deck"><strong>BERICAP</strong>, Longvic, France<sup><a href="#n1">1</a></sup> · part of <strong>Bericap Holding GmbH</strong>, Budenheim, Germany<sup><a href="#n1">1</a></sup> · LEI 969500EAKWZ863LPRM81<sup><a href="#n1">1</a></sup> · <a href="https://bericap.com/">bericap.com</a><sup><a href="#n2">2</a></sup></p>
+  <div class="mast-actions"><a class="btn btn--primary" href="#review">Review the next proposed fact</a><button class="btn" type="button">Download PDF</button><button class="link" type="button">Close</button></div>
+</header>
+
+<h2 class="vh">Key figures</h2>
+<div class="figs">
+  <div class="fig"><div class="v">EUR 1.20 bn<sup><a href="#n3">3</a></sup></div><div class="l">Revenue</div><div class="s"><span class="scope">Group</span>year not stated</div></div>
+  <div class="fig"><div class="v">4,500+<sup><a href="#n3">3</a></sup></div><div class="l">Employees</div><div class="s"><span class="scope">Group</span>year not stated</div></div>
+  <div class="fig"><div class="v">31<sup><a href="#n2">2</a></sup></div><div class="l">Production plants</div><div class="s">sales teams in 100+ countries</div></div>
+  <div class="fig"><div class="v">104 bn+<sup><a href="#n3">3</a></sup></div><div class="l">Closures produced</div><div class="s">period not stated</div></div>
+  <div class="fig"><div class="miss">No public evidence found</div><div class="l">Market share</div></div>
+</div>
+
+<div class="trio">
+  <div><p class="lab">Head office</p><p>Longvic, France<sup><a href="#n1">1</a></sup></p></div>
+  <div><p class="lab">Group</p><p>Bericap Holding GmbH, Budenheim, Germany: ultimate and direct parent<sup><a href="#n1">1</a></sup></p></div>
+  <div><p class="lab">Latest strategic move</p><p>New plant in Kunshan, China, and +50% capacity at a modernised site<sup><a href="#n6">6</a></sup> <span class="when">· date not stated</span></p></div>
+</div>
+
+<section class="sec" aria-labelledby="h-ass">
+  <h2 id="h-ass">Assessment <span class="meta">AI draft from the facts below · 6 statements pending · no overall score</span></h2>
+  <div class="swot">
+    <div><h3>Strengths</h3><ul>
+      <li>Food-safety certification across plants: all plants stated as ISO 9000 and BRC-IOP or ISO 22000 certified, and certified to BRC and FSSC 22000; years not stated.<sup><a href="#n3">3</a>, <a href="#n4">4</a></sup>
+        <div class="stmt-foot"><span class="ai">AI draft</span><button class="link" type="button">Approve</button><button class="link" type="button">Correct</button><button class="link" type="button">Delete</button><button class="link" type="button">Provenance</button></div></li>
+      <li>Broad closure range: food, beverage, industrial, home care and pharma, wine and spirits.<sup><a href="#n3">3</a></sup>
+        <div class="stmt-foot"><span class="ai">AI draft</span><button class="link" type="button">Approve</button><button class="link" type="button">Correct</button><button class="link" type="button">Delete</button></div></li>
+    </ul></div>
+    <div><h3>Risk watch-points</h3><ul>
+      <li>Acquisition integration: Embankment Plastics (Ireland) is being acquired; the effect on supply is not stated.<sup><a href="#n7">7</a></sup>
+        <div class="stmt-foot"><span class="ai">AI draft</span><button class="link" type="button">Approve</button><button class="link" type="button">Correct</button><button class="link" type="button">Delete</button></div></li>
+      <li>Figures mix entities: revenue and headcount describe the group; the card’s entity is the French company.<sup><a href="#n3">3</a>, <a href="#n1">1</a></sup>
+        <div class="stmt-foot"><span class="ai">AI draft</span><button class="link" type="button">Approve</button><button class="link" type="button">Correct</button><button class="link" type="button">Delete</button></div></li>
+    </ul></div>
+    <div><h3>Opportunities</h3><ul>
+      <li>Capacity growth: a new plant in Kunshan, China, and a planned +50% at a modernised site; no year stated.<sup><a href="#n6">6</a></sup>
+        <div class="stmt-foot"><span class="ai">AI draft</span><button class="link" type="button">Approve</button><button class="link" type="button">Correct</button><button class="link" type="button">Delete</button></div></li>
+    </ul></div>
+    <div><h3>Evidence gaps</h3><ul>
+      <li class="gap-t">No public evidence found for market share or market position.</li>
+      <li class="gap-t">No public evidence found for environmental certifications or a sustainability report.</li>
+    </ul></div>
+  </div>
+
+  <div class="impl">
+    <p class="lab">Procurement implication</p>
+    <p><span class="assume">Assuming a first evaluation:</span> plausible for food-contact closures, subject to confirming the certificates of the plant that would actually supply.<sup><a href="#n3">3</a>, <a href="#n4">4</a></sup></p>
+    <div class="stmt-foot"><span class="ai">AI draft</span><button class="link" type="button">Approve</button><button class="link" type="button">Correct</button><button class="link" type="button">Delete</button><button class="link" type="button">Add buyer context</button></div>
+  </div>
+  <div class="reco">
+    <div><p class="lab">Contract approach</p><p>Medium term, price indexed to a published raw-material reference; review once the acquisition’s effect on supply is known.</p></div>
+    <div><p class="lab">Volume share</p><p>No range on current evidence: capacity utilisation is not public.</p></div>
+    <div><p class="lab">Next actions</p><ol>
+      <li><span class="when">Before shortlisting</span> · Certificate and year of issue for the supplying plant.</li>
+      <li><span class="when">Within 30 days</span> · Status of the Embankment Plastics acquisition, in writing.</li>
+      <li><span class="when">Within 30 days</span> · Year and scope of the +50% capacity plan.</li></ol></div>
+  </div>
+</section>
+
+<section class="sec" aria-labelledby="h-ev">
+  <h2 id="h-ev">Recent events <span class="meta">newest dated first · undated last</span></h2>
+  <ol class="tl">
+    <li><span class="d">Feb 23, 2021</span><span><span class="k">Leadership</span>New president appointed<sup><a href="#n9">9</a></sup></span></li>
+    <li><span class="d">Dec 31, 2020</span><span><span class="k">Legal form</span>Converted to SAS<sup><a href="#n9">9</a></sup></span></li>
+    <li><span class="d u">Date not stated</span><span><span class="k">Acquisition</span>Embankment Plastics, Ireland<sup><a href="#n7">7</a></sup></span></li>
+    <li><span class="d u">Date not stated</span><span><span class="k">Investment</span>New plant in Kunshan, China; +50% capacity at a modernised site<sup><a href="#n6">6</a></sup></span></li>
+  </ol>
+</section>
+
+<section class="sec" id="review" aria-labelledby="h-prof">
+  <h2 id="h-prof">Profile <span class="meta">46 fields · 23 found · every value quoted from its source</span></h2>
+  <table class="ledger">
+    <caption>Company overview</caption>
+    <thead><tr><th scope="col">Field</th><th scope="col">Value</th><th scope="col">Review</th></tr></thead>
+    <tbody>
+      <tr><td>Legal name</td><td>BERICAP<sup><a href="#n1">1</a></sup></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Trading names</td><td>BERICAP TECHNOLOGIES<sup><a href="#n8">8</a></sup></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Website</td><td>bericap.com<sup><a href="#n2">2</a></sup><span class="src">From the confirmed identity; page fetched on this site</span></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Legal form</td><td>Code (ELF) 6CHY<sup><a href="#n1">1</a></sup><span class="src">The register gives the code, not the name · <a href="#">GLEIF legal-form list</a></span></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Ownership</td><td>Bericap Holding GmbH, owner type not stated<sup><a href="#n1">1</a></sup></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Year founded</td><td class="miss">No public evidence found</td><td class="st"></td></tr>
+    </tbody>
+  </table>
+  <table class="ledger">
+    <caption>Financial performance</caption>
+    <thead><tr><th scope="col">Field</th><th scope="col">Value</th><th scope="col">Review</th></tr></thead>
+    <tbody>
+      <tr><td>Revenue</td><td><span class="scope">Group</span>EUR 1.20 bn, year not stated<sup><a href="#n3">3</a></sup>
+        <div class="note-open" role="region" aria-label="Quote for revenue"><q>1.20 Bln. EUR Sales</q><span class="src">Note 3 · bericap.com, About us · fetched Nov 11, 2026 · Supplier’s own claim · <button class="link" type="button">Close</button></span></div></td>
+        <td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Profitability</td><td class="miss">No public evidence found</td><td class="st"></td></tr>
+      <tr><td>Employees</td><td><span class="scope">Group</span>4,500+, year not stated<sup><a href="#n3">3</a></sup></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Audit opinion</td><td class="miss">No public evidence found</td><td class="st"></td></tr>
+    </tbody>
+  </table>
+  <table class="ledger">
+    <caption>Products, plants and customers</caption>
+    <thead><tr><th scope="col">Field</th><th scope="col">Value</th><th scope="col">Review</th></tr></thead>
+    <tbody>
+      <tr><td>Product lines</td><td>Food closures; beverage closures; industrial closures; home care, pharma and supplies closures; wine and spirits closures<sup><a href="#n3">3</a></sup></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Industries served</td><td>Food, beverage, industrial<sup><a href="#n2">2</a></sup></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Production plants</td><td>31 production sites<sup><a href="#n2">2</a></sup></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Customer references</td><td>Suzhou Zi Jin Plastic Co., Ltd (jerry-can maker)<sup><a href="#n5">5</a></sup></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Quality certifications</td><td>ISO 9000; BRC-IOP or ISO 22000, all plants, year not stated<sup><a href="#n4">4</a></sup><span class="src"><a href="#">Verify on IAF CertSearch</a></span></td><td class="st">Proposed<button class="link" type="button">Approve</button><button class="link" type="button">Correct</button></td></tr>
+      <tr><td>Environmental certifications</td><td class="miss">No public evidence found</td><td class="st"></td></tr>
+    </tbody>
+  </table>
+  <p class="lede">[mock-up] The other sections (market position, strategy, innovation, ESG) follow the same ledger.</p>
+</section>
+
+<section class="sec" aria-labelledby="h-fe">
+  <h2 id="h-fe">Financial evidence <span class="meta">from rules, not AI</span></h2>
+  <p class="fe-t">Financial year 2025: no filed accounts among the collected sources, for the company or its group.</p>
+  <table class="ledger">
+    <thead><tr><th scope="col">Entity</th><th scope="col">Documents</th><th scope="col">Access</th></tr></thead>
+    <tbody>
+      <tr><td><span class="scope">This entity</span><br>BERICAP, France</td><td>Income statement, balance sheet, notes, audit report</td><td class="st">[registry for France]</td></tr>
+      <tr><td><span class="scope">Group</span><br>Bericap Holding GmbH, Germany</td><td>Consolidated accounts</td><td class="st">[registry for Germany]</td></tr>
+    </tbody>
+  </table>
+  <p class="lede">Documents to request from the supplier: statutory accounts, audited statements, tax schedules, management accounts, and the group’s consolidated accounts. No credit score, estimate or commercial report replaces filed financial statements.</p>
+</section>
+
+<section class="sec" aria-labelledby="h-notes">
+  <h2 id="h-notes">Sources <span class="meta">9 sources · fetched Nov 11, 2026</span></h2>
+  <ol class="notes">
+    <li id="n1"><span class="t">GLEIF, LEI record 969500EAKWZ863LPRM81</span><span class="ty">Third-party · official register</span> · <a href="https://search.gleif.org/#/record/969500EAKWZ863LPRM81">search.gleif.org</a>
+      <ul><li><q>Ultimate parent: BERICAP HOLDING GMBH (Budenheim, DE)</q></li><li><q>Headquarters address: … 21600 LONGVIC, FR</q></li></ul></li>
+    <li id="n2"><span class="t">Bericap, home page</span><span class="ty">Supplier’s own</span> · <a href="https://bericap.com/">bericap.com</a>
+      <ul><li><q>BERICAP has 31 production sites, and local sales teams in more than 100 countries.</q></li></ul></li>
+    <li id="n3"><span class="t">Bericap, About us</span><span class="ty">Supplier’s own</span> · <a href="https://bericap.com/company-career/about-us/">bericap.com/company-career/about-us</a>
+      <ul><li><q>1.20 Bln. EUR Sales</q> · <q>&gt;4.500 Employees worldwide</q> · <q>&gt;104 Bln. Closures produced</q></li></ul></li>
+    <li id="n4"><span class="t">Bericap, Our locations</span><span class="ty">Supplier’s own</span> · <a href="https://bericap.com/contact/our-locations/">bericap.com/contact/our-locations</a>
+      <ul><li><q>All BERICAP plants are ISO 9000 and BRC-IOP or ISO 22000-certified.</q></li></ul></li>
+    <li id="n5"><span class="t">Bericap, “Convincing Chinese doubters”, Jan 11, 2020</span><span class="ty">Supplier’s own</span> · <a href="#">bericap.com</a></li>
+    <li id="n6"><span class="t">Plasticker, “Bericap: closure manufacturer invests in new plant in China”</span><span class="ty">Third-party · trade press</span> · <a href="#">plasticker.de</a>
+      <ul><li><q>is investing in a new plant in Kunshan, China</q> · <q>increase production capacity by 50 percent</q></li></ul></li>
+    <li id="n7"><span class="t">Plasticker, “Bericap: acquisition of Ireland’s Embankment Plastics”</span><span class="ty">Third-party · trade press</span> · <a href="#">plasticker.de</a></li>
+    <li id="n8"><span class="t">LEI Lookup, record 969500EAKWZ863LPRM81</span><span class="ty">Third-party</span> · <a href="#">lei-lookup.com</a></li>
+    <li id="n9"><span class="t">[mock-up] Company register extract</span><span class="ty">Third-party</span> · events dated from a register page, as in the earlier run</li>
+  </ol>
+</section>
+
+<footer class="foot"><span>Supplier iScan · prepared for Brenmoor Industries · AI drafts are proposals until a member approves them</span><span>Source content kept until May 11, 2027</span></footer>
+</main>
+
+<section class="mock-notes" aria-label="Mock-up annotations"><div class="in">
+<div><h2>What this page takes from each reference</h2><ul>
+<li><strong>Tearsheet theme:</strong> paper and ink colours with one green accent, Barlow Semi Condensed headings, Piazzolla body, rules instead of boxes, no bold values, numbered notes and every source listed at the end.</li>
+<li><strong>Your Market Analysis card:</strong> the band of five figures, head office / group / latest strategic move, strengths next to risk watch-points, the procurement-implication bar, and the row of contract approach, volume share and next actions.</li>
+<li><strong>Beroe:</strong> a one-page snapshot that starts with who the company is; product lines and named customers; a four-part assessment (we keep strengths, risk watch-points, opportunities and evidence gaps, and invent no weakness).</li>
+<li><strong>spend-ai:</strong> “Recent events”, a dated timeline, newest first, undated items last and never called latest.</li>
+<li><strong>Supplier iScan’s own:</strong> a note number on every value, the quote one click away (open on Revenue), “No public evidence found”, supplier’s own vs third-party, Group / This entity tags, review actions on every fact and statement.</li>
+</ul></div>
+<div><h2>To decide</h2><ol>
+<li>Approve the direction, or say what to change (order of blocks, density, colour).</li>
+<li>One page, read top to bottom, instead of the side panel next to the list: the card opens as its own page. The PDF would follow the same layout.</li>
+<li>Note numbers per source (this page, 9 notes) rather than per fact (23 notes).</li>
+<li>Build scope before 16 Nov: the card page in the React app with this look. The Group / This entity tags and the group row in financial evidence need backend work; without it they are left out.</li>
+</ol></div>
+</div></section>
+</body>
+</html>
