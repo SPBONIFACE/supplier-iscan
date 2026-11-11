@@ -25,7 +25,7 @@ import concurrent.futures
 import logging
 import uuid
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Final
 
@@ -48,7 +48,7 @@ from app.extraction.grounding import (
     website_labels,
 )
 from app.extraction.settings import ExtractionSettings, load_extraction_settings
-from app.extraction.source_type import classify_source, host_of, registry_domains
+from app.extraction.source_type import _is_own, classify_source, host_of, registry_domains
 from app.limits.budget import RunBudgetExhausted
 from app.llm_schemas import FieldExtraction, FieldExtractionAnswer
 from app.models import Fact, ProfileRun, Source, SupplierIdentity
@@ -71,6 +71,7 @@ PROMPT_ID: Final = "extraction"
 # quote of 300 characters, a value, a source id), so 46 items need about 7400; twice the default
 # of the interface leaves room for a longer profile definition.
 MAX_OUTPUT_TOKENS: Final = 16_384
+WEBSITE_FIELD: Final = "website"
 
 
 @dataclass(frozen=True)
@@ -283,7 +284,11 @@ def make_extraction_stage(
             section_of = {item.id: name for name, items in batch for item in items}
             tallies = {name: Tally() for name, _items in batch}
             kept: dict[str, Kept] = {}
-            pending = [item for _name, items in batch for item in items]
+            # The website comes from the confirmed identity, never from the model (#158).
+            website = _website_kept(sources, supplier)
+            if website is not None:
+                kept[WEBSITE_FIELD] = website
+            pending = [item for _name, items in batch for item in items if item.id != WEBSITE_FIELD]
             if limits.extract_concurrency == 1:
                 # Sequential path: identical to #147.
                 try:
@@ -324,23 +329,24 @@ def make_extraction_stage(
             else:
                 # Concurrent path: all (source, chunk) pairs submitted to a ThreadPoolExecutor.
                 try:
-                    if client is None:
-                        raise DependencyUnavailable("structuring_provider")
-                    _fill_concurrent(
-                        sources,
-                        pending,
-                        kept,
-                        tallies,
-                        section_of,
-                        batch,
-                        limits,
-                        context,
-                        client,
-                        gate,
-                        redaction,
-                        prompts,
-                        supplier,
-                    )
+                    if pending:
+                        if client is None:
+                            raise DependencyUnavailable("structuring_provider")
+                        _fill_concurrent(
+                            sources,
+                            pending,
+                            kept,
+                            tallies,
+                            section_of,
+                            batch,
+                            limits,
+                            context,
+                            client,
+                            gate,
+                            redaction,
+                            prompts,
+                            supplier,
+                        )
                 except BaseException:
                     # Budget exhausted, stop signal, or provider dependency error: store the facts
                     # that arrived before the interruption (complete=False leaves unexamined fields
@@ -353,6 +359,24 @@ def make_extraction_stage(
         return None
 
     return stage
+
+
+def _website_kept(sources: list[SourceText], supplier: Supplier | None) -> Kept | None:
+    """The `website` fact (#158): the identity's website, quoted by the address of the first stored
+    source (canonical order) on that domain; None when there is no website or no such source."""
+    own = host_of(supplier.website) if supplier and supplier.website else None
+    if supplier is None or supplier.website is None or own is None:
+        return None
+    for source in sources:
+        host = host_of(source.url)
+        if host is not None and _is_own(host, own):
+            return Kept(
+                value=supplier.website,
+                quote=source.url[:300],
+                quote_redacted=False,
+                source=replace(source, source_type="supplier_claim"),
+            )
+    return None
 
 
 def _fill_concurrent(
