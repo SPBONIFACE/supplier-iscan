@@ -9,7 +9,8 @@
           "id": "legal_form",
           "labels": { "en": "Legal form", "fr": "Forme juridique" },
           "kind": "fact",
-          "extraction_hint": "The legal form of the company as stated by the company or its registry."
+          "extraction_hint": "The legal form of the company as stated by the company or its registry.",
+          "header_detail": true
         },
         {
           "id": "founding_year",
@@ -30,7 +31,8 @@
           "labels": { "en": "Management", "fr": "Direction" },
           "kind": "fact",
           "extraction_hint": "The roles in the management team as published by the company.",
-          "concerns_people": true
+          "concerns_people": true,
+          "timeline": true
         }
       ]
     },
@@ -42,7 +44,8 @@
           "id": "production_sites",
           "labels": { "en": "Production sites", "fr": "Sites de production" },
           "kind": "fact",
-          "extraction_hint": "The locations (city and country) of the production sites."
+          "extraction_hint": "The locations (city and country) of the production sites.",
+          "header_detail": true
         },
         {
           "id": "main_products",

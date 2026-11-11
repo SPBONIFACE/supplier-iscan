@@ -41,7 +41,13 @@ export type StatementControls = {
 };
 
 /** A cited fact, as the statement shows it. */
-export type CitedFact = { id: string; label: string; correctedAfterDraft: boolean };
+export type CitedFact = {
+  id: string;
+  label: string;
+  correctedAfterDraft: boolean;
+  /** The note number of the fact's source on the card page; it links to the entry in Sources. */
+  note?: number | null;
+};
 
 export type StatementProps = {
   item: AssessmentStatement;
@@ -529,6 +535,13 @@ function CitesLine({
             >
               {fact.label}
             </a>
+            {fact.note ? (
+              <sup className="note-ref">
+                <a href={`#n${fact.note}`} aria-label={t("card.noteLink", { number: fact.note })}>
+                  {fact.note}
+                </a>
+              </sup>
+            ) : null}
           </li>
         ))}
         {context ? (

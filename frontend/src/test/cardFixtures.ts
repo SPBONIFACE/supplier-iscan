@@ -45,6 +45,8 @@ export const makeField = (id: string, label: string, extra: Partial<Field> = {})
   certification: false,
   concerns_people: false,
   key_figure: false,
+  header_detail: false,
+  timeline: false,
   ...extra,
 });
 

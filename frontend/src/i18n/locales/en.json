@@ -422,10 +422,23 @@
       "count_one": "{{count}} fact still proposed",
       "count_other": "{{count}} facts still proposed",
       "countNone": "No fact is waiting for review.",
-      "nextProposed": "Go to the next proposed fact",
+      "nextProposed": "Review the next proposed fact",
       "announceApproved": "{{field}} approved.",
       "announceCorrected": "{{field}} corrected."
-    }
+    },
+    "kickerProposed_one": "{{count}} fact proposed",
+    "kickerProposed_other": "{{count}} facts proposed",
+    "noteRef": "Note {{number}}: quote for {{field}}",
+    "noteLink": "Note {{number}}, see Sources",
+    "noteInSources": "Note {{number}} in Sources",
+    "events": "Recent events",
+    "eventsMeta": "newest dated first · undated last",
+    "dateNotStated": "Date not stated",
+    "profile": "Profile",
+    "profileMeta": "{{count}} fields · {{found}} found",
+    "sources": "Sources",
+    "sourcesMeta_one": "{{count}} source",
+    "sourcesMeta_other": "{{count}} sources"
   },
   "assessment": {
     "aiDraft": "AI draft, pending your validation",

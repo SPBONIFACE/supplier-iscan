@@ -58,6 +58,8 @@ const field = (
   certification: false,
   concerns_people: false,
   key_figure: false,
+  header_detail: false,
+  timeline: false,
   ...extra,
 });
 
@@ -187,7 +189,7 @@ describe("supplier card, content", () => {
   it("shows the header, one row per fact field with value, status, source and source type", async () => {
     const view = renderApp(PATH);
     expect(await screen.findByText("Loading…")).toBeTruthy();
-    const panel = await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    const panel = await screen.findByRole("article", { name: "Corvane Précision SAS" });
     expect(
       within(panel).getByRole("heading", { name: "Corvane Précision SAS", level: 1 }),
     ).toBeTruthy();
@@ -219,7 +221,7 @@ describe("supplier card, content", () => {
 
   it("says No public evidence found for a field with none, never a negative statement", async () => {
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const env = row("Environmental management");
     expect(within(env).getByText("No public evidence found")).toBeTruthy();
     expect(env.textContent).not.toMatch(/not certified|no certification|does not/i);
@@ -237,7 +239,7 @@ describe("supplier card, content", () => {
       }),
     );
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const link = within(row("Quality management")).getByRole("link", {
       name: /Verify on IAF CertSearch/,
     });
@@ -246,7 +248,7 @@ describe("supplier card, content", () => {
 
   it("links the verification address given by the API", async () => {
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const link = within(row("Quality management")).getByRole("link", {
       name: /Verify on IAF CertSearch/,
     });
@@ -266,7 +268,7 @@ describe("supplier card, content", () => {
       }),
     );
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const year = row("Founding year");
     expect(within(year).getByText("Corrected")).toBeTruthy();
     expect(year.textContent).toMatch(/Original AI value: 1987/);
@@ -307,7 +309,7 @@ describe("supplier card, source chip and quote", () => {
   it("opens with Enter or Space, shows the quote with its attribution, closes with Escape and returns focus", async () => {
     const user = userEvent.setup();
     const view = renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const chip = within(row("Number of employees")).getByRole("button", { name: /Found in/ });
     expect(chip.getAttribute("aria-expanded")).toBe("false");
 
@@ -354,7 +356,7 @@ describe("supplier card, key figures", () => {
   it("repeats the selected facts with status and chip, and says No public evidence found when missing", async () => {
     const user = userEvent.setup();
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const figures = document.querySelector("dl.kf") as HTMLElement;
     expect(figures.getAttribute("aria-label")).toBe("Key figures, repeating facts of this card");
     expect(within(figures).getByText("Founding year")).toBeTruthy();
@@ -379,7 +381,7 @@ describe("supplier card, key figures", () => {
     for (const section of plain.sections) for (const f of section.fields) f.key_figure = false;
     mocks.getProfileDefinition.mockResolvedValue(ok(plain));
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     expect(document.querySelector("dl.kf")).toBeNull();
   });
 });
@@ -388,7 +390,7 @@ describe("supplier card, flags", () => {
   it("shows the identity to verify banner", async () => {
     mocks.getRun.mockResolvedValue(ok(run({ identity_to_verify: true })));
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     expect(screen.getByText("identity to verify")).toBeTruthy();
     expect(
       screen.getByText(/Check that this website belongs to the company you confirmed/),
@@ -404,7 +406,7 @@ describe("supplier card, flags", () => {
       ok({ items: facts().filter((f) => f.section === "company_overview") }),
     );
     const view = renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     expect(screen.getByText("partial", { selector: ".ml" })).toBeTruthy();
     expect(
       screen.getByText(/Sections not covered: Certifications, Procurement recommendations/),
@@ -430,7 +432,7 @@ describe("supplier card, flags", () => {
       }),
     );
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const env = row("Environmental management");
     expect(
       within(env).getByText(/Not covered by this run: it stopped before this field/),
@@ -441,7 +443,7 @@ describe("supplier card, flags", () => {
   it("says neutrally that the assessment is skipped for a natural person, because of the legal form", async () => {
     mocks.getRun.mockResolvedValue(ok(run({ natural_person: true })));
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     const section = screen
       .getByRole("heading", { name: "Assessment" })
       .closest("section") as HTMLElement;
@@ -494,7 +496,7 @@ describe("supplier card, panel", () => {
     const opener = await screen.findByRole("link", { name: "Corvane Précision SAS" });
     await user.click(opener);
     expect(where()).toBe(PATH);
-    const panel = await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    const panel = await screen.findByRole("article", { name: "Corvane Précision SAS" });
     expect(screen.getByRole("table")).toBeTruthy(); // the list stays
     await waitFor(() => expect(document.activeElement?.id).toBe("card-name"));
     expect(panel.contains(document.activeElement)).toBe(true);
@@ -502,13 +504,13 @@ describe("supplier card, panel", () => {
     await user.keyboard("{Escape}");
     await waitFor(() => expect(where()).toBe("/workspace"));
     await waitFor(() => expect(document.activeElement?.getAttribute("data-run-id")).toBe(ID));
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("article")).toBeNull();
   });
 
   it("closes with the Close button", async () => {
     const user = userEvent.setup();
     renderApp(PATH);
-    await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    await screen.findByRole("article", { name: "Corvane Précision SAS" });
     await user.click(screen.getByRole("button", { name: /^Close/ }));
     await waitFor(() => expect(where()).toBe("/workspace"));
   });
@@ -520,7 +522,7 @@ describe("supplier card, French", () => {
     await initI18n("fr");
     const user = userEvent.setup();
     renderApp(PATH);
-    const panel = await screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+    const panel = await screen.findByRole("article", { name: "Corvane Précision SAS" });
     expect(mocks.getProfileDefinition).toHaveBeenCalledWith("fr");
     expect(within(panel).getByText("Dernière actualisation")).toBeTruthy();
     expect(within(panel).getByText("26/10/2026", { selector: "dd" })).toBeTruthy();

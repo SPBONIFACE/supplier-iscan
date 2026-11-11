@@ -128,7 +128,7 @@ describe("workspace list", () => {
     await user.click(await screen.findByRole("link", { name: "Supplier 7" }));
     expect(where()).toBe("/profiles/run-completed");
     // The card opens beside the list, which stays.
-    expect(await screen.findByRole("dialog", { name: "Supplier card" })).toBeTruthy();
+    expect(await screen.findByRole("article", { name: "Supplier card" })).toBeTruthy();
     expect(screen.getByRole("table")).toBeTruthy();
   });
 

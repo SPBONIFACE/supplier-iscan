@@ -33,6 +33,10 @@ class FieldDefinition:
     concerns_people: bool
     # Shown again in the key-figures band at the top of the supplier card (spec F5).
     key_figure: bool
+    # Shown as label and value under the key-figures band (header_detail) or in the recent events
+    # list (timeline) of the supplier card.
+    header_detail: bool
+    timeline: bool
 
 
 @dataclass(frozen=True)
@@ -103,6 +107,8 @@ def load_profile_definition(path: Path | None = None) -> ProfileDefinition:
                         certification=f.get("certification", False),
                         concerns_people=f.get("concerns_people", False),
                         key_figure=f.get("key_figure", False),
+                        header_detail=f.get("header_detail", False),
+                        timeline=f.get("timeline", False),
                     )
                     for f in s["fields"]
                 ),

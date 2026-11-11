@@ -68,7 +68,7 @@ const reviewed = (fact: Fact, changes: Partial<Fact>): Fact => ({
 
 async function openCard() {
   renderApp(CARD_PATH);
-  return screen.findByRole("dialog", { name: "Corvane Précision SAS" });
+  return screen.findByRole("article", { name: "Corvane Précision SAS" });
 }
 
 beforeEach(async () => {
@@ -249,7 +249,7 @@ describe("correct", () => {
 
     expect(within(year).queryByLabelText("Corrected value")).toBeNull();
     expect(document.activeElement).toBe(year);
-    expect(screen.getByRole("dialog", { name: "Corvane Précision SAS" })).toBeTruthy();
+    expect(screen.getByRole("article", { name: "Corvane Précision SAS" })).toBeTruthy();
     expect(mocks.reviewFact).not.toHaveBeenCalled();
   });
 });

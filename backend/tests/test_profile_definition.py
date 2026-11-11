@@ -68,6 +68,22 @@ def test_the_example_has_four_sections_and_every_kind_and_validates() -> None:
     assert definition.content_hash.startswith("sha256:")
 
 
+def test_card_flags_are_parsed_and_default_to_false(tmp_path: Path) -> None:
+    shipped = load_profile_definition()
+    assert {f.id for f in shipped.fields() if f.header_detail} == {"legal_form", "production_sites"}
+    assert {f.id for f in shipped.fields() if f.timeline} == {"management_team"}
+    document = example()
+    field = first_field(document)
+    field.pop("header_detail", None)
+    field.pop("timeline", None)
+    loaded = load_profile_definition(write(tmp_path, document)).fields()[0]
+    assert loaded.header_detail is False
+    assert loaded.timeline is False
+    field["timeline"] = "yes"
+    with pytest.raises(ConfigurationError, match="sections/0/fields/0/timeline"):
+        load_profile_definition(write(tmp_path, document))
+
+
 def test_key_figures_are_marked_in_the_definition_and_default_to_false(tmp_path: Path) -> None:
     shipped = load_profile_definition()
     assert {f.id for f in shipped.fields() if f.key_figure} == {

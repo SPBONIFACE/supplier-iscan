@@ -12,7 +12,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { NewProfilePage } from "./pages/NewProfilePage";
 import { RunPage } from "./pages/RunPage";
 import { NotFoundPage, Placeholder } from "./pages/Simple";
-import { SupplierCardPanel, WorkspaceShell } from "./pages/SupplierCardPanel";
+import { SupplierCardPage, WorkspaceShell } from "./pages/SupplierCardPanel";
 
 /** Protected routes: nothing is rendered for a signed-out user, who is sent to login and back. */
 function RequireAuth() {
@@ -57,8 +57,8 @@ export function App() {
           {/* Placeholders: #38 comparison, #48 admin. */}
           <Route element={<WorkspaceShell />}>
             <Route path="/workspace" element={null} />
-            <Route path="/profiles/:profileId" element={<SupplierCardPanel />} />
           </Route>
+          <Route path="/profiles/:profileId" element={<SupplierCardPage />} />
           <Route path="/profiles/new" element={<NewProfilePage />} />
           <Route path="/profiles/new/:sessionId" element={<IdentityChatPage />} />
           <Route path="/profiles/:profileId/run" element={<RunPage />} />
