@@ -202,7 +202,7 @@ found in the cited source. It sends at most `EXTRACT_MAX_INPUT_CHARS` characters
 | API | http://localhost:8000 (port 8000, fixed in `docker-compose.yml`); health check: http://localhost:8000/health |
 | Database | `127.0.0.1:5432`, reachable from this machine only |
 
-Every port is published on `127.0.0.1` only. The API accepts browser requests from the origin set in
+Locally, use Chrome, Firefox or Edge: the session cookie is marked `Secure`, which Safari refuses on plain `http://localhost` (you would stay signed out although the password is accepted). The hosted instance uses HTTPS and works in every browser. Every port is published on `127.0.0.1` only. The API accepts browser requests from the origin set in
 `CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`). The API contract is [`openapi.yaml`](openapi.yaml).
 
 ### In a browser (GitHub Codespaces)
