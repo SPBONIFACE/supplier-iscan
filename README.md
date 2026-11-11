@@ -173,7 +173,17 @@ quantity from the counts and is covered by a test.
 
 For a local collector, point the endpoint at any OTLP/HTTP receiver, for example an OpenTelemetry Collector with the
 `otlp` receiver on port 4318. The optional Docker Compose telemetry stack (Collector, Prometheus, Loki, Tempo,
-Grafana) belongs to #52 and #53.
+Grafana) is follow-up #167.
+
+**Alert and on-call agent (dev, #53).** A Cloud Monitoring alert policy, kept as code in
+`deploy/monitoring/failure-rate.dev.json` and applied with `make alert-apply ENV=dev`, fires when more than half of
+the profile runs finished in 15 minutes failed (at least 3 runs, held 5 minutes). It emails the owner and calls a
+small relay (`deploy/alert-relay`, standard library only) that starts `.github/workflows/oncall.yml`. That workflow
+collects the telemetry with a read-only account, lets Claude Code diagnose it as data (no cloud credential, read-only
+repository access), opens one issue labelled `incident` with the schema-checked report and, when the agent proposes
+a fix, a pull request for the owner. It never merges or deploys. The dev-only switch `FAULT_INJECTION_FAIL_RUNS`
+makes runs fail on purpose for a drill; the application and `deploy/deploy.sh` refuse it outside dev. Set-up, drill,
+replay and switching off: [`_docs/operations/oncall-runbook.md`](_docs/operations/oncall-runbook.md).
 
 Diagnostic for a provider response that fails validation: `make provider-shape CONFIG=<retrieval configuration id>`
 makes one retrieval call on a synthetic public query and writes the shape of the response (field names, types, string

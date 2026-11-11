@@ -335,10 +335,25 @@ of rolling back. To stop everything at once: `gcloud run services update iscan-a
   Neon's monthly compute allowance on your plan.
 - The budget alert (step 2) is your safety net. If a warning arrives: open Billing, **Reports**, group by
   service, find the cause, and if needed use the stop command of step 16.
-- **Email alerts for the application** (failed runs, errors) are set up by issue #53 with Cloud Monitoring
-  notification channels (Monitoring, **Alerting**, **Edit notification channels**, add your email).
+- **Email alerts for the application** (failed runs) and the on-call agent: step 18.
 - Traces: console, **Trace**. Metrics: **Monitoring**, **Metrics explorer**, PromQL, for example the failure rate in
   `README.md` ("Observability"). Logs: **Logging**, **Logs Explorer**.
+
+### 18. Alert and on-call agent (dev only, #53)
+
+After the pull request of #53 is merged and deployed to dev, follow the set-up of
+[`oncall-runbook.md`](oncall-runbook.md) in order. Each step has its exact commands:
+
+1. Repository settings: allow GitHub Actions to create pull requests; create the label `incident`.
+2. The model key: GitHub secret `ONCALL_ANTHROPIC_API_KEY` in the environment `oncall` (spending limit first).
+3. The read-only account `iscan-oncall-reader` (logging viewer, trace user, monitoring viewer), usable only by
+   `oncall.yml` on `main`; repository variable `ONCALL_READER_SERVICE_ACCOUNT`.
+4. The relay `iscan-alert-relay` with its two secrets `iscan-dev-alert-webhook-token` and
+   `iscan-dev-github-dispatch-token` (fine-grained token, *Actions: write* on this repository only, with an expiry).
+5. The two notification channels: your email, and the relay webhook.
+6. The alert policy: `make alert-apply ENV=dev`.
+
+Then run the drill and the replay of the runbook once.
 
 ### Checklist of what you created (no values)
 
