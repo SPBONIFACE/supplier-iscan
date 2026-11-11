@@ -180,6 +180,11 @@ def test_reserved_slots_are_not_given_to_an_own_domain_address() -> None:
 
     assert [r.url for r in stored] == [SITE, f"https://{OTHER}/x"]
     assert f"https://{HOST}/a" in result.skipped
+    (failure,) = [f for f in result.failures if f.url == f"https://{HOST}/a"]
+    assert failure.kind == "refused"
+    assert failure.message == (
+        "Not fetched: the remaining slots are kept for sources outside the supplier's website."
+    )
 
 
 def test_an_own_domain_address_beyond_the_first_is_still_dropped() -> None:

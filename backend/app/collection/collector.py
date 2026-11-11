@@ -8,6 +8,7 @@ function; this module never writes a source itself.
 import logging
 import re
 import time
+import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -90,6 +91,24 @@ def _host(url: str) -> str:
 
 def _is_pdf(url: str) -> bool:
     return url.lower().split("?", 1)[0].endswith(".pdf")
+
+
+SAMPLE_WORDS = frozenset(
+    {"exemple", "exemples", "example", "examples", "sample", "samples", "specimen"}
+    | {"modele", "modeles"}
+)
+SAMPLE_MESSAGE = "A sample document, not about the supplier; not read."
+RESERVED_MESSAGE = (
+    "Not fetched: the remaining slots are kept for sources outside the supplier's website."
+)
+
+
+def _is_sample(url: str) -> bool:
+    """A sample document by its file name: a whole word part (split on non-letters) of the last
+    path segment is a sample word. Host and directories never count."""
+    name = unquote(urlsplit(url).path.rsplit("/", 1)[-1]).lower()
+    name = "".join(c for c in unicodedata.normalize("NFD", name) if not unicodedata.combining(c))
+    return any(part in SAMPLE_WORDS for part in re.split(r"[^a-z]+", name))
 
 
 def _is_financial(url: str, anchor: str) -> bool:
@@ -219,12 +238,18 @@ class Collector:
             logger.warning("Collection reached its limit of requests; going on with what it has")
             self._fail(None, "attempt_cap", message=REQUEST_CAP_MESSAGE)
 
-    def _skip(self, url: str, kind: Kind | None = None, status: int | None = None) -> Any:
+    def _skip(
+        self,
+        url: str,
+        kind: Kind | None = None,
+        status: int | None = None,
+        message: str | None = None,
+    ) -> Any:
         """Record a URL as not collected (with the failure when it has a kind); returns None,
         for `return self._skip(url)`."""
         self.result.skipped.append(url)
         if kind is not None:
-            self._fail(url, kind, status)
+            self._fail(url, kind, status, message)
         return None
 
     # -- discovery --------------------------------------------------------------------------
@@ -341,7 +366,7 @@ class Collector:
         for url in self._independent_first(usable)[: self._settings.max_retrieval_urls]:
             if crawl_full and not self._third_party(url):
                 # The reserved slots are for addresses outside the supplier's website.
-                self._skip(url, "refused")
+                self._skip(url, "refused", message=RESERVED_MESSAGE)
                 continue
             if url.lower().split("?", 1)[0].endswith(".pdf"):
                 self._take_pdf(url)
@@ -374,6 +399,10 @@ class Collector:
         for url, _anchor in candidates:
             if taken >= PER_PAGE_LINKED_PDFS or self._linked_pdfs >= self._settings.max_linked_pdfs:
                 break
+            if _is_sample(url):
+                if not self._already_kept(url):
+                    self._skip(url, "not_a_page", message=SAMPLE_MESSAGE)
+                continue
             if self._requests_exhausted or self._already_kept(url):
                 continue
             if self._take_pdf(url, page) is not None:
@@ -447,6 +476,10 @@ class Collector:
                 if absolute and _is_pdf(absolute):
                     add_candidate(absolute, page=url)
 
+        samples = [u for u in pdf_links if _is_sample(u)]
+        for url in samples:
+            self._skip(url, "not_a_page", message=SAMPLE_MESSAGE)
+        pdf_links = [u for u in pdf_links if u not in samples]
         for url in pdf_links[
             : min(settings.max_pdfs, max(settings.crawl_pages - len(self.result.sources), 0))
         ]:

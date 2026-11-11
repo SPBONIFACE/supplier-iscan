@@ -22,7 +22,7 @@ def lei_record(
     city: str = "Paris",
     country: str = "FR",
     status: str = "ACTIVE",
-    form: str = "SAS",
+    form: str | None = "SAS",
     registered_as: str | None = "552 081 317",
 ) -> dict[str, Any]:
     address = {

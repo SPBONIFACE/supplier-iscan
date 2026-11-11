@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 
 import httpx2
 
-from app.collection.collector import _is_financial
+from app.collection.collector import _is_financial, _is_sample
 from app.collection.settings import CollectionSettings, load_collection_settings
 from app.collection.source_store import SourceRecord
 from app.extraction.source_type import classify_source
@@ -185,3 +185,45 @@ def test_a_failing_or_non_pdf_link_is_skipped_and_the_run_goes_on() -> None:
     assert f"https://{OTHER}/gone.pdf" in skipped
     assert f"https://{OTHER}/fake.pdf" in skipped
     assert stored_pdfs(stored) == [f"https://{OTHER}/ok.pdf"]
+
+
+def test_a_sample_document_is_skipped_with_its_own_message_and_costs_no_slot() -> None:
+    pages: Pages = {
+        (HOST, "/"): html("<p>Acme Supplies SA</p>"),
+        (OTHER, "/entry"): register(
+            ("/docs/rapport-complet-exemple.pdf", "Rapport"),
+            ("/docs/Sample_2024.PDF", ""),
+            ("/docs/annual-report-2024.pdf", "Annual report"),
+        ),
+        (OTHER, "/docs/annual-report-2024.pdf"): pdf("Revenue"),
+    }
+    collector, site, stored, _sleeps, _ = make_collector(pages)
+
+    result = collector.collect(SITE, NAME, lambda _lacking: [PAGE])
+
+    assert stored_pdfs(stored) == [f"https://{OTHER}/docs/annual-report-2024.pdf"]
+    assert not any("exemple" in u or "Sample" in u for u in requested(site))
+    samples = [f for f in result.failures if f.kind == "not_a_page"]
+    assert len(samples) == 2
+    assert {f.message for f in samples} == {"A sample document, not about the supplier; not read."}
+    assert {f.url for f in samples} <= set(result.skipped)
+
+
+def test_only_whole_word_parts_of_the_file_name_make_a_sample() -> None:
+    assert _is_sample("https://x.example/a/Modele-2024.pdf")
+    assert _is_sample("https://x.example/a/specimen.pdf")
+    assert _is_sample("https://x.example/a/my_example_report.pdf")
+    assert not _is_sample("https://examples.com/report.pdf")
+    assert not _is_sample("https://x.example/examples/report.pdf")
+    assert not _is_sample("https://x.example/resample-2024.pdf")
+
+
+def test_a_pdf_in_an_examples_directory_is_still_fetched() -> None:
+    pages: Pages = {
+        (HOST, "/"): html("<p>Acme Supplies SA</p>"),
+        (OTHER, "/examples/report.pdf"): pdf("Acme Supplies SA revenue"),
+    }
+
+    _urls, stored, _skipped = run(pages, url=f"https://{OTHER}/examples/report.pdf")
+
+    assert stored_pdfs(stored) == [f"https://{OTHER}/examples/report.pdf"]
