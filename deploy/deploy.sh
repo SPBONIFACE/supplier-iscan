@@ -177,6 +177,11 @@ deploy)
     MISTRAL_API_KEY:mistral-api-key PERPLEXITY_API_KEY:perplexity-api-key; do
     if secret_exists "${pair#*:}"; then extra="$extra,${pair%%:*}=iscan-$env_name-${pair#*:}:latest"; fi
   done
+  # The worker pool gets the keys but not the content files: Cloud Run worker pools do not support secret
+  # volume mounts yet ("Secrets volume mount is not supported for Worker Pools yet"). Without the files the
+  # worker uses the shipped example content (a known limitation of the hosted dev instance, see the runbook).
+  worker_extra="$extra"
+  cp "$work/app.yaml" "$work/worker.yaml"
   for pair in PROVIDER_CONFIG_FILE:provider-config PRICE_TABLE_FILE:price-table PROFILE_DEFINITION_FILE:profile-definition \
     PROMPT_SET_FILE:prompt-set COUNTRY_TABLE_FILE:country-table PDF_DISCLAIMER_FILE:pdf-disclaimer; do
     if secret_exists "${pair#*:}"; then
@@ -234,7 +239,7 @@ for t in json.load(sys.stdin).get("status", {}).get("traffic", []):
     --service-account "$runtime_sa" "${worker_instances[@]}" --labels "$labels" \
     --container worker --image "$IMAGE_API" --command /opt/venv/bin/python --args="-m,app.worker" \
     --cpu "$WORKER_CPU" --memory "$WORKER_MEMORY" \
-    --env-vars-file "$work/app.yaml" --set-secrets "$base_secrets$extra" \
+    --env-vars-file "$work/worker.yaml" --set-secrets "$base_secrets$worker_extra" \
     --container collector --image "$IMAGE_COLLECTOR" --cpu "$COLLECTOR_CPU" --memory "$COLLECTOR_MEMORY"
   ;;
 

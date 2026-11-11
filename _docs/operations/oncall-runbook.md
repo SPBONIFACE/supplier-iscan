@@ -54,8 +54,9 @@ Set a monthly spending limit on the Anthropic console first. Then:
 gh secret set ONCALL_ANTHROPIC_API_KEY --env oncall -R "$GITHUB_REPO"
 ```
 
-`gh` asks for the value (paste it; it is not echoed). It creates the environment `oncall` if needed. In
-**Settings**, **Environments**, **oncall**, *Deployment branches and tags*: **Selected branches**, add `main`.
+`gh` asks for the value (paste it; it is not echoed). It needs the environment `oncall` to exist first
+(`gh` does not create it): **Settings**, **Environments**, **New environment** `oncall`, then *Deployment branches
+and tags*: **Selected branches**, add `main`.
 
 ### 3. The read-only account (approval 3)
 
@@ -142,6 +143,10 @@ GCP_PROJECT_ID="$PROJECT_ID" make alert-apply ENV=dev
 *Expect* `Alert policy 'iscan-dev profile-run failure rate': created` (and `updated ...` when run again: there is
 always one policy). The command fails, naming the channel, if a channel of step 5 is missing. To check:
 Monitoring, **Alerting**, the policy shows the PromQL condition and the two channels.
+
+> **Known limitation (dev):** Cloud Run worker pools do not support secret volume mounts yet, so the deploy gives
+> the worker the keys but not the private content files; a real profile run on the hosted dev instance uses the
+> shipped example content. The drill is not affected (its runs fail at the start of collection).
 
 ## The drill (live, dev)
 
