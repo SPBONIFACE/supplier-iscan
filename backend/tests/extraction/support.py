@@ -5,6 +5,7 @@ id, the requested fields, the source text) and answers as the test says.
 """
 
 import json
+import os
 import re
 import uuid
 from collections.abc import Callable
@@ -26,6 +27,7 @@ from app.providers.fake import FakeStructuringAdapter, fake_adapters
 from app.runs.stages import Stage, StageContext
 from tests.providers.support import SENTINEL_KEY, catalogue, config, make_meter
 
+TEST_CONCURRENCY = "TEST_EXTRACT_CONCURRENCY"
 FETCHED = datetime(2026, 11, 3, 10, 30, tzinfo=UTC)
 SITE = "https://www.acme.example"
 DEFINITION: ProfileDefinition = load_profile_definition()
@@ -135,7 +137,9 @@ def add_source(
     content_type: str = "text/html",
     author: str | None = None,
     linked_from: uuid.UUID | None = None,
+    source_id: uuid.UUID | None = None,
 ) -> uuid.UUID:
+    """A stored source of the run; `source_id` fixes its id (otherwise a random one)."""
     with Session(engine) as db:
         source = Source(
             run_id=run_id,
@@ -147,6 +151,8 @@ def add_source(
             author=author,
             linked_from_source_id=linked_from,
         )
+        if source_id is not None:
+            source.id = source_id
         db.add(source)
         db.commit()
         return source.id
@@ -176,9 +182,14 @@ def context_for(
 def stage(
     max_input_chars: int = 20_000,
     groups_per_call: int = 1,
-    extract_concurrency: int = 1,
+    extract_concurrency: int | None = None,
 ) -> Stage:
-    """The stage; one call per section by default, which most tests are written for (#147)."""
+    """The stage; one call per section by default, which most tests are written for (#147).
+
+    `extract_concurrency` is 1 unless the test gives it, or `TEST_EXTRACT_CONCURRENCY` sets it for
+    a whole run (#130: to repeat the extraction tests on the concurrent path)."""
+    if extract_concurrency is None:
+        extract_concurrency = int(os.environ.get(TEST_CONCURRENCY, "1"))
     return make_extraction_stage(
         DEFINITION,
         PROMPTS,
