@@ -3,8 +3,9 @@
 **Evidence-based supplier profiles for procurement teams.** Every fact comes with its source, or the app says
 there is none.
 
-> Status: specification approved; development in progress (final project of the
-> [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp)).
+> Final project of the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) (2026
+> cohort). **Live (dev):** https://iscan-web-dev-939730526492.europe-west3.run.app. The API is behind the same address,
+> at `/api/` (health: `/api/health`).
 
 ## The problem
 
@@ -31,6 +32,22 @@ into a supplier qualification file.
    side, and export a PDF.
 
 The AI proposes; the buyer decides.
+
+## For reviewers: where each criterion is
+
+| Criterion | Where to look |
+| :--- | :--- |
+| Problem description | [The problem](#the-problem), [What Supplier iScan does](#what-supplier-iscan-does) |
+| Product specification | [`_docs/product/spec.md`](_docs/product/spec.md) (user flows, acceptance criteria, data model, security model); the task tracker is the [GitHub issues](../../issues), each groomed to a four-section template with checkable acceptance criteria ([`task-template.md`](_docs/process/task-template.md)) |
+| Agent team specification | PM, SWE and QA role contracts in [`_docs/team/`](_docs/team/), their Claude Code wrappers in [`.claude/agents/`](.claude/agents/), the workflow and verdicts in [`process.md`](_docs/process/process.md). See [How it is built](#how-it-is-built) |
+| Context management | [`AGENTS.md`](AGENTS.md) (short, read by every agent) points to the modular documents: spec, process, role contracts, API contract, permissions ([`agent-pack/PERMISSIONS.md`](agent-pack/PERMISSIONS.md)) |
+| Application | FastAPI backend, React frontend, PostgreSQL, a worker for profile runs: [Architecture](#architecture). One command: `make run` |
+| Testing | Unit and integration tests (backend against a real PostgreSQL), API contract test, frontend tests: `make test`. See [Testing](#testing) |
+| Containerization | [`docker-compose.yml`](docker-compose.yml): database, API, worker, frontend; `make run` |
+| Deployment | Google Cloud Run (EU) and Neon PostgreSQL (EU); public dev URL above. See [Deployment](#deployment) |
+| CI/CD | [`ci.yml`](.github/workflows/ci.yml) (lint, tests), [`images.yml`](.github/workflows/images.yml) (image checks), [`deploy-dev.yml`](.github/workflows/deploy-dev.yml) (automatic to dev on green `main`), [`promote-prod.yml`](.github/workflows/promote-prod.yml) (manual, with a required reviewer) |
+| Observability | OpenTelemetry metrics, traces and logs sharing one trace ID, exported to Google Cloud Trace and Monitoring. See [Observability](#observability) |
+| Alerting on user impact, on-call agent | In progress: [#53](../../issues/53) (alert on the profile-run failure rate; an agent woken by the alert diagnoses it and proposes a fix, never merges) |
 
 ## Design principles
 
@@ -59,13 +76,34 @@ Disallow: /
 or open an issue in this repository naming your domain, and it will be added to the crawler's suppression list.
 Someone running their own instance of Supplier iScan sets their own contact page (`CRAWLER_CONTACT_URL`).
 
-## Architecture (planned)
+## Architecture
+
+```mermaid
+flowchart LR
+  B[Buyer's browser] --> W[Frontend<br/>React + nginx]
+  W -- /api/ --> A[API<br/>FastAPI]
+  A --> D[(PostgreSQL<br/>data + job queue)]
+  K[Worker<br/>profile runs] --> D
+  K --> R[Redaction<br/>local name detection]
+  R --> L[LLM providers<br/>structured output]
+  K --> X[Public sources<br/>websites, PDFs, registries, search]
+  A & K -. OTLP .-> O[Collector<br/>traces, metrics, logs]
+```
+
+A profile run is a job in the PostgreSQL queue. The worker takes it through four stages: **identity** (the
+supplier the buyer confirmed), **collection** (public pages, PDF reports, registries and web search, within a
+request and domain budget, respecting `robots.txt` and text-and-data-mining reservations), **extraction** (one
+fact per profile field, kept only if its quote is found verbatim in the cited source) and **assessment**
+(statements that cite facts). Every text is redacted locally before it reaches a provider; every model answer is
+validated against a JSON schema. The buyer then reviews facts and statements, compares suppliers and exports a PDF.
 
 | Layer | Technology |
 | :--- | :--- |
-| Frontend | React, Vite, TypeScript (pnpm), react-i18next |
-| Backend API | Python 3.13, FastAPI (uv), OpenAPI contract first |
-| Profile runs | Worker with a PostgreSQL-backed job queue |
+| Frontend | React, Vite, TypeScript (pnpm), react-i18next (English, French) |
+| Backend API | Python 3.13, FastAPI (uv); contract first: [`openapi.yaml`](openapi.yaml) |
+| Profile runs | Worker with a PostgreSQL-backed job queue, a cost budget per run |
+| Redaction | GLiNER name detection on CPU plus patterns, before any LLM call |
+| LLM providers | Claude, Gemini, OpenAI, Mistral, Perplexity, chosen per role; evaluated with `make eval` against reference sets |
 | Data | PostgreSQL 16 |
 | PDF | WeasyPrint |
 | Deployment | Docker Compose locally; Google Cloud Run and Neon (EU) |
@@ -85,6 +123,14 @@ Spec-driven and agent-assisted:
   server over `openapi.yaml`, and a hook that blocks `.env` access and `npm`/`npx` (Claude Code; the skill and the
   server also work with other agent tools).
 - **Task tracker:** the GitHub issues of this repository.
+
+The tools: **Claude Code** is the main development tool. One session orchestrates; the PM, SWE and QA agents run as
+Claude Code subagents, the SWE and QA each in their own git worktree, so a QA check never sees uncommitted work.
+A task goes PM (grooms the issue) → SWE (implements on a branch, opens the pull request) → QA (verifies each
+acceptance criterion with its own probes and posts PASS or FAIL) → merge on PASS and green CI. The owner approves
+the specification, every design mock-up, every new dependency and every change of scope. The agent pack gives the
+agents project knowledge (the `evidence-wording` skill), the API contract (an MCP server) and guard rails (a hook
+that blocks secret files and unapproved package installs).
 
 ## Running it
 
@@ -134,7 +180,74 @@ Extraction fills the `fact` fields of the profile from the stored sources and ke
 found in the cited source. It sends at most `EXTRACT_MAX_INPUT_CHARS` characters of source text per call (default
 20000), and gives a certification fact the link of `IAF_CERTSEARCH_URL` (default `https://www.iafcertsearch.org/`).
 
-### Observability
+### Commands
+
+| Command | What it does |
+| :--- | :--- |
+| `make install` | Installs the backend and frontend dependencies from the lockfiles (`uv.lock`, `pnpm-lock.yaml`), without changing them, and fetches the name-detection model (below) |
+| `make fetch-model` | Fetches the name-detection model used by redaction: about 1.2 GB, pinned revision, sha256-checked, into `~/.cache/supplier-iscan` (outside the repository; override with `REDACTION_MODEL_DIR`). Files already there are kept; nothing is downloaded at run time |
+| `make eval CONFIG=<id> PROMPTS=<path>` | Evaluates the LLM features against the reference sets in `eval/` and writes a Markdown and JSON report to `eval/reports/` (not committed). `CONFIG=fake` replays recorded answers: plumbing only, no key, no network. A live run needs the key of the configuration, by name, and stays local. A reviewer rating file (`RATINGS=`, template `eval/reviewer_ratings.template.csv`) gives the "judged useful" metric; without it the report says "not rated" |
+| `make provider-shape CONFIG=<id>` | One live retrieval call on a synthetic public query; writes the response shape (names and types only) to `diagnostics/` (git-ignored). See Configuration |
+| `make provider-check CONFIG=<id>` | One tiny live structured call on a synthetic prompt; prints OK or the provider's error type and message. See Configuration |
+| `make test-model` | The tests that use the real model (slow; `make test` leaves them out and uses a small fake detector) |
+| `make lint` | Linters, format checks and type checks (Ruff and mypy; Biome and TypeScript) |
+| `make test` | Backend and frontend tests, including the API contract test against `openapi.yaml` |
+| `make run` | Starts the database, the API and the frontend with Docker Compose (`make stop` stops them) |
+
+### Local URLs
+
+| Service | URL |
+| :--- | :--- |
+| Frontend | http://localhost:5173 |
+| API | http://localhost:8000 (port 8000, fixed in `docker-compose.yml`); health check: http://localhost:8000/health |
+| Database | `127.0.0.1:5432`, reachable from this machine only |
+
+Every port is published on `127.0.0.1` only. The API accepts browser requests from the origin set in
+`CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`). The API contract is [`openapi.yaml`](openapi.yaml).
+
+### In a browser (GitHub Codespaces)
+
+For a machine where Docker or the toolchain cannot be installed. The dev container in `.devcontainer/` provides
+Python 3.13.16 with uv, Node.js 24.22.1 with pnpm (through Corepack), Docker and a PostgreSQL 16 database for the
+tests. Nothing to install by hand.
+
+1. On the repository page on GitHub: **Code** > **Codespaces** > **Create codespace on main**. The first creation
+   takes a few minutes; it ends by running `make install`.
+2. In the codespace terminal, the same commands as on a laptop: `make lint`, `make test`, `make run`. The database
+   used by the tests starts with the codespace; after `make stop`, start it again with
+   `docker compose up -d --wait db`. To check it: `docker compose exec db psql -U supplier_iscan -c 'select version()'`.
+3. After `make run`, open the **Ports** tab and open the forwarded address of port **5173** (Frontend). Port 8000
+   is the API (`/health`). The database port is not forwarded. Forwarded ports are private to the account that
+   opened the codespace: keep them private.
+
+The API accepts browser requests from the codespace's own frontend address and from `http://localhost:5173`:
+`devcontainer.json` sets `CORS_ALLOWED_ORIGINS` to these two origins, no wildcard. The database and administrator
+credentials are the local-only defaults of `docker-compose.yml`.
+
+No key is needed to install, lint, test or run. To use an LLM provider, add its key as a Codespaces secret under
+the same name as in `.env.example` (for example `ANTHROPIC_API_KEY`): GitHub **Settings** > **Codespaces** >
+**Secrets** > **New secret**, select this repository, then restart the codespace. Do not create a `.env` file in
+the codespace.
+
+Codespaces usage counts against the free monthly allowance (core hours and storage) of the GitHub account that opens
+the codespace; stop or delete the codespace when you are done.
+## Testing
+
+`make test` runs everything; CI runs the same command, with `make lint`, on every pull request.
+
+- **Backend unit tests** (pytest): parsing, validation, redaction rules, the quote check, budgets, wording rules.
+- **Backend integration tests**, against a real PostgreSQL: the API routes through FastAPI's test client, the job
+  queue and the worker stages with recorded provider answers, organisation isolation (one organisation never sees
+  another's data), access rules for every route, migrations.
+- **API contract test**: every route and response checked against [`openapi.yaml`](openapi.yaml).
+- **Frontend tests** (Vitest and Testing Library): every screen, its states and both languages.
+- **LLM evaluation** (`make eval`, separate from the tests): reference sets in `eval/`, scored per feature.
+- **Image checks** (`images.yml`): no secret or private file in any image layer, the redaction model loads offline,
+  the nginx `/api/` proxy works.
+
+No test needs a key or the network: providers are faked or replayed.
+
+## Observability
 
 The API and the worker write JSON logs to standard error (`timestamp`, `level`, `service`, `logger`, `message`, and
 `trace_id` and `span_id` inside a trace; an exception is logged by its type and stack only, never its message), and
@@ -200,57 +313,6 @@ hidden prompt (for Anthropic, `read -s "ANTHROPIC_API_KEY?Key: "; export ANTHROP
 A call the provider rejects is logged by the application, for every provider, with the provider's error type and message
 (they describe the request, never its content).
 
-### Commands
-
-| Command | What it does |
-| :--- | :--- |
-| `make install` | Installs the backend and frontend dependencies from the lockfiles (`uv.lock`, `pnpm-lock.yaml`), without changing them, and fetches the name-detection model (below) |
-| `make fetch-model` | Fetches the name-detection model used by redaction: about 1.2 GB, pinned revision, sha256-checked, into `~/.cache/supplier-iscan` (outside the repository; override with `REDACTION_MODEL_DIR`). Files already there are kept; nothing is downloaded at run time |
-| `make eval CONFIG=<id> PROMPTS=<path>` | Evaluates the LLM features against the reference sets in `eval/` and writes a Markdown and JSON report to `eval/reports/` (not committed). `CONFIG=fake` replays recorded answers: plumbing only, no key, no network. A live run needs the key of the configuration, by name, and stays local. A reviewer rating file (`RATINGS=`, template `eval/reviewer_ratings.template.csv`) gives the "judged useful" metric; without it the report says "not rated" |
-| `make provider-shape CONFIG=<id>` | One live retrieval call on a synthetic public query; writes the response shape (names and types only) to `diagnostics/` (git-ignored). See Configuration |
-| `make provider-check CONFIG=<id>` | One tiny live structured call on a synthetic prompt; prints OK or the provider's error type and message. See Configuration |
-| `make test-model` | The tests that use the real model (slow; `make test` leaves them out and uses a small fake detector) |
-| `make lint` | Linters, format checks and type checks (Ruff and mypy; Biome and TypeScript) |
-| `make test` | Backend and frontend tests, including the API contract test against `openapi.yaml` |
-| `make run` | Starts the database, the API and the frontend with Docker Compose (`make stop` stops them) |
-
-### Local URLs
-
-| Service | URL |
-| :--- | :--- |
-| Frontend | http://localhost:5173 |
-| API | http://localhost:8000 (port 8000, fixed in `docker-compose.yml`); health check: http://localhost:8000/health |
-| Database | `127.0.0.1:5432`, reachable from this machine only |
-
-Every port is published on `127.0.0.1` only. The API accepts browser requests from the origin set in
-`CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`). The API contract is [`openapi.yaml`](openapi.yaml).
-
-### In a browser (GitHub Codespaces)
-
-For a machine where Docker or the toolchain cannot be installed. The dev container in `.devcontainer/` provides
-Python 3.13.16 with uv, Node.js 24.22.1 with pnpm (through Corepack), Docker and a PostgreSQL 16 database for the
-tests. Nothing to install by hand.
-
-1. On the repository page on GitHub: **Code** > **Codespaces** > **Create codespace on main**. The first creation
-   takes a few minutes; it ends by running `make install`.
-2. In the codespace terminal, the same commands as on a laptop: `make lint`, `make test`, `make run`. The database
-   used by the tests starts with the codespace; after `make stop`, start it again with
-   `docker compose up -d --wait db`. To check it: `docker compose exec db psql -U supplier_iscan -c 'select version()'`.
-3. After `make run`, open the **Ports** tab and open the forwarded address of port **5173** (Frontend). Port 8000
-   is the API (`/health`). The database port is not forwarded. Forwarded ports are private to the account that
-   opened the codespace: keep them private.
-
-The API accepts browser requests from the codespace's own frontend address and from `http://localhost:5173`:
-`devcontainer.json` sets `CORS_ALLOWED_ORIGINS` to these two origins, no wildcard. The database and administrator
-credentials are the local-only defaults of `docker-compose.yml`.
-
-No key is needed to install, lint, test or run. To use an LLM provider, add its key as a Codespaces secret under
-the same name as in `.env.example` (for example `ANTHROPIC_API_KEY`): GitHub **Settings** > **Codespaces** >
-**Secrets** > **New secret**, select this repository, then restart the codespace. Do not create a `.env` file in
-the codespace.
-
-Codespaces usage counts against the free monthly allowance (core hours and storage) of the GitHub account that opens
-the codespace; stop or delete the codespace when you are done.
 ## Deployment
 
 The hosted instance runs on Google Cloud Run (EU) with a Neon PostgreSQL database (EU). Setup is done once by the
@@ -285,3 +347,22 @@ the worker and telemetry is in [`_docs/operations/cloud-run-sizing.md`](_docs/op
 - **Worker off by default**: the deployment creates the worker with zero instances in dev and production and never
   switches it on; the owner switches it on for a run or a demo and off afterwards (guide, step 17). With no worker
   a started run waits in the queue.
+
+## Known limitations
+
+- **Entity versus group.** A profile describes the legal entity the buyer confirmed. Financial documents found in
+  public registries are often those of a national subsidiary; the card says which entity a figure belongs to, but it
+  does not yet gather the group's consolidated accounts next to the local entity's.
+- **Public evidence only.** The profile is as good as what the supplier and third parties publish; a missing fact
+  reads "No public evidence found", which is not a statement about the supplier.
+- **PDF export** needs the Pango system libraries outside Docker (they are in the image).
+- **Card fonts** cover Latin scripts; other scripts fall back to the system fonts.
+- **Worker off by default** in the cloud to keep costs at zero: a run started on the hosted instance waits until the
+  owner switches the worker on.
+
+## Roadmap
+
+Planned after the course (issues labelled
+[`after-submission`](../../issues?q=is%3Aissue+is%3Aopen+label%3Aafter-submission)): the comparison as a PDF, bias
+checks on the assessment, more registries, the group's financial evidence next to the entity's, and a hosted
+offering for procurement teams.
