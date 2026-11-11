@@ -129,7 +129,7 @@ describe("workspace list", () => {
     expect(where()).toBe("/profiles/run-completed");
     // The card opens beside the list, which stays.
     expect(await screen.findByRole("article", { name: "Supplier card" })).toBeTruthy();
-    expect(screen.getByRole("table")).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull(); // the card is its own page
   });
 
   it("opens the run page for a run still going", async () => {

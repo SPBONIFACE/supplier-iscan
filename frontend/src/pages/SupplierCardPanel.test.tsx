@@ -193,13 +193,15 @@ describe("supplier card, content", () => {
     expect(
       within(panel).getByRole("heading", { name: "Corvane Précision SAS", level: 1 }),
     ).toBeTruthy();
-    const site = within(panel).getByRole("link", { name: /corvane-precision\.example/ });
+    const site = within(panel).getAllByRole("link", {
+      name: /corvane-precision\.example/,
+    })[0] as HTMLElement;
     expect(site.getAttribute("href")).toBe("https://corvane-precision.example/");
     expect(site.getAttribute("target")).toBe("_blank");
     expect(site.getAttribute("rel")).toBe("noopener noreferrer");
-    expect(within(panel).getByText("France", { selector: "dd" })).toBeTruthy();
+    expect(within(panel).getByText(/· France ·/)).toBeTruthy();
     expect(within(panel).getByText("Precision machining for aerospace")).toBeTruthy();
-    expect(within(panel).getByText("Oct 26, 2026", { selector: "dd" })).toBeTruthy();
+    expect(within(panel).getByText(/Last refresh Oct 26, 2026/)).toBeTruthy();
 
     // Sections and field labels come from the definition; the assessment-only section has no rows here.
     expect(within(panel).getByRole("heading", { name: /Company overview/ })).toBeTruthy();
@@ -209,7 +211,9 @@ describe("supplier card, content", () => {
     const year = row("Founding year");
     expect(within(year).getByText("1987")).toBeTruthy();
     expect(within(year).getByText("Proposed")).toBeTruthy();
-    expect(year.textContent).toMatch(/Found in corvane-precision\.example on Oct 26, 2026/);
+    expect(
+      within(year).getByRole("button", { name: /^Note \d+: quote for Founding year/ }),
+    ).toBeTruthy();
     expect(within(year).getByText("Supplier's own claim")).toBeTruthy();
     expect(within(row("Legal form")).getByText("Approved")).toBeTruthy();
     const employees = row("Number of employees");
@@ -295,7 +299,7 @@ describe("supplier card, content", () => {
     const view = renderApp(PATH);
     await screen.findAllByText(/Machined parts/);
     expect(view.container.querySelector("img, b")).toBeNull();
-    await user.click(within(row("Founding year")).getByRole("button", { name: /Found in/ }));
+    await user.click(within(row("Founding year")).getByRole("button", { name: /^Note \d+/ }));
     const block = view.container.querySelector("blockquote");
     expect(block?.textContent).toBe(quote);
     expect(block?.getAttribute("lang")).toBe("ja");
@@ -310,7 +314,7 @@ describe("supplier card, source chip and quote", () => {
     const user = userEvent.setup();
     const view = renderApp(PATH);
     await screen.findByRole("article", { name: "Corvane Précision SAS" });
-    const chip = within(row("Number of employees")).getByRole("button", { name: /Found in/ });
+    const chip = within(row("Number of employees")).getByRole("button", { name: /^Note \d+/ });
     expect(chip.getAttribute("aria-expanded")).toBe("false");
 
     chip.focus();
@@ -365,7 +369,7 @@ describe("supplier card, key figures", () => {
     expect(within(figures).queryByText("Legal form")).toBeNull();
 
     const chip = within(figures).getByRole("button", {
-      name: /Le Journal de l'Industrie Rhône · Oct 26, 2026/,
+      name: /^Note \d+: quote for Number of employees/,
     });
     await user.click(chip);
     const note = screen.getAllByRole("region", {
@@ -497,7 +501,7 @@ describe("supplier card, panel", () => {
     await user.click(opener);
     expect(where()).toBe(PATH);
     const panel = await screen.findByRole("article", { name: "Corvane Précision SAS" });
-    expect(screen.getByRole("table")).toBeTruthy(); // the list stays
+    expect(screen.queryByRole("table")).toBeNull(); // the card is a page: the list is not beside it
     await waitFor(() => expect(document.activeElement?.id).toBe("card-name"));
     expect(panel.contains(document.activeElement)).toBe(true);
 
@@ -524,19 +528,55 @@ describe("supplier card, French", () => {
     renderApp(PATH);
     const panel = await screen.findByRole("article", { name: "Corvane Précision SAS" });
     expect(mocks.getProfileDefinition).toHaveBeenCalledWith("fr");
-    expect(within(panel).getByText("Dernière actualisation")).toBeTruthy();
-    expect(within(panel).getByText("26/10/2026", { selector: "dd" })).toBeTruthy();
+    expect(within(panel).getByText(/Dernière actualisation 26\/10\/2026/)).toBeTruthy();
     expect(within(row("Nombre de salariés")).getByText("Source tierce")).toBeTruthy();
     expect(within(row("Nombre de salariés")).getByText("Extrait masqué")).toBeTruthy();
     expect(within(row("Année de création")).getByText("Déclaration du fournisseur")).toBeTruthy();
     expect(
       within(row("Environmental management")).getByText("Aucune preuve publique trouvée"),
     ).toBeTruthy();
-    await user.click(
-      within(row("Nombre de salariés")).getByRole("button", { name: /Trouvé dans/ }),
-    );
+    await user.click(within(row("Nombre de salariés")).getByRole("button", { name: /^Note \d+/ }));
     expect(panel.querySelector("blockquote")?.textContent).toMatch(
       /^Le site de Vénissieux compte aujourd'hui 240 salariés/,
     );
+  });
+});
+
+describe("supplier card, tearsheet page", () => {
+  it("is a page, not a panel; lists each source once with its quotes", async () => {
+    renderApp(PATH);
+    const page = await screen.findByRole("article", { name: "Corvane Précision SAS" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(page.classList.contains("panel")).toBe(false);
+    const sources = within(page)
+      .getByRole("heading", { name: /^Sources/ })
+      .closest("section");
+    expect(sources?.querySelectorAll("ol.notes > li").length).toBe(1); // one source id shared by the five facts with evidence
+    expect(sources?.textContent).toMatch(/Quote for founding_year/);
+    expect(sources?.querySelector("#n1")).toBeTruthy();
+  });
+
+  it("shows header details and recent events, dated newest first, undated last", async () => {
+    const def = definition();
+    for (const f of def.sections[0]?.fields ?? []) {
+      if (f.id === "legal_form") f.header_detail = true;
+      if (f.id === "management_team" || f.id === "founding_year") f.timeline = true;
+    }
+    mocks.getProfileDefinition.mockResolvedValue(ok(def));
+    mocks.listRunFacts.mockResolvedValue(
+      ok({
+        items: [
+          fact("legal_form", "company_overview", { value: "SAS" }),
+          fact("founding_year", "company_overview", { value: "Founded in 1987" }),
+          fact("management_team", "company_overview", { value: "President appointed" }),
+        ],
+      }),
+    );
+    renderApp(PATH);
+    const page = await screen.findByRole("article", { name: "Corvane Précision SAS" });
+    expect(within(page).getByText("Legal form", { selector: "dt" })).toBeTruthy();
+    const lines = Array.from(page.querySelectorAll("#events li")).map((li) => li.textContent);
+    expect(lines[0]).toMatch(/^1987Founding year/);
+    expect(lines[1]).toMatch(/^Date not statedManagement/);
   });
 });
