@@ -341,6 +341,38 @@ def test_refused_patch_is_never_applied(monkeypatch: pytest.MonkeyPatch) -> None
     assert "left no change" in oncall.propose(FakeGitHub(), incident(), 77, report, "")
 
 
+@pytest.mark.parametrize(
+    "extra",
+    [
+        "rename from backend/app/x.py\nrename to deploy/deploy.sh\n",
+        "rename from .github/workflows/ci.yml\nrename to backend/app/ci.yml\n",
+        "copy from backend/app/x.py\ncopy to .github/workflows/evil.yml\n",
+        "--- a/backend/app/x.py\n+++ b/ops/oncall/oncall.py\n",
+        "--- a/deploy/deploy.sh\n+++ /dev/null\n",
+        '+++ "b/.github/workflows/x.yml"\n',
+    ],
+)
+def test_renames_copies_and_file_lines_are_checked_too(extra: str) -> None:
+    header = "diff --git a/backend/app/x.py b/backend/app/y.py\nsimilarity index 100%\n"
+    assert not oncall.patch_allowed(header + extra)
+
+
+def test_an_allowed_rename_and_a_new_file_pass() -> None:
+    rename = (
+        "diff --git a/backend/app/x.py b/backend/app/y.py\nsimilarity index 100%\n"
+        "rename from backend/app/x.py\nrename to backend/app/y.py\n"
+    )
+    new_file = (
+        "diff --git a/frontend/src/n.ts b/frontend/src/n.ts\nnew file mode 100644\n"
+        "--- /dev/null\n+++ b/frontend/src/n.ts\n@@ -0,0 +1 @@\n+x\n"
+    )
+    assert oncall.patch_allowed(rename + new_file)
+
+
+def test_an_unexpected_diff_header_is_refused() -> None:
+    assert not oncall.patch_allowed("diff --git a/backend/a b/backend/b c/deploy/x\n")
+
+
 def test_the_branch_is_always_under_oncall() -> None:
     assert oncall.branch_name("0.inc42") == "oncall/0.inc42"
     assert oncall.branch_name("main") == "oncall/main"

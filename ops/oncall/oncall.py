@@ -397,12 +397,28 @@ def validate(report_path: Path) -> dict[str, Any]:
     return {"valid": not errors, "errors": errors[:10]}
 
 
+PATCH_PATH_LINES = re.compile(
+    r"^(?:rename from|rename to|copy from|copy to|--- (?:a/)?|\+\+\+ (?:b/)?)\s*(.+)$"
+)
+
+
 def patch_paths(patch: str) -> list[str]:
-    paths = []
+    """Every path a git patch names: `diff --git` headers, renames, copies and the ---/+++ lines.
+    A header line of an unexpected form is kept whole, so that it fails the path check."""
+    paths: list[str] = []
     for line in patch.splitlines():
         if line.startswith("diff --git "):
             parts = line.split(" ")
-            paths += [part[2:] for part in parts[2:4]]
+            if len(parts) != 4 or not parts[2].startswith("a/") or not parts[3].startswith("b/"):
+                paths.append(line)
+                continue
+            paths += [parts[2][2:], parts[3][2:]]
+            continue
+        match = PATCH_PATH_LINES.match(line)
+        if match:
+            path = match.group(1).strip().strip('"')
+            if path != "/dev/null":
+                paths.append(path)
     return paths
 
 
