@@ -3,25 +3,117 @@
    accent; rules, no boxes, no rounded corners, no bold values. The shared tokens are re-mapped inside the
    scope so that the shared components (buttons, banners, forms, statements) take the same look. */
 
-/* ---- Fonts (self-hosted woff2, see public/fonts/SOURCES.md) ------------------------------------------
-   MARKED: NOT YET ACTIVE. Piazzolla and Barlow Semi Condensed are not yet approved in
-   _docs/process/approved-dependencies.md, so no font file is shipped and the stacks below fall back to
-   Georgia and Arial Narrow. When the owner approves them and the woff2 files, their OFL licences and the
-   SOURCES.md entry are in public/fonts/, uncomment this block (font-display: swap, no third-party request).
+/* ---- Fonts: Piazzolla and Barlow Semi Condensed, SIL OFL 1.1, self-hosted (public/fonts/card/, see
+   public/fonts/SOURCES.md); approved by the owner on 11 Nov 2026 (owner decision 7 of the approved list).
+   Latin and Latin Extended only; other scripts fall back to the stacks. */
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-500-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
 
-@font-face { font-family: "Piazzolla"; font-style: normal; font-weight: 400; font-display: swap;
-  src: url("/fonts/piazzolla/Piazzolla-Regular.woff2") format("woff2"); }
-@font-face { font-family: "Piazzolla"; font-style: normal; font-weight: 600; font-display: swap;
-  src: url("/fonts/piazzolla/Piazzolla-SemiBold.woff2") format("woff2"); }
-@font-face { font-family: "Piazzolla"; font-style: italic; font-weight: 400; font-display: swap;
-  src: url("/fonts/piazzolla/Piazzolla-Italic.woff2") format("woff2"); }
-@font-face { font-family: "Barlow Semi Condensed"; font-style: normal; font-weight: 500; font-display: swap;
-  src: url("/fonts/barlow-semi-condensed/BarlowSemiCondensed-Medium.woff2") format("woff2"); }
-@font-face { font-family: "Barlow Semi Condensed"; font-style: normal; font-weight: 700; font-display: swap;
-  src: url("/fonts/barlow-semi-condensed/BarlowSemiCondensed-Bold.woff2") format("woff2"); }
-@font-face { font-family: "Barlow Semi Condensed"; font-style: normal; font-weight: 800; font-display: swap;
-  src: url("/fonts/barlow-semi-condensed/BarlowSemiCondensed-ExtraBold.woff2") format("woff2"); }
-   ---- end of the marked font block ------------------------------------------------------------------ */
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-500-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-700-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-800-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Barlow Semi Condensed";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/card/BarlowSemiCondensed-800-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-400-Italic-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-400-Italic-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-600-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Piazzolla";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/card/Piazzolla-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 
 :root {
   --ts-bg: #f7f8f6;
