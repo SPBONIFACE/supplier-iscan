@@ -79,6 +79,17 @@ def block(text: str, key: str, indent: int) -> str | None:
     return None if match is None else match.group(0)
 
 
+def job_permissions(job: str) -> str:
+    """What a job's `permissions:` grants, however it is written: block mapping, flow mapping
+    (`{ contents: write }`) or a scalar (`write-all`), as one flat string."""
+    found = ""
+    for match in re.finditer(
+        r"^([ \t]+)permissions\s*:(.*)\n((?:\1[ \t]+.*\n|[ \t]*\n)*)", job, re.M
+    ):
+        found += " " + match.group(2) + " " + " ".join(match.group(3).split())
+    return found
+
+
 def oncall_problems(name: str, text: str) -> list[str]:
     code = without_comments(text) + "\n"
     found = [
@@ -91,9 +102,10 @@ def oncall_problems(name: str, text: str) -> list[str]:
     if agent is None:
         found.append(f"{name}: has no job `agent`")
     else:
-        if re.search(r"id-token:\s*write", agent):
+        granted = job_permissions(agent)
+        if re.search(r"id-token\s*:\s*write", granted):
             found.append(f"{name}: the agent job asks for id-token: write")
-        if re.search(r"^\s+[a-z-]+:\s*write\b", agent, flags=re.MULTILINE):
+        if re.search(r"write", granted):
             found.append(f"{name}: the agent job asks for a write permission")
     top = block(code, "permissions", 0) or ""
     if re.search(r"write", top):
