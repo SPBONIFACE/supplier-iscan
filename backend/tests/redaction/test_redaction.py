@@ -100,6 +100,44 @@ def test_identifiers_and_figures_are_not_taken_for_phone_numbers(identifier: str
     assert redact(text) == text
 
 
+@pytest.mark.parametrize(
+    "identifier",
+    [
+        "6a8ac4ba-0580-4975-ad2f-89d94a2f20aa",
+        "03923845-0264-4491-a2a9-908ceebb6118",
+        "f3ace47a-3a78-4cac-b6dc-081755611568",
+        "529F2BA3-2A1A-4960-9931-BF0735A30CEE",
+    ],
+)
+@pytest.mark.parametrize(
+    "template",
+    ["source {}", "<<< BEGIN source_id\n{}\n<<< END source_id", "- id={} | field=founding_year"],
+)
+def test_a_uuid_is_not_taken_for_a_phone_number(identifier: str, template: str) -> None:
+    """Source and fact ids go to the model inside the redacted data (#130)."""
+    text = template.format(identifier)
+
+    assert redact(text) == text
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (
+            "id 6a8ac4ba-0580-4975-ad2f-89d94a2f20aa, call 01 42 68 53 00 or +33 1 23 45 67 89.",
+            f"id 6a8ac4ba-0580-4975-ad2f-89d94a2f20aa, call {OMISSION} or {OMISSION}.",
+        ),
+        (
+            "f3ace47a-3a78-4cac-b6dc-081755611568 01 42 68 53 00",
+            f"f3ace47a-3a78-4cac-b6dc-081755611568 {OMISSION}",
+        ),
+        ("call 0580-4975 today", f"call {OMISSION} today"),  # the same groups, not in a UUID
+    ],
+)
+def test_a_phone_number_next_to_a_uuid_is_still_removed(text: str, expected: str) -> None:
+    assert redact(text) == expected
+
+
 def test_a_name_in_a_suppression_entry_is_redacted_ignoring_case_and_accents() -> None:
     context = RedactionContext(names=("Zoë Müller-Lüdenscheidt", "Hans Müller"))
     texts = [

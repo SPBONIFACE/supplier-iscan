@@ -314,6 +314,9 @@ describe("supplier card, source chip and quote", () => {
     const user = userEvent.setup();
     const view = renderApp(PATH);
     await screen.findByRole("article", { name: "Corvane Précision SAS" });
+    // The loaded card moves the focus to the supplier name in an effect that can run after the
+    // article is found: wait for it, or it takes the focus back from the chip before Enter (#130).
+    await waitFor(() => expect(document.activeElement?.id).toBe("card-name"));
     const chip = within(row("Number of employees")).getByRole("button", { name: /^Note \d+/ });
     expect(chip.getAttribute("aria-expanded")).toBe("false");
 

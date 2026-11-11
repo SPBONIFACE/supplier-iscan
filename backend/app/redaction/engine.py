@@ -2,7 +2,8 @@
 
 What is removed, each omission replaced by `[…]`:
 - email addresses (regex, obfuscated forms included);
-- phone numbers (`phonenumbers`, with guards so that SIREN, LEI and VAT numbers survive);
+- phone numbers (`phonenumbers`, with guards so that SIREN, LEI and VAT numbers and UUIDs
+  survive);
 - people's names: GLiNER (`detector.py`) on the text and on a case-restored copy, united with
   spaCy `zh` for text with Han characters, widened over adjacent name tokens, plus precise rules
   (honorifics, labels, table columns, lower-case clues; `names.py`, `lowercase.py`);
@@ -52,6 +53,12 @@ _PHONE_WORD = re.compile(
     re.IGNORECASE,
 )
 _NAME_GAP = r"[\s,\-‐-―]+"
+# An identifier the application writes into the data it sends (a source id, a fact id): its digit
+# groups are never a phone number (#130).
+_UUID = re.compile(
+    r"(?<![^\W_])[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![^\W_])",
+    re.IGNORECASE,
+)
 
 
 def fold(text: str) -> tuple[str, list[int]]:
@@ -249,6 +256,8 @@ def _obfuscated_email_spans(text: str) -> list[Span]:
 
 def _phone_spans(text: str) -> list[Span]:
     spans: dict[Span, bool] = {}
+    # UUIDs are masked (same length, so the offsets hold) before the phone matcher reads the text.
+    text = _UUID.sub(lambda match: "x" * len(match.group()), text)
     for region in (None, *_PHONE_REGIONS):
         matcher = phonenumbers.PhoneNumberMatcher(
             text, region, leniency=phonenumbers.Leniency.VALID, max_tries=200
