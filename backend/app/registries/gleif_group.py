@@ -23,7 +23,8 @@ _MISSING: JsonValue = {"missing": True}
 class GleifEntity:
     lei: str
     legal_name: str
-    legal_form: str | None
+    legal_form: str | None  # the free text (legalForm.other), when the record has it
+    legal_form_code: str | None  # the ELF code (legalForm.id); GLEIF gives no name for it
     registered_as: str | None
     status: str | None
     legal_address: str | None
@@ -60,9 +61,10 @@ def parse_entity(record: Any) -> GleifEntity | None:
         return None
     entity: Mapping[str, Any] = record["attributes"]["entity"]
     legal_form = entity.get("legalForm")
-    form = None
+    form = code = None
     if isinstance(legal_form, Mapping):
-        form = clean_text(legal_form.get("other")) or clean_text(legal_form.get("id"))
+        form = clean_text(legal_form.get("other"))
+        code = clean_text(legal_form.get("id"))
     city = _locality(entity, "legalAddress", "city") or _locality(
         entity, "headquartersAddress", "city"
     )
@@ -73,6 +75,7 @@ def parse_entity(record: Any) -> GleifEntity | None:
         lei=candidate.lei,
         legal_name=candidate.legal_name,
         legal_form=form,
+        legal_form_code=code,
         registered_as=clean_text(entity.get("registeredAs")),
         status=candidate.lei_status,
         legal_address=address_text(entity.get("legalAddress")),

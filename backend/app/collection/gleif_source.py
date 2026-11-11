@@ -85,7 +85,9 @@ def render_group(group: GleifGroup) -> str:
         _label("Legal name", entity.legal_name),
         _label("LEI", entity.lei),
         _label("Entity status", entity.status),
-        _label("Legal form", entity.legal_form),
+        _label("Legal form", entity.legal_form)
+        if entity.legal_form
+        else _label("Legal form code (ELF)", entity.legal_form_code),
         _label("Registration authority entity ID", entity.registered_as),
         _label("Legal address", entity.legal_address),
         _label("Headquarters address", entity.headquarters_address),

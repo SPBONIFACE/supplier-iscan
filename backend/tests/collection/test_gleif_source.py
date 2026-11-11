@@ -21,7 +21,15 @@ from app.runs.stages import StageContext
 from tests.collection.support import CONTACT, HOST, RESOLVER, html
 from tests.factories import create_organisation
 from tests.http_client.support import MockSite
-from tests.registries.gleif_support import CHILD_LEI, PARENT_LEI, SUB_LEI, FakeGleif, group_answers
+from tests.registries.gleif_support import (
+    CHILD_LEI,
+    PARENT_LEI,
+    SUB_LEI,
+    FakeGleif,
+    group_answers,
+    lei_record,
+    one,
+)
 from tests.runs_support import create_run
 
 LIMITS = CollectionSettings(min_delay_seconds=0, backoff_seconds=0)
@@ -198,3 +206,19 @@ def test_gleif_down_the_run_continues_and_the_failure_log_says_so(engine: Engine
     assert [r.url for r in rows] == [f"https://{HOST}/"]
     # The first line of the log; the missing sitemap of the mock site follows it.
     assert (failures[0].url, failures[0].kind) == (record_page(SUB_LEI), "timeout")
+
+
+def test_the_elf_code_is_labelled_as_a_code_and_free_text_is_the_legal_form() -> None:
+    answers = group_answers()
+    answers[SUB_LEI] = one(lei_record(SUB_LEI, "Acme France SAS", form=None))
+    code_only, _ = stored_by(FakeGleif(answers))
+
+    assert "Legal form code (ELF): 8888" in code_only[0].text.splitlines()
+    assert not any(line.startswith("Legal form:") for line in code_only[0].text.splitlines())
+
+
+def test_the_free_text_is_shown_as_the_legal_form_and_the_code_is_not() -> None:
+    (source,), _ = stored_by(FakeGleif(group_answers()))
+
+    assert "Legal form: SAS" in source.text.splitlines()
+    assert "8888" not in source.text
