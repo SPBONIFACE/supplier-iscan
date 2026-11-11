@@ -153,6 +153,18 @@ def test_a_body_of_the_wrong_shape_gets_400(payload: bytes) -> None:
     assert recorder.calls == []
 
 
+def test_deeply_nested_json_under_the_cap_gets_400(caplog: pytest.LogCaptureFixture) -> None:
+    body = b"[" * 60_000
+    assert len(body) < relay.MAX_BODY_BYTES
+
+    with caplog.at_level(logging.INFO, logger="alert-relay"):
+        outcome, recorder = post(body)
+
+    assert outcome.status == 400
+    assert recorder.calls == []
+    assert "[[[" not in caplog.text
+
+
 def test_github_refusal_is_a_502_naming_the_status_only() -> None:
     outcome, _ = post(encode(notification()), recorder=Recorder(status=401))
 

@@ -158,7 +158,8 @@ def handle(
         return Outcome(400, "size")
     try:
         payload = json.loads(read_body(length))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError):
+        # RecursionError: deeply nested JSON (e.g. 60,000 "[") under the size cap.
         return Outcome(400, "not json")
     if not isinstance(payload, dict) or not isinstance(payload.get("incident"), dict):
         return Outcome(400, "shape")
