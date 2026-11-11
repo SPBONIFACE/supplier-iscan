@@ -1,0 +1,85 @@
+{
+  "_comment": "Replay fixture (#53, criterion 6c): synthetic telemetry of profile runs failing in the extraction stage because the structuring provider's answer does not match the output schema (StructuredOutputInvalid). Identifiers are made up. The evaluation case: the report must name StructuredOutputInvalid and the affected component (extraction or providers).",
+  "source": "fixture",
+  "failure_rate": {
+    "query": "sum(increase(iscan_runs_finished_total{iscan_status=\"failed\"}[15m])) / sum(increase(iscan_runs_finished_total[15m]))",
+    "points": [
+      ["2026-11-12T09:40:00Z", "0"],
+      ["2026-11-12T09:45:00Z", "0.25"],
+      ["2026-11-12T09:50:00Z", "0.6667"],
+      ["2026-11-12T09:55:00Z", "0.75"],
+      ["2026-11-12T10:00:00Z", "0.8"]
+    ]
+  },
+  "logs": [
+    {
+      "timestamp": "2026-11-12T09:58:41.204+00:00",
+      "level": "ERROR",
+      "service": "worker",
+      "logger": "app.runs.executor",
+      "message": "Run 5b0c1f4e-2a77-4c1e-9d0a-8f3e6b2a1c01 failed in stage extraction",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "error_type": "StructuredOutputInvalid",
+      "error_stack": [
+        "/app/app/runs/executor.py:216 _execute_run",
+        "/app/app/runs/stages.py:132 extraction_stage",
+        "/app/app/extraction/stage.py:88 stage",
+        "/app/app/extraction/fields.py:141 extract_section",
+        "/app/app/providers/structured.py:97 call_structured"
+      ]
+    },
+    {
+      "timestamp": "2026-11-12T09:58:40.913+00:00",
+      "level": "WARNING",
+      "service": "worker",
+      "logger": "app.providers.structured",
+      "message": "Structured output failed schema validation after 1 retry (role structuring, provider gemini)",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+    },
+    {
+      "timestamp": "2026-11-12T09:54:12.530+00:00",
+      "level": "ERROR",
+      "service": "worker",
+      "logger": "app.runs.executor",
+      "message": "Run 0d3e7a52-91b4-4f63-a1c8-2e4b9f6d7a10 failed in stage extraction",
+      "trace_id": "a3ce929d0e0e47364bf92f3577b34da6",
+      "error_type": "StructuredOutputInvalid",
+      "error_stack": [
+        "/app/app/runs/executor.py:216 _execute_run",
+        "/app/app/runs/stages.py:132 extraction_stage",
+        "/app/app/extraction/stage.py:88 stage",
+        "/app/app/extraction/fields.py:141 extract_section",
+        "/app/app/providers/structured.py:97 call_structured"
+      ]
+    },
+    {
+      "timestamp": "2026-11-12T09:49:03.118+00:00",
+      "level": "ERROR",
+      "service": "worker",
+      "logger": "app.runs.executor",
+      "message": "Run 7e1a0b93-5c2d-4e8f-b7a6-3d9c0f1e2b44 failed in stage extraction",
+      "trace_id": "0e0e47364bf92f3577b34da6a3ce929d",
+      "error_type": "StructuredOutputInvalid",
+      "error_stack": [
+        "/app/app/runs/executor.py:216 _execute_run",
+        "/app/app/runs/stages.py:132 extraction_stage",
+        "/app/app/extraction/stage.py:88 stage",
+        "/app/app/extraction/fields.py:141 extract_section",
+        "/app/app/providers/structured.py:97 call_structured"
+      ]
+    }
+  ],
+  "traces": [
+    {
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+      "spans": [
+        {"name": "run.execute", "duration_ms": 41230, "labels": {}},
+        {"name": "run.stage", "duration_ms": 1180, "labels": {"iscan.stage": "identity"}},
+        {"name": "run.stage", "duration_ms": 31544, "labels": {"iscan.stage": "collection"}},
+        {"name": "run.stage", "duration_ms": 8410, "labels": {"iscan.stage": "extraction", "g.co/status/code": "2"}},
+        {"name": "llm.call", "duration_ms": 3902, "labels": {"iscan.role": "structuring", "iscan.provider": "gemini", "iscan.outcome": "schema_invalid"}},
+        {"name": "llm.call", "duration_ms": 4105, "labels": {"iscan.role": "structuring", "iscan.provider": "gemini", "iscan.outcome": "schema_invalid"}}
+      ]
+    }
+  ]
+}

@@ -51,6 +51,15 @@ class DependencyUnavailable(Exception):
         self.dependency = dependency
 
 
+class SyntheticFaultInjected(Exception):
+    """The dev-only drill switch FAULT_INJECTION_FAIL_RUNS is on (#53): the run fails on
+    purpose, so that the failure-rate alert and the on-call agent can be exercised. Never a
+    dependency failure."""
+
+    def __init__(self) -> None:
+        super().__init__("FAULT_INJECTION_FAIL_RUNS is on: synthetic failure at collection start")
+
+
 class RunStopped(Exception):
     """A member stopped the run."""
 
@@ -113,7 +122,10 @@ def collection_stage(context: StageContext) -> StageOutcome | None:
     from app.collection.stage import make_collection_stage  # imported here: it imports this module
     from app.config import load_settings
 
-    return make_collection_stage(load_settings().crawler_contact_url)(context)
+    settings = load_settings()
+    if settings.fault_injection_fail_runs:
+        raise SyntheticFaultInjected
+    return make_collection_stage(settings.crawler_contact_url)(context)
 
 
 def extraction_stage(context: StageContext) -> StageOutcome | None:
