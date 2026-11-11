@@ -13,6 +13,7 @@ Versions come from the PyPI JSON API, the npm registry, GitHub releases and OSV 
 4. **Security exceptions to the 14-day rule:** `pypdf` 6.21.2, `pillow` 13.0.0, `undici` ≥ 8.12.2 (dev, transitive) are accepted.
 5. **Non-Latin text in the PDF:** IBM Plex Sans JP, KR and SC (SIL OFL 1.1), consistent with the design brief (#3), instead of Debian `fonts-noto-cjk`.
 6. **Observability, as in the course's Part 4 (DevOps and Observability):** the application exports OTLP with the OpenTelemetry SDK listed below. Locally, an optional Docker Compose part runs the same stack: OpenTelemetry Collector (`otel/opentelemetry-collector-contrib`), Prometheus (`prom/prometheus`), Loki (`grafana/loki`), Tempo (`grafana/tempo`) and Grafana (`grafana/grafana`), with Grafana alert rules calling the on-call responder through a webhook (#51, #53). These images are approved; their versions are pinned by tag and digest at install, at least 14 days old. The deployed telemetry backend, the alert relay and the on-call runtime (`anthropics/claude-code-action` or a script on `anthropic`) are decided with the deployment in Sprint 7 (#52, #53).
+7. **Supplier card fonts**: Piazzolla and Barlow Semi Condensed (SIL OFL 1.1), self-hosted woff2, from the tearsheet redesign (#163).
 
 ## Rules the list follows
 
@@ -111,6 +112,7 @@ start is accepted by the spec.
 | `@testing-library/user-event` | 14.6.8 | dev | MIT | #31 | Keyboard-only tests (review, comparison, forms) | Released 13 Oct (exactly 14 days). 0 dependencies. |
 | `jsdom` | 30.1.2 | dev | MIT | #31 | Vitest DOM environment | ~20 transitive. **SEC note:** its dependency `undici` must resolve to ≥ 8.12.2 (8.11.2 has 3 advisories, 1 HIGH DoS; fix released 15 Oct). If #31 installs before 29 Oct, add `undici@8.12.2` to `minimumReleaseAgeExclude`. `happy-dom` rejected (2025 VM-escape advisory, less complete). |
 | `axe-core` | 4.14.0 | dev | MPL-2.0 | #31 | Automated accessibility check, `axe.run(container)` asserting 0 critical | 0 dependencies; dev only, not distributed. No wrapper (`vitest-axe` is 0.1.0 from 2022). jsdom cannot compute colour contrast: contrast is checked on the mock-ups (#3 to #7, #54). |
+
 
 ## Agent extension pack (#56; own `uv` project `agent-pack/`, own `uv.lock`, never in an image)
 
