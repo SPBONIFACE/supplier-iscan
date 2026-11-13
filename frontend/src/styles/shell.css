@@ -1,0 +1,118 @@
+/* The application shell in the tearsheet style (mock-up 06-app-shell-tearsheet, approved by the owner on
+   14 Nov 2026). The palette and the fonts are those of the approved supplier card (card.css, #163), applied to
+   every page: the shared tokens are re-mapped at the root, so every shared component (header, buttons, forms,
+   tables, notices) takes the look without any change of layout. Paper, ink and one green accent; rules, no
+   boxes, square corners. Fonts (Piazzolla, Barlow Semi Condensed, SIL OFL 1.1) are declared in card.css. */
+
+:root {
+  --ts-bg: #f7f8f6;
+  --ts-surface: #eceeeb;
+  --ts-ink: #15191c;
+  --ts-muted: #545d64;
+  --ts-rule: #c9cfcc;
+  --ts-green: #1f5c48;
+  --ts-green-hover: #164536;
+  --ts-on-green: #ffffff;
+  --ts-missing: #8a3324;
+  --ts-body: "Piazzolla", Georgia, serif;
+  --ts-head: "Barlow Semi Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --ts-wide: 72rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ts-bg: #121614;
+    --ts-surface: #1b211e;
+    --ts-ink: #e7ebe8;
+    --ts-muted: #9ba6a1;
+    --ts-rule: #343d39;
+    --ts-green: #7cc3a5;
+    --ts-green-hover: #a3d8c0;
+    --ts-on-green: #121614;
+    --ts-missing: #e59a8a;
+  }
+}
+
+:root {
+  --isc-color-ink: var(--ts-ink);
+  --isc-color-ink-secondary: var(--ts-muted);
+  --isc-color-ink-tertiary: var(--ts-muted);
+  --isc-color-ink-disabled: var(--ts-muted);
+  --isc-color-rule: var(--ts-rule);
+  --isc-color-paper: var(--ts-bg);
+  --isc-color-paper-margin: var(--ts-surface);
+  --isc-color-field: var(--ts-bg);
+  --isc-color-border-control: var(--ts-muted);
+  --isc-color-cobalt: var(--ts-green);
+  --isc-color-cobalt-strong: var(--ts-green-hover);
+  --isc-color-cobalt-tint: var(--ts-surface);
+  --isc-color-on-cobalt: var(--ts-on-green);
+  --isc-color-brick: var(--ts-missing);
+  --isc-color-skeleton: var(--ts-surface);
+  --isc-focus-color: var(--ts-green);
+  --isc-font-family-sans: var(--ts-body);
+  --isc-font-family-serif: var(--ts-head);
+  --isc-font-size-base: 1.0625rem;
+  --isc-font-size-sm: 0.875rem;
+  --isc-font-size-micro: 0.75rem;
+  --isc-font-size-quote: 1rem;
+  --isc-radius-control: 0;
+  --isc-font-line-height-compact: 1.45;
+  --isc-font-size-h1: 2.25rem;
+  --isc-font-size-h2: 1.375rem;
+  --isc-font-size-h3: 1.1875rem;
+}
+
+body {
+  line-height: 1.55;
+}
+h1 {
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.005em;
+  text-wrap: balance;
+}
+h2,
+h3 {
+  font-weight: 700;
+  text-wrap: balance;
+}
+.brand {
+  font-weight: 800;
+  font-size: 1.375rem;
+  letter-spacing: 0.01em;
+}
+.nav a,
+.tb-right,
+.btn,
+.micro,
+.ml,
+.tbl th {
+  font-family: var(--ts-head);
+}
+.nav a {
+  font-weight: 500;
+  font-size: 1.0625rem;
+  color: var(--ts-muted);
+}
+.nav a[aria-current="page"] {
+  color: var(--ts-ink);
+}
+.tb-right {
+  font-weight: 500;
+  font-size: 0.9375rem;
+}
+.btn {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.tbl th {
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-size: 0.8125rem;
+}
+.msg {
+  border-left: 0;
+  border-top: var(--isc-border-section-rule) solid var(--isc-color-ink);
+  background: var(--ts-surface);
+}
