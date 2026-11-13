@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 App shell, tearsheet style: sign-in, profile list, run progress</title>
+<style>
+/* Mock-up 06. Same tokens, fonts and green accent as the approved card (05-supplier-card-tearsheet, #163),
+   applied to the whole application shell. Fonts are the self-hosted files of the app. */
+@font-face{font-family:"Barlow Semi Condensed";font-weight:500;src:url("../../../frontend/public/fonts/card/BarlowSemiCondensed-500-latin.woff2") format("woff2")}
+@font-face{font-family:"Barlow Semi Condensed";font-weight:700;src:url("../../../frontend/public/fonts/card/BarlowSemiCondensed-700-latin.woff2") format("woff2")}
+@font-face{font-family:"Barlow Semi Condensed";font-weight:800;src:url("../../../frontend/public/fonts/card/BarlowSemiCondensed-800-latin.woff2") format("woff2")}
+@font-face{font-family:"Piazzolla";font-weight:400;src:url("../../../frontend/public/fonts/card/Piazzolla-400-latin.woff2") format("woff2")}
+@font-face{font-family:"Piazzolla";font-weight:600;src:url("../../../frontend/public/fonts/card/Piazzolla-600-latin.woff2") format("woff2")}
+:root{--bg:#f7f8f6;--surface:#eceeeb;--ink:#15191c;--muted:#545d64;--rule:#c9cfcc;--green:#1f5c48;--green-h:#164536;--on-green:#fff;--missing:#8a3324;
+--body:"Piazzolla",Georgia,serif;--head:"Barlow Semi Condensed","Arial Narrow","Helvetica Neue",sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#121614;--surface:#1b211e;--ink:#e7ebe8;--muted:#9ba6a1;--rule:#343d39;--green:#7cc3a5;--green-h:#a3d8c0;--on-green:#121614;--missing:#e59a8a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:1.0625rem/1.55 var(--body)}
+.label{max-width:72rem;margin:2.5rem auto .5rem;padding:0 1rem;font:700 .8125rem var(--head);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.screen{border:1px solid var(--rule);max-width:72rem;margin:0 auto 1rem;background:var(--bg)}
+.top{border-bottom:1px solid var(--ink)}
+.top .in{display:flex;flex-wrap:wrap;align-items:center;gap:.25rem 1.5rem;padding:0 1.5rem;min-height:3.25rem}
+.brand{font:800 1.375rem var(--head);letter-spacing:.01em;color:var(--ink);text-decoration:none}
+.nav{display:flex;gap:1.25rem;margin:0;padding:0;list-style:none}
+.nav a{display:inline-flex;align-items:center;min-height:3.25rem;font:500 1.0625rem var(--head);color:var(--muted);text-decoration:none;border-bottom:2px solid transparent}
+.nav a[aria-current]{color:var(--ink);border-bottom-color:var(--green)}
+.right{margin-left:auto;display:flex;gap:1.25rem;align-items:center;font:500 .9375rem var(--head);color:var(--muted)}
+.right a{color:var(--green)}
+main{padding:2rem 1.5rem 3rem;max-width:56rem}
+.crumb{font:500 .9375rem var(--head);color:var(--muted);margin-bottom:.75rem}
+.crumb a{color:var(--green)}
+h1{font:800 2.25rem/1.1 var(--head);margin:0 0 .5rem;letter-spacing:.005em}
+h2{font:700 1.375rem/1.2 var(--head);margin:2rem 0 .5rem;padding-top:.75rem;border-top:2px solid var(--ink)}
+.lede{color:var(--muted);margin:0 0 1.5rem;max-width:44rem}
+label{display:block;font:700 .9375rem var(--head);letter-spacing:.04em;text-transform:uppercase;margin:1.25rem 0 .25rem}
+input{width:100%;max-width:26rem;font:1.0625rem var(--body);padding:.5rem .625rem;border:1px solid var(--muted);border-radius:0;background:var(--bg);color:var(--ink)}
+.btn{display:inline-block;margin-top:1.5rem;font:700 1.0625rem var(--head);letter-spacing:.03em;padding:.55rem 1.25rem;border:1px solid var(--green);background:var(--green);color:var(--on-green);border-radius:0}
+.btn.sec{background:transparent;color:var(--ink);border-color:var(--ink)}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+table{width:100%;border-collapse:collapse;margin-top:1rem}
+th{font:700 .8125rem var(--head);letter-spacing:.07em;text-transform:uppercase;text-align:left;color:var(--muted);padding:.4rem .5rem;border-bottom:1px solid var(--ink)}
+td{padding:.65rem .5rem;border-bottom:1px solid var(--rule);vertical-align:top}
+td a{color:var(--green);font:600 1.0625rem var(--body)}
+.st{font:700 .8125rem var(--head);letter-spacing:.07em;text-transform:uppercase}
+.st.ok{color:var(--green)}.st.wait{color:var(--muted)}.st.pause{color:var(--missing)}
+.note{border-top:2px solid var(--ink);background:var(--surface);padding:.75rem 1rem 1rem;margin:1.25rem 0;max-width:48rem}
+.steps{list-style:none;padding:0;margin:.5rem 0 0}
+.steps li{display:grid;grid-template-columns:2rem 1fr auto;gap:.5rem;padding:.7rem 0;border-bottom:1px solid var(--rule)}
+.steps b{font:700 1.125rem var(--head)}
+.steps small{display:block;color:var(--muted)}
+.num{font:700 1.125rem var(--head);color:var(--muted)}
+footer{border-top:1px solid var(--rule);padding:.75rem 1.5rem;font-size:.875rem;color:var(--muted)}
+.how{max-width:72rem;margin:2rem auto;padding:0 1rem;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="label">1 · Sign-in (the only page a visitor without an account sees)</div>
+<div class="screen">
+  <header class="top"><div class="in">
+    <a class="brand" href="#">Supplier iScan</a>
+    <div class="right"><span><a href="#">EN</a> · FR</span></div>
+  </div></header>
+  <main>
+    <h1>Sign in</h1>
+    <p class="lede">Evidence-based supplier profiles for procurement teams. Every fact carries a verbatim quote, its source and its date. The AI proposes; you decide.</p>
+    <label for="e">E-mail</label><input id="e" type="email" value="buyer@example.com">
+    <label for="p">Password</label><input id="p" type="password" value="••••••••••••">
+    <a class="btn" href="#">Sign in</a>
+  </main>
+  <footer>Demonstration instance. Profiles are drafted with AI from public sources and may contain errors.</footer>
+</div>
+
+<div class="label">2 · Profile list</div>
+<div class="screen">
+  <header class="top"><div class="in">
+    <a class="brand" href="#">Supplier iScan</a>
+    <ul class="nav"><li><a href="#" aria-current="page">Profiles</a></li><li><a href="#">Administration</a></li></ul>
+    <div class="right"><span><a href="#">EN</a> · FR</span><span>buyer@example.com</span><a href="#">Sign out</a></div>
+  </div></header>
+  <main>
+    <div class="row"><div><h1>Profiles</h1><p class="lede">One profile per supplier. Open one to review its facts and sources.</p></div><a class="btn" href="#">New profile</a></div>
+    <table>
+      <thead><tr><th>Supplier</th><th>Country</th><th>Status</th><th>Started</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#">Bericap GmbH &amp; Co. KG</a></td><td>Germany</td><td><span class="st ok">Completed</span></td><td>13 Nov 2026</td></tr>
+        <tr><td><a href="#">United Caps</a></td><td>Luxembourg</td><td><span class="st pause">Paused</span></td><td>13 Nov 2026</td></tr>
+        <tr><td><a href="#">Example Supplier SA</a></td><td>France</td><td><span class="st wait">Queued</span></td><td>12 Nov 2026</td></tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+
+<div class="label">3 · Run progress (a paused run)</div>
+<div class="screen">
+  <header class="top"><div class="in">
+    <a class="brand" href="#">Supplier iScan</a>
+    <ul class="nav"><li><a href="#" aria-current="page">Profiles</a></li><li><a href="#">Administration</a></li></ul>
+    <div class="right"><span><a href="#">EN</a> · FR</span><span>buyer@example.com</span><a href="#">Sign out</a></div>
+  </div></header>
+  <main>
+    <div class="crumb"><a href="#">Profiles</a> / New profile</div>
+    <div class="row"><div><h1>United Caps</h1><p class="lede">Status: paused · Run started 13 Nov 2026, 21:49 UTC</p></div><a class="btn sec" href="#">Stop the run</a></div>
+    <div class="note"><b>The AI service that reads the sources does not respond.</b> The run is paused at the extraction step; the work done is kept. Resume when you like. If the service still does not respond, the run pauses again and nothing is lost.<br><a class="btn" href="#">Resume the run</a></div>
+    <h2>Progress</h2>
+    <ol class="steps">
+      <li><span class="num">1</span><div><b>Identity</b><small>Identity confirmed 13 Nov 2026, 21:48 UTC</small></div><span class="st ok">Done</span></li>
+      <li><span class="num">2</span><div><b>Collection</b><small>6 sources collected · 1 failure recorded</small></div><span class="st ok">Done</span></li>
+      <li><span class="num">3</span><div><b>Extraction</b><small>Paused: the structuring service does not respond.</small></div><span class="st pause">Paused</span></li>
+      <li><span class="num">4</span><div><b>Assessment</b></div><span class="st wait">Waiting</span></li>
+    </ol>
+  </main>
+</div>
+
+<div class="how">
+  <p><b>What changes.</b> The header, headings, buttons, forms, tables, notices and status labels take the look of the approved card: paper background, ink text, one green accent, Barlow Semi Condensed headings, Piazzolla body, rules instead of boxes, square corners. The old beige and cobalt blue disappear from every page. Dark mode follows the system setting, as on the card.</p>
+  <p><b>How.</b> The card already re-maps the shared colour and font tokens inside its own page. The change applies that re-map to the whole application; no page layout changes, only colours, fonts and the header.</p>
+</div>
+</body>
+</html>
