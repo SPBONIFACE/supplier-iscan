@@ -914,8 +914,18 @@ def test_the_suppliers_own_page_without_its_name_still_yields_facts(engine: Engi
 @pytest.mark.parametrize(
     ("legal_name", "website", "text", "kept"),
     [
-        ("ALDERMOOR HOLDING GMBH", None, "Aldermoor opened a plant. Founded in 2005 in Lyon.", True),
-        ("ALDERMOOR GmbH & Co. KG", None, "Aldermoor opened a plant. Founded in 2005 in Lyon.", True),
+        (
+            "ALDERMOOR HOLDING GMBH",
+            None,
+            "Aldermoor opened a plant. Founded in 2005 in Lyon.",
+            True,
+        ),
+        (
+            "ALDERMOOR GmbH & Co. KG",
+            None,
+            "Aldermoor opened a plant. Founded in 2005 in Lyon.",
+            True,
+        ),
         ("Foo S.A.S.", None, "Foo opened a plant. Founded in 2005 in Lyon.", False),  # < 4 chars
         (
             "Zeta Industries",
