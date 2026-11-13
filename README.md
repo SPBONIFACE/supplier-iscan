@@ -4,8 +4,9 @@
 there is none.
 
 > Final project of the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) (2026
-> cohort). **Live (dev):** https://iscan-web-dev-939730526492.europe-west3.run.app. The API is behind the same address,
-> at `/api/` (health: `/api/health`).
+> cohort). **Dev instance:** https://iscan-web-dev-939730526492.europe-west3.run.app. Sign-in is by invitation, so a
+> visitor sees the sign-in page; to see the product, read [What it looks like](#what-it-looks-like) (a fictional
+> supplier) or run it locally. The API is behind the same address, at `/api/` (health: `/api/health`).
 
 ## The problem
 
@@ -33,6 +34,20 @@ into a supplier qualification file.
 
 The AI proposes; the buyer decides.
 
+## What it looks like
+
+The supplier card, as one page. The supplier below, **Aldermoor, is fictional**: every name, figure, quote, strength,
+risk and source is invented, on reserved `.example` domains, so that no real company is shown. These are renders of
+the approved design ([`05-supplier-card-tearsheet.html`](_docs/design/mockups/05-supplier-card-tearsheet.html)),
+which the card page of the app implements (#163). Each value has a note number; each note lists the source, its type
+(the supplier's own or third-party) and the verbatim quote; a missing fact reads "No public evidence found".
+
+![Supplier card: key figures and the AI-drafted assessment](_docs/design/screenshots/card-fictional-summary.png)
+
+![Supplier card: strengths, risks, procurement implication, next actions and recent events](_docs/design/screenshots/card-fictional-assessment.png)
+
+![Supplier card: financial evidence and the numbered sources with their quotes](_docs/design/screenshots/card-fictional-sources.png)
+
 ## For reviewers: where each criterion is
 
 | Criterion | Where to look |
@@ -47,7 +62,7 @@ The AI proposes; the buyer decides.
 | Deployment | Google Cloud Run (EU) and Neon PostgreSQL (EU); public dev URL above. See [Deployment](#deployment) |
 | CI/CD | [`ci.yml`](.github/workflows/ci.yml) (lint, tests), [`images.yml`](.github/workflows/images.yml) (image checks), [`deploy-dev.yml`](.github/workflows/deploy-dev.yml) (automatic to dev on green `main`), [`promote-prod.yml`](.github/workflows/promote-prod.yml) (manual, with a required reviewer) |
 | Observability | OpenTelemetry metrics, traces and logs sharing one trace ID, exported to Google Cloud Trace and Monitoring. See [Observability](#observability) |
-| Alerting on user impact, on-call agent | In progress: [#53](../../issues/53) (alert on the profile-run failure rate; an agent woken by the alert diagnoses it and proposes a fix, never merges) |
+| Alerting on user impact, on-call agent | Built and merged ([#53](../../issues/53), PR #168): the alert on the profile-run failure rate as code, a relay, and an on-call workflow in which an agent diagnoses the alert, opens an issue and, when it can, a fix pull request; it never merges. See [Observability](#observability) and the [runbook](_docs/operations/oncall-runbook.md). The live drill on the dev instance is described in the runbook; its evidence is not yet in this repository |
 
 ## Design principles
 
@@ -357,8 +372,9 @@ the worker and telemetry is in [`_docs/operations/cloud-run-sizing.md`](_docs/op
   reads "No public evidence found", which is not a statement about the supplier.
 - **PDF export** needs the Pango system libraries outside Docker (they are in the image).
 - **Card fonts** cover Latin scripts; other scripts fall back to the system fonts.
-- **Worker off by default** in the cloud to keep costs at zero: a run started on the hosted instance waits until the
-  owner switches the worker on.
+- **The hosted dev instance is a private demonstration.** Sign-in is by invitation; its demo list is empty; its worker
+  is off by default (zero cost) and reads the shipped example content, because Cloud Run worker pools cannot mount
+  secret files yet. A complete profile run is shown by running the stack locally with your own provider keys.
 
 ## Roadmap
 
