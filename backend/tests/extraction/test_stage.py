@@ -914,8 +914,18 @@ def test_the_suppliers_own_page_without_its_name_still_yields_facts(engine: Engi
 @pytest.mark.parametrize(
     ("legal_name", "website", "text", "kept"),
     [
-        ("BERICAP HOLDING GMBH", None, "Bericap opened a plant. Founded in 2005 in Lyon.", True),
-        ("BERICAP GmbH & Co. KG", None, "Bericap opened a plant. Founded in 2005 in Lyon.", True),
+        (
+            "ALDERMOOR HOLDING GMBH",
+            None,
+            "Aldermoor opened a plant. Founded in 2005 in Lyon.",
+            True,
+        ),
+        (
+            "ALDERMOOR GmbH & Co. KG",
+            None,
+            "Aldermoor opened a plant. Founded in 2005 in Lyon.",
+            True,
+        ),
         ("Foo S.A.S.", None, "Foo opened a plant. Founded in 2005 in Lyon.", False),  # < 4 chars
         (
             "Zeta Industries",
@@ -932,8 +942,8 @@ def test_the_suppliers_own_page_without_its_name_still_yields_facts(engine: Engi
         ("Zeta Industries", "https://abc.com", "ABC makes caps. Founded in 2005 in Lyon.", False),
         (
             "Zeta Industries",
-            "https://bericap.com",
-            "The bericaps are sold. Founded in 2005 in Lyon.",
+            "https://aldermoor.example",
+            "The aldermoors are sold. Founded in 2005 in Lyon.",
             False,
         ),
     ],
