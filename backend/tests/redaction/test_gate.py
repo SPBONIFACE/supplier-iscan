@@ -176,8 +176,9 @@ def test_adapters_are_called_only_by_the_provider_clients() -> None:
 
 
 def test_every_request_is_built_from_a_gate_result_never_from_a_literal() -> None:
-    """The places that build provider requests are the identity agent and the retrieval step of
-    collection (#20), each with the result of `gate.redact`. A new call site must be added here on
+    """The places that build provider requests are the identity agent (its chat and its web search),
+    the retrieval step of collection (#20) and the extraction and assessment stages, each with
+    the result of `gate.redact`. A new call site must be added here on
     purpose, and be reviewed."""
     builders: dict[str, list[str]] = {}
     for path in python_files():
@@ -194,7 +195,7 @@ def test_every_request_is_built_from_a_gate_result_never_from_a_literal() -> Non
                     if keyword.arg in {"data", "query"}:
                         assert not isinstance(keyword.value, ast.Constant | ast.JoinedStr)
     assert builders == {
-        "identity/agent.py": ["StructuringRequest"],
+        "identity/agent.py": ["StructuringRequest", "RetrievalRequest"],
         "collection/retrieval.py": ["RetrievalRequest"],
         "extraction/stage.py": ["StructuringRequest"],
         "assessment/stage.py": ["StructuringRequest"],
@@ -488,3 +489,21 @@ def test_the_suppression_reader_failing_stops_the_call() -> None:
 
     with pytest.raises(RedactionUnavailable):
         RedactionGate(unreadable, fake_redactor()).redact("hello")
+
+
+def test_the_identity_web_search_redacts_before_it_builds_the_request() -> None:
+    """The identity web search (spec F1, web retrieval) sends the name and the hints only after
+    `gate.redact`; the request is built from its result."""
+    tree = ast.parse((APP / "identity" / "agent.py").read_text(encoding="utf-8"))
+    function = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name == "_search_web"
+    )
+    calls = sorted(
+        (node.lineno, node.func.attr if isinstance(node.func, ast.Attribute) else node.func.id)  # type: ignore[attr-defined]
+        for node in ast.walk(function)
+        if isinstance(node, ast.Call)
+    )
+    names = [name for _line, name in calls]
+    assert names.index("redact") < names.index("RetrievalRequest") < names.index("retrieve")

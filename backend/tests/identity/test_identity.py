@@ -65,8 +65,9 @@ def setup(
     *results: Any,
     model: list[Any] | None = None,
     pages: dict[tuple[str, str], httpx2.Response] | None = None,
+    web: list[Any] | None = None,
 ) -> tuple[Harness, Member]:
-    harness = make_harness(engine, settings, FakeRegistries(*results), model, pages)
+    harness = make_harness(engine, settings, FakeRegistries(*results), model, pages, web)
     return harness, Member(harness, engine)
 
 
