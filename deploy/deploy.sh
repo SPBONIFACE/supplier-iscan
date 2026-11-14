@@ -177,9 +177,10 @@ deploy)
     MISTRAL_API_KEY:mistral-api-key PERPLEXITY_API_KEY:perplexity-api-key; do
     if secret_exists "${pair#*:}"; then extra="$extra,${pair%%:*}=iscan-$env_name-${pair#*:}:latest"; fi
   done
-  # The worker pool gets the keys but not the content files: Cloud Run worker pools do not support secret
-  # volume mounts yet ("Secrets volume mount is not supported for Worker Pools yet"). Without the files the
-  # worker uses the shipped example content (a known limitation of the hosted dev instance, see the runbook).
+  # Cloud Run worker pools cannot mount a secret as a file yet ("Secrets volume mount is not supported
+  # for Worker Pools yet"), so the worker gets each content secret as an environment variable,
+  # <NAME>_CONTENT, which the application writes to a private file at startup (app/config.py,
+  # _content_file). The API and the migration job mount the same secrets as files.
   worker_extra="$extra"
   cp "$work/app.yaml" "$work/worker.yaml"
   for pair in PROVIDER_CONFIG_FILE:provider-config PRICE_TABLE_FILE:price-table PROFILE_DEFINITION_FILE:profile-definition \
@@ -188,6 +189,7 @@ deploy)
       mount="/secrets/${pair#*:}/content.json"
       extra="$extra,$mount=iscan-$env_name-${pair#*:}:latest"
       echo "${pair%%:*}: \"$mount\"" >> "$work/app.yaml"
+      worker_extra="$worker_extra,${pair%%_FILE:*}_CONTENT=iscan-$env_name-${pair#*:}:latest"
     fi
   done
 

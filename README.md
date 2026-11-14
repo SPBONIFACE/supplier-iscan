@@ -132,12 +132,13 @@ Someone running their own instance of Supplier iScan sets their own contact page
 - **Public evidence only.** A missing fact reads "No public evidence found", which is not a statement about the
   supplier.
 - **The hosted dev instance is a private demonstration.** Sign-in is by invitation, its demo list is empty, and its
-  worker is off by default (zero cost) and reads the shipped example content, because Cloud Run worker pools cannot
-  mount secret files yet. A complete run is shown locally with your own provider keys.
+  worker is off by default (zero cost); the owner switches it on for a run. It reads the instance's content and
+  provider settings from Secret Manager as environment variables, because Cloud Run worker pools cannot mount secret
+  files yet.
 - PDF export needs the Pango libraries outside Docker; the card fonts cover Latin scripts.
 
 ## Roadmap
 
 After the course (issues labelled [`after-submission`](../../issues?q=is%3Aissue+is%3Aopen+label%3Aafter-submission)):
-the worker reading its content from Secret Manager, the comparison as a PDF, bias checks on the assessment, more
+the comparison as a PDF, bias checks on the assessment, more
 registries, the group's financial evidence, and a hosted offering for procurement teams.

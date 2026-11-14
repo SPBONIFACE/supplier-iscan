@@ -144,9 +144,11 @@ GCP_PROJECT_ID="$PROJECT_ID" make alert-apply ENV=dev
 always one policy). The command fails, naming the channel, if a channel of step 5 is missing. To check:
 Monitoring, **Alerting**, the policy shows the PromQL condition and the two channels.
 
-> **Known limitation (dev):** Cloud Run worker pools do not support secret volume mounts yet, so the deploy gives
-> the worker the keys but not the private content files; a real profile run on the hosted dev instance uses the
-> shipped example content. The drill is not affected (its runs fail at the start of collection).
+> **Worker content (dev):** Cloud Run worker pools do not support secret volume mounts yet, so the deploy gives the
+> worker each content secret as an environment variable (`<NAME>_CONTENT`, for example `PROVIDER_CONFIG_CONTENT`),
+> which the worker writes to a private file at startup (`app/config.py`). Until 14 Nov 2026 the worker used the
+> shipped example content, in which every provider is disabled. The drill is not affected (its runs fail at the
+> start of collection).
 
 ## The drill (live, dev)
 
