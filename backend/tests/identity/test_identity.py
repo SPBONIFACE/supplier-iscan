@@ -128,7 +128,9 @@ def test_a_hint_never_removes_a_candidate(engine: Engine, settings: Settings) ->
     assert harness.registries.queries[0].country_hint == "FR"
     assert session["hints"] == {"website": None, "country": "FR", "sector": "Wholesale"}
     listed = member.call("GET", f"/identity-sessions/{session['id']}/candidates").json()
-    assert [c["id"] for c in listed["candidates"]] == [ACME_ID]
+    # The first proposal is the candidate that fits the country hint; the other one stays.
+    assert session["turns"][-1]["candidate"]["id"] == ACME_ID
+    assert [c["id"] for c in listed["candidates"]] == [OTHER_ID]
 
 
 # --- input validation ----------------------------------------------------------------------

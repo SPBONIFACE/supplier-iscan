@@ -18,6 +18,7 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
+from app.countries import Lang, country_name
 from app.db import utc_now
 from app.http_client import (
     FetchError,
@@ -121,6 +122,16 @@ def links_in(text: str) -> list[str]:
     return [match.rstrip(_TRAILING) for match in _LINK.findall(text)][:MAX_LINKS_PER_MESSAGE]
 
 
+# Key of `IdentitySession.hints` where the check of the buyer's website hint is kept (never in a
+# response): {hint, final_url, domain}, final_url None when the website did not respond.
+WEBSITE_CHECKED = "website_checked"
+
+
+def _country_of(entry: dict[str, Any]) -> str | None:
+    country = _public(entry).get("country")
+    return str(country).upper() if country else None
+
+
 class IdentityAgent:
     def __init__(
         self,
@@ -169,7 +180,7 @@ class IdentityAgent:
     # --- the model ---------------------------------------------------------------------------
 
     def _conversation(self, session: IdentitySession) -> str:
-        hints = {key: value for key, value in session.hints.items() if value}
+        hints = {k: v for k, v in session.hints.items() if v and k != WEBSITE_CHECKED}
         lines = [f"supplier name: {session.name}"]
         if hints:
             lines.append(f"hints: {json.dumps(hints, ensure_ascii=False)}")
@@ -257,9 +268,13 @@ class IdentityAgent:
 
     def _propose(self, session: IdentitySession, turns: list[dict[str, Any]]) -> None:
         """Ask the model about the current candidates and append its turn(s)."""
-        if not session.candidates:
-            return
         language = session.ui_language
+        if not session.candidates:
+            # No registry candidate: the website the buyer gave is the way forward, if it responds.
+            entry = self._website_hint_entry(session, turns)
+            if entry is not None:
+                self._propose_entry(session, turns, entry, message("website_proposal", language))
+            return
         proposal = self._ask(session)
         if proposal is None:
             turns.append(new_turn("assistant", "error", message("agent_failed", language)))
@@ -281,15 +296,88 @@ class IdentityAgent:
             question = None  # the model's question was about the previous candidates
         by_id = {_public(entry)["id"]: entry for entry in session.candidates}
         if not session.candidates:
+            # The search under the new name found nothing: the buyer's website, if it responds.
+            entry = self._website_hint_entry(session, turns)
+            if entry is not None:
+                self._propose_entry(session, turns, entry, message("website_proposal", language))
             return
         # Code, not the model, decides what a proposal is: an unknown id falls back to the top rank.
         chosen = by_id.get(proposal.candidate_id or "") or session.candidates[0]
+        wanted = self._wanted_country(session)
+        repeated = session.current_candidate_id in (None, _public(chosen)["id"])
+        if wanted and repeated and _country_of(chosen) not in (None, wanted):
+            # The chosen candidate contradicts the buyer's country, on a first proposal or proposed
+            # again after the buyer replied to it (a candidate the buyer asked for in the chat is
+            # kept): propose one that fits, if any; nothing is discarded, the others stay under
+            # "Show other candidates".
+            fitting = next(
+                (e for e in session.candidates if _country_of(e) in (None, wanted)), None
+            )
+            lang: Lang = "fr" if language == "fr" else "en"
+            place = country_name(wanted, lang) or wanted
+            if fitting is not None:
+                chosen, question = fitting, None
+            else:
+                entry = self._website_hint_entry(session, turns)
+                if entry is not None:
+                    text = message("country_mismatch_website", language, country=place)
+                    self._propose_entry(session, turns, entry, text)
+                    return
+                found_in = _country_of(chosen) or ""
+                other = country_name(found_in, lang) or found_in
+                question = message("country_mismatch", language, country=place, other=other)
         session.current_candidate_id = _public(chosen)["id"]
         text = question or message("confirm_question", language)
         group_line = self._group_line(session, chosen)
         if group_line:
             text = f"{text}\n{group_line}"
         turns.append(new_turn("assistant", "proposal", text, _public(chosen)))
+
+    @staticmethod
+    def _wanted_country(session: IdentitySession) -> str | None:
+        wanted = session.hints.get(STATED_COUNTRY) or session.hints.get("country")
+        return str(wanted).upper() if wanted else None
+
+    def _website_hint_entry(
+        self, session: IdentitySession, turns: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
+        """The website the buyer gave, as a candidate, once the guarded client has checked that it
+        responds (as "None of these, enter the website" does). Checked once per address: the
+        outcome is kept in the session; a failure is said once, with its reason."""
+        hint = session.hints.get("website")
+        if not hint:
+            return None
+        known = session.hints.get(WEBSITE_CHECKED)
+        if not (isinstance(known, dict) and known.get("hint") == hint):
+            result = check_website(hint, self._services.http)
+            reachable = result.status == "reachable" and result.final_url and result.final_domain
+            known = {
+                "hint": hint,
+                "final_url": result.final_url if reachable else None,
+                "domain": result.final_domain if reachable else None,
+            }
+            session.hints = {**session.hints, WEBSITE_CHECKED: known}
+            if not reachable:
+                reason = result.reason or ""
+                text = message("website_hint_rejected", session.ui_language, reason=reason)
+                turns.append(new_turn("assistant", "notice", text))
+        if not known.get("final_url"):
+            return None
+        entry = entry_from_website(session.name, known["final_url"], known["domain"])
+        ids = {_public(e)["id"] for e in session.candidates}
+        if _public(entry)["id"] not in ids:
+            session.candidates = [*session.candidates, entry]
+        return entry
+
+    def _propose_entry(
+        self,
+        session: IdentitySession,
+        turns: list[dict[str, Any]],
+        entry: dict[str, Any],
+        text: str,
+    ) -> None:
+        session.current_candidate_id = _public(entry)["id"]
+        turns.append(new_turn("assistant", "proposal", text, _public(entry)))
 
     # --- operations --------------------------------------------------------------------------
 
