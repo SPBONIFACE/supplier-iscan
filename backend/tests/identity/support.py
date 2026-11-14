@@ -17,7 +17,7 @@ from app.config import Settings
 from app.http_client import GuardedClient
 from app.identity.services import AsyncRunner, IdentityServices
 from app.providers import Providers
-from app.providers.fake import FakeStructuringAdapter, fake_adapters
+from app.providers.fake import FakeRetrievalAdapter, FakeStructuringAdapter, fake_adapters
 from app.registries import RegistryCandidate, RegistrySearchQuery, RegistrySearchResult
 from tests.http_client.support import PUBLIC_V4, MockSite, StubResolver
 from tests.providers.support import SENTINEL_KEY, catalogue, config, make_meter
@@ -80,6 +80,7 @@ class Harness:
     site: MockSite
     providers: Providers
     services: IdentityServices
+    web: FakeRetrievalAdapter
     resolver: StubResolver = field(default_factory=lambda: StubResolver({}))
 
 
@@ -89,13 +90,16 @@ def make_harness(
     registries: FakeRegistries,
     model_outputs: list[Any] | None = None,
     pages: dict[tuple[str, str], httpx2.Response] | None = None,
+    web_results: list[Any] | None = None,
 ) -> Harness:
     model = FakeStructuringAdapter(list(model_outputs or []))
+    # The identity web search: unscripted, a call fails (and the chat goes on without it).
+    web = FakeRetrievalAdapter(list(web_results or []))
     cat = catalogue(config("primary"))
     providers = Providers(
         cat,
         {"GEMINI_API_KEY": SENTINEL_KEY},
-        fake_adapters(cat, model),
+        fake_adapters(cat, model, web),
         meter=make_meter(),
     )
     site = MockSite(pages or {(WEBSITE_HOST, "/"): httpx2.Response(200, text="Acme")})
@@ -107,4 +111,4 @@ def make_harness(
     )
     client = make_client(settings=settings, engine=engine, providers=providers)
     client.app.state.identity_services = services  # type: ignore[attr-defined]
-    return Harness(client, model, registries, site, providers, services, resolver)
+    return Harness(client, model, registries, site, providers, services, web, resolver)

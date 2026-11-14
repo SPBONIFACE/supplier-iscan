@@ -29,7 +29,9 @@ from app.http_client import (
 )
 from app.identity.candidates import (
     STATED_COUNTRY,
+    comparable_name,
     entry_from_registry,
+    entry_from_web,
     entry_from_website,
     unique_active_lei,
 )
@@ -38,7 +40,7 @@ from app.identity.strings import disclosure_text, message
 from app.llm_schemas import IdentityProposal
 from app.models import IdentitySession
 from app.prompts import PromptSet, RenderedPrompt, log_render
-from app.providers import Providers, StructuringRequest
+from app.providers import Providers, RetrievalRequest, StructuringRequest
 from app.providers.metering import CallContext
 from app.redaction import RedactionGate
 from app.registries import RegistrySearchQuery, RegistrySearchResult
@@ -127,6 +129,46 @@ def links_in(text: str) -> list[str]:
 WEBSITE_CHECKED = "website_checked"
 
 
+# Key of `IdentitySession.hints` where the identity web search is kept (never in a response):
+# {key, host}, host None when the search found no website for the supplier.
+WEB_SEARCHED = "web_searched"
+RETRIEVAL_PROMPT = "retrieval"
+_INTERNAL_HINTS = (WEBSITE_CHECKED, WEB_SEARCHED)
+WEB_RESULTS = 10
+WEB_FOCUS = (
+    "Focus: the supplier's own website and official registers naming its legal entity, "
+    "in the country given"
+)
+
+
+def _host(url: str) -> str | None:
+    try:
+        host = normalise_url(url, assume_https=True).host
+    except Exception:  # noqa: BLE001 - an unusable address is skipped
+        return None
+    return host.lower().strip(".") or None
+
+
+def _site(host: str) -> str:
+    return host[4:] if host.startswith("www.") else host
+
+
+def _name_token(name: str) -> str:
+    """The name's first word of three letters or more, letters and digits only, lower case."""
+    for word in re.split(r"[^0-9a-z]+", comparable_name(name).lower()):
+        if len(word) >= 3:
+            return word
+    return ""
+
+
+def _fallback_text(entry: dict[str, Any], language: str, place: str | None = None) -> str:
+    web = "web" in _public(entry).get("found_in", [])
+    if place:
+        key = "country_mismatch_web" if web else "country_mismatch_website"
+        return message(key, language, country=place)
+    return message("web_proposal" if web else "website_proposal", language)
+
+
 def _country_of(entry: dict[str, Any]) -> str | None:
     country = _public(entry).get("country")
     return str(country).upper() if country else None
@@ -180,7 +222,7 @@ class IdentityAgent:
     # --- the model ---------------------------------------------------------------------------
 
     def _conversation(self, session: IdentitySession) -> str:
-        hints = {k: v for k, v in session.hints.items() if v and k != WEBSITE_CHECKED}
+        hints = {k: v for k, v in session.hints.items() if v and k not in _INTERNAL_HINTS}
         lines = [f"supplier name: {session.name}"]
         if hints:
             lines.append(f"hints: {json.dumps(hints, ensure_ascii=False)}")
@@ -270,10 +312,10 @@ class IdentityAgent:
         """Ask the model about the current candidates and append its turn(s)."""
         language = session.ui_language
         if not session.candidates:
-            # No registry candidate: the website the buyer gave is the way forward, if it responds.
-            entry = self._website_hint_entry(session, turns)
+            # No registry candidate: the buyer's website if it responds, else a web search.
+            entry = self._fallback_entry(session, turns)
             if entry is not None:
-                self._propose_entry(session, turns, entry, message("website_proposal", language))
+                self._propose_entry(session, turns, entry, _fallback_text(entry, language))
             return
         proposal = self._ask(session)
         if proposal is None:
@@ -296,10 +338,10 @@ class IdentityAgent:
             question = None  # the model's question was about the previous candidates
         by_id = {_public(entry)["id"]: entry for entry in session.candidates}
         if not session.candidates:
-            # The search under the new name found nothing: the buyer's website, if it responds.
-            entry = self._website_hint_entry(session, turns)
+            # The search under the new name found nothing: the buyer's website, else a web search.
+            entry = self._fallback_entry(session, turns)
             if entry is not None:
-                self._propose_entry(session, turns, entry, message("website_proposal", language))
+                self._propose_entry(session, turns, entry, _fallback_text(entry, language))
             return
         # Code, not the model, decides what a proposal is: an unknown id falls back to the top rank.
         chosen = by_id.get(proposal.candidate_id or "") or session.candidates[0]
@@ -318,14 +360,24 @@ class IdentityAgent:
             if fitting is not None:
                 chosen, question = fitting, None
             else:
-                entry = self._website_hint_entry(session, turns)
+                entry = self._fallback_entry(session, turns)
                 if entry is not None:
-                    text = message("country_mismatch_website", language, country=place)
+                    text = _fallback_text(entry, language, place)
                     self._propose_entry(session, turns, entry, text)
                     return
+                # Nothing in the buyer's country: no proposal; the website field opens, and the
+                # closest candidate is named (stating its country in the chat proposes it).
                 found_in = _country_of(chosen) or ""
                 other = country_name(found_in, lang) or found_in
-                question = message("country_mismatch", language, country=place, other=other)
+                text = message(
+                    "no_fit",
+                    language,
+                    country=place,
+                    other=other,
+                    name=_public(chosen)["legal_name"],
+                )
+                turns.append(new_turn("assistant", "website_rejected", text))
+                return
         session.current_candidate_id = _public(chosen)["id"]
         text = question or message("confirm_question", language)
         group_line = self._group_line(session, chosen)
@@ -368,6 +420,69 @@ class IdentityAgent:
         if _public(entry)["id"] not in ids:
             session.candidates = [*session.candidates, entry]
         return entry
+
+    def _fallback_entry(
+        self, session: IdentitySession, turns: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
+        """When no registry candidate fits: the buyer's website if it responds, else the supplier's
+        website found by one web search (spec F1: candidates from registries and web retrieval)."""
+        return self._website_hint_entry(session, turns) or self._web_entry(session)
+
+    def _web_entry(self, session: IdentitySession) -> dict[str, Any] | None:
+        """One request to the retrieval provider with the name and the hints; the supplier's website
+        is the buyer's website domain if a cited address is on it, else the first cited domain that
+        carries the supplier's name. Searched once per (name, hints); the outcome is kept in the
+        session. Only a domain leaves this method: snippets are never shown nor stored."""
+        key = json.dumps(
+            [session.name, session.hints.get("website"), self._wanted_country(session)],
+            ensure_ascii=False,
+        )
+        known = session.hints.get(WEB_SEARCHED)
+        if not (isinstance(known, dict) and known.get("key") == key):
+            host = self._search_web(session)
+            known = {"key": key, "host": host}
+            session.hints = {**session.hints, WEB_SEARCHED: known}
+        host = known.get("host")
+        if not host:
+            return None
+        entry = entry_from_web(session.name, host, self._wanted_country(session))
+        ids = {_public(e)["id"] for e in session.candidates}
+        if _public(entry)["id"] not in ids:
+            session.candidates = [*session.candidates, entry]
+        return entry
+
+    def _search_web(self, session: IdentitySession) -> str | None:
+        wanted = self._wanted_country(session)
+        lines = [f"Name: {session.name}"]
+        if session.hints.get("website"):
+            lines.append(f"Website: {session.hints['website']}")
+        if wanted:
+            lines.append(f"Country: {country_name(wanted) or wanted} ({wanted})")
+        if session.hints.get("sector"):
+            lines.append(f"Sector: {session.hints['sector']}")
+        lines.append(WEB_FOCUS)
+        try:
+            rendered = self._prompts.render(RETRIEVAL_PROMPT, {"supplier": "\n".join(lines)})
+            query = self._gate.redact(rendered.data, company_names=[session.name])
+            request = RetrievalRequest(rendered.instructions, query, max_results=WEB_RESULTS)
+            result = self._providers.retrieval().retrieve(
+                request, CallContext(organisation_id=session.organisation_id)
+            )
+        except Exception as error:  # noqa: BLE001 - a failed search is no candidate, never a 500
+            logger.warning("Identity web search failed: %s", type(error).__name__)
+            return None
+        hosts = [_host(item.url) for item in result.urls]
+        website = session.hints.get("website")
+        if website:
+            own = _site(_host(str(website)) or "")
+            for host in hosts:
+                if host and own and _site(host) == own:
+                    return host
+        token = _name_token(session.name)
+        for host in hosts:
+            if host and token and token in _site(host).split(".")[0].replace("-", ""):
+                return host
+        return None
 
     def _propose_entry(
         self,

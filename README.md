@@ -126,6 +126,9 @@ Someone running their own instance of Supplier iScan sets their own contact page
 
 - **Entity versus group.** A profile describes the legal entity the buyer confirmed; the group's consolidated accounts
   are not yet gathered next to the local entity's.
+- **Company registers do not cover every country.** The supplier is identified from GLEIF (global) and Wikidata;
+  where neither has it, from a web search for its website, which the buyer confirms. National registers are not
+  queried, so the legal entity may need checking by the buyer.
 - **Public evidence only.** A missing fact reads "No public evidence found", which is not a statement about the
   supplier.
 - **The hosted dev instance is a private demonstration.** Sign-in is by invitation, its demo list is empty, and its

@@ -137,3 +137,11 @@ def entry_from_website(name: str, final_url: str, domain: str) -> dict[str, Any]
         "identifiers": [{"scheme": "domain", "value": domain}],
     }
     return {"candidate": public, "natural_person": False, "wikidata_id": None, "lei": None}
+
+
+def entry_from_web(name: str, host: str, country: str | None) -> dict[str, Any]:
+    """The supplier's website found by the identity web search: a candidate the buyer confirms.
+    Its country is the one the buyer gave (none found by the search is kept)."""
+    entry = entry_from_website(name, f"https://{host}/", host)
+    entry["candidate"] = {**entry["candidate"], "found_in": ["web"], "country": country}
+    return entry

@@ -98,17 +98,39 @@ MESSAGES: dict[str, dict[Language, str]] = {
             "Est-ce bien l’entreprise que vous cherchez ?"
         ),
     },
-    "country_mismatch": {
+    "web_proposal": {
         "en": (
-            "I found no company with this name in {country} in the public registries; the "
-            "closest one is in {other}. Is this the company you mean? If not, choose “None of "
-            "these” and enter the supplier's website."
+            "I found no company with this name in the public registries; a web search found "
+            "the website below. Is this the company you mean?"
         ),
         "fr": (
-            "Je n’ai trouvé aucune entreprise de ce nom dans le pays indiqué ({country}) "
-            "dans les registres publics ; la plus proche est dans ce pays : {other}. "
-            "Est-ce bien l’entreprise que vous cherchez ? Sinon, choisissez « Aucun de "
-            "ceux-ci » et indiquez le site web du fournisseur."
+            "Je n’ai trouvé aucune entreprise de ce nom dans les registres publics ; une "
+            "recherche web a trouvé le site ci-dessous. Est-ce bien l’entreprise que vous "
+            "cherchez ?"
+        ),
+    },
+    "country_mismatch_web": {
+        "en": (
+            "I found no company with this name in {country} in the public registries; a web "
+            "search found the website below. Is this the company you mean?"
+        ),
+        "fr": (
+            "Je n’ai trouvé aucune entreprise de ce nom dans le pays indiqué ({country}) dans "
+            "les registres publics ; une recherche web a trouvé le site ci-dessous. Est-ce bien "
+            "l’entreprise que vous cherchez ?"
+        ),
+    },
+    "no_fit": {
+        "en": (
+            "I found no company with this name in {country}, in the public registries or on "
+            "the web. The closest one is {name}, in {other}. Enter the supplier's website below, "
+            "or tell me in your reply if it is the company in {other}."
+        ),
+        "fr": (
+            "Je n’ai trouvé aucune entreprise de ce nom dans le pays indiqué ({country}), ni "
+            "dans les registres publics ni sur le web. La plus proche est {name} (pays : "
+            "{other}). Indiquez le site web du fournisseur ci-dessous, ou dites-moi dans votre "
+            "réponse s’il s’agit de celle-ci."
         ),
     },
     "group_line": {
