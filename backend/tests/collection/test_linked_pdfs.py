@@ -34,7 +34,7 @@ def run(
 ) -> tuple[list[str], list[SourceRecord], list[str]]:
     """The addresses requested, the sources stored, the addresses skipped."""
     collector, site, stored, _sleeps, _ = make_collector(pages, settings)
-    result = collector.collect(SITE, NAME, lambda _lacking: [url])
+    result = collector.collect(SITE, NAME, lambda _lacking, _excluded: [url])
     return requested(site), stored, result.skipped
 
 
@@ -115,7 +115,7 @@ def test_at_most_the_run_cap_across_pages() -> None:
         entries.append(f"https://{OTHER}/{page}")
     collector, _site, stored, _s, _ = make_collector(pages, settings)
 
-    collector.collect(SITE, NAME, lambda _lacking: entries)
+    collector.collect(SITE, NAME, lambda _lacking, _excluded: entries)
 
     assert len(stored_pdfs(stored)) == 3
 
@@ -147,7 +147,7 @@ def test_a_pdf_already_stored_is_not_fetched_again() -> None:
     }
     collector, site, stored, _s, _ = make_collector(pages)
 
-    collector.collect(SITE, NAME, lambda _lacking: [PAGE, f"https://{OTHER}/entry2"])
+    collector.collect(SITE, NAME, lambda _lacking, _excluded: [PAGE, f"https://{OTHER}/entry2"])
 
     assert requested(site).count(pdf_url) == 1
     assert stored_pdfs(stored) == [pdf_url]
@@ -199,7 +199,7 @@ def test_a_sample_document_is_skipped_with_its_own_message_and_costs_no_slot() -
     }
     collector, site, stored, _sleeps, _ = make_collector(pages)
 
-    result = collector.collect(SITE, NAME, lambda _lacking: [PAGE])
+    result = collector.collect(SITE, NAME, lambda _lacking, _excluded: [PAGE])
 
     assert stored_pdfs(stored) == [f"https://{OTHER}/docs/annual-report-2024.pdf"]
     assert not any("exemple" in u or "Sample" in u for u in requested(site))

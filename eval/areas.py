@@ -390,7 +390,7 @@ def run_retrieval(case: dict[str, Any], context: Context) -> CaseResult:
         IdentityRecord(case["legal_name"], None, None),
         CallContext(organisation_id=ORGANISATION),
     )
-    returned = retrieve(list(case["lacking"]))
+    returned = retrieve(list(case["lacking"]), ())
     verifier = context.backend.verifier()
     try:
         reachable = set(case["pages"])

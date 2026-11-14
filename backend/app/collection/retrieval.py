@@ -15,6 +15,7 @@ import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 from pydantic import ValidationError
 
@@ -62,6 +63,17 @@ INDEPENDENT_REQUEST = (
 )
 
 
+# Asked when a domain blocked or did not answer in this run (#181): its pages would only fail again,
+# so the provider is told to leave it out; when it is the supplier's own website, the provider is
+# asked for third-party sources instead.
+EXCLUDED_LINE = "Do not return addresses on these domains (they could not be read): {domains}"
+OWN_SITE_UNREADABLE_REQUEST = (
+    "The supplier's own website could not be read. Return third-party sources only: official "
+    "registers and filed accounts, trade press, certification bodies, industry directories, and "
+    "customer or partner announcements."
+)
+
+
 # One line per focus, sent to the provider inside the supplier data text.
 FOCUS_LINES = {
     "registers": (
@@ -84,7 +96,16 @@ class IdentityRecord:
     country: str | None
 
 
-def _supplier_text(identity: IdentityRecord, lacking: list[str], focus: str | None = None) -> str:
+def _on(host: str, domains: tuple[str, ...]) -> bool:
+    return any(host == d or host.endswith("." + d) for d in domains)
+
+
+def _supplier_text(
+    identity: IdentityRecord,
+    lacking: list[str],
+    focus: str | None = None,
+    excluded: tuple[str, ...] = (),
+) -> str:
     # Quoted: unquoted, the name detector joins the name with the next line into one span that
     # the company protection does not cover, and the query loses the name (as in #176).
     lines = [f'Legal name: "{identity.legal_name}"']
@@ -97,10 +118,15 @@ def _supplier_text(identity: IdentityRecord, lacking: list[str], focus: str | No
             if name != identity.country
             else f"Country: {name}"
         )
-    if lacking:
+    own = (urlsplit(identity.website).hostname or "") if identity.website else ""
+    if own and _on(own.removeprefix("www."), excluded):
+        lines.append(OWN_SITE_UNREADABLE_REQUEST)
+    elif lacking:
         lines.append("Field groups lacking evidence: " + ", ".join(lacking))
     else:
         lines.append(INDEPENDENT_REQUEST)
+    if excluded:
+        lines.append(EXCLUDED_LINE.format(domains=", ".join(excluded)))
     if focus in FOCUS_LINES:
         lines.append(FOCUS_LINES[focus])
     return "\n".join(lines)
@@ -142,9 +168,11 @@ def make_retriever(
     `check_stop` is called after each wait. A focus whose request fails is reported in `failures`
     of the result (each with its own kind) and the others still run."""
 
-    def prepare(lacking: list[str], focus: str | None) -> RetrievalRequest:
+    def prepare(
+        lacking: list[str], focus: str | None, excluded: tuple[str, ...]
+    ) -> RetrievalRequest:
         """On the caller's thread: the redaction gate may read the database."""
-        text = _supplier_text(identity, lacking, focus)
+        text = _supplier_text(identity, lacking, focus, excluded)
         rendered = prompts.render(PROMPT_ID, {"supplier": text})
         # Redacted before the call; a failure raises RedactionUnavailable and nothing is sent.
         query = gate.redact(
@@ -183,8 +211,8 @@ def make_retriever(
                 raise RetrievalFailed("invalid_response") from None
             return rank(result.urls, lacking)
 
-    def retrieve(lacking: list[str], focus: str | None) -> list[str]:
-        request = prepare(lacking, focus)
+    def retrieve(lacking: list[str], focus: str | None, excluded: tuple[str, ...]) -> list[str]:
+        request = prepare(lacking, focus, excluded)
         try:
             client = providers.retrieval()
         except ProviderError:
@@ -192,11 +220,11 @@ def make_retriever(
             raise RetrievalFailed("provider_unavailable") from None
         return send(client, request, lacking)
 
-    def retrieve_focused(lacking: list[str]) -> list[str]:
+    def retrieve_focused(lacking: list[str], excluded: tuple[str, ...] = ()) -> list[str]:
         if not focuses:
-            return retrieve(lacking, None)
+            return retrieve(lacking, None, excluded)
         # Prepared in order on this thread; only the provider calls run at the same time.
-        prepared: list[RetrievalRequest] = [prepare(lacking, focus) for focus in focuses]
+        prepared = [prepare(lacking, focus, excluded) for focus in focuses]
         try:
             client = providers.retrieval()
         except ProviderError:
