@@ -31,7 +31,7 @@ def content_requests(site) -> list[str]:  # type: ignore[no-untyped-def]
 
 
 def retrieve_of(*urls: str) -> RetrieveFn:
-    return lambda _lacking: list(urls)
+    return lambda _lacking, _excluded: list(urls)
 
 
 # -- the failure log ----------------------------------------------------------------------------
@@ -64,17 +64,19 @@ def test_a_timeout_and_an_unreachable_page_are_told_apart() -> None:
     collector, site, _stored, _sleeps, _ = make_collector({})
 
     def fail(request: httpx2.Request) -> None:
-        if request.url.path == "/":
+        if request.headers["host"] == HOST and request.url.path == "/":
             raise FetchTimeoutError("slow")
-        if request.url.path == "/sitemap.xml":
+        if request.headers["host"] == OTHER and request.url.path == "/x":
             raise httpx2.ConnectError("down")
 
     site.error = fail
-    result = collector.collect(SITE, NAME)
+    result = collector.collect(SITE, NAME, retrieve_of(f"https://{OTHER}/x"))
 
     kinds = {f.url: f.kind for f in result.failures}
     assert kinds[SITE] == "timeout"
-    assert kinds[f"https://{HOST}/sitemap.xml"] == "unreachable"
+    assert kinds[f"https://{OTHER}/x"] == "unreachable"
+    # The website did not answer after its retries: its sitemap is not tried (#181).
+    assert f"https://{HOST}/sitemap.xml" not in kinds
 
 
 def test_a_page_blocked_by_robots_txt_is_logged() -> None:
@@ -215,7 +217,7 @@ def test_a_huge_retrieval_file_is_not_read_beyond_the_limit() -> None:
 
 
 def test_a_retrieval_failure_is_logged_and_the_other_sources_are_kept() -> None:
-    def broken(_lacking: list[str]) -> list[str]:
+    def broken(_lacking: list[str], _excluded: tuple[str, ...]) -> list[str]:
         raise RetrievalFailed("provider_unavailable")
 
     collector, _site, stored, _sleeps, _ = make_collector(

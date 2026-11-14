@@ -29,7 +29,7 @@ def full_site() -> dict[tuple[str, str], httpx2.Response]:
 def test_retrieval_runs_also_when_no_page_kind_is_lacking() -> None:
     asked: list[list[str]] = []
 
-    def retrieve(lacking: list[str]) -> list[str]:
+    def retrieve(lacking: list[str], _excluded: tuple[str, ...]) -> list[str]:
         asked.append(lacking)
         return [f"https://{OTHER}/register"]
 
@@ -61,7 +61,7 @@ def test_at_most_one_address_on_the_suppliers_own_domain_when_the_website_gave_s
     collector, _site, stored, _sleeps, _ = make_collector(pages, settings)
     urls = [f"https://{HOST}/a", f"https://{HOST}/b", f"https://{OTHER}/x", f"https://{OTHER}/y"]
 
-    collector.collect(SITE, NAME, lambda _lacking: urls)
+    collector.collect(SITE, NAME, lambda _lacking, _excluded: urls)
 
     assert [r.url for r in stored[1:]] == [
         f"https://{HOST}/a",
@@ -73,7 +73,7 @@ def test_at_most_one_address_on_the_suppliers_own_domain_when_the_website_gave_s
 def test_own_domain_addresses_are_not_capped_when_the_website_gave_no_source() -> None:
     pages = {(HOST, "/a"): html("<p>own a</p>"), (HOST, "/b"): html("<p>own b</p>")}
     collector, _site, stored, _sleeps, _ = make_collector(pages)
-    retrieve: RetrieveFn = lambda _lacking: [f"https://{HOST}/a", f"https://{HOST}/b"]  # noqa: E731
+    retrieve: RetrieveFn = lambda _lacking, _excluded: [f"https://{HOST}/a", f"https://{HOST}/b"]  # noqa: E731
 
     collector.collect(SITE, NAME, retrieve)
 
@@ -85,7 +85,7 @@ def test_the_default_number_of_retrieval_addresses_is_twelve() -> None:
 
 
 def test_a_failing_retrieval_with_nothing_lacking_keeps_the_website_sources() -> None:
-    def broken(_lacking: list[str]) -> list[str]:
+    def broken(_lacking: list[str], _excluded: tuple[str, ...]) -> list[str]:
         raise RetrievalFailed("provider_unavailable")
 
     collector, _site, stored, _sleeps, _ = make_collector(full_site())
@@ -117,7 +117,7 @@ def test_outside_addresses_after_fifteen_own_ones_are_fetched() -> None:
     pages, urls = _outside_after_own(15, 5)
     collector, _site, stored, _sleeps, _ = make_collector(pages, settings)
 
-    collector.collect(SITE, NAME, lambda _lacking: urls)
+    collector.collect(SITE, NAME, lambda _lacking, _excluded: urls)
 
     got = [r.url for r in stored]
     assert all(f"https://{OTHER}/x{i}" in got for i in range(5))
@@ -130,7 +130,7 @@ def test_stored_addresses_do_not_take_slots_of_the_cut() -> None:
     collector, _site, stored, _sleeps, _ = make_collector(pages, settings)
     urls = [SITE] * 3 + outside  # the homepage is already stored by the crawl
 
-    collector.collect(SITE, NAME, lambda _lacking: urls)
+    collector.collect(SITE, NAME, lambda _lacking, _excluded: urls)
 
     assert [r.url for r in stored if r.url.startswith(f"https://{OTHER}")] == outside
 
@@ -140,7 +140,7 @@ def test_total_retrieval_fetches_stay_within_the_cut() -> None:
     pages, urls = _outside_after_own(2, 10)
     collector, _site, stored, _sleeps, _ = make_collector(pages, settings)
 
-    collector.collect(SITE, NAME, lambda _lacking: urls)
+    collector.collect(SITE, NAME, lambda _lacking, _excluded: urls)
 
     assert len(stored) - 1 <= 4  # minus the homepage of the crawl
 
@@ -149,6 +149,6 @@ def test_only_own_domain_or_non_http_addresses_raise_no_error() -> None:
     pages, urls = _outside_after_own(3, 0)
     collector, _site, stored, _sleeps, _ = make_collector(pages)
 
-    collector.collect(SITE, NAME, lambda _lacking: [*urls, "ftp://x.example/a"])
+    collector.collect(SITE, NAME, lambda _lacking, _excluded: [*urls, "ftp://x.example/a"])
 
     assert len(stored) == 2  # homepage and one own-domain address

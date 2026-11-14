@@ -33,3 +33,17 @@ def test_the_extraction_supplier_lines_keep_the_supplier_name(
     redacted = real_redactor.redact(text, RedactionContext(keep=(name,))).text
 
     assert f'Legal name: "{name}"' in redacted and f"Website: {WEBSITE}" in redacted
+
+
+@pytest.mark.parametrize("name", ["Corvaglia", "Bossard"])
+def test_the_query_without_the_closed_website_keeps_name_and_domains(
+    real_redactor: Redactor, name: str
+) -> None:
+    """#181: the own website could not be read; the query names the closed domains."""
+    excluded = ("corvaglia.com", "europages.co.uk")
+    text = _supplier_text(IdentityRecord(name, WEBSITE, "CH"), ["about"], None, excluded)
+
+    redacted = real_redactor.redact(text, RedactionContext(keep=(name,))).text
+
+    assert f'Legal name: "{name}"' in redacted
+    assert "corvaglia.com, europages.co.uk" in redacted

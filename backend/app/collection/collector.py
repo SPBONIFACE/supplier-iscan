@@ -44,9 +44,13 @@ RETRYABLE: tuple[type[Exception], ...] = (*NETWORK_ERRORS, FetchTimeoutError)
 PER_KIND = 2  # pages kept per kind (for example two sustainability pages)
 RETRY_STATUSES = (429, 500, 502, 503, 504)
 MAX_BACKOFF_SECONDS = 60.0
-# The lacking page kinds in (empty when the website gave every kind: independent sources are then
-# asked for), the addresses the retrieval provider cited (best first) out.
-RetrieveFn = Callable[[list[str]], list[str]]
+# The lacking page kinds (empty when the website gave every kind: independent sources are then
+# asked for) and the domains to leave out (they blocked or did not answer in this run) in; the
+# addresses the retrieval provider cited (best first) out.
+RetrieveFn = Callable[[list[str], tuple[str, ...]], list[str]]
+# A fetch outcome that closes the whole domain for the rest of the run (#181): its other pages are
+# neither requested nor logged. "disallowed" (one path refused by robots.txt) does not close it.
+CLOSING_STATUSES = ("blocked", "excluded", "not_crawled")
 
 
 class RetrievedAddresses(list[str]):
@@ -82,6 +86,16 @@ class CollectionResult:
     failures: list[Failure] = field(default_factory=list)  # the failure log (spec F2)
     identity_to_verify: bool = False
     attempts: int = 0  # requests made for content, retries included (never above the cap)
+
+
+def _status_kind(status: str) -> Kind:
+    """The failure kind of a fetch that was not made or not read. Crawl rules that could not be
+    read are not rules that forbid (Q16); a bot check is not a crawl rule (#181)."""
+    if status == "not_crawled":
+        return "crawl_rules_unreadable"
+    if status == "blocked":
+        return "bot_check"
+    return "blocked_by_robots"
 
 
 def _host(url: str) -> str:
@@ -154,6 +168,9 @@ class Collector:
         self._kinds_found: set[str] = set()
         self._website_host = ""
         self._linked_pdfs = 0  # PDFs followed from retrieved third-party pages in this run
+        # Domains closed for the rest of the run (#181): they blocked us (bot check, exclusion),
+        # their crawl rules could not be read, or they did not answer. Logged once each.
+        self._closed: set[str] = set()
 
     # -- failures ---------------------------------------------------------------------------
 
@@ -172,10 +189,26 @@ class Collector:
 
     # -- fetching ---------------------------------------------------------------------------
 
+    def _is_closed(self, url: str) -> bool:
+        try:
+            host = _host(url)
+        except ValueError:
+            return False
+        return any(host == d or host.endswith("." + d) for d in self._closed)
+
+    def _close(self, url: str) -> None:
+        try:
+            self._closed.add(_host(url))
+        except ValueError:
+            pass
+
     def _fetch(self, url: str, max_bytes: int) -> Any:
         """The response of `url`, or None (refused, too large, not found, or failing after the
         retries). Waits for the domain's slot before each request; backs off between retries.
-        Every request counts as an attempt; none is made beyond the cap of the run."""
+        Every request counts as an attempt; none is made beyond the cap of the run. A domain
+        closed earlier in the run is not requested again, and not logged again (#181)."""
+        if self._is_closed(url):
+            return self._skip(url)
         attempts = self._settings.retries + 1
         kind: Kind = "unreachable"
         status = None
@@ -214,11 +247,9 @@ class Collector:
                     return self._skip(url, "too_large")
                 if result.status != "fetched":
                     logger.info("Not fetched: %s (%s)", url, result.status)
-                    # Crawl rules that could not be read are not rules that forbid (Q16).
-                    unread = result.status == "not_crawled"
-                    return self._skip(
-                        url, "crawl_rules_unreadable" if unread else "blocked_by_robots"
-                    )
+                    if result.status in CLOSING_STATUSES:
+                        self._close(url)
+                    return self._skip(url, _status_kind(result.status))
                 status = result.response.status_code
                 if status not in RETRY_STATUSES:
                     if status >= 400:
@@ -233,6 +264,8 @@ class Collector:
             if attempt + 1 < attempts:
                 self._sleep(min(delay, MAX_BACKOFF_SECONDS))
         logger.warning("Gave up on %s after %d attempts", url, attempts)
+        if kind in ("timeout", "unreachable"):
+            self._close(url)  # no answer after the retries: its other pages would not answer
         return self._skip(url, kind, status)
 
     def _request_ceiling(self) -> None:
@@ -260,6 +293,8 @@ class Collector:
 
     def _sitemap_urls(self, home: str) -> list[str]:
         settings = self._settings
+        if self._is_closed(home):
+            return []
         queue = [urljoin(home, "/sitemap.xml")]
         try:
             permission = self._fetcher.permission(home)
@@ -268,6 +303,8 @@ class Collector:
             return []
         except DomainLimitReached:
             return []
+        if self._is_closed(home) or permission.decision != "allowed":
+            return []  # a closed or refused domain: its sitemaps are neither fetched nor logged
         robots = permission.robots
         if robots is not None:
             queue = [*(s for s in robots.sitemaps if _host(s) == _host(home)), *queue]
@@ -345,39 +382,73 @@ class Collector:
 
     def _retrieve(self, retrieve: RetrieveFn) -> None:
         """Addresses from the retrieval provider, fetched and stored like any source. Only the
-        addresses are used: the provider's answer text and snippets are never stored."""
+        addresses are used: the provider's answer text and snippets are never stored.
+
+        Domains closed in this run (#181) are named to the provider as excluded, and their
+        addresses are skipped without a request, a log row or a slot: only addresses actually
+        tried count against `max_retrieval_urls`. When the website gave no source, its unused
+        pages go to third-party sources (`crawl_pages` more). When a domain closes during the
+        step and too few third-party sources were found, the provider is asked once more,
+        without the closed domains."""
         self._strategy = "retrieval"
         lacking = [kind for kind in PAGE_KINDS if kind not in self._kinds_found]
-        # Also when nothing is lacking: the provider is then asked for independent sources.
-        self._check_stop()
-        try:
-            urls = retrieve(lacking)
-        except RetrievalFailed as error:
-            self._fail(None, error.kind, message=error.message)
-            return
-        for failed in getattr(urls, "failures", []):
-            self._fail(None, failed.kind, message=failed.message)
-        crawl_full = len(self.result.sources) >= self._settings.crawl_pages
-        stored = {record.url for record in self.result.sources}
-        usable: list[str] = []
-        for url in urls:
-            if url in stored:
-                continue
-            if urlsplit(url).scheme not in ("http", "https"):
-                self._skip(url, "refused")
-                continue
-            usable.append(url)
-        for url in self._independent_first(usable)[: self._settings.max_retrieval_urls]:
-            if crawl_full and not self._third_party(url):
-                # The reserved slots are for addresses outside the supplier's website.
-                self._skip(url, "refused", message=RESERVED_MESSAGE)
-                continue
-            if url.lower().split("?", 1)[0].endswith(".pdf"):
-                self._take_pdf(url)
-            else:
-                links = self._take_page(url)
-                if links and self._third_party(self._final_url or url):
-                    self._follow_linked_pdfs(self._final_url or url, links)
+        budget = self._settings.max_retrieval_urls
+        if self._website_host and not self.result.sources:
+            budget += self._settings.crawl_pages
+        seen = {record.url for record in self.result.sources}
+        tried = 0
+        found_before = len(self.result.sources)
+        excluded: tuple[str, ...] = ()
+        for round_number in range(2):
+            if round_number == 1:
+                found = len(self.result.sources) - found_before
+                if (
+                    self._requests_exhausted
+                    or tried >= budget
+                    or found >= self._settings.reserved_independent
+                    or not self._closed - set(excluded)
+                ):
+                    return
+            excluded = tuple(sorted(self._closed))
+            # Also when nothing is lacking: the provider is then asked for independent sources.
+            self._check_stop()
+            try:
+                urls = retrieve(lacking, excluded)
+            except RetrievalFailed as error:
+                self._fail(None, error.kind, message=error.message)
+                return
+            for failed in getattr(urls, "failures", []):
+                self._fail(None, failed.kind, message=failed.message)
+            crawl_full = len(self.result.sources) >= self._settings.crawl_pages
+            usable: list[str] = []
+            for url in urls:
+                if url in seen:
+                    continue
+                seen.add(url)
+                if urlsplit(url).scheme not in ("http", "https"):
+                    self._skip(url, "refused")
+                    continue
+                if self._is_closed(url):
+                    self._skip(url)
+                    continue
+                usable.append(url)
+            for url in self._independent_first(usable):
+                if tried >= budget or self._requests_exhausted:
+                    break
+                if self._is_closed(url):  # closed by an earlier address of this step
+                    self._skip(url)
+                    continue
+                if crawl_full and not self._third_party(url):
+                    # The reserved slots are for addresses outside the supplier's website.
+                    self._skip(url, "refused", message=RESERVED_MESSAGE)
+                    continue
+                tried += 1
+                if url.lower().split("?", 1)[0].endswith(".pdf"):
+                    self._take_pdf(url)
+                else:
+                    links = self._take_page(url)
+                    if links and self._third_party(self._final_url or url):
+                        self._follow_linked_pdfs(self._final_url or url, links)
 
     def _third_party(self, url: str) -> bool:
         own = self._website_host

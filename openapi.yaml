@@ -2334,6 +2334,7 @@ components:
             - empty_content
             - blocked_by_robots
             - crawl_rules_unreadable
+            - bot_check
             - refused
             - too_large
             - not_a_page

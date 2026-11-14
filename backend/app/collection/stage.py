@@ -16,7 +16,7 @@ from sqlalchemy import delete, select
 
 from app.collection import source_store
 from app.collection.budget import RequestBudget
-from app.collection.collector import Collector
+from app.collection.collector import Collector, RetrieveFn
 from app.collection.failures import RetrievalFailed
 from app.collection.gleif_source import store_gleif_source
 from app.collection.retrieval import IdentityRecord, make_retriever
@@ -82,7 +82,7 @@ def make_collection_stage(
             # Owner decision (3 Nov 2026): a natural person's name and address are hidden from the
             # provider, so with no website to anchor it the query would identify nobody.
             skip_retrieval = identity.natural_person and not identity.website
-        retriever: Callable[[list[str]], list[str]] | None = None
+        retriever: RetrieveFn | None = None
         budget_reached = False
         if skip_retrieval:
             logger.info(
@@ -103,10 +103,10 @@ def make_collection_stage(
                 check_stop=context.check_stop,
             )
 
-            def budgeted(lacking: list[str]) -> list[str]:
+            def budgeted(lacking: list[str], excluded: tuple[str, ...] = ()) -> list[str]:
                 nonlocal budget_reached
                 try:
-                    found = search(lacking)
+                    found = search(lacking, excluded)
                     if getattr(found, "budget_exhausted", False):
                         budget_reached = True
                     return found
