@@ -2333,6 +2333,7 @@ components:
             - unreachable
             - empty_content
             - blocked_by_robots
+            - crawl_rules_unreadable
             - refused
             - too_large
             - not_a_page

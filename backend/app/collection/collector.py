@@ -214,7 +214,11 @@ class Collector:
                     return self._skip(url, "too_large")
                 if result.status != "fetched":
                     logger.info("Not fetched: %s (%s)", url, result.status)
-                    return self._skip(url, "blocked_by_robots")
+                    # Crawl rules that could not be read are not rules that forbid (Q16).
+                    unread = result.status == "not_crawled"
+                    return self._skip(
+                        url, "crawl_rules_unreadable" if unread else "blocked_by_robots"
+                    )
                 status = result.response.status_code
                 if status not in RETRY_STATUSES:
                     if status >= 400:

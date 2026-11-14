@@ -314,6 +314,7 @@
       "unreachable": "The address could not be reached",
       "empty_content": "The page was empty once fetched",
       "blocked_by_robots": "Not collected: the site's crawl rules do not allow it",
+      "crawl_rules_unreadable": "Not collected: the site's crawl rules could not be read (no answer or refused)",
       "refused": "The server refused the request",
       "too_large": "The document was too large",
       "not_a_page": "Not a page or document that can be read",

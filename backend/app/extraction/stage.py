@@ -100,7 +100,8 @@ class Supplier:
     natural_person: bool = False
 
     def text(self) -> str:
-        lines = [f"Legal name: {self.name}"]
+        # Quoted, so that the name detector keeps it apart from the next line (see retrieval).
+        lines = [f'Legal name: "{self.name}"']
         if self.website:
             lines.append(f"Website: {self.website}")
         if self.country:
