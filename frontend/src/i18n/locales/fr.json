@@ -314,6 +314,7 @@
       "unreachable": "L’adresse est injoignable",
       "empty_content": "La page était vide une fois récupérée",
       "blocked_by_robots": "Non collectée : les règles d’exploration du site ne l’autorisent pas",
+      "crawl_rules_unreadable": "Non collectée : les règles d’exploration du site n’ont pas pu être lues (pas de réponse ou refus)",
       "refused": "Le serveur a refusé la requête",
       "too_large": "Le document était trop volumineux",
       "not_a_page": "Ni page ni document lisible",

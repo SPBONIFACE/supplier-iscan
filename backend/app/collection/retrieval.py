@@ -85,7 +85,9 @@ class IdentityRecord:
 
 
 def _supplier_text(identity: IdentityRecord, lacking: list[str], focus: str | None = None) -> str:
-    lines = [f"Legal name: {identity.legal_name}"]
+    # Quoted: unquoted, the name detector joins the name with the next line into one span that
+    # the company protection does not cover, and the query loses the name (as in #176).
+    lines = [f'Legal name: "{identity.legal_name}"']
     if identity.website:
         lines.append(f"Website: {identity.website}")
     if identity.country:

@@ -92,6 +92,24 @@ def test_a_page_blocked_by_robots_txt_is_logged() -> None:
     assert len(stored) == 1
 
 
+def test_crawl_rules_that_could_not_be_read_are_not_logged_as_a_block() -> None:
+    """robots.txt did not answer (the Corvaglia run from Cloud Run): the domain is not crawled
+    (Q16), and the log says the rules could not be read, not that the site forbids it."""
+    pages = {
+        (HOST, "/robots.txt"): httpx2.Response(503),
+        (HOST, "/"): html("<p>Acme</p>"),
+    }
+    collector, _site, stored, _sleeps, _ = make_collector(pages)
+
+    result = collector.collect(SITE, NAME)
+
+    kinds = {f.url: f.kind for f in result.failures}
+    assert kinds[SITE] == "crawl_rules_unreadable"
+    assert "blocked_by_robots" not in kinds.values()
+    assert stored == []
+    assert "could not be read" in MESSAGES["crawl_rules_unreadable"]
+
+
 def test_failure_messages_are_plain_and_never_a_negative_claim_about_the_supplier() -> None:
     for kind, message in MESSAGES.items():
         assert not NEGATIVE.search(message), kind

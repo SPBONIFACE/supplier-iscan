@@ -17,6 +17,7 @@ Kind = Literal[
     "unreachable",
     "empty_content",
     "blocked_by_robots",
+    "crawl_rules_unreadable",
     "refused",
     "too_large",
     "not_a_page",
@@ -39,6 +40,13 @@ MESSAGES: Final[dict[Kind, str]] = {
     "blocked_by_robots": (
         "The site does not allow automated reading of this page (robots.txt or a reservation "
         "of the site owner), so it was not collected."
+    ),
+    # The site's crawl rules could not be read (robots.txt or tdmrep.json unreachable or
+    # refused): the domain is not crawled in this run (owner decision Q16). This says nothing
+    # about what the site allows.
+    "crawl_rules_unreadable": (
+        "The site's crawl rules could not be read (the site did not answer or refused the "
+        "request), so it was not crawled in this run."
     ),
     "refused": "The address is not a public web address and was not fetched.",
     "too_large": "The file is larger than the allowed size and was not read.",

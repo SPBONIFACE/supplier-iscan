@@ -797,7 +797,7 @@ def test_the_supplier_goes_into_the_prompt(engine: Engine) -> None:
 
     assert adapter.asked
     for asked in adapter.asked:
-        assert "Legal name: Acme Supplies SA" in asked.data
+        assert 'Legal name: "Acme Supplies SA"' in asked.data
         assert f"Website: {SITE}" in asked.data
         assert "Country: France (FR)" in asked.data
 

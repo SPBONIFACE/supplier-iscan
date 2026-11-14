@@ -1102,7 +1102,7 @@ export interface components {
             url: string | null;
             strategy: components["schemas"]["CollectionStrategy"];
             /** @enum {string} */
-            kind: "http_error" | "timeout" | "unreachable" | "empty_content" | "blocked_by_robots" | "refused" | "too_large" | "not_a_page" | "provider_unavailable" | "invalid_response" | "attempt_cap";
+            kind: "http_error" | "timeout" | "unreachable" | "empty_content" | "blocked_by_robots" | "crawl_rules_unreadable" | "refused" | "too_large" | "not_a_page" | "provider_unavailable" | "invalid_response" | "attempt_cap";
             /** @description The strategy chosen next; null when none is left. */
             next_strategy: components["schemas"]["CollectionStrategy"] | null;
             /** @description Plain-language description. Absence is never a statement about the supplier. */
