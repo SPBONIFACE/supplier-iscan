@@ -141,6 +141,21 @@ WEB_FOCUS = (
 )
 
 
+def web_query_text(name: str, hints: dict[str, Any], country: str | None) -> str:
+    """The supplier data of the identity web search. The name is quoted: unquoted at the end of a
+    line, the name detector joins it with the next line into one span, which the company
+    protection does not cover, and the name was redacted."""
+    lines = [f'Company name: "{name}"']
+    if hints.get("website"):
+        lines.append(f"Website: {hints['website']}")
+    if country:
+        lines.append(f"Country: {country_name(country) or country} ({country})")
+    if hints.get("sector"):
+        lines.append(f"Sector: {hints['sector']}")
+    lines.append(WEB_FOCUS)
+    return "\n".join(lines)
+
+
 def _host(url: str) -> str | None:
     try:
         host = normalise_url(url, assume_https=True).host
@@ -313,7 +328,7 @@ class IdentityAgent:
         language = session.ui_language
         if not session.candidates:
             # No registry candidate: the buyer's website if it responds, else a web search.
-            entry = self._fallback_entry(session, turns)
+            entry = self._fallback_entry(session, turns, session.name)
             if entry is not None:
                 self._propose_entry(session, turns, entry, _fallback_text(entry, language))
             return
@@ -326,6 +341,7 @@ class IdentityAgent:
             turns.append(new_turn("assistant", "text", text))
             return
         question = proposal.question_to_user
+        searched = session.name
         wanted_name = (proposal.search_name or "").strip()
         wanted_country = (proposal.country_hint or "").strip().upper()
         if len(wanted_country) == 2 and wanted_country.isascii() and wanted_country.isalpha():
@@ -334,12 +350,13 @@ class IdentityAgent:
         if wanted_name and wanted_name.casefold() != session.name.casefold():
             hints = {**session.hints, "country": wanted_country or session.hints.get("country")}
             self._search(session, wanted_name, hints)
+            searched = wanted_name
             turns.extend(self._registry_notices(session))
             question = None  # the model's question was about the previous candidates
         by_id = {_public(entry)["id"]: entry for entry in session.candidates}
         if not session.candidates:
             # The search under the new name found nothing: the buyer's website, else a web search.
-            entry = self._fallback_entry(session, turns)
+            entry = self._fallback_entry(session, turns, searched)
             if entry is not None:
                 self._propose_entry(session, turns, entry, _fallback_text(entry, language))
             return
@@ -360,7 +377,7 @@ class IdentityAgent:
             if fitting is not None:
                 chosen, question = fitting, None
             else:
-                entry = self._fallback_entry(session, turns)
+                entry = self._fallback_entry(session, turns, searched)
                 if entry is not None:
                     text = _fallback_text(entry, language, place)
                     self._propose_entry(session, turns, entry, text)
@@ -422,48 +439,40 @@ class IdentityAgent:
         return entry
 
     def _fallback_entry(
-        self, session: IdentitySession, turns: list[dict[str, Any]]
+        self, session: IdentitySession, turns: list[dict[str, Any]], name: str
     ) -> dict[str, Any] | None:
         """When no registry candidate fits: the buyer's website if it responds, else the supplier's
         website found by one web search (spec F1: candidates from registries and web retrieval)."""
-        return self._website_hint_entry(session, turns) or self._web_entry(session)
+        return self._website_hint_entry(session, turns) or self._web_entry(session, name)
 
-    def _web_entry(self, session: IdentitySession) -> dict[str, Any] | None:
+    def _web_entry(self, session: IdentitySession, name: str) -> dict[str, Any] | None:
         """One request to the retrieval provider with the name and the hints; the supplier's website
         is the buyer's website domain if a cited address is on it, else the first cited domain that
         carries the supplier's name. Searched once per (name, hints); the outcome is kept in the
         session. Only a domain leaves this method: snippets are never shown nor stored."""
         key = json.dumps(
-            [session.name, session.hints.get("website"), self._wanted_country(session)],
+            [name, session.hints.get("website"), self._wanted_country(session)],
             ensure_ascii=False,
         )
         known = session.hints.get(WEB_SEARCHED)
         if not (isinstance(known, dict) and known.get("key") == key):
-            host = self._search_web(session)
+            host = self._search_web(session, name)
             known = {"key": key, "host": host}
             session.hints = {**session.hints, WEB_SEARCHED: known}
         host = known.get("host")
         if not host:
             return None
-        entry = entry_from_web(session.name, host, self._wanted_country(session))
+        entry = entry_from_web(name, host, self._wanted_country(session))
         ids = {_public(e)["id"] for e in session.candidates}
         if _public(entry)["id"] not in ids:
             session.candidates = [*session.candidates, entry]
         return entry
 
-    def _search_web(self, session: IdentitySession) -> str | None:
-        wanted = self._wanted_country(session)
-        lines = [f"Name: {session.name}"]
-        if session.hints.get("website"):
-            lines.append(f"Website: {session.hints['website']}")
-        if wanted:
-            lines.append(f"Country: {country_name(wanted) or wanted} ({wanted})")
-        if session.hints.get("sector"):
-            lines.append(f"Sector: {session.hints['sector']}")
-        lines.append(WEB_FOCUS)
+    def _search_web(self, session: IdentitySession, name: str) -> str | None:
+        text = web_query_text(name, session.hints, self._wanted_country(session))
         try:
-            rendered = self._prompts.render(RETRIEVAL_PROMPT, {"supplier": "\n".join(lines)})
-            query = self._gate.redact(rendered.data, company_names=[session.name])
+            rendered = self._prompts.render(RETRIEVAL_PROMPT, {"supplier": text})
+            query = self._gate.redact(rendered.data, company_names=[name])
             request = RetrievalRequest(rendered.instructions, query, max_results=WEB_RESULTS)
             result = self._providers.retrieval().retrieve(
                 request, CallContext(organisation_id=session.organisation_id)
@@ -478,7 +487,7 @@ class IdentityAgent:
             for host in hosts:
                 if host and own and _site(host) == own:
                     return host
-        token = _name_token(session.name)
+        token = _name_token(name)
         for host in hosts:
             if host and token and token in _site(host).split(".")[0].replace("-", ""):
                 return host

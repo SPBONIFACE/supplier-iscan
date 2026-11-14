@@ -262,3 +262,29 @@ def test_the_web_search_runs_once_and_a_failure_is_no_error(
     assert after.status_code == 200
     assert len(harness.web.calls) == 1
     assert after.json()["hints"] == {"website": None, "country": None, "sector": None}
+
+
+def test_a_search_under_a_new_name_searches_the_web_under_that_name(
+    engine: Engine, settings: Settings
+) -> None:
+    harness, member = setup(
+        engine,
+        settings,
+        found(ACME),
+        found(),
+        model=[proposal(ACME_ID), proposal(None, search_name="Corvo Closures")],
+        web=_cited("https://www.corvo.example/"),
+    )
+    session = member.open()
+
+    after = member.call(
+        "POST",
+        f"/identity-sessions/{session['id']}/messages",
+        json={"text": "No, it is Corvo Closures."},
+    ).json()
+
+    last = after["turns"][-1]
+    assert last["candidate"]["id"] == "web:www.corvo.example"
+    assert last["candidate"]["legal_name"] == "Corvo Closures"
+    (request,) = harness.web.calls
+    assert '"Corvo Closures"' in request.query.text
