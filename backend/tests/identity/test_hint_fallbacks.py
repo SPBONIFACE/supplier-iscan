@@ -130,3 +130,26 @@ def test_a_candidate_the_buyer_asks_for_in_the_chat_is_kept(
     ).json()
 
     assert after["turns"][-1]["candidate"]["id"] == ACME_ID
+
+
+def test_the_website_hint_is_proposed_when_a_search_under_a_new_name_finds_nothing(
+    engine: Engine, settings: Settings
+) -> None:
+    """The buyer gives another name in the chat; the registries know nothing under it."""
+    _harness, member = setup(
+        engine,
+        settings,
+        found(ACME),
+        found(),
+        model=[proposal(ACME_ID), proposal(None, search_name="Acme Closures")],
+    )
+    session = member.open(hints={"website": WEBSITE_HOST})
+
+    after = member.call(
+        "POST",
+        f"/identity-sessions/{session['id']}/messages",
+        json={"text": "No, it is Acme Closures."},
+    ).json()
+
+    last = after["turns"][-1]
+    assert last["kind"] == "proposal" and last["candidate"]["id"] == WEB_ID

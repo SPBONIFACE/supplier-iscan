@@ -296,6 +296,10 @@ class IdentityAgent:
             question = None  # the model's question was about the previous candidates
         by_id = {_public(entry)["id"]: entry for entry in session.candidates}
         if not session.candidates:
+            # The search under the new name found nothing: the buyer's website, if it responds.
+            entry = self._website_hint_entry(session, turns)
+            if entry is not None:
+                self._propose_entry(session, turns, entry, message("website_proposal", language))
             return
         # Code, not the model, decides what a proposal is: an unknown id falls back to the top rank.
         chosen = by_id.get(proposal.candidate_id or "") or session.candidates[0]
