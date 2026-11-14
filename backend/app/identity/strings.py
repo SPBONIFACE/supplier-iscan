@@ -83,6 +83,34 @@ MESSAGES: dict[str, dict[Language, str]] = {
         "en": "This website cannot be used: {reason}",
         "fr": "Ce site web ne peut pas être utilisé : {reason}",
     },
+    "website_hint_rejected": {
+        "en": "I could not use the website you gave: {reason}",
+        "fr": "Je n’ai pas pu utiliser le site web indiqué : {reason}",
+    },
+    "country_mismatch_website": {
+        "en": (
+            "I found no company with this name in {country} in the public registries. "
+            "I checked the website you gave and it responds. Is this the company you mean?"
+        ),
+        "fr": (
+            "Je n’ai trouvé aucune entreprise de ce nom dans le pays indiqué ({country}) "
+            "dans les registres publics. J’ai vérifié le site web indiqué : il répond. "
+            "Est-ce bien l’entreprise que vous cherchez ?"
+        ),
+    },
+    "country_mismatch": {
+        "en": (
+            "I found no company with this name in {country} in the public registries; the "
+            "closest one is in {other}. Is this the company you mean? If not, choose “None of "
+            "these” and enter the supplier's website."
+        ),
+        "fr": (
+            "Je n’ai trouvé aucune entreprise de ce nom dans le pays indiqué ({country}) "
+            "dans les registres publics ; la plus proche est dans ce pays : {other}. "
+            "Est-ce bien l’entreprise que vous cherchez ? Sinon, choisissez « Aucun de "
+            "ceux-ci » et indiquez le site web du fournisseur."
+        ),
+    },
     "group_line": {
         "en": "Part of group: {name}, {place}",
         "fr": "Fait partie du groupe : {name}, {place}",
