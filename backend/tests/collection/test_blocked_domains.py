@@ -15,6 +15,7 @@ from app.collection.retrieval import (
     _supplier_text,
 )
 from app.collection.settings import CollectionSettings
+from app.http_client import FetchTimeoutError
 from tests.collection.support import HOST, OTHER, RESOLVER, html, make_collector
 from tests.http_client.support import PUBLIC_V4
 
@@ -24,6 +25,12 @@ PRESS = "press.example"
 DIRECTORY = "directory.example"
 ROBOTS = f"User-agent: *\nDisallow: /wp-admin/\nSitemap: https://{HOST}/sitemap_index.xml\n"
 CHALLENGE = httpx2.Response(403, text="<html><div class='cf-turnstile'></div></html>")
+
+
+def _requested(site) -> list[tuple[str, str]]:  # type: ignore[no-untyped-def]
+    """(host, path without the leading slash) of every request: the mock site records the
+    connected address, not the host name."""
+    return [(r.host_header, r.url.split("/", 3)[-1]) for r in site.seen]
 
 
 @pytest.fixture(autouse=True)
@@ -52,7 +59,7 @@ def test_a_website_that_answers_with_a_bot_check_is_logged_once_and_left_out() -
 
     on_host = [f for f in result.failures if f.url and HOST in f.url]
     assert [(f.url, f.strategy, f.kind) for f in on_host] == [(SITE, "website", "bot_check")]
-    on_site = [r.url.split("/", 3)[-1] for r in site.seen if r.host_header == HOST]
+    on_site = [path for host, path in _requested(site) if host == HOST]
     assert on_site == ["robots.txt", ".well-known/tdmrep.json", ""]  # no sitemap, no other page
     assert asked == [(HOST,)]  # the provider is told to leave the domain out
     # The own-domain addresses took no slot; the website's unused pages went to third parties:
@@ -87,7 +94,8 @@ def test_a_third_party_domain_with_a_bot_check_is_tried_once() -> None:
 
     directory = [f for f in result.failures if f.url and DIRECTORY in f.url]
     assert [(f.url, f.kind) for f in directory] == [(f"https://{DIRECTORY}/1", "bot_check")]
-    assert f"https://{DIRECTORY}/2" not in [r.url for r in site.seen]
+    assert (DIRECTORY, "2") not in _requested(site)
+    assert (DIRECTORY, "1") in _requested(site)
     assert f"https://{PRESS}/1" in [r.url for r in stored]
 
 
@@ -131,7 +139,7 @@ def test_a_page_refused_by_one_robots_rule_does_not_close_the_domain() -> None:
         (HOST, "/about"): html("<p>Acme</p>"),
         (HOST, "/esg"): html("<p>Acme sustainability</p>"),
     }
-    collector, _site, stored, _sleeps, _ = make_collector(pages)
+    collector, site, stored, _sleeps, _ = make_collector(pages)
 
     result = collector.collect(SITE, NAME)
 
@@ -139,6 +147,7 @@ def test_a_page_refused_by_one_robots_rule_does_not_close_the_domain() -> None:
         "blocked_by_robots"
     ]
     assert f"https://{HOST}/esg" in [r.url for r in stored]
+    assert (HOST, "esg") in _requested(site)
 
 
 def test_the_query_names_the_closed_domains_and_asks_for_third_party_sources() -> None:
@@ -159,3 +168,44 @@ def test_the_query_is_unchanged_when_no_domain_is_closed() -> None:
 
     assert OWN_SITE_UNREADABLE_REQUEST not in text and "Do not return" not in text
     assert "Field groups lacking evidence: about" in text
+
+
+def _slow(*paths: str):  # type: ignore[no-untyped-def]
+    def fail(request: httpx2.Request) -> None:
+        if request.headers["host"] == HOST and request.url.path in paths:
+            raise FetchTimeoutError("slow")
+
+    return fail
+
+
+def test_one_slow_page_does_not_close_the_website() -> None:
+    pages = {
+        (HOST, "/"): html("<a href='/about'>About</a><a href='/esg'>Sustainability</a>"),
+        (HOST, "/esg"): html("<p>Acme sustainability</p>"),
+    }
+    collector, site, stored, _sleeps, _ = make_collector(pages)
+    site.error = _slow("/about")
+
+    result = collector.collect(SITE, NAME)
+
+    assert [f.kind for f in result.failures if f.url == f"https://{HOST}/about"] == ["timeout"]
+    assert f"https://{HOST}/esg" in [r.url for r in stored]
+    assert (HOST, "esg") in _requested(site)
+
+
+def test_a_second_slow_page_closes_the_website() -> None:
+    pages = {
+        (HOST, "/"): html(
+            "<a href='/about'>About</a><a href='/esg'>Sustainability</a>"
+            "<a href='/quality'>Quality</a>"
+        ),
+        (HOST, "/quality"): html("<p>Acme quality</p>"),
+    }
+    collector, site, _stored, _sleeps, _ = make_collector(pages)
+    site.error = _slow("/about", "/esg")
+
+    result = collector.collect(SITE, NAME)
+
+    timed_out = [f.url for f in result.failures if f.kind == "timeout"]
+    assert len(timed_out) == 2
+    assert (HOST, "quality") not in _requested(site)

@@ -171,6 +171,7 @@ class Collector:
         # Domains closed for the rest of the run (#181): they blocked us (bot check, exclusion),
         # their crawl rules could not be read, or they did not answer. Logged once each.
         self._closed: set[str] = set()
+        self._no_answer: dict[str, int] = {}  # pages per domain that gave no answer
 
     # -- failures ---------------------------------------------------------------------------
 
@@ -201,6 +202,17 @@ class Collector:
             self._closed.add(_host(url))
         except ValueError:
             pass
+
+    def _no_answer_from(self, url: str) -> None:
+        """A page gave no answer after its retries. The domain closes when it was the home page
+        or the second such page of the domain: one slow document alone does not close it."""
+        try:
+            host = _host(url)
+        except ValueError:
+            return
+        self._no_answer[host] = self._no_answer.get(host, 0) + 1
+        if urlsplit(url).path in ("", "/") or self._no_answer[host] >= 2:
+            self._closed.add(host)
 
     def _fetch(self, url: str, max_bytes: int) -> Any:
         """The response of `url`, or None (refused, too large, not found, or failing after the
@@ -265,7 +277,7 @@ class Collector:
                 self._sleep(min(delay, MAX_BACKOFF_SECONDS))
         logger.warning("Gave up on %s after %d attempts", url, attempts)
         if kind in ("timeout", "unreachable"):
-            self._close(url)  # no answer after the retries: its other pages would not answer
+            self._no_answer_from(url)
         return self._skip(url, kind, status)
 
     def _request_ceiling(self) -> None:
