@@ -324,6 +324,10 @@ body.ts-page .wrap {
 .tearsheet sup button[aria-expanded="true"] {
   text-decoration: underline;
 }
+/* next to a big key figure the note number stays small */
+.tearsheet .kf .v sup {
+  font-size: 1rem;
+}
 .tearsheet .note-ref + .note-ref {
   margin-left: 0.1em;
 }
