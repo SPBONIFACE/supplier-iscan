@@ -4,12 +4,15 @@ Secrets (the database URL, the local administrator's initial password) are refer
 file is read here, and no value is ever logged or shown in an error message.
 """
 
+import hashlib
 import os
+import tempfile
 import uuid
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
@@ -318,6 +321,36 @@ def require_run_budget(settings: "Settings") -> Decimal:
     return settings.run_budget_eur
 
 
+# A content file can also arrive as the content itself, in `<NAME>_CONTENT` (for example
+# PROVIDER_CONFIG_CONTENT): Cloud Run worker pools take a secret as an environment variable but
+# cannot mount it as a file yet. The content is written once to a private file (0600, in a 0700
+# folder of the temporary directory, named by its hash) and that path is used as if `<NAME>_FILE`
+# were set. A set `<NAME>_FILE` wins. The content is never logged.
+CONTENT_SUFFIX = "_CONTENT"
+CONTENT_DIRECTORY = "supplier-iscan-content"
+
+
+def _content_file(env: Mapping[str, str], file_setting: str) -> str | None:
+    path = env.get(file_setting, "").strip()
+    if path:
+        return path
+    name = file_setting.removesuffix("_FILE")
+    content = env.get(name + CONTENT_SUFFIX, "")
+    if not content.strip():
+        return None
+    folder = Path(tempfile.gettempdir()) / CONTENT_DIRECTORY
+    folder.mkdir(mode=0o700, exist_ok=True)
+    digest = hashlib.sha256(content.encode()).hexdigest()[:16]
+    target = folder / f"{name.lower()}-{digest}.json"
+    if not target.exists():
+        partial = folder / f".{target.name}.{os.getpid()}"
+        descriptor = os.open(partial, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(content)
+        os.replace(partial, target)  # never a half-written file under the final name
+    return str(target)
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
     deployment_environment = env.get(DEPLOYMENT_ENVIRONMENT, "").strip() or None
@@ -330,12 +363,12 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         admin_email=env.get(ADMIN_EMAIL, "").strip() or None,
         # Not stripped: spaces are valid in a password. Empty means "not set".
         admin_password=env.get(ADMIN_PASSWORD, "") or None,
-        provider_config_file=env.get(PROVIDER_CONFIG_FILE, "").strip() or None,
-        price_table_file=env.get(PRICE_TABLE_FILE, "").strip() or None,
-        profile_definition_file=env.get(PROFILE_DEFINITION_FILE, "").strip() or None,
-        prompt_set_file=env.get(PROMPT_SET_FILE, "").strip() or None,
-        country_table_file=env.get(COUNTRY_TABLE_FILE, "").strip() or None,
-        pdf_disclaimer_file=env.get(PDF_DISCLAIMER_FILE, "").strip() or None,
+        provider_config_file=_content_file(env, PROVIDER_CONFIG_FILE),
+        price_table_file=_content_file(env, PRICE_TABLE_FILE),
+        profile_definition_file=_content_file(env, PROFILE_DEFINITION_FILE),
+        prompt_set_file=_content_file(env, PROMPT_SET_FILE),
+        country_table_file=_content_file(env, COUNTRY_TABLE_FILE),
+        pdf_disclaimer_file=_content_file(env, PDF_DISCLAIMER_FILE),
         criteria_max_chars=_parse_positive_int(env, CRITERIA_MAX_CHARS, DEFAULT_CRITERIA_MAX_CHARS),
         buyer_notes_max_chars=_parse_positive_int(
             env, BUYER_NOTES_MAX_CHARS, DEFAULT_BUYER_NOTES_MAX_CHARS
