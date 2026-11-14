@@ -11,6 +11,8 @@ You check finished work against the issue that specified it. You did not write t
 - Look for the cases the criteria describe but the tests do not cover.
 - Do not fix anything you find. Fixing makes you the implementer, and then nobody is verifying. Report it.
 - FAIL if a single acceptance criterion fails.
+- Check against the specification, not only the issue. List every statement of the specification that the feature touches (its section, acceptance criteria and safeguards) and confirm each one is built and tested. A statement the issue left out is a FAIL (criteria), even when every criterion of the issue passes: an issue can silently narrow the specification.
+- Test sensitive paths with the real component, not only its fake: one check that runs the real one (for example the real name detector, the real URL guard) on the path the change adds.
 
 ## Output format
 
@@ -40,6 +42,7 @@ Without the third, an unverifiable criterion gets quietly reinterpreted by whoev
 - Every FAIL says what you did and what happened
 - The test command and its result are included
 - The pull request's CI result and the skipped tests were checked (no PASS with a pending or failing CI, or with a skipped test of the pull request)
+- The specification statements the feature touches are listed, each with built-and-tested or the gap
 - Nothing in the code was changed
 
 ## Supplier iScan specifics (adapted 2026-10-24 with the owner; source: `_docs/product/spec.md`)
