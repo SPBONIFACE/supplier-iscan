@@ -1235,3 +1235,29 @@ def test_the_detector_is_not_called_for_stored_source_text_but_a_new_name_is_red
     # The detector saw only the app's own text (field list, supplier line), never the source text.
     seen = [piece for call in detector.calls for piece in call]
     assert seen and not any("started in 2005" in piece for piece in seen)
+
+
+def test_text_that_is_not_from_a_stored_source_goes_through_the_detector(
+    engine: Engine,
+) -> None:
+    """The reference-set harness builds a `SourceText` without `stored`: the full gate runs."""
+    from dataclasses import replace as _replace
+
+    from app.db import Database
+    from app.extraction.stage import _load, ask
+    from app.redaction import Redactor
+    from tests.redaction.support import FakeDetector
+
+    organisation_id, run_id, _source = setup(engine, "Acme Supplies SA. Zed Zorn founded it.")
+    sources, redaction, supplier = _load(Database(None, engine), run_id)
+    source = _replace(sources[0], stored=None)
+    detector = FakeDetector(found=["Zed Zorn"])
+    gate = RedactionGate(lambda: [], Redactor(detector))
+    adapter = scripted(lambda asked: [])
+    client = providers_with(adapter).structuring()
+    context = context_for(engine, organisation_id, run_id, providers_with(adapter))
+
+    ask(context, client, gate, redaction, PROMPTS, source, source.text, [], supplier)
+
+    assert adapter.asked and all("Zed Zorn" not in a.data for a in adapter.asked)
+    assert any("founded it" in piece for call in detector.calls for piece in call)

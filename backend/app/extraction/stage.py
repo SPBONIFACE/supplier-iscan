@@ -84,11 +84,13 @@ class SourceText:
     fetched_at: datetime
     author: str | None
     text: str
-    stored: StoredSourceText = field(repr=False)
     source_type: str
     publisher: str
     normalised: str = field(repr=False)
     folded: str = field(repr=False, default="")
+    # Set only by `_load`, from a Source row of the database. Without it (the reference-set
+    # harness) the text never passed the detector and `ask` uses the full gate on it.
+    stored: StoredSourceText | None = field(repr=False, default=None)
 
 
 @dataclass(frozen=True)
@@ -245,17 +247,15 @@ def ask(
             company_names=redaction.company_names,
         )
 
-    data = concat(
-        [
-            full(head),
-            gate.redact_stored(
-                source.stored.piece(chunk),
-                person_names=redaction.person_names,
-                addresses=redaction.addresses,
-            ),
-            full(tail),
-        ]
-    )
+    if source.stored is None:
+        body = full(chunk)  # text that is not from a stored source: the detector runs
+    else:
+        body = gate.redact_stored(
+            source.stored.piece(chunk),
+            person_names=redaction.person_names,
+            addresses=redaction.addresses,
+        )
+    data = concat([full(head), body, full(tail)])
     request = StructuringRequest(
         instructions=rendered.instructions, data=data, max_output_tokens=MAX_OUTPUT_TOKENS
     )

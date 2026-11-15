@@ -35,12 +35,12 @@ from app.http_client import GuardedClient
 from app.identity.agent import IdentityAgent
 from app.identity.services import AsyncRunner, IdentityServices
 from app.llm_schemas import RECOMMENDATION_KINDS
-from app.models import IdentitySession, Source
+from app.models import IdentitySession
 from app.profile_definition import FieldDefinition, ProfileDefinition
 from app.prompts import PromptSet
 from app.providers.interface import RetrievedUrl
 from app.providers.metering import CallContext
-from app.redaction import RedactionGate, StoredSourceText
+from app.redaction import RedactionGate
 from app.registries import RegistryCandidate, RegistrySearchQuery, RegistrySearchResult
 from app.registries.ranking import rank_candidates
 from app.runs.stages import StageContext
@@ -184,8 +184,6 @@ def run_extraction(case: ExtractionCase, context: Context) -> CaseResult:
             fetched_at=FETCHED,
             author=None,
             text=item.text,
-            # The case texts stand for stored (already redacted) source text.
-            stored=StoredSourceText.of(Source(redacted_text=item.text)),
             source_type="other",
             publisher=item.url,
             normalised=normalise(item.text),
