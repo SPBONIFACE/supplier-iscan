@@ -47,3 +47,18 @@ def test_the_query_without_the_closed_website_keeps_name_and_domains(
 
     assert f'Legal name: "{name}"' in redacted
     assert "corvaglia.com, europages.co.uk" in redacted
+
+
+@pytest.mark.parametrize(("name", "group"), [("Amcor Flexibles Sarrebourg SAS", "Amcor plc")])
+def test_the_group_query_keeps_entity_and_group_names(
+    real_redactor: Redactor, name: str, group: str
+) -> None:
+    """#195: the group's name survives as a company name, with its website."""
+    text = _supplier_text(
+        IdentityRecord(name, WEBSITE, "FR", group, "https://www.amcor.com"), ["financials"]
+    )
+
+    redacted = real_redactor.redact(text, RedactionContext(keep=(name, group))).text
+
+    assert f'Legal name: "{name}"' in redacted and f'Parent group: "{group}"' in redacted
+    assert "Group website: https://www.amcor.com" in redacted

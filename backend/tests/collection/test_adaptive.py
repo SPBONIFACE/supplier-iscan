@@ -317,3 +317,14 @@ def test_a_snippet_only_ranks(snippet: str) -> None:
     ]
 
     assert rank(offered, ["certifications", "sustainability"])[0] == "https://b.example/y"
+
+
+def test_the_groups_website_does_not_flag_the_identity_for_a_missing_entity_name() -> None:
+    pages = {(HOST, "/"): html("<p>Amcor plc packages food.</p>")}
+    collector, _site, _stored, _sleeps, _ = make_collector(pages)
+
+    result = collector.collect(SITE, "Amcor Flexibles Sarrebourg SAS", None, "Amcor plc")
+
+    assert result.identity_to_verify is False
+    flagged, _site, _stored, _sleeps, _ = make_collector(pages)
+    assert flagged.collect(SITE, "Amcor Flexibles Sarrebourg SAS").identity_to_verify is True

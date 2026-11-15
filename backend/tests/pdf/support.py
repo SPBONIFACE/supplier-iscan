@@ -79,6 +79,7 @@ def fact(field: str, section: str, **changes: Any) -> FactOut:
         "source_id": uuid.uuid4(),
         "source_url": "https://forge.example/societe",
         "source_type": "supplier_claim",
+        "group_level": None,
         "publisher": "forge.example",
         "author": None,
         "fetched_at": datetime(2026, 10, 12, 8, 0, tzinfo=UTC),
@@ -103,6 +104,7 @@ def not_found(field: str, section: str) -> FactOut:
         source_id=None,
         source_url=None,
         source_type=None,
+        group_level=None,
         publisher=None,
         fetched_at=None,
     )

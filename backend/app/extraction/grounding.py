@@ -77,6 +77,30 @@ def supplier_names(legal_name: str) -> list[str]:
     return names
 
 
+def group_names(legal_name: str) -> list[str]:
+    """The folded legal name of the parent group, and the same without its trailing legal forms
+    ("plc", "Inc"), when that keeps at least four characters. Group words ("Group", "Holding")
+    stay: they are part of what tells the group from another company (#195)."""
+    words = fold(legal_name).replace(".", "").replace(",", " ").split()
+    names = [" ".join(words)] if words else []
+    while len(words) > 1 and words[-1] in _LEGAL_FORMS:
+        words = words[:-1]
+    short = " ".join(words)
+    if short not in names and len(short) >= _MIN_SHORT_NAME:
+        names.append(short)
+    return names
+
+
+def names_group(
+    folded_text: str, names: list[str], host: str | None, labels: list[str] | None = None
+) -> bool:
+    """Whether the (folded) text holds one of the group's names as a whole word ("Amcor" is not
+    "Amcorp"), or its website host or label."""
+    if any(re.search(rf"(?<!\w){re.escape(name)}(?!\w)", folded_text) for name in names):
+        return True
+    return names_supplier(folded_text, [], host, labels)
+
+
 def website_labels(host: str | None) -> list[str]:
     """The registrable label of the website host (acme-supplies.co.uk gives "acme-supplies" and
     "acme supplies"), when it has at least four characters. Matched as a whole word."""

@@ -39,7 +39,9 @@ from app.db import Database
 from app.extraction.grounding import (
     MAX_QUOTE_CHARS,
     fold,
+    group_names,
     is_redacted_quote,
+    names_group,
     names_supplier,
     normalise,
     quote_in_text,
@@ -102,6 +104,9 @@ class Supplier:
     country: str | None
     # A natural person's name is redacted from the stored text: the check cannot look for it.
     natural_person: bool = False
+    # The parent group of the entity (#195): its evidence is kept, labelled "Group level".
+    group_name: str | None = None
+    group_website: str | None = None
 
     def text(self) -> str:
         # Quoted, so that the name detector keeps it apart from the next line (see retrieval).
@@ -113,13 +118,39 @@ class Supplier:
             lines.append(
                 f"Country: {name} ({self.country})" if name != self.country else f"Country: {name}"
             )
+        if self.group_name and not self.natural_person:
+            lines.append(f'Parent group: "{self.group_name}"')
+            lines.append("A fact about the parent group is about the supplier's group: keep it.")
         return "\n".join(lines)
+
+    def names_entity(self, source: SourceText) -> bool:
+        host = host_of(self.website) if self.website else None
+        return names_supplier(source.folded, supplier_names(self.name), host, website_labels(host))
+
+    def names_group(self, source: SourceText) -> bool:
+        if not self.group_name or self.natural_person:
+            return False
+        host = host_of(self.group_website) if self.group_website else None
+        own = host_of(source.url)
+        return names_group(
+            source.folded, group_names(self.group_name), host, website_labels(host)
+        ) or bool(host and own and _is_own(own, host))
 
     def named_in(self, source: SourceText) -> bool:
         if self.natural_person:
             return True
-        host = host_of(self.website) if self.website else None
-        return names_supplier(source.folded, supplier_names(self.name), host, website_labels(host))
+        return self.names_entity(source) or self.names_group(source)
+
+    def group_level(self, source: SourceText) -> str | None:
+        """The group's name when the source names the group and not the entity (#195). A page of
+        the entity's own website is about the entity, whatever it names."""
+        if not self.group_name or self.natural_person or self.names_entity(source):
+            return None
+        own = host_of(self.website) if self.website else None
+        host = host_of(source.url)
+        if own and host and _is_own(host, own):
+            return None
+        return self.group_name if self.names_group(source) else None
 
 
 @dataclass(frozen=True)
@@ -128,6 +159,7 @@ class Kept:
     quote: str
     quote_redacted: bool
     source: SourceText
+    group_level: str | None = None
 
 
 @dataclass
@@ -204,7 +236,14 @@ def judge(
     if not value_supported(item.value, quote):  # a guard on figures: counted as invalid
         tally.invalid_items += 1
         return None
-    return Kept(item.value.strip(), quote, is_redacted_quote(quote), source)
+    group = supplier.group_level(source) if supplier is not None else None
+    if group is not None and supplier is not None and supplier.group_website:
+        own = host_of(supplier.group_website)
+        host = host_of(source.url)
+        if own and host and _is_own(host, own):
+            # The group's own website is the group's own claim, not the entity's.
+            source = replace(source, source_type="supplier_claim")
+    return Kept(item.value.strip(), quote, is_redacted_quote(quote), source, group)
 
 
 def ask(
@@ -589,7 +628,12 @@ def _load(
         ]
         supplier = (
             Supplier(
-                identity.legal_name, identity.website, identity.country, identity.natural_person
+                identity.legal_name,
+                identity.website,
+                identity.country,
+                identity.natural_person,
+                identity.group_name,
+                identity.group_website,
             )
             if identity
             else None
@@ -631,6 +675,7 @@ def _store(
                 fact.quote_redacted = result.quote_redacted
                 fact.source_id, fact.source_url = result.source.id, result.source.url
                 fact.source_type = result.source.source_type
+                fact.group_level = result.group_level
                 fact.publisher = result.source.publisher[:300]
                 fact.author = result.source.author
                 fact.fetched_at = result.source.fetched_at

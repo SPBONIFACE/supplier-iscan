@@ -336,3 +336,15 @@ def test_a_hidden_supplier_name_reads_as_not_shown_never_as_empty_quotes(
     assert page.count(shown) >= 4  # title, header, legal name, identity notice
     assert "“”" not in page and "« »" not in page and quoted not in page
     assert "<h1></h1>" not in page and "<dd></dd>" not in page
+
+
+def test_a_group_level_fact_carries_its_label_in_both_languages_and_others_none() -> None:
+    facts = all_facts()
+    facts[0] = facts[0].model_copy(update={"group_level": "Amcor plc"})
+
+    english = htmllib.unescape(render_html(card("en", facts=facts)))
+    french = htmllib.unescape(render_html(card("fr", facts=facts)))
+
+    assert english.count("Group level: Amcor plc") == 1
+    assert french.count("Niveau groupe : Amcor plc") == 1
+    assert "Group level" not in htmllib.unescape(render_html(card("en")))

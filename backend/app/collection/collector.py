@@ -408,7 +408,11 @@ class Collector:
     # -- the run ----------------------------------------------------------------------------
 
     def collect(
-        self, website: str | None, legal_name: str, retrieve: RetrieveFn | None = None
+        self,
+        website: str | None,
+        legal_name: str,
+        retrieve: RetrieveFn | None = None,
+        group_name: str | None = None,
     ) -> CollectionResult:
         """The ladder: the website (home page, its links, the sitemaps), then the retrieval
         provider's addresses (`retrieve`), all under one cap of attempts. `website` is None when
@@ -429,7 +433,10 @@ class Collector:
         elif website_sources == 0:
             self.result.identity_to_verify = True
         else:
-            self.result.identity_to_verify = not name_appears(legal_name, website_texts)
+            # The website of the entity's group names the group, not the entity (#195).
+            self.result.identity_to_verify = not name_appears(legal_name, website_texts) and not (
+                group_name and name_appears(group_name, website_texts)
+            )
         return self.result
 
     def _retrieve(self, retrieve: RetrieveFn) -> None:

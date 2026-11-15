@@ -115,6 +115,7 @@ const fact = (fieldId: string, section: string, changes: Partial<Fact> = {}): Fa
   source_id: "77777777-7777-4777-8777-777777777777",
   source_url: "https://corvane-precision.example/about",
   source_type: "supplier_claim",
+  group_level: null,
   publisher: "corvane-precision.example",
   author: null,
   fetched_at: "2026-10-26T10:05:00Z",
@@ -141,12 +142,13 @@ const notFound = (fieldId: string, section: string): Fact =>
 
 const facts = (): Fact[] => [
   fact("legal_form", "company_overview", { status: "approved", value: "SAS" }),
-  fact("founding_year", "company_overview", { value: "1987" }),
+  fact("founding_year", "company_overview", { value: "1987", group_level: "Corvane Group" }),
   fact("employee_count", "company_overview", {
     value: "240 at the Vénissieux site",
     quote: "Le site de Vénissieux compte aujourd'hui 240 salariés, indique […], directeur du site.",
     quote_redacted: true,
     source_type: "third_party",
+    group_level: null,
     publisher: "Le Journal de l'Industrie Rhône",
     source_url: "https://lji-rhone.example/2026/03/effectif",
     author: "[…]",
@@ -215,6 +217,8 @@ describe("supplier card, content", () => {
       within(year).getByRole("button", { name: /^Note \d+: quote for Founding year/ }),
     ).toBeTruthy();
     expect(within(year).getByText("Supplier's own claim")).toBeTruthy();
+    expect(within(year).getByText("Group level: Corvane Group")).toBeTruthy();
+    expect(within(row("Legal form")).queryByText(/Group level/)).toBeNull();
     expect(within(row("Legal form")).getByText("Approved")).toBeTruthy();
     const employees = row("Number of employees");
     expect(within(employees).getByText("Third-party source")).toBeTruthy();
@@ -535,6 +539,9 @@ describe("supplier card, French", () => {
     expect(within(row("Nombre de salariés")).getByText("Source tierce")).toBeTruthy();
     expect(within(row("Nombre de salariés")).getByText("Extrait masqué")).toBeTruthy();
     expect(within(row("Année de création")).getByText("Déclaration du fournisseur")).toBeTruthy();
+    expect(
+      within(row("Année de création")).getByText(/^Niveau groupe.: Corvane Group$/),
+    ).toBeTruthy();
     expect(
       within(row("Environmental management")).getByText("Aucune preuve publique trouvée"),
     ).toBeTruthy();

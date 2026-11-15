@@ -76,7 +76,13 @@ def make_collection_stage(
             )
             if identity is None:
                 return None
-            record = IdentityRecord(identity.legal_name, identity.website, identity.country)
+            record = IdentityRecord(
+                identity.legal_name,
+                identity.website,
+                identity.country,
+                identity.group_name,
+                identity.group_website,
+            )
             lei = (identity.registry_ids or {}).get("lei")
             redaction = identity_redaction(db, context.run_id)
             # Owner decision (3 Nov 2026): a natural person's name and address are hidden from the
@@ -146,7 +152,9 @@ def make_collection_stage(
                 store_source(database, context.run_id, context.organisation_id, source)
 
             collector = Collector(fetcher, limits, store, check_stop=context.check_stop)
-            result = collector.collect(record.website, record.legal_name, retriever)
+            result = collector.collect(
+                record.website, record.legal_name, retriever, record.group_name
+            )
         with database.session() as db:
             run = db.get(ProfileRun, context.run_id)
             if run is not None:
