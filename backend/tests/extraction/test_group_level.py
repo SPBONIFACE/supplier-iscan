@@ -31,7 +31,7 @@ def respond_with(quote: str) -> Any:
     return respond
 
 
-def revenue(engine: Engine, text: str, quote: str, **identity: Any) -> Any:
+def employees(engine: Engine, text: str, quote: str, **identity: Any) -> Any:
     organisation_id, run_id, _source = setup(
         engine, text, f"{BASE}/a", legal_name=ENTITY, website=None, **identity
     )
@@ -40,7 +40,7 @@ def revenue(engine: Engine, text: str, quote: str, **identity: Any) -> Any:
 
 
 def test_the_amcor_case_a_group_page_is_kept_and_labelled(engine: Engine) -> None:
-    fact = revenue(engine, GROUP_PAGE, GROUP_QUOTE, group_name=GROUP)
+    fact = employees(engine, GROUP_PAGE, GROUP_QUOTE, group_name=GROUP)
 
     assert fact.status == "proposed" and fact.group_level == GROUP
     assert fact.quote == GROUP_QUOTE
@@ -50,13 +50,13 @@ def test_a_page_naming_the_entity_has_no_label_even_when_it_names_the_group(
     engine: Engine,
 ) -> None:
     text = f"{ENTITY} is part of {GROUP}. Amcor employs 41000 people worldwide."
-    fact = revenue(engine, text, GROUP_QUOTE, group_name=GROUP)
+    fact = employees(engine, text, GROUP_QUOTE, group_name=GROUP)
 
     assert fact.status == "proposed" and fact.group_level is None
 
 
 def test_without_a_parent_group_the_group_page_is_not_used(engine: Engine) -> None:
-    fact = revenue(engine, GROUP_PAGE, GROUP_QUOTE)
+    fact = employees(engine, GROUP_PAGE, GROUP_QUOTE)
 
     assert fact.status == "not_found" and fact.group_level is None
 
@@ -64,7 +64,7 @@ def test_without_a_parent_group_the_group_page_is_not_used(engine: Engine) -> No
 def test_a_page_naming_another_company_with_the_same_first_word_is_not_accepted(
     engine: Engine,
 ) -> None:
-    fact = revenue(
+    fact = employees(
         engine, OTHER_PAGE, "Amcorp Rentals makes pallets and employs 12 people", group_name=GROUP
     )
 
@@ -72,7 +72,7 @@ def test_a_page_naming_another_company_with_the_same_first_word_is_not_accepted(
 
 
 def test_a_group_quote_must_still_be_verbatim_in_the_text(engine: Engine) -> None:
-    fact = revenue(engine, GROUP_PAGE, "Amcor employs 99000 people worldwide", group_name=GROUP)
+    fact = employees(engine, GROUP_PAGE, "Amcor employs 99000 people worldwide", group_name=GROUP)
 
     assert fact.status == "not_found"
 
@@ -140,3 +140,12 @@ def test_the_group_name_is_kept_with_the_company_names_of_redaction(engine: Engi
 
     with Session(engine) as db:
         assert identity_redaction(db, run_id).company_names == (ENTITY, GROUP)
+
+
+def test_a_page_naming_a_company_that_shares_the_groups_name_is_accepted_as_group_level(
+    engine: Engine,
+) -> None:
+    text = "Amcor Foods employs 41000 people in Europe."
+    fact = employees(engine, text, "Amcor Foods employs 41000 people", group_name=GROUP)
+
+    assert fact.status == "proposed" and fact.group_level == GROUP
