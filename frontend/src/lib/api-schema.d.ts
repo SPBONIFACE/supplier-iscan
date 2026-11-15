@@ -915,6 +915,8 @@ export interface components {
             /** @description One line. */
             description: string | null;
             found_in: ("gleif" | "wikidata" | "website" | "web")[];
+            /** @description The fields of this candidate filled from the buyer's hints because no source gave them. The interface shows them as given by the buyer, never as found in a source. A value from a registry or a website is never in this list. */
+            given_by_buyer: ("country" | "sector")[];
             identifiers: {
                 scheme: string;
                 value: string;

@@ -15,6 +15,9 @@ export function CandidateCard({
 }) {
   const { t, i18n } = useTranslation();
   const none = t("identity.notGiven");
+  // A value filled from the buyer's hints is labelled as such, never as found in a source (#187).
+  const given = (field: "country" | "sector") =>
+    candidate.given_by_buyer.includes(field) ? ` (${t("identity.givenByYou")})` : "";
   return (
     <section className="cand" aria-label={title ?? candidate.legal_name}>
       <h3>{title ?? candidate.legal_name}</h3>
@@ -30,9 +33,15 @@ export function CandidateCard({
         <dt>{t("identity.website")}</dt>
         <dd className="mono">{candidate.website ?? none}</dd>
         <dt>{t("identity.country")}</dt>
-        <dd>{candidate.country ? countryName(candidate.country, i18n.language) : none}</dd>
+        <dd>
+          {candidate.country ? countryName(candidate.country, i18n.language) : none}
+          {given("country")}
+        </dd>
         <dt>{t("identity.sector")}</dt>
-        <dd>{candidate.sector ?? none}</dd>
+        <dd>
+          {candidate.sector ?? none}
+          {given("sector")}
+        </dd>
         {record ? null : (
           <>
             <dt>{t("identity.description")}</dt>

@@ -70,6 +70,7 @@ def entry_from_registry(candidate: RegistryCandidate) -> dict[str, Any]:
         "description": candidate.description,
         "found_in": list(candidate.registries),
         "identifiers": identifiers,
+        "given_by_buyer": [],
     }
     natural_person = is_natural_person(candidate.legal_form)
     return {
@@ -135,13 +136,32 @@ def entry_from_website(name: str, final_url: str, domain: str) -> dict[str, Any]
         "description": None,
         "found_in": ["website"],
         "identifiers": [{"scheme": "domain", "value": domain}],
+        "given_by_buyer": [],
     }
     return {"candidate": public, "natural_person": False, "wikidata_id": None, "lei": None}
 
 
-def entry_from_web(name: str, host: str, country: str | None) -> dict[str, Any]:
+def entry_from_web(
+    name: str, host: str, country: str | None, sector: str | None = None
+) -> dict[str, Any]:
     """The supplier's website found by the identity web search: a candidate the buyer confirms.
-    Its country is the one the buyer gave (none found by the search is kept)."""
+    Its country and sector are the buyer's hints, shown as given by the buyer."""
     entry = entry_from_website(name, f"https://{host}/", host)
-    entry["candidate"] = {**entry["candidate"], "found_in": ["web"], "country": country}
-    return entry
+    entry["candidate"] = {**entry["candidate"], "found_in": ["web"]}
+    return with_hints(entry, country, sector)
+
+
+def with_hints(entry: dict[str, Any], country: str | None, sector: str | None) -> dict[str, Any]:
+    """The buyer's country and sector fill what the candidate does not have (#187). A value the
+    registry or the website gave is never replaced; a filled field is listed in `given_by_buyer`
+    so that it is shown as given by the buyer, never as found in a source."""
+    candidate = dict(entry["candidate"])
+    given: list[str] = list(candidate.get("given_by_buyer") or [])
+    if country and not candidate.get("country"):
+        candidate["country"] = normalise_code(country) or country.upper()
+        given.append("country")
+    if sector and not candidate.get("sector"):
+        candidate["sector"] = sector
+        given.append("sector")
+    candidate["given_by_buyer"] = given
+    return {**entry, "candidate": candidate}

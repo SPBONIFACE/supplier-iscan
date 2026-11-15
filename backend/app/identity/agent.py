@@ -34,6 +34,7 @@ from app.identity.candidates import (
     entry_from_web,
     entry_from_website,
     unique_active_lei,
+    with_hints,
 )
 from app.identity.services import IdentityServices
 from app.identity.strings import disclosure_text, message
@@ -214,7 +215,10 @@ class IdentityAgent:
             sector_hint=(hints.get("sector") or None) and hints["sector"][:MAX_HINT_LENGTH],
         )
         result = self._services.runner.run(self._services.registries.search(query))
-        session.candidates = [entry_from_registry(c) for c in result.candidates]
+        country, sector = hints.get("country"), hints.get("sector")
+        session.candidates = [
+            with_hints(entry_from_registry(c), country, sector) for c in result.candidates
+        ]
         failed = set(result.failed_registries)
         session.registries = {
             "gleif": "unreachable" if "gleif" in failed else "ok",
@@ -432,7 +436,11 @@ class IdentityAgent:
                 turns.append(new_turn("assistant", "notice", text))
         if not known.get("final_url"):
             return None
-        entry = entry_from_website(session.name, known["final_url"], known["domain"])
+        entry = with_hints(
+            entry_from_website(session.name, known["final_url"], known["domain"]),
+            self._wanted_country(session),
+            session.hints.get("sector"),
+        )
         ids = {_public(e)["id"] for e in session.candidates}
         if _public(entry)["id"] not in ids:
             session.candidates = [*session.candidates, entry]
@@ -462,7 +470,9 @@ class IdentityAgent:
         host = known.get("host")
         if not host:
             return None
-        entry = entry_from_web(name, host, self._wanted_country(session))
+        entry = entry_from_web(
+            name, host, self._wanted_country(session), session.hints.get("sector")
+        )
         ids = {_public(e)["id"] for e in session.candidates}
         if _public(entry)["id"] not in ids:
             session.candidates = [*session.candidates, entry]
@@ -554,7 +564,11 @@ class IdentityAgent:
                 )
             )
         else:
-            entry = entry_from_website(session.name, result.final_url, result.final_domain)
+            entry = with_hints(
+                entry_from_website(session.name, result.final_url, result.final_domain),
+                self._wanted_country(session),
+                session.hints.get("sector"),
+            )
             session.candidates = [entry, *session.candidates]
             session.current_candidate_id = _public(entry)["id"]
             turns.append(

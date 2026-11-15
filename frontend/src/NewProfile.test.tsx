@@ -34,6 +34,7 @@ const candidate = (id: string, legal_name: string, extra = {}) => ({
   sector: "Industrial automation",
   description: "Maker of drives.",
   found_in: ["gleif", "website"],
+  given_by_buyer: [],
   identifiers: [{ scheme: "LEI", value: "549300EXAMPLEARD0042" }],
   ...extra,
 });
@@ -169,6 +170,22 @@ describe("identity chat", () => {
     expect(mocks.confirmIdentity).toHaveBeenCalledTimes(1);
     expect(mocks.confirmIdentity).toHaveBeenCalledWith(expect.any(String), "c2");
     expect(mocks.startRun).toHaveBeenCalledTimes(1);
+  });
+
+  it("labels a country and a sector taken from the buyer's hints as given by the buyer", async () => {
+    const web = candidate("web:acme.example", "Acme", {
+      legal_form: null,
+      found_in: ["website"],
+      country: "CH",
+      sector: "Plastic closures",
+      given_by_buyer: ["country", "sector"],
+    });
+    mocks.getIdentitySession.mockResolvedValue(
+      ok(session([turn("t1", "proposal", "Is this the company?", "assistant", web)])),
+    );
+    renderApp(CHAT);
+    expect(await screen.findByText(/Switzerland \(Given by you\)/)).toBeTruthy();
+    expect(screen.getByText("Plastic closures (Given by you)")).toBeTruthy();
   });
 
   it("keeps the confirmed identity when the run is refused, and says why", async () => {

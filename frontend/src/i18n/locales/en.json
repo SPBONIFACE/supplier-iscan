@@ -166,6 +166,7 @@
     "legalForm": "Legal form",
     "identifiers": "Registry identifiers",
     "notGiven": "Not given",
+    "givenByYou": "Given by you",
     "foundIn": "Found in {{sources}}",
     "source": {
       "gleif": "GLEIF",

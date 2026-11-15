@@ -1872,7 +1872,7 @@ components:
     IdentityCandidate:
       type: object
       additionalProperties: false
-      required: [id, legal_name, legal_form, website, country, sector, description, found_in, identifiers]
+      required: [id, legal_name, legal_form, website, country, sector, description, found_in, given_by_buyer, identifiers]
       properties:
         id:
           type: string
@@ -1895,6 +1895,12 @@ components:
           items:
             type: string
             enum: [gleif, wikidata, website, web]
+        given_by_buyer:
+          description: The fields of this candidate filled from the buyer's hints because no source gave them. The interface shows them as given by the buyer, never as found in a source. A value from a registry or a website is never in this list.
+          type: array
+          items:
+            type: string
+            enum: [country, sector]
         identifiers:
           type: array
           items:
