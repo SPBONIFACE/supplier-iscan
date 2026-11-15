@@ -21,13 +21,19 @@ from app.collection.failures import RetrievalFailed
 from app.collection.gleif_source import store_gleif_source
 from app.collection.retrieval import IdentityRecord, make_retriever
 from app.collection.settings import CollectionSettings, load_collection_settings
-from app.collection.source_store import SourceRecord, identity_redaction, store_source
+from app.collection.source_store import (
+    SourceRecord,
+    SourceStorage,
+    identity_redaction,
+    store_source,
+)
 from app.crawl import DatabaseSuppressionList, PermittedFetcher, build_client, record_permission
 from app.http_client import GuardedClient
 from app.limits.budget import RunBudgetExhausted
 from app.models import ProfileRun, RunFailure, SupplierIdentity
 from app.prompts import PromptSet, load_prompt_set
 from app.redaction import gate_for
+from app.redaction.detector import detector_instances
 from app.registries.http import Fetch
 from app.runs.stages import Stage, StageContext, StageOutcome
 
@@ -142,11 +148,18 @@ def make_collection_stage(
                 never_contact=limits.never_contact_hosts,
             )
 
-            def store(source: SourceRecord) -> None:
-                store_source(database, context.run_id, context.organisation_id, source)
-
-            collector = Collector(fetcher, limits, store, check_stop=context.check_stop)
-            result = collector.collect(record.website, record.legal_name, retriever)
+            # Sources are redacted up to `detector_instances()` at a time (#196); the rows are
+            # written here, in the order the collector kept them.
+            storage = SourceStorage(
+                database, context.run_id, context.organisation_id, detector_instances()
+            )
+            collector = Collector(fetcher, limits, storage.submit, check_stop=context.check_stop)
+            try:
+                result = collector.collect(record.website, record.legal_name, retriever)
+            except BaseException:
+                storage.abandon()
+                raise
+            storage.finish()
         with database.session() as db:
             run = db.get(ProfileRun, context.run_id)
             if run is not None:
