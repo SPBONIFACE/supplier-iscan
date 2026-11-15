@@ -10,7 +10,7 @@ COLLECT_MAX_REQUESTS: "200"
 COLLECT_MAX_DOMAINS: "25"
 # Speed (#182): extraction reads sources and retrieval sends its focused requests 4 at a time.
 EXTRACT_CONCURRENCY: "4"
-COLLECT_RETRIEVAL_CONCURRENCY: "4"
+COLLECT_RETRIEVAL_CONCURRENCY: "2"
 # Telemetry goes to the collector sidecar of the same instance (deploy/collector), which sends to
 # Google Cloud Trace and Cloud Monitoring.
 OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4318"

@@ -22,7 +22,12 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from app.limits.budget import BudgetGate
 from app.providers.catalogue import ProviderConfigSpec, Role
 from app.providers.errors import ProviderCallError, ProviderError, StructuredOutputInvalid
-from app.providers.failures import classify_failure, provider_error_detail, validation_detail
+from app.providers.failures import (
+    classify_failure,
+    provider_error_detail,
+    retry_after_seconds,
+    validation_detail,
+)
 from app.providers.metering import NO_USAGE, CallContext, CallUsage, Outcome, UsageMeter
 from app.redaction.text import RedactedText
 from app.telemetry import record_failure, span
@@ -144,7 +149,11 @@ def _call_failure(
         f" {reason}" if reason else "",
     )
     return ProviderCallError(
-        provider=config.provider, config_id=config.id, kind=kind, status_code=status_code
+        provider=config.provider,
+        config_id=config.id,
+        kind=kind,
+        status_code=status_code,
+        retry_after=retry_after_seconds(error) if kind == "rate_limited" else None,
     )
 
 

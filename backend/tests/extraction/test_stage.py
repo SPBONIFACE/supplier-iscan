@@ -1203,3 +1203,35 @@ def test_the_website_is_stored_when_the_section_is_partial(engine: Engine) -> No
         website_stage(groups_per_call=0)(context)
 
     assert facts_of(engine, run_id)["website"].status == "proposed"
+
+
+# --- the fast second pass (#185) ---
+
+
+def test_the_detector_is_not_called_for_stored_source_text_but_a_new_name_is_redacted(
+    engine: Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.redaction import Redactor
+    from tests.redaction.support import FakeDetector
+
+    text = "Acme Supplies SA. The founder, Tobias Reuter, started in 2005. Call +33 4 72 00 11 22."
+    organisation_id, run_id, _source = setup(engine, text)
+    with Session(engine) as db:
+        db.add(SuppressionEntry(kind="person_name", value="Tobias Reuter"))
+        db.commit()
+    detector = FakeDetector()
+    redactor = Redactor(detector)
+    monkeypatch.setattr(
+        "app.extraction.stage.gate_for",
+        lambda _db: RedactionGate(lambda: ["Tobias Reuter"], redactor),
+    )
+    adapter = scripted(lambda asked: [])
+
+    run_stage(engine, organisation_id, run_id, adapter)
+
+    assert adapter.asked
+    assert all("Tobias Reuter" not in a.data and "72 00 11 22" not in a.data for a in adapter.asked)
+    assert all("Acme Supplies SA" in a.data for a in adapter.asked)
+    # The detector saw only the app's own text (field list, supplier line), never the source text.
+    seen = [piece for call in detector.calls for piece in call]
+    assert seen and not any("started in 2005" in piece for piece in seen)

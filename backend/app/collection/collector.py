@@ -10,7 +10,7 @@ import re
 import time
 import unicodedata
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any
 from urllib.parse import unquote, urldefrag, urljoin, urlsplit
@@ -43,7 +43,9 @@ logger = logging.getLogger(__name__)
 RETRYABLE: tuple[type[Exception], ...] = (*NETWORK_ERRORS, FetchTimeoutError)
 PER_KIND = 2  # pages kept per kind (for example two sustainability pages)
 RETRY_STATUSES = (429, 500, 502, 503, 504)
-MAX_BACKOFF_SECONDS = 60.0
+# The longest wait between two attempts, a `Retry-After` included: a site that asks for more is
+# given up on after its retries, it never holds the collection (#185).
+MAX_BACKOFF_SECONDS = 10.0
 # The lacking page kinds (empty when the website gave every kind: independent sources are then
 # asked for) and the domains to leave out (they blocked or did not answer in this run) in; the
 # addresses the retrieval provider cited (best first) out.
@@ -97,6 +99,14 @@ def _status_kind(status: str) -> Kind:
     if status == "blocked":
         return "bot_check"
     return "blocked_by_robots"
+
+
+def _cut(text: str, limit: int) -> str:
+    """`text` up to `limit` characters, cut at a line or a space when there is one in the last
+    tenth."""
+    head = text[:limit]
+    cut = max(head.rfind("\n"), head.rfind(" "))
+    return head[:cut] if cut > limit * 9 // 10 else head
 
 
 def _host(url: str) -> str:
@@ -275,7 +285,16 @@ class Collector:
                 if retry_after.isdigit():
                     delay = max(delay, float(retry_after))
             if attempt + 1 < attempts:
-                self._sleep(min(delay, MAX_BACKOFF_SECONDS))
+                pause = min(delay, MAX_BACKOFF_SECONDS)
+                logger.info(
+                    "Retrying %s in %.0f s (attempt %d of %d, %s)",
+                    url,
+                    pause,
+                    attempt + 2,
+                    attempts,
+                    kind,
+                )
+                self._sleep(pause)
         logger.warning("Gave up on %s after %d attempts", url, attempts)
         if kind in ("timeout", "unreachable"):
             self._no_answer_from(url)
@@ -636,6 +655,10 @@ class Collector:
         return any(record.url == url for record in self.result.sources)
 
     def _keep(self, record: SourceRecord) -> None:
+        limit = self._settings.max_source_chars
+        if len(record.text) > limit:
+            logger.warning("Source text cut from %d to %d characters", len(record.text), limit)
+            record = replace(record, text=_cut(record.text, limit))
         self._store(record)
         self.result.sources.append(record)
         if self._strategy != "retrieval":

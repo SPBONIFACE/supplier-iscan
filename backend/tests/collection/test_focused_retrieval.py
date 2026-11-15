@@ -397,3 +397,14 @@ def test_each_focused_request_asks_for_the_candidate_count() -> None:
     retriever(Client(), ("registers", "news"))(["about"], ())  # type: ignore[arg-type]
 
     assert seen == [RETRIEVAL_CANDIDATES] * 2 and RETRIEVAL_CANDIDATES > 10
+
+
+def test_a_rate_limited_focus_waits_for_the_retry_after_of_the_provider() -> None:
+    waits: list[float] = []
+    after = ProviderCallError(
+        provider="p", config_id="c", kind="rate_limited", status_code=429, retry_after=7.0
+    )
+    client = CountingClient(dict(ANSWERS), {"official registers": [after, limited()]})
+    urls = retriever(client, FOCUSES, concurrency=2, wait=waits.append)([], ())
+    assert waits == [7.0, 4.0]  # the provider's delay, then the short backoff of the second retry
+    assert not urls.failures

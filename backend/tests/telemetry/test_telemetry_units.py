@@ -267,3 +267,24 @@ def test_the_statement_timeout_is_a_setting() -> None:
     assert load_settings({}).database_statement_timeout_seconds == 30
     settings = load_settings({"DATABASE_STATEMENT_TIMEOUT_SECONDS": "7"})
     assert settings.database_statement_timeout_seconds == 7
+
+
+def test_a_stage_logs_one_line_with_its_run_id_and_its_duration(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    import logging
+    import uuid
+
+    from app.telemetry.core import stage_span
+
+    run_id = uuid.uuid4()
+    with caplog.at_level(logging.INFO, logger="app.telemetry.core"):
+        with stage_span("collection", run_id):
+            pass
+        with pytest.raises(RuntimeError), stage_span("extraction", run_id):
+            raise RuntimeError("boom")
+
+    lines = [m for m in caplog.messages if f"Run {run_id} stage" in m]
+    assert len(lines) == 2
+    assert lines[0].startswith(f"Run {run_id} stage collection took ") and lines[0].endswith("(ok)")
+    assert lines[1].endswith("(error)") and "boom" not in lines[1]

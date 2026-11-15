@@ -5,6 +5,8 @@
 - `COLLECT_MAX_PAGE_BYTES` (2 MB): a page body is never read beyond this.
 - `COLLECT_MAX_PDF_BYTES` (20 MB): a PDF is never downloaded beyond this.
 - `COLLECT_MAX_PDF_PAGES` (200): pages of a PDF whose text is read.
+- `COLLECT_MAX_SOURCE_CHARS` (200000): a source's text is cut here before it is redacted and
+  stored (redaction of a long text takes minutes: 342 s without a line in the log, #185).
 - `COLLECT_MIN_DELAY_SECONDS` (1): minimum delay between two requests to one domain.
 - `COLLECT_RETRIES` (2) and `COLLECT_BACKOFF_SECONDS` (1): retries of a failed fetch, with the
   delay doubling each time.
@@ -54,6 +56,7 @@ class CollectionSettings:
     max_page_bytes: int = 2_000_000
     max_pdf_bytes: int = 20_000_000
     max_pdf_pages: int = 200
+    max_source_chars: int = 200_000
     min_delay_seconds: float = 1.0
     retries: int = 2
     backoff_seconds: float = 1.0
@@ -128,6 +131,7 @@ def load_collection_settings(environ: Mapping[str, str] | None = None) -> Collec
         max_page_bytes=whole("COLLECT_MAX_PAGE_BYTES", d.max_page_bytes),
         max_pdf_bytes=whole("COLLECT_MAX_PDF_BYTES", d.max_pdf_bytes),
         max_pdf_pages=whole("COLLECT_MAX_PDF_PAGES", d.max_pdf_pages),
+        max_source_chars=whole("COLLECT_MAX_SOURCE_CHARS", d.max_source_chars),
         min_delay_seconds=_number(
             env, "COLLECT_MIN_DELAY_SECONDS", d.min_delay_seconds, whole=False
         ),
