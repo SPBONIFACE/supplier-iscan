@@ -15,13 +15,16 @@
   checks of a domain (robots.txt, TDM) are not attempts.
 - `COLLECT_MAX_REQUESTS` (200): ALL outbound requests per run, permission checks, redirect hops
   and retries included; none is sent beyond it and the run continues with what it has.
-- `COLLECT_MAX_DOMAINS` (10): distinct domains contacted per run; a further one is refused.
+- `COLLECT_MAX_DOMAINS` (25): distinct domains contacted per run; a further one is refused.
 - `COLLECT_MAX_RETRIEVAL_URLS` (12): addresses of the retrieval provider fetched per run.
 - `COLLECT_RETRIEVAL_FOCUSES` (`registers,certifications,news,customers`): the focuses of the
   retrieval step, one provider request each, merged in this order whatever the order of arrival
   (only these four names are known). Set to an empty value, it keeps a single, unfocused request.
 - `COLLECT_RETRIEVAL_CONCURRENCY` (2): focused requests in flight at the same time (at least 1;
   1 sends them one after another; above the number of focuses, that number is used).
+- `COLLECT_LOW_VALUE_HOSTS` (business directories and phone listings, see `LOW_VALUE_HOSTS`):
+  comma-separated host suffixes; the retrieval ranking puts their addresses last, never drops
+  them. An empty value disables the list.
 - `COLLECT_RESERVED_INDEPENDENT` (6): page slots of `COLLECT_MAX_PAGES` kept for addresses outside
   the supplier's website; the website crawl stores at most `max_pages` minus this (never below 1).
 - `COLLECT_MAX_LINKED_PDFS` (3): PDFs followed per run from retrieved pages of other sites.
@@ -35,6 +38,13 @@ from dataclasses import dataclass
 from app.config import ConfigurationError
 
 FOCUSES = ("registers", "certifications", "news", "customers")
+LOW_VALUE_HOSTS = (
+    "yellowpages.swiss", "local.ch", "search.ch", "kompass.com", "europages.com",
+    "europages.ch", "europages.de", "europages.fr", "europages.co.uk", "cylex.ch",
+    "cylex.de", "cylex.fr", "cylex.com", "dnb.com", "zoominfo.com", "opencorporates.com",
+    "northdata.com", "firmenwissen.de", "wlw.de", "moneyhouse.ch", "bizapedia.com",
+    "yelp.com", "yellowpages.com",
+)  # fmt: skip
 
 
 @dataclass(frozen=True)
@@ -53,11 +63,12 @@ class CollectionSettings:
     max_attempts: int = 60
     max_retrieval_urls: int = 12
     max_requests: int = 200
-    max_domains: int = 10
+    max_domains: int = 25
     max_linked_pdfs: int = 3
     reserved_independent: int = 6
     retrieval_focuses: tuple[str, ...] = FOCUSES
     retrieval_concurrency: int = 2
+    low_value_hosts: tuple[str, ...] = LOW_VALUE_HOSTS
 
     @property
     def crawl_pages(self) -> int:
@@ -88,6 +99,13 @@ def _focuses(env: Mapping[str, str], default: tuple[str, ...]) -> tuple[str, ...
     if unknown:
         raise ConfigurationError("COLLECT_RETRIEVAL_FOCUSES has an unknown focus")
     return tuple(dict.fromkeys(names))
+
+
+def _low_value_hosts(env: Mapping[str, str], default: tuple[str, ...]) -> tuple[str, ...]:
+    if "COLLECT_LOW_VALUE_HOSTS" not in env:
+        return default
+    names = (n.strip().lower().lstrip(".") for n in env["COLLECT_LOW_VALUE_HOSTS"].split(","))
+    return tuple(dict.fromkeys(n for n in names if n))
 
 
 def _concurrency(env: Mapping[str, str], default: int) -> int:
@@ -126,4 +144,5 @@ def load_collection_settings(environ: Mapping[str, str] | None = None) -> Collec
         reserved_independent=whole("COLLECT_RESERVED_INDEPENDENT", d.reserved_independent),
         retrieval_focuses=_focuses(env, d.retrieval_focuses),
         retrieval_concurrency=_concurrency(env, d.retrieval_concurrency),
+        low_value_hosts=_low_value_hosts(env, d.low_value_hosts),
     )

@@ -320,3 +320,19 @@ def test_an_unexamined_field_never_reads_as_no_public_evidence() -> None:
 
     assert "Not covered by this run" in section
     assert "No public evidence found" not in section
+
+
+@pytest.mark.parametrize(
+    ("lang", "shown", "quoted"),
+    [("en", "(name not shown)", "name “”"), ("fr", "(nom non affiché)", "nom « »")],
+)
+def test_a_hidden_supplier_name_reads_as_not_shown_never_as_empty_quotes(
+    lang: Any, shown: str, quoted: str
+) -> None:
+    page = htmllib.unescape(
+        render_html(card(lang, run=run_out(supplier_name=None, identity_to_verify=True)))
+    )
+
+    assert page.count(shown) >= 4  # title, header, legal name, identity notice
+    assert "“”" not in page and "« »" not in page and quoted not in page
+    assert "<h1></h1>" not in page and "<dd></dd>" not in page

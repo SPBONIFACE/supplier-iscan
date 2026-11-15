@@ -20,6 +20,7 @@ _EN = {
     "identity": "Identity",
     "profile": "Profile",
     "legal_name": "Legal name",
+    "name_hidden": "(name not shown)",
     "website": "Website",
     "country": "Country",
     "sector": "Sector",
@@ -66,6 +67,12 @@ _EN = {
         "Nothing collected confirms the identity: the confirmed name “{name}” was not found in the "
         "content collected from the supplier's website, or the website gave no content. Check that "
         "this website belongs to the company you confirmed before relying on its facts."
+    ),
+    "flag_identity_body_hidden": (
+        "Nothing collected confirms the identity: the confirmed name (name not shown) was not "
+        "found in the content collected from the supplier's website, or the website gave no "
+        "content. Check that this website belongs to the company you confirmed before relying "
+        "on its facts."
     ),
     "flag_excluded": "source excluded at the site owner's request",
     "flag_excluded_body": "Not collected: {domains}.",
@@ -219,6 +226,7 @@ _FR = {
     "identity": "Identité",
     "profile": "Profil",
     "legal_name": "Raison sociale",
+    "name_hidden": "(nom non affiché)",
     "website": "Site web",
     "country": "Pays",
     "sector": "Secteur",
@@ -268,6 +276,12 @@ _FR = {
         "été trouvé dans le contenu collecté sur le site du fournisseur, ou le site n’a donné aucun "
         "contenu. Vérifiez que ce site appartient bien à l’entreprise confirmée avant de vous "
         "fier à ses faits."
+    ).replace(" :", f"{NNBSP}:"),
+    "flag_identity_body_hidden": (
+        "Rien de ce qui a été collecté ne confirme l’identité : le nom confirmé (nom non affiché) "
+        "n’a pas été trouvé dans le contenu collecté sur le site du fournisseur, ou le site n’a "
+        "donné aucun contenu. Vérifiez que ce site appartient bien à l’entreprise confirmée "
+        "avant de vous fier à ses faits."
     ).replace(" :", f"{NNBSP}:"),
     "flag_excluded": "source exclue à la demande du propriétaire du site",
     "flag_excluded_body": "Non collectée : {domains}.".replace(" :", f"{NNBSP}:"),

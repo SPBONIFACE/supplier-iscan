@@ -374,7 +374,10 @@ def build_context(card: CardInput) -> dict[str, Any]:
         )
         entry["generated_at"] = max(entry["generated_at"], _utc(prov.generated_at).isoformat())
         entry["statements"][prov.status] = entry["statements"].get(prov.status, 0) + 1
-    name = run.supplier_name or ""
+    # No name for an administrator of a hosted instance (spec, Data model & ownership): the screens
+    # say "(name not shown)"; so does the card, never an empty name or empty quotes (#182).
+    name_hidden = not run.supplier_name
+    name = run.supplier_name or strings["name_hidden"]
     metadata = {
         "title": f"{strings['doc_title']} · {name}",
         "generator": PRODUCER,
@@ -394,6 +397,7 @@ def build_context(card: CardInput) -> dict[str, Any]:
         "s": strings,
         "meta": metadata,
         "name": name,
+        "name_hidden": name_hidden,
         "organisation": card.organisation_name,
         "run": run,
         "country": country_name(run.supplier_country, lang),

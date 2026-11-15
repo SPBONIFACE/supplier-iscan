@@ -21,7 +21,9 @@ from pydantic import ValidationError
 
 from app.collection.collector import RetrievedAddresses, RetrieveFn
 from app.collection.failures import RetrievalFailed
+from app.collection.identity import LEGAL_FORMS, fold
 from app.collection.pages import classify
+from app.collection.settings import LOW_VALUE_HOSTS
 from app.collection.source_store import IdentityRedaction
 from app.countries import country_name
 from app.limits.budget import RunBudgetExhausted
@@ -132,12 +134,44 @@ def _supplier_text(
     return "\n".join(lines)
 
 
-def rank(urls: list[RetrievedUrl], lacking: list[str]) -> list[str]:
-    """The addresses, those whose address or snippet points at a lacking group first. The snippet
-    is used here only and is dropped."""
+def significant_word(legal_name: str) -> str:
+    """The first word of the folded legal name that is not a legal form ("" when none)."""
+    for word in fold(legal_name).split():
+        if word not in LEGAL_FORMS and len(word) > 1:
+            return word
+    return ""
+
+
+def _low_value(url: str, hosts: tuple[str, ...]) -> bool:
+    try:
+        host = (urlsplit(url).hostname or "").lower().removeprefix("www.")
+    except ValueError:
+        return False
+    return bool(host) and _on(host, hosts)
+
+
+def rank(
+    urls: list[RetrievedUrl],
+    lacking: list[str],
+    legal_name: str = "",
+    low_value_hosts: tuple[str, ...] = LOW_VALUE_HOSTS,
+) -> list[str]:
+    """The addresses, best first. Keys, in order: the address or snippet points at a lacking group;
+    the snippet (the title) names the supplier (first significant word of the legal name); the host
+    is not a low-value one (directories, never dropped). The snippet is used here only and is
+    dropped; the sort is stable, so the provider's order decides between equals."""
     wanted = set(lacking)
-    scored = [(0 if classify(item.url, item.snippet) in wanted else 1, item.url) for item in urls]
-    return [url for _score, url in sorted(scored, key=lambda pair: pair[0])]
+    word = significant_word(legal_name)
+
+    def key(item: RetrievedUrl) -> tuple[int, int, int]:
+        named = bool(word) and f" {word} " in f" {fold(item.snippet)} "
+        return (
+            0 if classify(item.url, item.snippet) in wanted else 1,
+            0 if named or not word else 1,
+            1 if _low_value(item.url, low_value_hosts) else 0,
+        )
+
+    return [item.url for item in sorted(urls, key=key)]
 
 
 def _round_robin(lists: list[list[str]]) -> list[str]:
@@ -160,6 +194,7 @@ def make_retriever(
     focuses: tuple[str, ...] = (),
     *,
     concurrency: int = 2,
+    low_value_hosts: tuple[str, ...] = LOW_VALUE_HOSTS,
     wait: Callable[[float], None] = time.sleep,
     check_stop: Callable[[], None] = lambda: None,
 ) -> RetrieveFn:
@@ -209,7 +244,7 @@ def make_retriever(
             except ValidationError as error:
                 logger.warning("Retrieval answer invalid: fields=[%s]", validation_detail(error))
                 raise RetrievalFailed("invalid_response") from None
-            return rank(result.urls, lacking)
+            return rank(result.urls, lacking, identity.legal_name, low_value_hosts)
 
     def retrieve(lacking: list[str], focus: str | None, excluded: tuple[str, ...]) -> list[str]:
         request = prepare(lacking, focus, excluded)

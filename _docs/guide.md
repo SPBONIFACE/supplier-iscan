@@ -46,7 +46,7 @@ Collection of public evidence is on in every run. Its worker needs `CRAWLER_CONT
 placeholder), the public page named in
 the User-Agent of every request to a supplier's site; without it a run fails at collection. Every outbound request of
 a run is capped (`COLLECT_MAX_REQUESTS`, default 200, permission checks included) as are the distinct websites
-contacted (`COLLECT_MAX_DOMAINS`, default 10).
+contacted (`COLLECT_MAX_DOMAINS`, default 25).
 
 Extraction fills the `fact` fields of the profile from the stored sources and keeps a value only when its quote is
 found in the cited source. It sends at most `EXTRACT_MAX_INPUT_CHARS` characters of source text per call (default

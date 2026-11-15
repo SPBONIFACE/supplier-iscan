@@ -293,7 +293,7 @@ def test_the_budget_holds_under_concurrent_requests() -> None:
 
 def test_the_default_ceilings_and_their_environment_variables() -> None:
     defaults = load_collection_settings({})
-    assert (defaults.max_requests, defaults.max_domains) == (200, 10)
+    assert (defaults.max_requests, defaults.max_domains) == (200, 25)
     tuned = load_collection_settings({"COLLECT_MAX_REQUESTS": "40", "COLLECT_MAX_DOMAINS": "3"})
     assert (tuned.max_requests, tuned.max_domains) == (40, 3)
 

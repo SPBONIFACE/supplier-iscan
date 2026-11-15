@@ -100,6 +100,7 @@ def make_collection_stage(
                 context.call_context,
                 limits.retrieval_focuses,
                 concurrency=limits.retrieval_concurrency,
+                low_value_hosts=limits.low_value_hosts,
                 check_stop=context.check_stop,
             )
 

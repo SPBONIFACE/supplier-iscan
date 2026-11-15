@@ -109,7 +109,7 @@ and green CI. I approve the specification, every design mock-up, every new depen
 If you found a link to this page in your website's logs, it was left by the Supplier iScan crawler
 (`SupplierIScan/1.0`). A buyer starts it for one named supplier at a time; it reads a few public pages about that
 company to build a sourced profile. It follows `robots.txt` and text-and-data-mining reservations
-(`tdm-reservation`, `tdmrep.json`), makes at most 200 requests across at most 10 websites per run, and never logs in,
+(`tdm-reservation`, `tdmrep.json`), makes at most 200 requests across at most 25 websites per run, and never logs in,
 fills in forms or gets around access controls.
 
 To stop it visiting your site, add this to your `robots.txt`:
