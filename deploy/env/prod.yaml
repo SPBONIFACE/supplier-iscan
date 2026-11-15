@@ -11,6 +11,8 @@ COLLECT_MAX_DOMAINS: "25"
 # Speed (#182): extraction reads sources 4 at a time, retrieval sends its focused requests 2 at a time (#185).
 EXTRACT_CONCURRENCY: "4"
 COLLECT_RETRIEVAL_CONCURRENCY: "2"
+# Redaction (#196): two name detectors, so two sources are redacted at the same time in collection.
+REDACTION_DETECTOR_INSTANCES: "2"
 OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4318"
 TELEMETRY_EXPORT_TIMEOUT_SECONDS: "5"
 DATABASE_STATEMENT_TIMEOUT_SECONDS: "30"

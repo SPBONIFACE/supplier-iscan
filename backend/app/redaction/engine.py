@@ -28,9 +28,11 @@ import phonenumbers
 
 from app.redaction import lowercase, names
 from app.redaction.detector import (
+    DetectorPool,
     GlinerDetector,
     NameDetector,
     SpacyHanDetector,
+    detector_instances,
     has_han,
     strip_cjk,
 )
@@ -419,8 +421,18 @@ class Redactor:
             if self._loaded:
                 return
             try:
-                gliner = GlinerDetector()
-                gliner.load()
+                size = detector_instances()
+                first = GlinerDetector()
+                first.load()
+                gliner: NameDetector = first
+                if size > 1:
+
+                    def another() -> NameDetector:
+                        extra = GlinerDetector()
+                        extra.load()
+                        return extra
+
+                    gliner = DetectorPool(gliner, another, size)
                 han = SpacyHanDetector()
                 han.load()
             except Exception as error:  # noqa: BLE001 - any load failure is fail-closed

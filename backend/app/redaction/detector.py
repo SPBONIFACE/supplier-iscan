@@ -33,6 +33,9 @@ Span = tuple[int, int]
 MODEL_DIR_ENV: Final = "REDACTION_MODEL_DIR"
 THRESHOLD_ENV: Final = "REDACTION_GLINER_THRESHOLD"
 THREADS_ENV: Final = "REDACTION_THREADS"
+INSTANCES_ENV: Final = "REDACTION_DETECTOR_INSTANCES"
+DEFAULT_INSTANCES: Final = 1
+MAX_INSTANCES: Final = 4
 DEFAULT_THRESHOLD: Final = 0.9
 DEFAULT_THREADS: Final = 4
 MODEL_REVISION: Final = "1fcf13e85f4eef5394e1fcd406cf2ca9ea82351d"
@@ -220,6 +223,57 @@ class GlinerDetector:
                         (offset + entity["start"], offset + entity["end"]) for entity in entities
                     )
         return found
+
+
+def detector_instances() -> int:
+    """How many GLiNER instances may run at the same time (`REDACTION_DETECTOR_INSTANCES`)."""
+    count = int(_env_number(INSTANCES_ENV, DEFAULT_INSTANCES, int))
+    if not 1 <= count <= MAX_INSTANCES:
+        raise RedactionUnavailable
+    return count
+
+
+class DetectorPool:
+    """Up to `size` detectors, each with its own lock, used by one call at a time. The first is
+    given loaded; the others are made by `factory` (and loaded) only when a call finds every
+    instance busy, so a process that never redacts two texts at once holds one model. A call
+    waits when `size` instances are busy. Spans do not depend on the instance."""
+
+    def __init__(self, first: NameDetector, factory: Callable[[], NameDetector], size: int) -> None:
+        if size < 1:
+            raise RedactionUnavailable
+        self._free: list[NameDetector] = [first]
+        self._factory = factory
+        self._size = size
+        self._made = 1
+        self._condition = threading.Condition()
+
+    def _acquire(self) -> NameDetector:
+        with self._condition:
+            while not self._free and self._made >= self._size:
+                self._condition.wait()
+            if self._free:
+                return self._free.pop()
+            self._made += 1
+        try:
+            return self._factory()
+        except BaseException:
+            with self._condition:
+                self._made -= 1
+                self._condition.notify()
+            raise
+
+    def _release(self, detector: NameDetector) -> None:
+        with self._condition:
+            self._free.append(detector)
+            self._condition.notify()
+
+    def person_spans(self, texts: Sequence[str]) -> list[list[Span]]:
+        detector = self._acquire()
+        try:
+            return detector.person_spans(texts)
+        finally:
+            self._release(detector)
 
 
 class SpacyHanDetector:

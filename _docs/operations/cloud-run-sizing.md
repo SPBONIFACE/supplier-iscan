@@ -21,6 +21,24 @@ cannot be known before then.
   kills, raise the memory to 6 GiB first. (The earlier failure to finish was the 4 GB Docker VM shared with other
   containers, not the image.)
 
+## Two name detectors (#196)
+
+`REDACTION_DETECTOR_INSTANCES` (code default 1, "2" in `deploy/env/dev.yaml` and `prod.yaml`, at most 4) is the
+number of GLiNER instances, each with its own lock. Collection redacts up to that many sources at the same time
+(the rows are still written one by one, in order, by the collection thread); with 1, it redacts one source and writes
+it before the next, as before. A second instance is loaded only when a call finds the first busy, so a process that
+never redacts two texts at once (usually the API) holds one model.
+
+Measured locally (15 Nov 2026, Apple silicon, 4 threads, a 40,000-character French text with names, emails and phone
+numbers, real model, peak resident memory of the process): **1 instance 1,426 MB; 2 instances, two such texts redacted
+at once, 2,069 MB** (the second model adds about 0.65 GB: the weights are shared pages, not a full 1.2 GB). The
+spans of the two texts were identical. On the Linux container measured in #128 (2.9 GB peak with one model), the
+worker with two instances is expected near 3.6 GB, under its 4 GiB limit: **the worker memory is not raised**. If
+Cloud Run reports memory kills on the worker, raise `WORKER_MEMORY` to 6Gi in `deploy/env/*.conf` (approved by the
+owner, 15 Nov 2026). `REDACTION_THREADS` stays 4 and is shared by the two instances (torch's thread count is per
+process), so the speed-up on 4 vCPU is below 2x; it was not measured here (the local figure above includes loading
+the second model) and is to confirm on the next dev run (collection took 406.6 s before).
+
 ## Services
 
 | | API | Worker | Frontend | Telemetry sidecar |
