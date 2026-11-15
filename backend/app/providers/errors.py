@@ -60,9 +60,12 @@ class ProviderCallError(ProviderError):
         config_id: str,
         kind: FailureKind,
         status_code: int | None = None,
+        retry_after: float | None = None,
     ) -> None:
         self.kind = kind
         self.status_code = status_code
+        # The provider's `Retry-After` in seconds, already capped; None when it sent none.
+        self.retry_after = retry_after
         reason = FAILURE_REASONS[kind]
         if status_code is not None:
             reason = f"{reason} (HTTP {status_code})"

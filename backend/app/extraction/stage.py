@@ -6,10 +6,11 @@ The structuring provider fills the `fact` fields of the profile definition from 
 
 Boundaries that hold here:
 - `ask` is the single call site of the model for extraction. The prompt comes from the prompt set
-  (id `extraction`); the data part passes the redaction gate again before the request is built
-  (see `ask`), so a name added to the suppression list after collection is also redacted, and
-  nothing but `RedactedText` is sent. The model has no tools: it returns a `FieldExtractionAnswer`,
-  and code makes the call and decides what is kept.
+  (id `extraction`); the data part is redacted again before the request is built (see `ask`):
+  the stored source text by the fast pass without the detector (it passed the detector when it
+  was stored), the rest by the full gate. A name added to the suppression list after collection
+  is also redacted, and nothing but `RedactedText` is sent. The model has no tools: it returns
+  a `FieldExtractionAnswer`, and code makes the call and decides what is kept.
 - Only `fact` fields are requested, never `assessment` or `buyer` fields.
 - Prompt and completion text are never logged: counts and ids only.
 - The stage can run again after a pause or a crash. A section's facts are written in one
@@ -61,7 +62,7 @@ from app.providers import (
     StructuringClient,
     StructuringRequest,
 )
-from app.redaction import RedactionGate, gate_for
+from app.redaction import RedactedText, RedactionGate, StoredSourceText, concat, gate_for
 from app.runs.stages import DependencyUnavailable, RunStopped, Stage, StageContext, StageOutcome
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,9 @@ class SourceText:
     publisher: str
     normalised: str = field(repr=False)
     folded: str = field(repr=False, default="")
+    # Set only by `_load`, from a Source row of the database. Without it (the reference-set
+    # harness) the text never passed the detector and `ask` uses the full gate on it.
+    stored: StoredSourceText | None = field(repr=False, default=None)
 
 
 @dataclass(frozen=True)
@@ -217,24 +221,41 @@ def ask(
     """The single call site of the model for extraction: the validated items of the answer, and
     the number of items dropped as invalid (after one retry).
 
-    The source text is already redacted in `Source.redacted_text`. It still goes through
-    `RedactionGate.redact` before the request is built, like every text sent to a provider: the
-    gate is the only way to obtain the `RedactedText` the provider interface accepts, and it is
-    idempotent on `[…]`. It also applies a suppression-list entry added after collection.
+    The source text is already redacted in `Source.redacted_text` (the detector ran when it was
+    stored). It passes the fast pass (`RedactionGate.redact_stored`: suppression list, identity,
+    emails, phones; no detector), which is the only way to a `RedactedText` from stored text that
+    skips the detector. Everything else in the data (the field list, the supplier line) goes
+    through the full gate, like every other text sent to a provider.
     """
-    values = {"fields": fields_text(requested), "source_id": str(source.id), "source_text": chunk}
+    marker = f"@@{uuid.uuid4().hex}@@"
+    values = {"fields": fields_text(requested), "source_id": str(source.id), "source_text": marker}
     if "supplier" in prompts.placeholders(PROMPT_ID):
         # Passes the gate below with the rest of the data. A caller without an identity (the
         # reference-set harness) gets a neutral line, never a missing value.
         values["supplier"] = supplier.text() if supplier else "Legal name: not given"
     rendered = prompts.render(PROMPT_ID, values)
     log_render(rendered)
-    data = gate.redact(
-        rendered.data,
-        person_names=redaction.person_names,
-        addresses=redaction.addresses,
-        company_names=redaction.company_names,
-    )
+    head, found, tail = rendered.data.partition(marker)
+    if not found or marker in tail:
+        raise ValueError("the extraction prompt must use source_text exactly once")
+
+    def full(part: str) -> RedactedText:
+        return gate.redact(
+            part,
+            person_names=redaction.person_names,
+            addresses=redaction.addresses,
+            company_names=redaction.company_names,
+        )
+
+    if source.stored is None:
+        body = full(chunk)  # text that is not from a stored source: the detector runs
+    else:
+        body = gate.redact_stored(
+            source.stored.piece(chunk),
+            person_names=redaction.person_names,
+            addresses=redaction.addresses,
+        )
+    data = concat([full(head), body, full(tail)])
     request = StructuringRequest(
         instructions=rendered.instructions, data=data, max_output_tokens=MAX_OUTPUT_TOKENS
     )
@@ -553,6 +574,7 @@ def _load(
                 fetched_at=row.fetched_at,
                 author=row.author,
                 text=row.redacted_text,
+                stored=StoredSourceText.of(row),
                 source_type=classify_source(
                     row.url,
                     website,

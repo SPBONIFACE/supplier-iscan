@@ -292,3 +292,26 @@ def test_the_name_in_a_pdf_alone_counts() -> None:
     collector, _site, _stored, _s, _ = make_collector(pages)
 
     assert not collector.collect(SITE, NAME).identity_to_verify
+
+
+def test_a_retry_after_longer_than_the_cap_never_holds_the_collection() -> None:
+    pages = site_pages()
+    pages[(HOST, "/about")] = httpx2.Response(429, headers={"retry-after": "3600"})
+    settings = CollectionSettings(min_delay_seconds=0, backoff_seconds=0.5, retries=2)
+    collector, _site, _stored, sleeps, _ = make_collector(pages, settings)
+
+    collector.collect(SITE, NAME)
+
+    assert sleeps and max(sleeps) <= 10.0
+
+
+def test_a_source_text_over_the_limit_is_cut_before_it_is_stored() -> None:
+    pages = site_pages()
+    pages[(HOST, "/about")] = html("<p>" + "Acme Supplies makes bolts. " * 400 + "</p>")
+    settings = CollectionSettings(min_delay_seconds=0, backoff_seconds=0, max_source_chars=1000)
+    collector, _site, stored, _sleeps, _ = make_collector(pages, settings)
+
+    collector.collect(SITE, NAME)
+
+    about = [record for record in stored if record.url.endswith("/about")]
+    assert about and len(about[0].text) <= 1000

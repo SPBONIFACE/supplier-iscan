@@ -6,7 +6,13 @@ accepts. Failure is `RedactionUnavailable`: nothing is sent, nothing is stored.
 
 from app.redaction.engine import RedactionContext, Redactor, get_redactor
 from app.redaction.gate import RedactionGate, database_suppressed_names, gate_for
-from app.redaction.text import OMISSION, RedactedText, RedactionUnavailable
+from app.redaction.text import (
+    OMISSION,
+    RedactedText,
+    RedactionUnavailable,
+    StoredSourceText,
+    concat,
+)
 
 __all__ = [
     "OMISSION",
@@ -14,7 +20,9 @@ __all__ = [
     "RedactionContext",
     "RedactionGate",
     "RedactionUnavailable",
+    "StoredSourceText",
     "Redactor",
+    "concat",
     "database_suppressed_names",
     "gate_for",
     "get_redactor",

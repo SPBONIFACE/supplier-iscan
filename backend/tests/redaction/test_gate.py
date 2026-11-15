@@ -241,10 +241,11 @@ def test_the_identity_agent_redacts_before_it_builds_the_request() -> None:
     assert calls.index("redact") < calls.index("StructuringRequest") < calls.index("structure")
 
 
-def test_extraction_redacts_the_stored_source_text_again_before_it_builds_the_request() -> None:
-    """The stored text is already redacted, but the only way to a `RedactedText` is the gate: the
-    extraction call site passes the rendered data through `gate.redact` (no new route into the
-    provider interface), and it is the only function there that calls the model."""
+def test_extraction_redacts_the_data_again_before_it_builds_the_request() -> None:
+    """The extraction call site redacts the stored source text with the fast pass
+    (`gate.redact_stored`) and everything else with `gate.redact`, and joins the pieces with
+    `concat` before the request is built (no new route into the provider interface); it is the
+    only function there that calls the model."""
     source = (APP / "extraction" / "stage.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
     function = next(
@@ -255,7 +256,8 @@ def test_extraction_redacts_the_stored_source_text_again_before_it_builds_the_re
         for node in ast.walk(function)
         if isinstance(node, ast.Call)
     ]
-    assert calls.index("redact") < calls.index("StructuringRequest") < calls.index("structure")
+    assert {"redact", "redact_stored", "concat"} <= set(calls)
+    assert calls.index("concat") < calls.index("StructuringRequest") < calls.index("structure")
     structure_callers = sorted(
         node.name
         for node in ast.walk(tree)

@@ -46,8 +46,8 @@ logger = logging.getLogger(__name__)
 
 PROMPT_ID = "retrieval"
 
-# Waits before the first and the second retry of a rate-limited request (`Retry-After` is not
-# exposed by the provider errors).
+# Waits before the first and the second retry of a rate-limited request when the provider sent no
+# `Retry-After`; when it did, its delay is used (capped by the provider module).
 RATE_LIMIT_WAITS = (2.0, 4.0)
 
 
@@ -199,9 +199,10 @@ def make_retriever(
     check_stop: Callable[[], None] = lambda: None,
 ) -> RetrieveFn:
     """One request per focus (none: a single request without focus), at most `concurrency` at the
-    same time. A request refused as rate-limited is retried twice, after 2 s then 4 s (`wait`);
-    `check_stop` is called after each wait. A focus whose request fails is reported in `failures`
-    of the result (each with its own kind) and the others still run."""
+    same time. A request refused as rate-limited is retried twice, after the provider's
+    `Retry-After` or else 2 s then 4 s (`wait`); `check_stop` is called after each wait. A focus
+    whose request fails is reported in `failures` of the result (each with its own kind) and the
+    others still run."""
 
     def prepare(
         lacking: list[str], focus: str | None, excluded: tuple[str, ...]
@@ -229,7 +230,11 @@ def make_retriever(
             except ProviderCallError as error:
                 logger.warning("Retrieval provider call failed (%s)", error.kind)
                 if error.kind == "rate_limited" and retries < len(RATE_LIMIT_WAITS):
-                    wait(RATE_LIMIT_WAITS[retries])
+                    wait(
+                        error.retry_after
+                        if error.retry_after is not None
+                        else RATE_LIMIT_WAITS[retries]
+                    )
                     retries += 1
                     check_stop()  # RunStopped propagates: no retry after a stop request
                     continue

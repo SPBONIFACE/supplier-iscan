@@ -6,6 +6,8 @@ are always redacted, and for a natural-person identity so are its confirmed name
 cannot run, `RedactionUnavailable` propagates: nothing is written, and the run pauses.
 """
 
+import logging
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
@@ -16,6 +18,8 @@ from sqlalchemy.orm import Session
 from app.db import Database
 from app.models import ProfileRun, Source, SupplierIdentity
 from app.redaction import RedactionGate, gate_for
+
+logger = logging.getLogger(__name__)
 
 # Lifts the guard of `app.collection.stage.ensure_collection_allowed` (#18): storage redacts.
 REDACTION_WIRED = True
@@ -77,7 +81,11 @@ def store_source(
     # Redacted before anything is written; a failure raises before the row is touched. Redaction
     # can take a minute on a long text: no database session (no connection, no transaction) is
     # held meanwhile (#52, deployment findings).
+    started = time.monotonic()
     text = redact_for_storage(record.text, gate, context)
+    logger.info(
+        "Redacted a source of %d characters in %.1f s", len(record.text), time.monotonic() - started
+    )
     author = redact_for_storage(record.author, gate, context)[:300] if record.author else None
     with database.session() as db:
         row = db.scalar(select(Source).where(Source.run_id == run_id, Source.url == record.url))

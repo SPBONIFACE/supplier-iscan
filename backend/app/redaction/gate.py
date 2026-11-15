@@ -14,7 +14,7 @@ from sqlalchemy import select
 from app.db import Database
 from app.models import SuppressionEntry
 from app.redaction.engine import RedactionContext, Redactor, get_redactor
-from app.redaction.text import RedactedText, RedactionUnavailable
+from app.redaction.text import RedactedText, RedactionUnavailable, StoredSourceText
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,24 @@ class RedactionGate:
             names=tuple(forced), addresses=tuple(addresses), keep=tuple(company_names)
         )
         return (self.redactor or get_redactor()).redact(text, context)
+
+    def redact_stored(
+        self,
+        stored: StoredSourceText,
+        *,
+        person_names: Sequence[str] = (),
+        addresses: Sequence[str] = (),
+    ) -> RedactedText:
+        """The fast pass for stored source text (it passed the detector at collection): no
+        detector, but the suppression list, the identity's names and addresses, emails and phone
+        numbers are redacted again. Company names need no `keep`: no detector can eat them."""
+        try:
+            forced = (*self.suppressed_names(), *person_names)
+        except Exception as error:  # noqa: BLE001 - without the list, nothing may pass
+            logger.error("Suppression names could not be read: %s", type(error).__name__)
+            raise RedactionUnavailable from None
+        context = RedactionContext(names=tuple(forced), addresses=tuple(addresses))
+        return (self.redactor or get_redactor()).redact_stored(stored, context)
 
 
 def gate_for(database: Database) -> RedactionGate:

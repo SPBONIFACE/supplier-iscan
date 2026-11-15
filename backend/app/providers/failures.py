@@ -59,6 +59,26 @@ def _status_code(error: Exception) -> int | None:
     return None
 
 
+MAX_RETRY_AFTER = 30.0
+
+
+def retry_after_seconds(error: Exception) -> float | None:
+    """The `Retry-After` of the provider's HTTP answer, in seconds (the delay form only), capped at
+    `MAX_RETRY_AFTER`; None when absent or unreadable. Reads the one header, nothing else."""
+    response = getattr(error, "response", None)
+    headers = getattr(response, "headers", None)
+    if headers is None:
+        return None
+    try:
+        value = headers.get("retry-after")
+        seconds = float(value) if value is not None else None
+    except (TypeError, ValueError, AttributeError):
+        return None
+    if seconds is None or seconds != seconds or seconds < 0:
+        return None
+    return min(seconds, MAX_RETRY_AFTER)
+
+
 def _kind_for_status(status: int) -> FailureKind:
     if status in (401, 403):
         return "authentication"

@@ -15,6 +15,7 @@ Rules that make the telemetry safe by construction:
   timeout and a bounded queue: an unreachable collector never slows or fails a request or a run.
 """
 
+import logging
 import re
 import time
 from collections.abc import Iterator, Mapping, Sequence
@@ -31,6 +32,8 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.trace import Span, SpanKind, Status, StatusCode
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+
+logger = logging.getLogger(__name__)
 
 INSTRUMENTATION_NAME = "supplier_iscan"
 TRACEPARENT = "traceparent"  # key in the payload of a queued job
@@ -279,7 +282,10 @@ def stage_span(stage: str, run_id: object) -> Iterator[Span]:
             outcome = "error"
             raise
         finally:
-            _current.stage_duration(stage, time.monotonic() - started, outcome)
+            seconds = time.monotonic() - started
+            _current.stage_duration(stage, seconds, outcome)
+            # One line per stage: run id, stage, seconds and outcome; no supplier, no content.
+            logger.info("Run %s stage %s took %.1f s (%s)", run_id, stage, seconds, outcome)
 
 
 # ---- propagation through the queue ----

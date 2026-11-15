@@ -34,7 +34,13 @@ from app.redaction.detector import (
     has_han,
     strip_cjk,
 )
-from app.redaction.text import OMISSION, RedactedText, RedactionUnavailable, mint
+from app.redaction.text import (
+    OMISSION,
+    RedactedText,
+    RedactionUnavailable,
+    StoredSourceText,
+    mint,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -433,12 +439,44 @@ class Redactor:
             logger.error("Redaction failed: %s", type(error).__name__)
             raise RedactionUnavailable from None
 
+    def redact_stored(
+        self, stored: StoredSourceText, context: RedactionContext | None = None
+    ) -> RedactedText:
+        """The fast pass for text that already passed the detector when it was stored: email
+        addresses, phone numbers and the forced names and addresses of `context`, without the
+        person-name detector (no model is loaded or called, no lock is taken)."""
+        context = context or RedactionContext()
+        text = stored.text
+        try:
+            if len(text) > MAX_TEXT_CHARS:
+                logger.error("Redaction refused a text over %d characters", MAX_TEXT_CHARS)
+                raise RedactionUnavailable
+            spans = _merge(
+                [
+                    *_email_spans(text),
+                    *_obfuscated_email_spans(text),
+                    *_phone_spans(text),
+                    *_forced_spans(text, context),
+                ],
+                text,
+            )
+            return mint(self._apply(text, spans))
+        except RedactionUnavailable:
+            raise
+        except Exception as error:  # noqa: BLE001 - fail closed, never a fallback
+            logger.error("Redaction failed: %s", type(error).__name__)
+            raise RedactionUnavailable from None
+
     def _redact(self, text: str, context: RedactionContext) -> str:
         if not text:
             return text
+        return self._apply(text, self.removed_spans(text, context))
+
+    @staticmethod
+    def _apply(text: str, spans: list[Span]) -> str:
         out: list[str] = []
         position = 0
-        for start, end in self.removed_spans(text, context):
+        for start, end in spans:
             out.append(text[position:start])
             out.append(OMISSION)
             position = end
