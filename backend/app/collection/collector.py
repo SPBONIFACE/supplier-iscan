@@ -30,7 +30,7 @@ from app.collection.identity import name_appears
 from app.collection.limiter import DomainRateLimiter
 from app.collection.pages import PAGE_KINDS, classify
 from app.collection.pdf import extract_pdf
-from app.collection.settings import CollectionSettings
+from app.collection.settings import CollectionSettings, host_matches
 from app.collection.sitemap import parse_sitemap
 from app.collection.source_store import SourceRecord
 from app.crawl import PermittedFetcher
@@ -182,6 +182,7 @@ class Collector:
         # Domains closed for the rest of the run (#181): they blocked us (bot check, exclusion),
         # their crawl rules could not be read, or they did not answer. Logged once each.
         self._closed: set[str] = set()
+        self._never_logged: set[str] = set()  # never-contact domains already logged (#186)
         self._no_answer: dict[str, int] = {}  # pages per domain that gave no answer
 
     # -- failures ---------------------------------------------------------------------------
@@ -208,6 +209,20 @@ class Collector:
             return False
         return any(host == d or host.endswith("." + d) for d in self._closed)
 
+    def _never_contacted(self, url: str) -> bool:
+        """The address is on a domain whose terms forbid automated collection (#186). It is not
+        requested, takes no slot and counts against no ceiling; one failure-log row per domain."""
+        try:
+            host = _host(url)
+        except ValueError:
+            return False
+        if not host_matches(host, self._settings.never_contact_hosts):
+            return False
+        if host not in self._never_logged:
+            self._never_logged.add(host)
+            self._fail(url, "not_contacted")
+        return True
+
     def _close(self, url: str) -> None:
         try:
             self._closed.add(_host(url))
@@ -230,6 +245,8 @@ class Collector:
         retries). Waits for the domain's slot before each request; backs off between retries.
         Every request counts as an attempt; none is made beyond the cap of the run. A domain
         closed earlier in the run is not requested again, and not logged again (#181)."""
+        if self._never_contacted(url):
+            return self._skip(url)
         if self._is_closed(url):
             return self._skip(url)
         attempts = self._settings.retries + 1
@@ -268,6 +285,9 @@ class Collector:
                 if result.status == "too_large":
                     logger.warning("Skipped %s: %s bytes exceeds %s", url, result.size, max_bytes)
                     return self._skip(url, "too_large")
+                if result.status == "never_contacted":  # a redirect hop (#186)
+                    self._never_contacted(result.final_url or url)
+                    return self._skip(url)
                 if result.status != "fetched":
                     logger.info("Not fetched: %s (%s)", url, result.status)
                     if result.status in CLOSING_STATUSES:
@@ -325,7 +345,7 @@ class Collector:
 
     def _sitemap_urls(self, home: str) -> list[str]:
         settings = self._settings
-        if self._is_closed(home):
+        if self._is_closed(home) or self._never_contacted(home):
             return []
         queue = [urljoin(home, "/sitemap.xml")]
         try:
@@ -441,7 +461,7 @@ class Collector:
                     or not self._closed - set(excluded)
                 ):
                     return
-            excluded = tuple(sorted(self._closed))
+            excluded = tuple(sorted({*self._settings.never_contact_hosts, *self._closed}))
             # Also when nothing is lacking: the provider is then asked for independent sources.
             self._check_stop()
             try:
@@ -460,7 +480,7 @@ class Collector:
                 if urlsplit(url).scheme not in ("http", "https"):
                     self._skip(url, "refused")
                     continue
-                if self._is_closed(url):
+                if self._never_contacted(url) or self._is_closed(url):
                     self._skip(url)
                     continue
                 usable.append(url)

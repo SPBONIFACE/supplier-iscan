@@ -24,7 +24,13 @@ __all__ = ["WebsiteCheckFailure", "WebsiteCheckResult", "check_website"]
 
 WebsiteCheckFailure = (
     FetchErrorCode
-    | Literal["http_error", "connection_failed", "certificate_invalid", "invalid_response"]
+    | Literal[
+        "http_error",
+        "connection_failed",
+        "certificate_invalid",
+        "invalid_response",
+        "not_contacted",
+    ]
 )
 
 

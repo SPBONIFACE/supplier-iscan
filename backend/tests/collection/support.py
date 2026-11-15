@@ -108,7 +108,6 @@ def make_collector(
     site = MockSite(pages)
     client = build_client(CONTACT, resolver=RESOLVER, inner_transport=site.transport)
     recorded: list[DomainPermission] = []
-    fetcher = PermittedFetcher(client, EmptySuppressionList(), recorded.append)
     stored: list[SourceRecord] = []
     sleeps: list[float] = []
     now = [0.0]
@@ -120,6 +119,9 @@ def make_collector(
     from app.collection.limiter import DomainRateLimiter
 
     limits = settings or CollectionSettings(min_delay_seconds=0.0, backoff_seconds=0.0)
+    fetcher = PermittedFetcher(
+        client, EmptySuppressionList(), recorded.append, never_contact=limits.never_contact_hosts
+    )
     limiter = DomainRateLimiter(limits.min_delay_seconds, clock=lambda: now[0], sleep=sleep)
     collector = Collector(
         fetcher, limits, stored.append, limiter=limiter, sleep=sleep, check_stop=check

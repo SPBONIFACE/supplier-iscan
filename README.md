@@ -110,7 +110,8 @@ If you found a link to this page in your website's logs, it was left by the Supp
 (`SupplierIScan/1.0`). A buyer starts it for one named supplier at a time; it reads a few public pages about that
 company to build a sourced profile. It follows `robots.txt` and text-and-data-mining reservations
 (`tdm-reservation`, `tdmrep.json`), makes at most 200 requests across at most 25 websites per run, and never logs in,
-fills in forms or gets around access controls.
+fills in forms or gets around access controls. It never contacts sites whose terms forbid automated collection
+(LinkedIn is one; the list is `COLLECT_NEVER_CONTACT_HOSTS`) and does not ask the search provider for them.
 
 To stop it visiting your site, add this to your `robots.txt`:
 

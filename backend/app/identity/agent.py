@@ -18,11 +18,13 @@ import uuid
 from collections.abc import Sequence
 from typing import Any
 
+from app.collection.settings import host_matches, load_collection_settings
 from app.countries import Lang, country_name
 from app.db import utc_now
 from app.http_client import (
     FetchError,
     InvalidUrlError,
+    WebsiteCheckResult,
     check_website,
     is_public_address,
     normalise_url,
@@ -155,6 +157,23 @@ def web_query_text(name: str, hints: dict[str, Any], country: str | None) -> str
         lines.append(f"Sector: {hints['sector']}")
     lines.append(WEB_FOCUS)
     return "\n".join(lines)
+
+
+NEVER_CONTACTED_REASON = "its terms do not allow automated collection, so it was not contacted."
+
+
+def _guarded_website_check(raw: str, client: Any) -> WebsiteCheckResult:
+    """`check_website`, except for a domain whose terms forbid automated collection (#186): it is
+    not requested, and the reason says so."""
+    try:
+        host = normalise_url(raw, assume_https=True).host
+    except FetchError:
+        host = ""  # the check itself reports it
+    if host and host_matches(host, load_collection_settings().never_contact_hosts):
+        return WebsiteCheckResult(
+            status="unreachable", failure="not_contacted", reason=NEVER_CONTACTED_REASON
+        )
+    return check_website(raw, client)
 
 
 def _host(url: str) -> str | None:
@@ -422,7 +441,7 @@ class IdentityAgent:
             return None
         known = session.hints.get(WEBSITE_CHECKED)
         if not (isinstance(known, dict) and known.get("hint") == hint):
-            result = check_website(hint, self._services.http)
+            result = _guarded_website_check(hint, self._services.http)
             reachable = result.status == "reachable" and result.final_url and result.final_domain
             known = {
                 "hint": hint,
@@ -490,7 +509,12 @@ class IdentityAgent:
         except Exception as error:  # noqa: BLE001 - a failed search is no candidate, never a 500
             logger.warning("Identity web search failed: %s", type(error).__name__)
             return None
-        hosts = [_host(item.url) for item in result.urls]
+        never = load_collection_settings().never_contact_hosts
+        hosts = [
+            h
+            for h in (_host(item.url) for item in result.urls)
+            if not (h and host_matches(h, never))
+        ]
         website = session.hints.get("website")
         if website:
             own = _site(_host(str(website)) or "")
@@ -553,7 +577,7 @@ class IdentityAgent:
         """ "None of these": the domain is checked by the guarded client and must respond."""
         language = session.ui_language
         turns = [new_turn("user", "text", raw)]
-        result = check_website(raw, self._services.http)
+        result = _guarded_website_check(raw, self._services.http)
         if result.status != "reachable" or not result.final_url or not result.final_domain:
             reason = result.reason or ""
             turns.append(

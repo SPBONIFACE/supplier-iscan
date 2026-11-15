@@ -25,6 +25,7 @@ Kind = Literal[
     "provider_unavailable",
     "invalid_response",
     "attempt_cap",
+    "not_contacted",
 ]
 
 NEXT_STRATEGY: Final[dict[Strategy, Strategy | None]] = {
@@ -55,6 +56,9 @@ MESSAGES: Final[dict[Kind, str]] = {
         "The site answered with an automated-access check, so it was not read and not tried "
         "again in this run."
     ),
+    # A domain on the never-contact list (#186): its terms forbid automated collection. Says
+    # nothing about the supplier.
+    "not_contacted": "Not contacted: the site's terms do not allow automated collection.",
     "refused": "The address is not a public web address and was not fetched.",
     "too_large": "The file is larger than the allowed size and was not read.",
     "not_a_page": "The address is not a web page or a PDF report and was not read.",
