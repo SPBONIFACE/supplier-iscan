@@ -98,6 +98,7 @@ export const makeFact = (fieldId: string, section: string, changes: Partial<Fact
   source_id: "77777777-7777-4777-8777-777777777777",
   source_url: "https://corvane-precision.example/about",
   source_type: "supplier_claim",
+  group_level: null,
   publisher: "corvane-precision.example",
   author: null,
   fetched_at: "2026-10-26T10:05:00Z",

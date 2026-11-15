@@ -47,6 +47,7 @@ from app.providers import Providers, RetrievalRequest, StructuringRequest
 from app.providers.metering import CallContext
 from app.redaction import RedactionGate
 from app.registries import RegistrySearchQuery, RegistrySearchResult
+from app.registries.gleif_group import GleifEntity
 from app.registries.models import MAX_HINT_LENGTH, MAX_NAME_LENGTH
 
 logger = logging.getLogger(__name__)
@@ -323,21 +324,28 @@ class IdentityAgent:
             logger.warning("Identity agent call failed: %s", type(error).__name__)
             return None
 
-    def _group_line(self, session: IdentitySession, chosen: dict[str, Any]) -> str | None:
-        """The group of the proposed candidate (#142): its ultimate (else direct) parent from
-        GLEIF, when it is another entity. The parent joins the session's candidates so the buyer
-        can choose it. A GLEIF failure or a missing relation changes nothing. A candidate without
-        an LEI uses the one it would get at confirmation."""
+    def parent_of(self, session: IdentitySession, chosen: dict[str, Any]) -> GleifEntity | None:
+        """The ultimate (else direct) GLEIF parent of the candidate, when it is another entity
+        (#142). A candidate without an LEI uses the one it would get at confirmation. A GLEIF
+        failure or a missing relation gives None: the group is a courtesy, never an error."""
         lei = chosen.get("lei") or unique_active_lei(chosen, session.candidates)
         group = self._services.group
         if not lei or group is None:
             return None
         try:
             parent = self._services.runner.run(group.parent_of(lei))
-        except Exception as error:  # noqa: BLE001 - the group is a courtesy, never an error
+        except Exception as error:  # noqa: BLE001
             logger.warning("GLEIF parent lookup failed: %s", type(error).__name__)
             return None
         if parent is None or parent.lei == lei:
+            return None
+        return parent
+
+    def _group_line(self, session: IdentitySession, chosen: dict[str, Any]) -> str | None:
+        """The group of the proposed candidate (#142). The parent joins the session's candidates
+        so the buyer can choose it."""
+        parent = self.parent_of(session, chosen)
+        if parent is None:
             return None
         entry = entry_from_registry(parent.candidate)
         if all(_public(known)["id"] != _public(entry)["id"] for known in session.candidates):

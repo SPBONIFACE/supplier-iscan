@@ -306,7 +306,7 @@ def _stored_address(entry: dict[str, Any]) -> str | None:
 
 @router.post("/identity-sessions/{id}/confirm", response_model=IdentityConfirmedOut)
 def confirm_identity(
-    id: str, body: IdentityConfirmIn, scope: OrganisationScoped, db: DbSession
+    id: str, body: IdentityConfirmIn, scope: OrganisationScoped, db: DbSession, request: Request
 ) -> IdentityConfirmedOut:
     session = _open_session(scope, db, id, lock=True)
     entry: dict[str, Any] | None = next(
@@ -325,6 +325,8 @@ def confirm_identity(
     if not entry.get("lei"):
         # A candidate without an LEI gets the one of its unique active GLEIF twin (#142).
         entry = {**entry, "lei": unique_active_lei(entry, session.candidates)}
+    # The parent group (#195), kept with the identity: another entity, never the candidate itself.
+    parent = None if entry["natural_person"] else _agent(request).parent_of(session, entry)
     identity = scope.new(
         SupplierIdentity,
         legal_name=candidate["legal_name"][:300],
@@ -335,6 +337,8 @@ def confirm_identity(
         natural_person=bool(entry["natural_person"]),
         # Only for a natural person, and only what the registry gave; never in a response.
         registered_address=_stored_address(entry),
+        group_name=parent.legal_name[:300] if parent else None,
+        group_website=parent.candidate.website if parent else None,
         confirmed_by=scope.principal.user_id,
         confirmed_at=now,
     )

@@ -173,6 +173,7 @@ class FactOut(BaseModel):
     source_id: uuid.UUID | None
     source_url: str | None
     source_type: Literal["supplier_claim", "third_party"] | None
+    group_level: str | None
     publisher: str | None
     author: str | None
     fetched_at: datetime | None
@@ -418,6 +419,7 @@ def fact_out(
         source_id=fact.source_id,
         source_url=fact.source_url,
         source_type=fact.source_type,  # type: ignore[arg-type]
+        group_level=fact.group_level,
         publisher=fact.publisher,
         author=fact.author,
         fetched_at=fact.fetched_at,

@@ -374,6 +374,7 @@
       "third_party": "Source tierce"
     },
     "redactedExtract": "Extrait masqué",
+    "groupLevel": "Niveau groupe : {{name}}",
     "redacted": "masqué",
     "foundIn": "Trouvé dans <cite>{{source}}</cite> le {{date}}",
     "quoteTitle": "Citation · {{field}}",

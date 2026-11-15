@@ -374,6 +374,7 @@
       "third_party": "Third-party source"
     },
     "redactedExtract": "Redacted extract",
+    "groupLevel": "Group level: {{name}}",
     "redacted": "redacted",
     "foundIn": "Found in <cite>{{source}}</cite> on {{date}}",
     "quoteTitle": "Quote · {{field}}",

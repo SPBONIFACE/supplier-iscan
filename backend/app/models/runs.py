@@ -67,6 +67,9 @@ class SupplierIdentity(OrganisationOwned, Base):
     # The registry address of a natural person (sole trader), for redaction only: personal data,
     # never exposed and never logged. Always None for a company.
     registered_address: Mapped[str | None] = mapped_column(String(500))
+    # The parent group found by the identity check (#195): another entity, public registry data.
+    group_name: Mapped[str | None] = mapped_column(String(300))
+    group_website: Mapped[str | None] = mapped_column(String(2000))
     confirmed_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     # An identity is confirmed once it has a confirmation time (#16 sets both fields).
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

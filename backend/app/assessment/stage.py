@@ -131,15 +131,25 @@ def _line(value: str | None) -> str:
     return re.sub(r"\s+", " ", value or "").strip()[:MAX_VALUE_CHARS]
 
 
+GROUP_LEVEL_NOTE = (
+    "A fact with group_level is evidence about that parent group, not about the supplier entity: "
+    "state it as the group's, and never present a group figure (revenue, employees, capacity) "
+    "as the entity's."
+)
+
+
 def facts_text(facts: list[FactView], labels: dict[str, str]) -> str:
     """The facts for the prompt: id, field, value and verbatim quote of each usable fact, then the
     fields with no public evidence (by field, without an id: nothing can cite them)."""
     lines = [
         f"- id={fact.id} | field={fact.field} ({labels.get(fact.field, fact.field)}) | "
         f'value={_line(fact.value)} | quote="{_line(fact.quote)}"'
+        + (f' | group_level="{_line(fact.group_level)}"' if fact.group_level else "")
         for fact in facts
         if fact.usable
     ]
+    if any(fact.group_level for fact in facts if fact.usable):
+        lines.insert(0, GROUP_LEVEL_NOTE)
     missing = [
         f"{fact.field} ({labels.get(fact.field, fact.field)})"
         for fact in facts
@@ -410,6 +420,7 @@ def load_run(database: Database, run_id: uuid.UUID, people: set[str]) -> RunData
                 quote=row.quote,
                 concerns_people=row.field in people,
                 source_type=row.source_type,
+                group_level=row.group_level,
             )
             for row in rows
         ]

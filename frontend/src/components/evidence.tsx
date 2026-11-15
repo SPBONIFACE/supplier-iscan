@@ -141,6 +141,12 @@ export function SourceTypeLabel({ type }: { type: Fact["source_type"] }) {
   return type ? <span className="ev">{t(`card.sourceType.${type}`)}</span> : null;
 }
 
+/** "Group level: <name>" on a fact whose source names the parent group, not the entity (#195). */
+export function GroupLevelLabel({ name }: { name: Fact["group_level"] }) {
+  const { t } = useTranslation();
+  return name ? <span className="ev">{t("card.groupLevel", { name })}</span> : null;
+}
+
 type QuoteProps = {
   fact: Fact;
   fieldLabel: string;
@@ -212,6 +218,7 @@ export function QuoteBlock({
         ) : null}
         <div className="labels">
           <SourceTypeLabel type={fact.source_type} />
+          <GroupLevelLabel name={fact.group_level} />
           {fact.quote_redacted ? <span className="ev">{t("card.redactedExtract")}</span> : null}
         </div>
         <dl className="attr">
@@ -380,6 +387,7 @@ export function FactRow({
               ) : null}
               <span className="f-src">
                 <SourceTypeLabel type={evidence.source_type} />
+                <GroupLevelLabel name={evidence.group_level} />
                 {evidence.quote_redacted ? <RedactedLabel /> : null}
               </span>
             </>
@@ -496,6 +504,7 @@ function Chip({
         chipRef={quote.chip}
       />
       <SourceTypeLabel type={row.source_type} />
+      <GroupLevelLabel name={row.group_level} />
       {row.quote_redacted ? <RedactedLabel /> : null}
     </div>
   );

@@ -91,6 +91,7 @@
     {% if f.source_line %}<div class="srcline">{{ f.source_line }}</div>{% endif %}
     <div class="labels">
       {% if f.source_type %}<span class="ev">{{ f.source_type }}</span>{% endif %}
+      {% if f.group_label %}<span class="ev">{{ f.group_label }}</span>{% endif %}
       {% if f.redacted %}<span class="ev">{{ s.redacted_extract }}</span>{% endif %}
     </div>
     {% if f.url %}<div class="url mono">{{ f.url }}</div>{% endif %}

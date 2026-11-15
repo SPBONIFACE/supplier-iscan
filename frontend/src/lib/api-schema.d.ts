@@ -1149,6 +1149,8 @@ export interface components {
             source_id: string | null;
             source_url: string | null;
             source_type: components["schemas"]["SourceType"] | null;
+            /** @description The legal name of the entity's parent group when the source names the group but not the confirmed entity: the fact is evidence about the group, shown as "Group level: <name>". Null for a fact about the entity itself and for `not_found`. */
+            group_level: string | null;
             /** @description The site name or, failing that, the domain of the source. */
             publisher: string | null;
             /** @description The author of the source when it names one (a PDF); otherwise null. */

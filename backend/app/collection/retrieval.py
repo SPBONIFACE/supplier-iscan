@@ -96,6 +96,15 @@ class IdentityRecord:
     legal_name: str
     website: str | None
     country: str | None
+    group_name: str | None = None
+    group_website: str | None = None
+
+
+# Asked when the entity belongs to a group (#195): evidence about each, the group's marked as such.
+GROUP_REQUEST = (
+    "The supplier is an entity of the group named above. Return evidence about the supplier "
+    "entity itself and about its group."
+)
 
 
 def _on(host: str, domains: tuple[str, ...]) -> bool:
@@ -120,6 +129,11 @@ def _supplier_text(
             if name != identity.country
             else f"Country: {name}"
         )
+    if identity.group_name:
+        lines.append(f'Parent group: "{identity.group_name}"')
+        if identity.group_website:
+            lines.append(f"Group website: {identity.group_website}")
+        lines.append(GROUP_REQUEST)
     own = (urlsplit(identity.website).hostname or "") if identity.website else ""
     if own and _on(own.removeprefix("www."), excluded):
         lines.append(OWN_SITE_UNREADABLE_REQUEST)

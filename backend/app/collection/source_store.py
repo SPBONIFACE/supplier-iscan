@@ -68,7 +68,9 @@ def identity_redaction(db: Session, run_id: uuid.UUID) -> IdentityRedaction:
     if identity.natural_person:
         addresses = (identity.registered_address,) if identity.registered_address else ()
         return IdentityRedaction(person_names=(identity.legal_name,), addresses=addresses)
-    return IdentityRedaction(company_names=(identity.legal_name,))
+    # The group's name is protected like the entity's: it must survive in the text (#195).
+    names = (identity.legal_name, *((identity.group_name,) if identity.group_name else ()))
+    return IdentityRedaction(company_names=names)
 
 
 def store_source(

@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   ExternalLink,
+  GroupLevelLabel,
   IAF_CERTSEARCH_URL,
   QuoteBlock,
   Redacted,
@@ -474,6 +475,7 @@ function Cell({
           ) : null}
           <StatusBadge status={evidence.status as BadgeStatus} />
           <SourceTypeLabel type={evidence.source_type} />
+          <GroupLevelLabel name={evidence.group_level} />
           {evidence.quote_redacted ? <span className="ev">{t("card.redactedExtract")}</span> : null}
           {verify ? <ExternalLink href={verify}>{t("card.verifyIaf")}</ExternalLink> : null}
         </div>

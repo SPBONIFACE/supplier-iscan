@@ -125,6 +125,9 @@ def _fact_block(
         quote=quote,
         quote_lang=quote_language(quote),
         redacted=fact.quote_redacted,
+        group_label=strings["group_level"].format(name=fact.group_level)
+        if fact.group_level
+        else "",
         source_type=strings["source_type"].get(fact.source_type or "", ""),
         source_line=(
             strings["found_in"].format(

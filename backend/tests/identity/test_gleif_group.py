@@ -233,3 +233,29 @@ def test_names_compare_without_case_accents_punctuation_and_form() -> None:
     assert comparable_name("Acme GmbH & Co. KG") == "acme"
     assert comparable_name("Acme-Industries, Ltd.") == "acme industries"
     assert comparable_name("SA") == "sa"  # a name that is only a form word is kept
+
+
+def test_the_group_is_kept_with_the_confirmed_entity(engine: Engine, settings: Settings) -> None:
+    member, session = open_with(engine, settings, FakeGroup(PARENT), SUBSIDIARY)
+
+    response = member.call(
+        "POST", f"/identity-sessions/{session['id']}/confirm", json={"candidate_id": SUBSIDIARY_ID}
+    )
+
+    assert response.status_code == 200, response.text
+    with Session(engine) as db:
+        identity = db.scalars(select(SupplierIdentity)).one()
+    assert identity.legal_name == "Acme France SAS"
+    assert identity.group_name == "Acme Holding GmbH"
+
+
+def test_no_parent_found_keeps_no_group(engine: Engine, settings: Settings) -> None:
+    member, session = open_with(engine, settings, FakeGroup(None), SUBSIDIARY)
+
+    member.call(
+        "POST", f"/identity-sessions/{session['id']}/confirm", json={"candidate_id": SUBSIDIARY_ID}
+    )
+
+    with Session(engine) as db:
+        identity = db.scalars(select(SupplierIdentity)).one()
+    assert identity.group_name is None and identity.group_website is None

@@ -58,6 +58,8 @@ class Fact(OrganisationOwned, Base):
     )
     source_url: Mapped[str | None] = mapped_column(String(2000))
     source_type: Mapped[str | None] = mapped_column(String(20))
+    # The group's name when the source names the group but not the entity (#195): "Group level".
+    group_level: Mapped[str | None] = mapped_column(String(300))
     publisher: Mapped[str | None] = mapped_column(String(300))
     author: Mapped[str | None] = mapped_column(String(300))
     fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
