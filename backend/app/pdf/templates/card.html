@@ -56,7 +56,7 @@
 </div>
 
 {% if identity_to_verify %}
-<div class="flag"><span class="micro">{{ s.flag_identity }}</span><p>{{ s.flag_identity_body.format(name=name) }}</p></div>
+<div class="flag"><span class="micro">{{ s.flag_identity }}</span><p>{{ (s.flag_identity_body_hidden if name_hidden else s.flag_identity_body.format(name=name)) }}</p></div>
 {% endif %}
 {% if partial %}
 <div class="flag"><span class="micro">{{ s.flag_partial }}</span><p>{{ s.flag_partial_body.format(sections=partial_sections) }}</p></div>

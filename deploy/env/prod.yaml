@@ -7,7 +7,10 @@ INSTANCE_MODE: "hosted"
 RUN_BUDGET_EUR: "5"
 # Ceilings per run (issue #52, from #103).
 COLLECT_MAX_REQUESTS: "200"
-COLLECT_MAX_DOMAINS: "10"
+COLLECT_MAX_DOMAINS: "25"
+# Speed (#182): extraction reads sources and retrieval sends its focused requests 4 at a time.
+EXTRACT_CONCURRENCY: "4"
+COLLECT_RETRIEVAL_CONCURRENCY: "4"
 OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4318"
 TELEMETRY_EXPORT_TIMEOUT_SECONDS: "5"
 DATABASE_STATEMENT_TIMEOUT_SECONDS: "30"

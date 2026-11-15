@@ -50,6 +50,7 @@ MAX_BACKOFF_SECONDS = 60.0
 RetrieveFn = Callable[[list[str], tuple[str, ...]], list[str]]
 # A fetch outcome that closes the whole domain for the rest of the run (#181): its other pages are
 # neither requested nor logged. "disallowed" (one path refused by robots.txt) does not close it.
+REFUSED_KINDS = ("bot_check", "blocked_by_robots", "crawl_rules_unreadable")
 CLOSING_STATUSES = ("blocked", "excluded", "not_crawled")
 
 
@@ -245,7 +246,7 @@ class Collector:
                 self._request_ceiling()
                 return self._skip(url)
             except DomainLimitReached as error:
-                if error.domain not in self._domains_refused:
+                if not self._domains_refused:  # one row for the ceiling, not one per address
                     self._domains_refused.add(error.domain)
                     self._fail(url, "attempt_cap", message=DOMAIN_CAP_MESSAGE)
                 return self._skip(url)
@@ -454,13 +455,23 @@ class Collector:
                     # The reserved slots are for addresses outside the supplier's website.
                     self._skip(url, "refused", message=RESERVED_MESSAGE)
                     continue
-                tried += 1
+                failures_before = len(self.result.failures)
+                closed_before = set(self._closed)
+                links = None
                 if url.lower().split("?", 1)[0].endswith(".pdf"):
                     self._take_pdf(url)
                 else:
                     links = self._take_page(url)
-                    if links and self._third_party(self._final_url or url):
-                        self._follow_linked_pdfs(self._final_url or url, links)
+                if not self._refused_site(failures_before, closed_before):
+                    tried += 1
+                if links and self._third_party(self._final_url or url):
+                    self._follow_linked_pdfs(self._final_url or url, links)
+
+    def _refused_site(self, failures_before: int, closed_before: set[str]) -> bool:
+        """The address just tried was refused by its domain (bot check, robots.txt, unreadable
+        crawl rules) or closed the domain for no answer: it takes no source slot (#182)."""
+        new = self.result.failures[failures_before:]
+        return bool(self._closed - closed_before) or any(f.kind in REFUSED_KINDS for f in new)
 
     def _third_party(self, url: str) -> bool:
         own = self._website_host

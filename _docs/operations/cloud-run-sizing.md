@@ -77,7 +77,7 @@ Set per environment in `deploy/env/*.yaml` (non-secret) and from GitHub environm
 |---|---|---|
 | `INSTANCE_MODE` | yaml | `hosted` |
 | `RUN_BUDGET_EUR` | yaml | per-run cost budget, API and worker refuse to start without it |
-| `COLLECT_MAX_REQUESTS`, `COLLECT_MAX_DOMAINS` | yaml | ceilings per run: 200 and 10 |
+| `COLLECT_MAX_REQUESTS`, `COLLECT_MAX_DOMAINS` | yaml | ceilings per run: 200 requests and 25 websites |
 | `CRAWLER_CONTACT_URL` | GitHub environment variable | public contact page named in the crawler's User-Agent; the worker refuses to start without it |
 | `CORS_ALLOWED_ORIGINS` | computed | exactly the frontend's address of that environment (its run.app address) |
 | `EUR_PER_USD` | GitHub environment variable | conversion rate for costs |
