@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
 
+from app.crawl.never_contact import host_matches
 from app.crawl.permissions import (
     SERVICE_NAME,
     TDM_HEADER,
@@ -36,7 +37,9 @@ from app.http_client import (
 
 logger = logging.getLogger(__name__)
 
-FetchStatus = Literal["fetched", "excluded", "not_crawled", "disallowed", "blocked", "too_large"]
+FetchStatus = Literal[
+    "fetched", "excluded", "not_crawled", "disallowed", "blocked", "too_large", "never_contacted"
+]
 
 # Markers of a challenge page (CAPTCHA or bot check) that a person must solve.
 CAPTCHA_MARKERS = (
@@ -70,6 +73,7 @@ class FetchResult:
     # With `too_large`: the size announced by the site, or the bytes read when it announced none.
     size: int | None = None
     # With `fetched`: the address answered after the redirects (equal to `url` without any).
+    # With `never_contacted`: the address that was not requested (#186).
     final_url: str | None = None
 
 
@@ -111,7 +115,9 @@ class PermittedFetcher:
         suppression: SuppressionList,
         record: Callable[[DomainPermission], None],
         now: Callable[[], datetime] = utc_now,
+        never_contact: tuple[str, ...] = (),
     ) -> None:
+        self._never_contact = never_contact
         self._client = client
         self._suppression = suppression
         self._record = record
@@ -165,6 +171,10 @@ class PermittedFetcher:
         deadline = time.monotonic() + settings.timeout_seconds
         current = url
         for _hop in range(settings.max_redirects + 1):
+            if host_matches(domain_of(current).removeprefix("www."), self._never_contact):
+                # A hop to a domain whose terms forbid automated collection (#186): nothing is
+                # requested there, robots.txt and tdmrep.json included. `final_url` names it.
+                return FetchResult("never_contacted", url, final_url=current)
             permission = self.permission(current)
             if permission.decision == "excluded":
                 return FetchResult("excluded", url)

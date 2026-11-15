@@ -139,6 +139,7 @@ def make_collection_stage(
                 client,
                 DatabaseSuppressionList(database),
                 partial(record_permission, database, context.run_id, context.organisation_id),
+                never_contact=limits.never_contact_hosts,
             )
 
             def store(source: SourceRecord) -> None:

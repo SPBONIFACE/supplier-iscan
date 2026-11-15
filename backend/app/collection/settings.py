@@ -42,6 +42,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from app.config import ConfigurationError
+from app.crawl.never_contact import host_matches
+
+__all__ = ["CollectionSettings", "host_matches", "load_collection_settings"]
 
 FOCUSES = ("registers", "certifications", "news", "customers")
 LOW_VALUE_HOSTS = (
@@ -115,12 +118,6 @@ def _host_list(env: Mapping[str, str], name: str, default: tuple[str, ...]) -> t
         return default
     names = (n.strip().lower().lstrip(".") for n in env[name].split(","))
     return tuple(dict.fromkeys(n for n in names if n))
-
-
-def host_matches(host: str, suffixes: tuple[str, ...]) -> bool:
-    """`host` equals a suffix or ends with "." and the suffix (`notlinkedin.com` does not match)."""
-    host = host.lower().rstrip(".")
-    return any(host == s or host.endswith("." + s) for s in suffixes)
 
 
 def _concurrency(env: Mapping[str, str], default: int) -> int:

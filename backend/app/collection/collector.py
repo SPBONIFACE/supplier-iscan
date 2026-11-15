@@ -285,6 +285,9 @@ class Collector:
                 if result.status == "too_large":
                     logger.warning("Skipped %s: %s bytes exceeds %s", url, result.size, max_bytes)
                     return self._skip(url, "too_large")
+                if result.status == "never_contacted":  # a redirect hop (#186)
+                    self._never_contacted(result.final_url or url)
+                    return self._skip(url)
                 if result.status != "fetched":
                     logger.info("Not fetched: %s (%s)", url, result.status)
                     if result.status in CLOSING_STATUSES:

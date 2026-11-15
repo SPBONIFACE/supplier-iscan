@@ -305,3 +305,69 @@ def test_an_empty_setting_lists_no_domain() -> None:
     assert asked[0] == ()
     assert not [f for f in result.failures if f.kind == "not_contacted"]
     assert f"https://{LINKEDIN}/company/acme" in [r.url for r in stored]
+
+
+def _no_linkedin_request(site) -> None:  # type: ignore[no-untyped-def]
+    assert not [(h, p) for h, p in _requested(site) if h.endswith("linkedin.com")]
+
+
+def test_a_redirect_to_a_never_contact_domain_is_not_followed() -> None:
+    pages = {
+        (HOST, "/"): html("<p>Acme Supplies SA</p>"),
+        (PRESS, "/moved"): httpx2.Response(
+            302, headers={"location": f"https://{LINKEDIN}/company/acme"}
+        ),
+        (PRESS, "/moved2"): httpx2.Response(
+            301, headers={"location": f"https://{LINKEDIN}/company/other"}
+        ),
+        (PRESS, "/ok"): html("<p>Acme press</p>"),
+    }
+    collector, site, stored, _sleeps, _ = make_collector(pages)
+    urls = [f"https://{PRESS}/moved", f"https://{PRESS}/moved2", f"https://{PRESS}/ok"]
+
+    result = collector.collect(SITE, NAME, lambda _l, _e: urls)
+
+    _no_linkedin_request(site)  # no robots.txt, no tdmrep.json, no page
+    rows = [f for f in result.failures if f.kind == "not_contacted"]
+    assert [f.url for f in rows] == [f"https://{LINKEDIN}/company/acme"]  # once per domain
+    assert f"https://{PRESS}/ok" in [r.url for r in stored]
+
+
+def test_a_page_link_and_a_sitemap_entry_on_a_never_contact_domain_are_not_requested() -> None:
+    home = (
+        f"<p>Acme Supplies SA</p><a href='https://{LINKEDIN}/company/acme/report.pdf'>Report</a>"
+        f"<a href='https://{LINKEDIN}/company/acme'>Follow us</a>"
+    )
+    sitemap = (
+        "<urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>"
+        f"<url><loc>https://{LINKEDIN}/company/acme/about</loc></url></urlset>"
+    )
+    pages = {
+        (HOST, "/"): html(home),
+        (HOST, "/sitemap.xml"): httpx2.Response(
+            200, text=sitemap, headers={"content-type": "application/xml"}
+        ),
+    }
+    collector, site, _stored, _sleeps, _ = make_collector(pages)
+
+    result = collector.collect(SITE, NAME, None)
+
+    _no_linkedin_request(site)
+    rows = [f for f in result.failures if f.kind == "not_contacted"]
+    assert len(rows) <= 1  # one per domain per run
+
+
+def test_never_contact_addresses_consume_no_ceiling() -> None:
+    pages = {(HOST, "/"): html("<p>Acme</p>"), (PRESS, "/1"): html("<p>Acme press</p>")}
+    limits = _never_settings(max_attempts=3, max_retrieval_urls=1, max_domains=2)
+    with_linkedin, site, stored, _s, _ = make_collector(pages, limits)
+    noise = [f"https://{LINKEDIN}/{i}" for i in range(20)]
+    result = with_linkedin.collect(SITE, NAME, lambda _l, _e: [*noise, f"https://{PRESS}/1"])
+    baseline, _site2, _stored2, _s2, _ = make_collector(pages, limits)
+    expected = baseline.collect(SITE, NAME, lambda _l, _e: [f"https://{PRESS}/1"])
+
+    _no_linkedin_request(site)
+    assert result.attempts == expected.attempts  # attempts
+    assert not [f for f in result.failures if f.kind == "attempt_cap"]  # attempt, domain caps
+    assert f"https://{PRESS}/1" in [r.url for r in stored]  # the single retrieval slot
+    assert len(site.seen) == len(_site2.seen)  # requests: the same as without the addresses
