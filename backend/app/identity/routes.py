@@ -94,6 +94,7 @@ class IdentityCandidateOut(BaseModel):
     sector: str | None
     description: str | None
     found_in: list[Literal["gleif", "wikidata", "website", "web"]]
+    given_by_buyer: list[Literal["country", "sector"]] = []
     identifiers: list[IdentifierOut]
 
 
