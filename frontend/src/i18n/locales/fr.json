@@ -317,6 +317,7 @@
       "blocked_by_robots": "Non collectée : les règles d’exploration du site ne l’autorisent pas",
       "crawl_rules_unreadable": "Non collectée : les règles d’exploration du site n’ont pas pu être lues (pas de réponse ou refus)",
       "bot_check": "Non collectée : le site a répondu par un contrôle d’accès automatisé (anti-robot)",
+      "not_contacted": "Non contactée : les conditions du site n’autorisent pas la collecte automatisée",
       "refused": "Le serveur a refusé la requête",
       "too_large": "Le document était trop volumineux",
       "not_a_page": "Ni page ni document lisible",

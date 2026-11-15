@@ -27,6 +27,10 @@
 - `COLLECT_LOW_VALUE_HOSTS` (business directories and phone listings, see `LOW_VALUE_HOSTS`):
   comma-separated host suffixes; the retrieval ranking puts their addresses last, never drops
   them. An empty value disables the list.
+- `COLLECT_NEVER_CONTACT_HOSTS` (`linkedin.com`, #186): comma-separated host suffixes of sites whose
+  terms forbid automated collection. A host matches when it equals a suffix or ends with "." and
+  the suffix. Such a domain is named to the retrieval provider as excluded from the first request
+  and is never requested (no robots.txt, no page); an empty value lists none.
 - `COLLECT_RESERVED_INDEPENDENT` (6): page slots of `COLLECT_MAX_PAGES` kept for addresses outside
   the supplier's website; the website crawl stores at most `max_pages` minus this (never below 1).
 - `COLLECT_MAX_LINKED_PDFS` (3): PDFs followed per run from retrieved pages of other sites.
@@ -47,6 +51,7 @@ LOW_VALUE_HOSTS = (
     "northdata.com", "firmenwissen.de", "wlw.de", "moneyhouse.ch", "bizapedia.com",
     "yelp.com", "yellowpages.com",
 )  # fmt: skip
+NEVER_CONTACT_HOSTS = ("linkedin.com",)
 
 
 @dataclass(frozen=True)
@@ -72,6 +77,7 @@ class CollectionSettings:
     retrieval_focuses: tuple[str, ...] = FOCUSES
     retrieval_concurrency: int = 2
     low_value_hosts: tuple[str, ...] = LOW_VALUE_HOSTS
+    never_contact_hosts: tuple[str, ...] = NEVER_CONTACT_HOSTS
 
     @property
     def crawl_pages(self) -> int:
@@ -104,11 +110,17 @@ def _focuses(env: Mapping[str, str], default: tuple[str, ...]) -> tuple[str, ...
     return tuple(dict.fromkeys(names))
 
 
-def _low_value_hosts(env: Mapping[str, str], default: tuple[str, ...]) -> tuple[str, ...]:
-    if "COLLECT_LOW_VALUE_HOSTS" not in env:
+def _host_list(env: Mapping[str, str], name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+    if name not in env:
         return default
-    names = (n.strip().lower().lstrip(".") for n in env["COLLECT_LOW_VALUE_HOSTS"].split(","))
+    names = (n.strip().lower().lstrip(".") for n in env[name].split(","))
     return tuple(dict.fromkeys(n for n in names if n))
+
+
+def host_matches(host: str, suffixes: tuple[str, ...]) -> bool:
+    """`host` equals a suffix or ends with "." and the suffix (`notlinkedin.com` does not match)."""
+    host = host.lower().rstrip(".")
+    return any(host == s or host.endswith("." + s) for s in suffixes)
 
 
 def _concurrency(env: Mapping[str, str], default: int) -> int:
@@ -148,5 +160,6 @@ def load_collection_settings(environ: Mapping[str, str] | None = None) -> Collec
         reserved_independent=whole("COLLECT_RESERVED_INDEPENDENT", d.reserved_independent),
         retrieval_focuses=_focuses(env, d.retrieval_focuses),
         retrieval_concurrency=_concurrency(env, d.retrieval_concurrency),
-        low_value_hosts=_low_value_hosts(env, d.low_value_hosts),
+        low_value_hosts=_host_list(env, "COLLECT_LOW_VALUE_HOSTS", d.low_value_hosts),
+        never_contact_hosts=_host_list(env, "COLLECT_NEVER_CONTACT_HOSTS", d.never_contact_hosts),
     )

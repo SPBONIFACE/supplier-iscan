@@ -2347,6 +2347,7 @@ components:
             - provider_unavailable
             - invalid_response
             - attempt_cap
+            - not_contacted
         next_strategy:
           description: The strategy chosen next; null when none is left.
           oneOf:

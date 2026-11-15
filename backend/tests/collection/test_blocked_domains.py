@@ -21,6 +21,7 @@ from tests.http_client.support import PUBLIC_V4
 
 NAME = "Acme Supplies SA"
 SITE = f"https://{HOST}/"
+NEVER = "linkedin.com"  # the shipped never-contact default (#186)
 PRESS = "press.example"
 DIRECTORY = "directory.example"
 ROBOTS = f"User-agent: *\nDisallow: /wp-admin/\nSitemap: https://{HOST}/sitemap_index.xml\n"
@@ -61,7 +62,7 @@ def test_a_website_that_answers_with_a_bot_check_is_logged_once_and_left_out() -
     assert [(f.url, f.strategy, f.kind) for f in on_host] == [(SITE, "website", "bot_check")]
     on_site = [path for host, path in _requested(site) if host == HOST]
     assert on_site == ["robots.txt", ".well-known/tdmrep.json", ""]  # no sitemap, no other page
-    assert asked == [(HOST,)]  # the provider is told to leave the domain out
+    assert asked == [tuple(sorted((HOST, NEVER)))]  # the provider is told to leave the domain out
     # The own-domain addresses took no slot; the website's unused pages went to third parties:
     # 4 retrieval slots + crawl_pages (6) = 8 third-party pages.
     assert [r.url for r in stored] == third
@@ -114,7 +115,7 @@ def test_a_domain_closed_during_retrieval_leads_to_one_more_request_without_it()
 
     collector.collect(SITE, NAME, retrieve)
 
-    assert asked == [(), (DIRECTORY,)]
+    assert asked == [(NEVER,), tuple(sorted((DIRECTORY, NEVER)))]
     assert f"https://{PRESS}/1" in [r.url for r in stored]
 
 
@@ -129,7 +130,7 @@ def test_no_second_request_when_no_domain_closed() -> None:
 
     collector.collect(SITE, NAME, retrieve)
 
-    assert asked == [()]
+    assert asked == [(NEVER,)]
 
 
 def test_a_page_refused_by_one_robots_rule_does_not_close_the_domain() -> None:
@@ -209,3 +210,98 @@ def test_a_second_slow_page_closes_the_website() -> None:
     timed_out = [f.url for f in result.failures if f.kind == "timeout"]
     assert len(timed_out) == 2
     assert (HOST, "quality") not in _requested(site)
+
+
+# --- #186: domains whose terms forbid automated collection are never contacted ---------------
+
+LINKEDIN = "www.linkedin.com"
+
+
+def _never_settings(**kw: object) -> CollectionSettings:
+    return CollectionSettings(min_delay_seconds=0, backoff_seconds=0, **kw)  # type: ignore[arg-type]
+
+
+def test_the_provider_is_told_to_exclude_linkedin_from_the_first_request() -> None:
+    collector, _site, _stored, _sleeps, _ = make_collector({(HOST, "/"): html("<p>Acme</p>")})
+    asked: list[tuple[str, ...]] = []
+
+    def retrieve(_lacking: list[str], excluded: tuple[str, ...]) -> list[str]:
+        asked.append(excluded)
+        return []
+
+    collector.collect(SITE, NAME, retrieve)
+
+    assert asked and "linkedin.com" in asked[0]
+
+
+@pytest.mark.parametrize("host", ["www.linkedin.com", "fr.linkedin.com", "linkedin.com"])
+def test_a_returned_linkedin_address_is_not_requested_and_logged_once(host: str) -> None:
+    pages = {(HOST, "/"): html("<p>Acme Supplies SA</p>"), (PRESS, "/1"): html("<p>Acme press</p>")}
+    collector, site, stored, _sleeps, _ = make_collector(pages)
+    urls = [f"https://{host}/company/acme", f"https://{host}/in/someone", f"https://{PRESS}/1"]
+
+    result = collector.collect(SITE, NAME, lambda _l, _e: urls)
+
+    assert not [h for h, _p in _requested(site) if h.endswith("linkedin.com")]
+    rows = [f for f in result.failures if f.kind == "not_contacted"]
+    assert [f.url for f in rows] == [f"https://{host}/company/acme"]
+    assert "terms do not allow automated collection" in rows[0].message
+    assert [r.url for r in stored if "linkedin" in r.url] == []
+    assert f"https://{PRESS}/1" in [r.url for r in stored]
+
+
+def test_a_linkedin_address_takes_no_retrieval_slot() -> None:
+    pages = {(HOST, "/"): html("<p>Acme</p>"), (PRESS, "/1"): html("<p>Acme press</p>")}
+    collector, _site, stored, _sleeps, _ = make_collector(
+        pages, _never_settings(max_retrieval_urls=1)
+    )
+    urls = [f"https://{LINKEDIN}/company/acme", f"https://{PRESS}/1"]
+
+    collector.collect(SITE, NAME, lambda _l, _e: urls)
+
+    assert f"https://{PRESS}/1" in [r.url for r in stored]
+
+
+def test_a_buyer_website_on_a_never_contact_domain_is_not_requested() -> None:
+    collector, site, stored, _sleeps, _ = make_collector({})
+
+    result = collector.collect(f"https://{LINKEDIN}/company/acme", NAME, None)
+
+    assert site.seen == []
+    assert [f.kind for f in result.failures] == ["not_contacted"]
+    assert stored == []
+
+
+def test_a_notlinkedin_domain_is_not_matched() -> None:
+    other = "notlinkedin.com"
+    RESOLVER.answers[other] = [PUBLIC_V4]
+    pages = {(HOST, "/"): html("<p>Acme</p>"), (other, "/1"): html("<p>Acme page</p>")}
+    collector, _site, stored, _sleeps, _ = make_collector(pages)
+
+    result = collector.collect(SITE, NAME, lambda _l, _e: [f"https://{other}/1"])
+
+    assert not [f for f in result.failures if f.kind == "not_contacted"]
+    assert f"https://{other}/1" in [r.url for r in stored]
+
+
+def test_an_empty_setting_lists_no_domain() -> None:
+    from app.collection.settings import load_collection_settings
+
+    assert load_collection_settings({"COLLECT_NEVER_CONTACT_HOSTS": ""}).never_contact_hosts == ()
+    assert load_collection_settings({}).never_contact_hosts == ("linkedin.com",)
+    RESOLVER.answers[LINKEDIN] = [PUBLIC_V4]
+    pages = {(HOST, "/"): html("<p>Acme</p>"), (LINKEDIN, "/company/acme"): html("<p>Acme</p>")}
+    collector, _site, stored, _sleeps, _ = make_collector(
+        pages, _never_settings(never_contact_hosts=())
+    )
+    asked: list[tuple[str, ...]] = []
+
+    def retrieve(_lacking: list[str], excluded: tuple[str, ...]) -> list[str]:
+        asked.append(excluded)
+        return [f"https://{LINKEDIN}/company/acme"]
+
+    result = collector.collect(SITE, NAME, retrieve)
+
+    assert asked[0] == ()
+    assert not [f for f in result.failures if f.kind == "not_contacted"]
+    assert f"https://{LINKEDIN}/company/acme" in [r.url for r in stored]
