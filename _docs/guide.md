@@ -217,6 +217,24 @@ the worker and telemetry is in [`_docs/operations/cloud-run-sizing.md`](../_docs
 - **One address**: the browser talks to the frontend service only; its nginx forwards `/api/` to the API service
   (`frontend/deploy/`), so the session cookie stays on one site and no domain name is needed
   (`cloud-run-sizing.md`, "One address"). `deploy/check_proxy.py` tests this on the built image in CI.
-- **Worker off by default**: the deployment creates the worker with zero instances in dev and production and never
-  switches it on; the owner switches it on for a run or a demo and off afterwards (guide, step 17). With no worker
-  a started run waits in the queue.
+- **Worker on demand (#200)**: the worker is a Cloud Run job `iscan-worker-<env>` (same image, service account,
+  settings, secrets and telemetry sidecar as the former worker pool; `python -m app.worker --until-empty`, 1 task, no
+  retry, task timeout 3600 s). The API starts one execution after each commit that queues work (start or resume a
+  run, ask for fit or recommendations), through the Cloud Run Admin API with its service account's token; the
+  execution processes the queue and exits once it has stayed empty for one poll interval. A failed start is logged
+  as a warning and never fails the request; the work stays queued. The deploy never executes the job.
+  - **IAM**: `deploy/deploy.sh` grants the runtime service account `roles/run.invoker` on that job only (no
+    project-level role) and sets `WORKER_JOB_NAME=projects/<project>/locations/<region>/jobs/iscan-worker-<env>` on
+    the API. The deployer service account needs `roles/run.admin` (it has it) to set that grant.
+  - **What a run costs in compute**: the worker (4 vCPU, 4 GiB) and its sidecar (1 vCPU, 512 MiB) only while an
+    execution runs: the start (image pull and model load, about a minute or more), the run, and one poll interval.
+    Nothing while no run is waiting. Each execution is capped at one hour; `RUN_BUDGET_EUR` still caps each run's AI
+    cost.
+  - **The old worker pool**: no longer deployed. The deploy keeps it at zero instances if it still exists;
+    deleting it is the owner's step, once, per environment:
+    `gcloud beta run worker-pools delete iscan-worker-dev --region="$REGION"` (then `prod`).
+  - **A run that waits**: a job left by a crashed execution is taken again once its lease has expired, by the next
+    execution (the next request that queues work). To move it on at once:
+    `gcloud run jobs execute iscan-worker-dev --region="$REGION"`.
+  - *To confirm at the first deploy*: that the telemetry sidecar stops when the worker exits, so an execution ends
+    with the queue (check the duration of the first executions in the console; see `cloud-run-sizing.md`).

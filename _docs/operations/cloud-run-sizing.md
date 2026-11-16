@@ -25,9 +25,9 @@ cannot be known before then.
 
 | | API | Worker | Frontend | Telemetry sidecar |
 |---|---|---|---|---|
-| Kind | Cloud Run service | Cloud Run worker pool | Cloud Run service | container in the API and the worker |
+| Kind | Cloud Run service | Cloud Run job, started on demand (#200) | Cloud Run service | container in the API and the worker |
 | CPU / memory | 2 / 4 GiB | 4 / 4 GiB | 1 / 256 MiB | 1 / 512 MiB |
-| Instances | 0 to 2 (dev), 0 to 3 (prod) | 0 (dev, switched off), 1 (prod) | 0 to 2 / 3 | with its host |
+| Instances | 0 to 2 (dev), 0 to 3 (prod) | 0 while no work is queued; one execution per queuing request (1 task, task timeout 3600 s) | 0 to 2 / 3 | with its host |
 | Concurrency | 8 | not applicable | default (80) | |
 | Request timeout | 300 s | not applicable | default | |
 
@@ -49,25 +49,41 @@ cannot be known before then.
   locked (the owner's question on #19). That is a code change in `app/worker.py` (call the redactor's `load()`
   before the polling loop), not made in this task: open a follow-up issue.
 
-## Worker: worker pool, not service, not job
+## Worker: a Cloud Run job started on demand (#200)
 
-The worker is a polling loop with no HTTP port that must run continuously and works for minutes per run.
+The worker is a polling loop with no HTTP port that works for minutes per run. Until 16 Nov 2026 it was a Cloud
+Run **worker pool** switched on and off by hand; forgetting it cost about EUR 3 to 5 a day (EUR 17.80 of worker
+CPU between 11 and 15 Nov 2026), and nobody could try the app unless the owner switched it on first. Owner
+decision (16 Nov 2026): no always-on worker.
 
-- A Cloud Run **service** needs an HTTP port and a request to keep its CPU; a loop with no request is throttled
-  to near zero CPU, and Cloud Run stops an instance with no traffic. It would need a code change (a health
-  listener) and always-on CPU billing anyway.
-- A Cloud Run **job** runs to completion and then ends. It fits if the API triggered one job execution per run
-  (scale to zero, exact cost), but that needs the API to call the Cloud Run Jobs API and a different queue
-  design: a change of architecture, not a deployment task.
-- A Cloud Run **worker pool** is made for this: a continuous container without an HTTP endpoint, a fixed number
-  of instances, no request needed. Its cost is the price of the instance while it runs.
-  The worker is **off by default in dev and in production**: `deploy/deploy.sh` creates the pool with zero
-  instances and never changes the count of an existing pool; the owner switches it on for a run or a demo and off
-  afterwards (guide, step 17). With no worker, a started run waits in the queue (the screen says it is waiting to start). Worker pools are a recent Cloud Run feature (the `gcloud beta run worker-pools` command): *to
-  confirm* at the first deploy that the command and the region support it. Fallback if not: a service with
-  `--no-cpu-throttling --min-instances 1` and a minimal health listener (follow-up code change).
-- The worker polls the database (`WORKER_POLL_SECONDS`, 5 s here), so a production Neon compute never goes idle
-  while the worker runs. Plan for that in Neon's compute hours (see the owner guide), or accept the cost.
+- The worker is a Cloud Run **job** `iscan-worker-<env>`: same image, service account, environment, secrets and
+  telemetry sidecar as the pool had, command `python -m app.worker --until-empty`, `--tasks 1 --max-retries 0
+  --task-timeout 3600`.
+- **Drain mode**: an execution claims and processes queued jobs one at a time and exits (code 0) once the queue
+  has stayed empty for one poll interval (`WORKER_POLL_SECONDS`, 5 s here). A database error counts as an empty
+  poll, so an unreachable database does not keep an execution billed.
+- **Started on demand**: the API has `WORKER_JOB_NAME` (the job's full resource name, set by `deploy/deploy.sh`)
+  and, after each commit that queues work (start a run, resume a run, ask for fit or recommendations), starts one
+  execution through the Cloud Run Admin API v2 `:run` method, with the runtime service account's token from the
+  metadata server. The call runs after the response is sent and has a 5 s timeout; a failure is logged as a
+  warning (no token) and the job stays queued. The runtime service account has `roles/run.invoker` on that job
+  only.
+- Several executions at once are safe: a queued job is never claimed twice, and an execution with nothing to
+  claim exits after one interval.
+- **What it costs in compute**: the worker (4 vCPU, 4 GiB) plus the sidecar (1 vCPU, 512 MiB) are billed only
+  while an execution runs: the job's start (image pull of 1.77 GB, then the model load), the run itself, and one
+  poll interval at the end. Nothing is billed while no run is waiting. The task timeout (3600 s) caps any single
+  execution; `RUN_BUDGET_EUR` still caps the AI cost of each run.
+- **Wait after idle**: the first run after a pause waits for the job to start (about a minute or more: image pull
+  and model load) before it moves from "waiting to start".
+- **Limits**: a job left by a crashed execution is taken again when its lease (`RUN_LEASE_SECONDS`) has expired
+  **and** an execution is running: in practice, at the next request that queues work. A run that waits with no
+  other activity can be moved on by starting the job by hand (guide). *To confirm at the first deploy*: that the
+  telemetry sidecar stops when the worker container exits (if it kept the task alive, each execution would run
+  to the task timeout: check the duration of the first executions in the console).
+- Local Docker Compose is unchanged: an always-on worker without the flag, and no `WORKER_JOB_NAME`.
+- The worker polls the database only while an execution runs, so a production Neon compute can go idle between
+  runs.
 
 ## Settings by name
 
@@ -83,6 +99,7 @@ Set per environment in `deploy/env/*.yaml` (non-secret) and from GitHub environm
 | `EUR_PER_USD` | GitHub environment variable | conversion rate for costs |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`, `TELEMETRY_EXPORT_TIMEOUT_SECONDS`, `DATABASE_STATEMENT_TIMEOUT_SECONDS` | yaml | telemetry and database timeouts |
 | `RUN_LEASE_SECONDS`, `WORKER_POLL_SECONDS` | yaml | job queue |
+| `WORKER_JOB_NAME` | computed (API only) | `projects/<project>/locations/<region>/jobs/iscan-worker-<env>`: the job the API starts when it queues work (#200). Unset: nothing is started |
 | `PROVIDER_CONFIG_FILE`, `PRICE_TABLE_FILE`, `PROFILE_DEFINITION_FILE`, `PROMPT_SET_FILE`, `COUNTRY_TABLE_FILE`, `PDF_DISCLAIMER_FILE` | computed | paths of files mounted from Secret Manager at run time, when the secret exists (`/secrets/<name>/content.json`) |
 | `API_UPSTREAM_URL` | computed (frontend) | address of the API service; the frontend's nginx forwards `/api/` to it (below) |
 

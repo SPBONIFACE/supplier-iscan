@@ -3,7 +3,7 @@
 #
 #   deploy/deploy.sh ENV images     print the image references now running in ENV (dev), for promotion
 #   deploy/deploy.sh ENV migrate    apply the database migrations (a Cloud Run job, run and awaited)
-#   deploy/deploy.sh ENV deploy     deploy API, worker and frontend, check /health, then send traffic
+#   deploy/deploy.sh ENV deploy     deploy API and frontend (check /health, then send traffic), then the worker job
 #   deploy/deploy.sh ENV health     check the API and the frontend of ENV
 #   deploy/deploy.sh dev relay      deploy the alert relay (#53, dev only; IMAGE_RELAY by digest)
 #
@@ -48,6 +48,9 @@ runtime_sa="iscan-runtime@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 web_sa="iscan-web@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 api_service="iscan-api-$env_name"
 web_service="iscan-web-$env_name"
+# The hosted worker is a Cloud Run job (#200), started by the API when it queues work. The worker pool of
+# the same name (before #200) is no longer deployed; deleting it is the owner's step (guide).
+worker_job="iscan-worker-$env_name"
 worker_pool="iscan-worker-$env_name"
 migrate_job="iscan-migrate-$env_name"
 gc=(gcloud --project "$GCP_PROJECT_ID" --quiet)
@@ -180,7 +183,8 @@ deploy)
   # Cloud Run worker pools cannot mount a secret as a file yet ("Secrets volume mount is not supported
   # for Worker Pools yet"), so the worker gets each content secret as an environment variable,
   # <NAME>_CONTENT, which the application writes to a private file at startup (app/config.py,
-  # _content_file). The API and the migration job mount the same secrets as files.
+  # _content_file). The API and the migration job mount the same secrets as files. The worker job (#200)
+  # keeps this form, unchanged from the worker pool.
   worker_extra="$extra"
   cp "$work/app.yaml" "$work/worker.yaml"
   for pair in PROVIDER_CONFIG_FILE:provider-config PRICE_TABLE_FILE:price-table PROFILE_DEFINITION_FILE:profile-definition \
@@ -192,6 +196,8 @@ deploy)
       worker_extra="$worker_extra,${pair%%_FILE:*}_CONTENT=iscan-$env_name-${pair#*:}:latest"
     fi
   done
+  # The API starts one execution of the worker job after each commit that queues work (#200).
+  echo "WORKER_JOB_NAME: \"projects/$GCP_PROJECT_ID/locations/$GCP_REGION/jobs/$worker_job\"" >> "$work/app.yaml"
 
   # --- API (with the telemetry sidecar). The new revision gets no traffic until /health passes. ---
   # --no-traffic is not supported when creating a new service; skip it and the candidate tag on first deploy.
@@ -229,20 +235,26 @@ for t in json.load(sys.stdin).get("status", {}).get("traffic", []):
     --cpu "$WEB_CPU" --memory "$WEB_MEMORY" --min-instances 0 --max-instances "$WEB_MAX_INSTANCES" \
     --set-env-vars "API_UPSTREAM_URL=$api_url" --labels "$labels"
 
-  # --- Worker: a Cloud Run worker pool (no HTTP port, runs continuously). See cloud-run-sizing.md. ---
-  # The deploy never switches the worker on. A new pool is created with ZERO instances; an existing pool
-  # keeps the number it has (--instances is not passed), so a deploy neither starts nor stops it.
-  # The owner switches it on and off with the two commands of the owner guide (step 17).
-  worker_instances=()
-  if ! "${gc[@]}" beta run worker-pools describe "$worker_pool" --region "$GCP_REGION" > /dev/null 2>&1; then
-    worker_instances=(--instances 0)
-  fi
-  "${gc[@]}" beta run worker-pools deploy "$worker_pool" --region "$GCP_REGION" \
-    --service-account "$runtime_sa" "${worker_instances[@]}" --labels "$labels" \
-    --container worker --image "$IMAGE_API" --command /opt/venv/bin/python --args="-m,app.worker" \
+  # --- Worker: a Cloud Run job (#200), after the API passed its health check. ---
+  # Same image, service account, environment, secrets and telemetry sidecar as the worker pool had. Drain
+  # mode: an execution processes the queue and exits once it stayed empty for one poll interval. One task,
+  # no retry (a crashed execution's job is taken again by the next execution, after its lease), and the
+  # task timeout caps any single execution. The deploy never executes the job: on the very first deploy, a
+  # run queued before the job exists waits for the next start (the API logs a warning).
+  # Content secrets are passed as <NAME>_CONTENT environment variables, as for the worker pool.
+  "${gc[@]}" run jobs deploy "$worker_job" --region "$GCP_REGION" \
+    --service-account "$runtime_sa" --tasks 1 --max-retries 0 --task-timeout 3600 --labels "$labels" \
+    --container worker --image "$IMAGE_API" --command /opt/venv/bin/python --args="-m,app.worker,--until-empty" \
     --cpu "$WORKER_CPU" --memory "$WORKER_MEMORY" \
     --env-vars-file "$work/worker.yaml" --set-secrets "$base_secrets$worker_extra" \
     --container collector --image "$IMAGE_COLLECTOR" --cpu "$COLLECTOR_CPU" --memory "$COLLECTOR_MEMORY"
+  # The runtime service account may start this job, and only this one (no project-level role).
+  "${gc[@]}" run jobs add-iam-policy-binding "$worker_job" --region "$GCP_REGION" \
+    --member "serviceAccount:$runtime_sa" --role roles/run.invoker > /dev/null
+  # The worker pool of before #200, if it still exists, is kept at zero instances (the owner deletes it).
+  if "${gc[@]}" beta run worker-pools describe "$worker_pool" --region "$GCP_REGION" > /dev/null 2>&1; then
+    "${gc[@]}" beta run worker-pools update "$worker_pool" --region "$GCP_REGION" --instances 0
+  fi
   ;;
 
 health)

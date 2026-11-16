@@ -9,8 +9,8 @@ press a button and approve. The database lives at Neon (EU). The application run
 password or key is ever stored in GitHub or in a file: they stay in Google Secret Manager.
 
 **Time and money.** About 2 hours the first time. Cost stays small while nobody uses it: Cloud Run scales to zero,
-Neon scales to zero. A budget alert (step 2) warns you by email if the bill grows. The one thing that costs
-continuously is the worker, and it is **off** until you switch it on (step 17).
+Neon scales to zero. A budget alert (step 2) warns you by email if the bill grows. The worker runs only
+while a profile run is waiting: the application starts it and it stops by itself (step 17).
 
 **Words you will meet.** *Project*: your box in Google Cloud. *Cloud Shell*: a terminal that runs in your web
 browser, with Google's tools already installed (nothing to install on your computer). *Secret Manager*: Google's
@@ -312,27 +312,16 @@ of rolling back. To stop everything at once: `gcloud run services update iscan-a
 
 ### 17. Costs, the worker, and alerts
 
-- The **worker** (it carries out the profile runs and the drafting of assessments) is **off by default, in dev and
-  in production**: the deployment creates it with zero instances and never switches it on. While it is off, nothing
-  costs and nothing is computed: a run you start shows "En attente de démarrage" (waiting to start) and stays in
-  the queue until the worker is on. Switch it on before a test run or a demo, and off afterwards. In Cloud Shell
-  (replace `dev` by `prod` for production; `REGION` is `europe-west3`, type `REGION=europe-west3` first if Cloud
-  Shell was closed since step 1):
-
-  ```sh
-  # ON: one worker
-  gcloud beta run worker-pools update iscan-worker-dev --region="$REGION" --instances=1
-  # OFF: no worker, no cost
-  gcloud beta run worker-pools update iscan-worker-dev --region="$REGION" --instances=0
-  ```
-
-  A waiting run starts by itself a few seconds after the worker is on. Switching it off while a run is in progress
-  interrupts that run; it is picked up again, or can be resumed, when the worker comes back. **Do not forget to
-  switch it off**: an instance left on is the one thing here that costs by the hour. To see the state:
-  `gcloud beta run worker-pools describe iscan-worker-dev --region="$REGION"`. The first deployment creates the
-  worker, so these commands work only after step 13.
-- The worker polls the database, so the production Neon database does not fall asleep while the worker runs. Check
-  Neon's monthly compute allowance on your plan.
+- The **worker** (it carries out the profile runs and the drafting of assessments) is a Cloud Run **job**,
+  `iscan-worker-dev` (and `-prod`), started by the application each time it queues work and stopped by itself once
+  the queue is empty (#200). There is nothing to switch on or off: while no run is waiting, nothing is computed
+  and nothing costs. The first run after a pause waits about a minute or more while the job starts. In the
+  console, **Cloud Run**, **Jobs**, `iscan-worker-dev`, **Executions** shows each execution and how long it ran.
+  To start one by hand (for example for a run that stays waiting):
+  `gcloud run jobs execute iscan-worker-dev --region="$REGION"`.
+- **Once, after the first deployment with the job**: delete the old worker pool, which is no longer used (the
+  deployment keeps it at zero instances until then):
+  `gcloud beta run worker-pools delete iscan-worker-dev --region="$REGION"` (and the same for `prod`).
 - The budget alert (step 2) is your safety net. If a warning arrives: open Billing, **Reports**, group by
   service, find the cause, and if needed use the stop command of step 16.
 - **Email alerts for the application** (failed runs) and the on-call agent: step 18.

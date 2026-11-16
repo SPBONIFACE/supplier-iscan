@@ -3,14 +3,21 @@
 It claims jobs from the PostgreSQL queue (`app.queue`) one at a time and executes them. Run as
 many worker processes as needed: a job is never claimed twice, and a job whose worker died is
 claimed again after the lease timeout (`RUN_LEASE_SECONDS`).
+
+`python -m app.worker --until-empty` (drain mode, #200) processes queued jobs and exits with code 0
+once the queue has stayed empty for one poll interval (`WORKER_POLL_SECONDS`): the hosted worker is
+a Cloud Run job that the API starts when it queues work. Without the flag the worker runs until it
+is stopped (local Docker Compose).
 """
 
+import argparse
 import logging
 import os
 import signal
+import sys
 import threading
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
@@ -160,7 +167,42 @@ def _draft_part(
     return True
 
 
-def main() -> None:
+def drain(
+    work: Callable[[], bool], stopping: threading.Event, poll_seconds: float, until_empty: bool
+) -> None:
+    """The worker loop. `work` claims and executes one job (False when there was none); the loop
+    ends when `stopping` is set (SIGTERM, SIGINT).
+
+    In drain mode, an empty poll is followed by one poll interval and one more poll: if that one is
+    empty too, the queue stayed empty for one poll interval and the loop ends. A database error
+    counts as an empty poll, so that an unreachable database does not keep a billed execution
+    alive: the work stays queued for the next execution.
+    """
+    empty_polls = 0
+    while not stopping.is_set():
+        try:
+            if work():
+                empty_polls = 0
+                continue
+            empty_polls += 1
+        except SQLAlchemyError:
+            # Database down or not migrated yet: wait, as for an empty queue.
+            logger.warning("Worker: the database is unavailable")
+            empty_polls += 1
+        if until_empty and empty_polls >= 2:
+            logger.info("Worker: the queue stayed empty for one poll interval, exiting")
+            return
+        stopping.wait(poll_seconds)
+
+
+def main(argv: Sequence[str] = ()) -> None:
+    parser = argparse.ArgumentParser(prog="python -m app.worker")
+    parser.add_argument(
+        "--until-empty",
+        action="store_true",
+        help="exit once the queue has stayed empty for one poll interval",
+    )
+    arguments = parser.parse_args(argv)
     settings = load_settings()
     telemetry = configure("worker", settings)
     if not settings.database_url:
@@ -178,18 +220,16 @@ def main() -> None:
     for signum in (signal.SIGTERM, signal.SIGINT):
         signal.signal(signum, lambda *_: stopping.set())
     logger.info("Worker %s started", worker_id)
-    while not stopping.is_set():
-        try:
-            if work_once(database, settings, worker_id, providers=providers):
-                continue
-        except SQLAlchemyError:
-            # Database down or not migrated yet: wait, as for an empty queue.
-            logger.warning("Worker %s: the database is unavailable", worker_id)
-        stopping.wait(settings.worker_poll_seconds)
+    drain(
+        lambda: work_once(database, settings, worker_id, providers=providers),
+        stopping,
+        settings.worker_poll_seconds,
+        arguments.until_empty,
+    )
     database.dispose()
     telemetry.shutdown()  # sends what is left; bounded by the export timeout
     logger.info("Worker %s stopped", worker_id)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

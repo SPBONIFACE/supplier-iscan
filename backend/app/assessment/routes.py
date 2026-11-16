@@ -5,7 +5,7 @@ check and queue; the worker drafts (`app.assessment.drafting`). Nothing here cal
 import uuid
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 
@@ -20,6 +20,7 @@ from app.limits.budget import used_up
 from app.models import Job, ProfileRun, SupplierIdentity
 from app.organisations.scope import OrganisationScope, OrganisationScoped
 from app.runs.refusal import refuse, spend_cap_reached
+from app.runs.wake import start_worker_after_response
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -48,7 +49,12 @@ def pending_parts(db: DbSession, run_id: uuid.UUID) -> list[str]:
 
 
 def _queue(
-    db: DbSession, scope: OrganisationScope, run: ProfileRun, part: str, settings: Settings
+    db: DbSession,
+    scope: OrganisationScope,
+    run: ProfileRun,
+    part: str,
+    settings: Settings,
+    background: BackgroundTasks,
 ) -> DraftingAccepted:
     identity = db.scalar(
         scope.select(SupplierIdentity).where(SupplierIdentity.id == run.identity_id)
@@ -66,22 +72,31 @@ def _queue(
     if part not in pending_parts(db, run.id):  # a second request while one is waiting adds none
         queue.enqueue(db, ASSESSMENT_JOB, {"run_id": str(run.id), "part": part})
         db.commit()
+        start_worker_after_response(background, settings)
     return DraftingAccepted(part=part, status="queued")  # type: ignore[arg-type]
 
 
 @router.post("/{id}/fit", status_code=status.HTTP_202_ACCEPTED, response_model=DraftingAccepted)
 def draft_fit(
-    id: str, scope: OrganisationScoped, db: DbSession, request: Request
+    id: str,
+    scope: OrganisationScoped,
+    db: DbSession,
+    request: Request,
+    background: BackgroundTasks,
 ) -> DraftingAccepted:
     run = scope.get(db, ProfileRun, id, for_update=True)  # the one 404 for another organisation
-    return _queue(db, scope, run, FIT_PROMPT, request.app.state.settings)
+    return _queue(db, scope, run, FIT_PROMPT, request.app.state.settings, background)
 
 
 @router.post(
     "/{id}/recommendations", status_code=status.HTTP_202_ACCEPTED, response_model=DraftingAccepted
 )
 def draft_recommendations(
-    id: str, scope: OrganisationScoped, db: DbSession, request: Request
+    id: str,
+    scope: OrganisationScoped,
+    db: DbSession,
+    request: Request,
+    background: BackgroundTasks,
 ) -> DraftingAccepted:
     run = scope.get(db, ProfileRun, id, for_update=True)
-    return _queue(db, scope, run, RECOMMENDATIONS_PROMPT, request.app.state.settings)
+    return _queue(db, scope, run, RECOMMENDATIONS_PROMPT, request.app.state.settings, background)
