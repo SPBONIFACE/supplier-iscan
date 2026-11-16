@@ -1,9 +1,11 @@
 """The HTTP client module: the only place that opens outgoing HTTP connections to supplier sites.
 
 Every other module fetches through `GuardedClient` (enforced by tests/test_outbound_http_policy.py).
+`start_worker_job` calls two fixed Google Cloud hosts only, never a supplier site (#200).
 """
 
 from app.http_client.client import NETWORK_ERRORS, FetchSettings, GuardedClient, load_fetch_settings
+from app.http_client.cloud_run import start_worker_job
 from app.http_client.errors import (
     BlockedAddressError,
     DnsResolutionError,
@@ -30,4 +32,5 @@ __all__ = [
     "is_public_address",
     "load_fetch_settings",
     "normalise_url",
+    "start_worker_job",
 ]

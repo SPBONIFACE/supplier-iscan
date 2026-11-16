@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, select
 
@@ -39,6 +39,7 @@ from app.profile_definition import ProfileDefinition
 from app.providers.usage import run_usage_totals
 from app.runs.executor import RUN_JOB
 from app.runs.refusal import check_resume, reserve_run_slot
+from app.runs.wake import start_worker_after_response
 from app.telemetry import current as telemetry
 
 router = APIRouter(prefix="/runs", tags=["runs"])
@@ -483,7 +484,13 @@ def _one(db: DbSession, scope: OrganisationScope, run: ProfileRun, hide: bool) -
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
-def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request: Request) -> RunOut:
+def start_run(
+    body: RunStart,
+    scope: OrganisationScoped,
+    db: DbSession,
+    request: Request,
+    background: BackgroundTasks,
+) -> RunOut:
     identity = scope.get(db, SupplierIdentity, body.identity_id)
     if identity.confirmed_at is None:
         # Same answer as an unknown identity: only a confirmed identity starts a run.
@@ -507,6 +514,7 @@ def start_run(body: RunStart, scope: OrganisationScoped, db: DbSession, request:
         )
     )
     db.commit()
+    start_worker_after_response(background, request.app.state.settings)
     telemetry().run_started()
     db.refresh(run)
     return _run_out(db, scope, run, identity, hide_names(request, scope), [], 0)
@@ -673,7 +681,13 @@ def stop_run(id: str, scope: OrganisationScoped, db: DbSession, request: Request
 
 
 @router.post("/{id}/resume", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
-def resume_run(id: str, scope: OrganisationScoped, db: DbSession, request: Request) -> RunOut:
+def resume_run(
+    id: str,
+    scope: OrganisationScoped,
+    db: DbSession,
+    request: Request,
+    background: BackgroundTasks,
+) -> RunOut:
     run = scope.get(db, ProfileRun, id, for_update=True)
     if run.status != "paused":
         raise HTTPException(status.HTTP_409_CONFLICT, detail=NOT_PAUSED)
@@ -684,4 +698,5 @@ def resume_run(id: str, scope: OrganisationScoped, db: DbSession, request: Reque
     run.counts_against_quota = True
     queue.enqueue(db, RUN_JOB, {"run_id": str(run.id)})
     db.commit()
+    start_worker_after_response(background, request.app.state.settings)
     return _one(db, scope, run, hide_names(request, scope))

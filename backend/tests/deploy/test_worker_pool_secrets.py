@@ -1,5 +1,5 @@
-"""Cloud Run worker pools refuse secret volume mounts ("Secrets volume mount is not supported for
-Worker Pools yet"), so the deploy must never pass a content-file mount to the worker pool."""
+"""The worker gets its content secrets as environment variables, never as file mounts: Cloud Run
+worker pools refused secret volume mounts, and the worker job (#200) keeps the same form."""
 
 import re
 import subprocess
@@ -10,12 +10,12 @@ DEPLOY = Path(__file__).resolve().parents[3] / "deploy" / "deploy.sh"
 
 def _worker_deploy_command() -> str:
     text = DEPLOY.read_text(encoding="utf-8")
-    match = re.search(r"beta run worker-pools deploy .*?(?:\n\s*\n|\Z)", text, re.DOTALL)
-    assert match, "no worker-pools deploy command in deploy.sh"
+    match = re.search(r'run jobs deploy "\$worker_job" .*?(?:\n\s*#|\n\s*\n|\Z)', text, re.DOTALL)
+    assert match, "no worker job deploy command in deploy.sh"
     return match.group(0)
 
 
-def test_worker_pool_gets_no_content_file_mounts() -> None:
+def test_the_worker_job_gets_no_content_file_mounts() -> None:
     command = _worker_deploy_command()
     assert '"$work/worker.yaml"' in command
     assert "$worker_extra" in command
@@ -65,3 +65,30 @@ def test_the_worker_gets_each_content_secret_as_an_environment_variable(tmp_path
     assert "/secrets/provider-config/content.json=iscan-dev-provider-config:latest" in api
     assert "_CONTENT=" not in api
     assert "PROVIDER_CONFIG_FILE" not in (tmp_path / "worker.yaml").read_text(encoding="utf-8")
+
+
+def test_the_worker_is_a_job_in_drain_mode_with_the_cost_caps() -> None:
+    command = _worker_deploy_command()
+    assert '--args="-m,app.worker,--until-empty"' in command
+    assert "--tasks 1 --max-retries 0 --task-timeout 3600" in command
+    assert '--service-account "$runtime_sa"' in command
+    assert '--container collector --image "$IMAGE_COLLECTOR"' in command
+    # Non-container flags must come before the first --container.
+    assert command.index("--task-timeout") < command.index("--container")
+
+
+def test_the_deploy_never_runs_the_worker_and_grants_start_on_the_job_only() -> None:
+    text = DEPLOY.read_text(encoding="utf-8")
+    assert 'jobs execute "$worker_job"' not in text
+    assert "worker-pools deploy" not in text
+    grant = re.search(r"add-iam-policy-binding.*?roles/run\.invoker", text, re.DOTALL)
+    assert grant and grant.group(0).startswith('add-iam-policy-binding "$worker_job"')
+    assert "projects add-iam-policy-binding" not in text
+
+
+def test_only_the_api_gets_the_worker_job_name() -> None:
+    text = DEPLOY.read_text(encoding="utf-8")
+    line = text.index("WORKER_JOB_NAME: ")
+    assert text.index('cp "$work/app.yaml" "$work/worker.yaml"') < line
+    assert '>> "$work/app.yaml"' in text[line : text.index("\n", line)]
+    assert "jobs/$worker_job" in text[line : text.index("\n", line)]

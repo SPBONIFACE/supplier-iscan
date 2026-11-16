@@ -6,6 +6,7 @@ file is read here, and no value is ever logged or shown in an error message.
 
 import hashlib
 import os
+import re
 import tempfile
 import uuid
 from collections.abc import Mapping
@@ -63,6 +64,10 @@ PASSWORD_MIN_LENGTH = "PASSWORD_MIN_LENGTH"  # noqa: S105 - the name of the sett
 # idle worker looks for work.
 RUN_LEASE_SECONDS = "RUN_LEASE_SECONDS"
 WORKER_POLL_SECONDS = "WORKER_POLL_SECONDS"
+# On-demand worker (#200): the Cloud Run job the API starts after each commit that queues work, as a
+# full resource name (projects/<p>/locations/<r>/jobs/<name>). Unset: nothing is started (local
+# Docker Compose runs an always-on worker; tests).
+WORKER_JOB_NAME = "WORKER_JOB_NAME"
 # Crawler identity (#17): the public contact page named in the User-Agent of every request to a
 # supplier site. No default: the operator publishes their own page (#47).
 CRAWLER_CONTACT_URL = "CRAWLER_CONTACT_URL"
@@ -152,6 +157,7 @@ class Settings:
     password_min_length: int = DEFAULT_PASSWORD_MIN_LENGTH
     run_lease: timedelta = timedelta(seconds=DEFAULT_RUN_LEASE_SECONDS)
     worker_poll_seconds: int = DEFAULT_WORKER_POLL_SECONDS
+    worker_job_name: str | None = None
     crawler_contact_url: str | None = None
     monthly_spend_cap_eur: Decimal | None = None
     demo_organisation_id: uuid.UUID | None = None
@@ -351,6 +357,20 @@ def _content_file(env: Mapping[str, str], file_setting: str) -> str | None:
     return str(target)
 
 
+_WORKER_JOB_NAME_PATTERN = re.compile(r"projects/[^/\s]+/locations/[^/\s]+/jobs/[^/\s]+")
+
+
+def _parse_worker_job_name(raw: str) -> str | None:
+    value = raw.strip()
+    if not value:
+        return None
+    if not _WORKER_JOB_NAME_PATTERN.fullmatch(value):
+        raise ConfigurationError(
+            f"{WORKER_JOB_NAME} must be projects/<project>/locations/<region>/jobs/<name>"
+        )
+    return value
+
+
 def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
     env = os.environ if environ is None else environ
     deployment_environment = env.get(DEPLOYMENT_ENVIRONMENT, "").strip() or None
@@ -395,6 +415,7 @@ def load_settings(environ: Mapping[str, str] | None = None) -> Settings:
         worker_poll_seconds=_parse_positive_int(
             env, WORKER_POLL_SECONDS, DEFAULT_WORKER_POLL_SECONDS
         ),
+        worker_job_name=_parse_worker_job_name(env.get(WORKER_JOB_NAME, "")),
         crawler_contact_url=_parse_contact_url(env.get(CRAWLER_CONTACT_URL, "")),
         monthly_spend_cap_eur=_parse_spend_cap(env.get(MONTHLY_SPEND_CAP_EUR, "")),
         demo_organisation_id=_parse_demo_organisation(env.get(DEMO_ORGANISATION_ID, "")),
