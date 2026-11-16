@@ -3,6 +3,10 @@
 **Evidence-based supplier profiles for procurement teams.** Every fact comes with its source, or the app says
 there is none.
 
+> **Status (16 Nov 2026): operational, not finalised.** The app runs end to end (identity check, evidence
+> collection, profile, assessment, review and PDF export), but some features are still to be implemented: see
+> [Known limitations](#known-limitations) and [Roadmap](#roadmap).
+
 > Final project of the [AI Dev Tools Zoomcamp](https://github.com/DataTalksClub/ai-dev-tools-zoomcamp) (2026
 > cohort). **Dev instance:** https://iscan-web-dev-939730526492.europe-west3.run.app (sign-in is by invitation; see
 > [What it looks like](#what-it-looks-like) for the product).
