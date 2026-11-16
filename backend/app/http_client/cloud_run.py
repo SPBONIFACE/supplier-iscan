@@ -16,9 +16,8 @@ logger = logging.getLogger(__name__)
 __all__ = ["START_TIMEOUT_SECONDS", "start_worker_job"]
 
 START_TIMEOUT_SECONDS = 5.0
-_TOKEN_URL = (  # noqa: S105 - an address, not a secret
-    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
-)
+_METADATA = "http://metadata.google.internal/computeMetadata/v1"
+_TOKEN_URL = f"{_METADATA}/instance/service-accounts/default/token"  # noqa: S105 - an address
 _RUN_URL = "https://run.googleapis.com/v2/{name}:run"
 _JOB_NAME = re.compile(r"projects/[^/\s]+/locations/[^/\s]+/jobs/[^/\s]+")
 
