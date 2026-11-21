@@ -238,3 +238,15 @@ the worker and telemetry is in [`_docs/operations/cloud-run-sizing.md`](../_docs
     `gcloud run jobs execute iscan-worker-dev --region="$REGION"`.
   - *To confirm at the first deploy*: that the telemetry sidecar stops when the worker exits, so an execution ends
     with the queue (check the duration of the first executions in the console; see `cloud-run-sizing.md`).
+
+### Cost guardrails (hosted instance)
+
+- **Per run:** `RUN_BUDGET_EUR` caps the AI and search cost of one run (dev: 2).
+- **Per worker execution:** the worker job stops after one hour at most (`--task-timeout 3600`, #200).
+- **Per month, whole instance:** `MONTHLY_SPEND_CAP_EUR` (dev: 20). Past it, new runs are refused with the reason
+  shown; a run in progress finishes, but a paused run cannot be resumed.
+- **Per organisation:** set a profile quota when you create an organisation (none set means
+  unlimited). For a prospect's trial, use **3**
+  (owner decision, 21 Nov 2026). Runs that end in "insufficient sources" do not count.
+- **Outside the app (owner, in the consoles):** a Google Cloud budget alert on the project, and a monthly spend limit
+  at each AI and search provider. The provider limits are hard caps; the Google budget only alerts.
