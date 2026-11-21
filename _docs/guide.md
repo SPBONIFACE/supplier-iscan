@@ -250,3 +250,45 @@ the worker and telemetry is in [`_docs/operations/cloud-run-sizing.md`](../_docs
   (owner decision, 21 Nov 2026). Runs that end in "insufficient sources" do not count.
 - **Outside the app (owner, in the consoles):** a Google Cloud budget alert on the project, and a monthly spend limit
   at each AI and search provider. The provider limits are hard caps; the Google budget only alerts.
+
+### Hosted instance: the administrator sees no profile content (#203)
+
+On a hosted instance (`INSTANCE_MODE=hosted`) the administrator account sees run metadata only: status, dates, cost
+and errors, with "(name not shown)" in place of the supplier. Every endpoint that returns or changes profile content
+(facts and quotes, assessment and recommendations, notes and buyer inputs, sources, the card and its PDF, the
+comparison, identity sessions and candidates), and starting an identity session, a run, a resumption or a drafting,
+answers 403 "Profile content is visible to the members of the organisation only." The workspace shows the runs
+without links, and "New profile" is disabled with that reason. Runs the administrator made before this change stay
+in its organisation but are no longer readable by it; re-run them from a member account. No path lets an
+administrator read another organisation's content. A self-hosted instance is unchanged: its local administrator
+reads and runs in the default organisation.
+
+**Owner's test account.** To judge supplier cards while developing, use a member account of an organisation you
+control. The administrator area has no screen yet, so the first two steps go through the API, signed in as the
+administrator (`$APP` is the frontend address of the instance, for example the dev Cloud Run URL):
+
+1. Sign in and create the organisation (for example "Owner test"); note its `id` in the answer:
+
+   ```sh
+   curl -sc admin.cookies -H 'Content-Type: application/json' \
+     -d '{"email": "<administrator email>", "password": "<administrator password>"}' "$APP/api/auth/login"
+   curl -sb admin.cookies -H 'Content-Type: application/json' \
+     -d '{"name": "Owner test"}' "$APP/api/admin/organisations"
+   ```
+
+2. Invite a member address you control (a `+test` alias works); the answer's `link` is shown once:
+
+   ```sh
+   curl -sb admin.cookies -H 'Content-Type: application/json' \
+     -d '{"email": "<your member address>"}' "$APP/api/admin/organisations/<organisation id>/invitations"
+   ```
+
+3. Open the `link` in a browser (a private window, so the administrator session stays apart), choose a password
+   and accept: accepting signs you in as that member.
+4. From then on, sign in with that member address to start and review profiles. Delete `admin.cookies` afterwards.
+
+*Activation*: a new organisation on a hosted instance starts `pending_activation`, and its runs are refused ("not
+activated yet") until it is activated. The activation flow (spec, Flow 2) is not built yet, so until it is, either
+activate the test organisation by hand in the instance's database (one statement, as the owner:
+`UPDATE organisations SET status = 'active' WHERE name = 'Owner test';`), or invite the member address into the
+administrator's own organisation (the default organisation, created active) instead of a new one.

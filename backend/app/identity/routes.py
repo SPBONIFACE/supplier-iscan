@@ -1,8 +1,10 @@
 """/identity and /identity-sessions (openapi.yaml, tag `identity`).
 
 Every endpoint is scoped to the caller's organisation (`OrganisationScoped`): another
-organisation's session answers the same 404 as an unknown id. The member decides: the only way a
-session ends is `POST .../confirm`.
+organisation's session answers the same 404 as an unknown id. Identity sessions are for members
+only: on a hosted instance an administrator gets 403 `members_only` on every session endpoint
+(`MemberContentScoped`, #203); the disclosure text holds no content and stays readable. The member
+decides: the only way a session ends is `POST .../confirm`.
 """
 
 import threading
@@ -22,7 +24,7 @@ from app.identity.candidates import STATED_COUNTRY, unique_active_lei
 from app.identity.services import IdentityServices, build_identity_services
 from app.identity.strings import disclosure_text
 from app.models import IdentitySession, SupplierIdentity
-from app.organisations.scope import OrganisationScoped
+from app.organisations.scope import MemberContentScoped, OrganisationScoped
 from app.redaction import gate_for
 from app.registries.text import has_visible_text, normalise_text
 
@@ -231,7 +233,7 @@ def get_disclosure(language: Language, scope: OrganisationScoped) -> IdentityDis
     "/identity-sessions", status_code=status.HTTP_201_CREATED, response_model=IdentitySessionOut
 )
 def create_session(
-    body: IdentitySessionCreate, scope: OrganisationScoped, db: DbSession, request: Request
+    body: IdentitySessionCreate, scope: MemberContentScoped, db: DbSession, request: Request
 ) -> IdentitySessionOut:
     name = normalise_text(body.name)
     if not name or not has_visible_text(name):
@@ -255,13 +257,13 @@ def create_session(
 
 
 @router.get("/identity-sessions/{id}", response_model=IdentitySessionOut)
-def get_session(id: str, scope: OrganisationScoped, db: DbSession) -> IdentitySessionOut:
+def get_session(id: str, scope: MemberContentScoped, db: DbSession) -> IdentitySessionOut:
     return _session_out(scope.get(db, IdentitySession, id))
 
 
 @router.post("/identity-sessions/{id}/messages", response_model=IdentitySessionOut)
 def send_message(
-    id: str, body: IdentityMessageIn, scope: OrganisationScoped, db: DbSession, request: Request
+    id: str, body: IdentityMessageIn, scope: MemberContentScoped, db: DbSession, request: Request
 ) -> IdentitySessionOut:
     session = _open_session(scope, db, id, lock=True)
     text = body.text.strip()
@@ -273,7 +275,7 @@ def send_message(
 
 
 @router.get("/identity-sessions/{id}/candidates", response_model=IdentityCandidateListOut)
-def list_candidates(id: str, scope: OrganisationScoped, db: DbSession) -> IdentityCandidateListOut:
+def list_candidates(id: str, scope: MemberContentScoped, db: DbSession) -> IdentityCandidateListOut:
     session = scope.get(db, IdentitySession, id)
     others = [
         entry["candidate"]
@@ -285,7 +287,7 @@ def list_candidates(id: str, scope: OrganisationScoped, db: DbSession) -> Identi
 
 @router.post("/identity-sessions/{id}/website", response_model=IdentitySessionOut)
 def submit_website(
-    id: str, body: IdentityWebsiteIn, scope: OrganisationScoped, db: DbSession, request: Request
+    id: str, body: IdentityWebsiteIn, scope: MemberContentScoped, db: DbSession, request: Request
 ) -> IdentitySessionOut:
     session = _open_session(scope, db, id, lock=True)
     raw = body.website.strip()
@@ -306,7 +308,7 @@ def _stored_address(entry: dict[str, Any]) -> str | None:
 
 @router.post("/identity-sessions/{id}/confirm", response_model=IdentityConfirmedOut)
 def confirm_identity(
-    id: str, body: IdentityConfirmIn, scope: OrganisationScoped, db: DbSession, request: Request
+    id: str, body: IdentityConfirmIn, scope: MemberContentScoped, db: DbSession, request: Request
 ) -> IdentityConfirmedOut:
     session = _open_session(scope, db, id, lock=True)
     entry: dict[str, Any] | None = next(

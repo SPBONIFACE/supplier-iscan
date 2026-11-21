@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { safeNext } from "../auth/paths";
 import type { MemberOrganisation, Run } from "../lib/api";
-import { expectNoCriticalIssues, fail, member, ok, renderApp } from "../test/utils";
+import { admin, expectNoCriticalIssues, fail, member, ok, renderApp } from "../test/utils";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
@@ -284,6 +284,76 @@ describe("workspace refusal", () => {
     renderApp("/workspace");
     await screen.findByRole("heading", { name: "No profile yet" });
     expect(screen.queryByRole("link", { name: "Start your first profile" })).toBeNull();
+  });
+});
+
+describe("workspace of a hosted administrator (#203)", () => {
+  const MEMBERS_ONLY = "Profile content is visible to the members of the organisation only.";
+  const hidden = ALL.map((status) => run(`run-${status}`, null, status, "2026-10-27T10:00:00Z"));
+
+  beforeEach(() => {
+    mocks.getCurrentUser.mockResolvedValue(ok(admin));
+    mocks.listRuns.mockResolvedValue(ok({ items: hidden }));
+    mocks.getOrganisation.mockResolvedValue(
+      ok(organisation({ run_refusal_reason: "members_only" })),
+    );
+  });
+
+  it("lists run metadata with no link to a card, a run or a new profile", async () => {
+    const view = renderApp("/workspace");
+    const table = await screen.findByRole("table");
+    const bodyRows = within(table).getAllByRole("row").slice(1);
+    expect(bodyRows).toHaveLength(8);
+    LABELS_EN.forEach((label, index) => {
+      expect(within(bodyRows[index] as HTMLElement).getByText(label)).toBeTruthy();
+    });
+    expect(within(table).queryAllByRole("link")).toHaveLength(0);
+    expect(within(table).getAllByText("(name not shown)")).toHaveLength(8);
+    expect(screen.queryByRole("link", { name: "New profile" })).toBeNull();
+    const button = screen.getByRole("button", { name: "New profile" });
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    const described = document.getElementById(button.getAttribute("aria-describedby") ?? "");
+    expect(described?.textContent).toBe(MEMBERS_ONLY);
+    expect(screen.getByText(/sign in with a member account/)).toBeTruthy();
+    await expectNoCriticalIssues(view.container);
+  });
+
+  it("cannot tick a profile for comparison, and says why", async () => {
+    renderApp("/workspace");
+    const table = await screen.findByRole("table");
+    const boxes = within(table).getAllByRole("checkbox") as HTMLInputElement[];
+    expect(boxes.every((box) => box.disabled)).toBe(true);
+    const completed = boxes[7] as HTMLInputElement;
+    const why = document.getElementById(completed.getAttribute("aria-describedby") ?? "");
+    expect(why?.textContent).toBe(MEMBERS_ONLY);
+  });
+
+  it("does not offer the first-profile call to action", async () => {
+    mocks.listRuns.mockResolvedValue(ok({ items: [] }));
+    renderApp("/workspace");
+    await screen.findByRole("heading", { name: "No profile yet" });
+    expect(screen.queryByRole("link", { name: "Start your first profile" })).toBeNull();
+  });
+
+  it("states the reason in French", async () => {
+    const { initI18n } = await import("../i18n");
+    await initI18n("fr");
+    renderApp("/workspace");
+    await screen.findByRole("table");
+    const button = screen.getByRole("button", { name: "Nouveau profil" });
+    const described = document.getElementById(button.getAttribute("aria-describedby") ?? "");
+    expect(described?.textContent).toBe(
+      "Le contenu des profils n'est visible que par les membres de l'organisation.",
+    );
+  });
+
+  it("leaves a member's workspace unchanged", async () => {
+    mocks.getCurrentUser.mockResolvedValue(ok(member));
+    mocks.listRuns.mockResolvedValue(ok({ items: rows }));
+    mocks.getOrganisation.mockResolvedValue(ok(organisation()));
+    renderApp("/workspace");
+    expect(await screen.findByRole("link", { name: "Supplier 7" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "New profile" })).toBeTruthy();
   });
 });
 

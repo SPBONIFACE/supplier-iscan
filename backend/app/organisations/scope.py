@@ -22,7 +22,10 @@ resource of another organisation answers exactly the same 404 as an id that does
 An administrator is scoped like any member, to the organisation they belong to: an administrator
 never reaches the content of an organisation they are not a member of. The local administrator of
 a self-hosted instance belongs to the default organisation and so reaches that one, and only that
-one (owner decision, 27 Oct 2026). Administrator operations on organisations themselves
+one (owner decision, 27 Oct 2026). On a hosted instance an administrator reads no profile content
+at all, even in their own organisation (#203): an endpoint that reads or writes it, or starts work
+on it, depends on `MemberContentScoped` instead, which answers 403 `members_only` for them before
+any lookup. Administrator operations on organisations themselves
 (`/admin/...`) depend on `require_administrator` instead and never return content.
 
 An organisation-owned model inherits `app.models.OrganisationOwned`. A cache that holds personal
@@ -39,10 +42,15 @@ from sqlalchemy import Delete, Select, Update, delete, select, update
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentPrincipal, Principal
-from app.errors import not_found, parse_resource_id
+from app.config import Settings
+from app.errors import RunRefusedError, not_found, parse_resource_id
 from app.models import OrganisationOwned
+from app.settings_dependency import CurrentSettings
 
 Owned = TypeVar("Owned", bound=OrganisationOwned)
+
+MEMBERS_ONLY_REASON = "members_only"
+MEMBERS_ONLY = "Profile content is visible to the members of the organisation only."
 
 
 @dataclass(frozen=True)
@@ -93,3 +101,26 @@ def require_organisation_scope(principal: CurrentPrincipal) -> OrganisationScope
 
 # Type of an endpoint parameter that receives the caller's organisation scope.
 OrganisationScoped = Annotated[OrganisationScope, Depends(require_organisation_scope)]
+
+
+def content_hidden_from(principal: Principal, settings: Settings) -> bool:
+    """True for an administrator of a hosted instance: profile content (supplier names, facts,
+    quotes, assessments, notes, identity sessions) is for the members of the organisation only
+    (spec, Security model: access rules; #203). The local administrator of a self-hosted instance
+    is a member of the default organisation and reads its content (owner decision)."""
+    return principal.role == "admin" and not settings.organisations_skip_activation
+
+
+def require_member_content_scope(
+    scope: OrganisationScoped, settings: CurrentSettings
+) -> OrganisationScope:
+    """The organisation scope, refused with 403 `members_only` for a hosted administrator before
+    any resource is looked up (so the answer says nothing about whether it exists)."""
+    if content_hidden_from(scope.principal, settings):
+        raise RunRefusedError(MEMBERS_ONLY_REASON, MEMBERS_ONLY)
+    return scope
+
+
+# Type of an endpoint parameter for an endpoint that reads or writes profile content, or starts
+# work on it: the organisation scope, and 403 `MembersOnly` for a hosted administrator.
+MemberContentScoped = Annotated[OrganisationScope, Depends(require_member_content_scope)]

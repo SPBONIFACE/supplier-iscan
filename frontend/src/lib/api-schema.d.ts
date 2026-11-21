@@ -551,7 +551,7 @@ export interface paths {
         };
         /**
          * Download the supplier card as a PDF
-         * @description The supplier card of a run as a PDF generated on the server, in the requested language (labels; quotes stay in their source language): every fact field with its status, quote excerpt, source type, source URL and date, or "No public evidence found"; the assessment with its procurement recommendations, the buyer context and the buyer inputs, deleted statements excluded; for a natural-person identity "Not assessed: natural-person business" in place of the assessment. Each AI-generated section is labelled "AI draft" or "reviewed by …" with its provenance (model, version, generation time, review status); the same provenance is written to the file metadata. The first page carries the disclaimer (a content file; a marked placeholder until the owner supplies the text), the generation date and, when set, the source-content deletion date, the "partial" flag with its uncovered sections and the "identity to verify" flag. The file is generated on request and not stored; no model is called. A missing `lang` is `en`; any other value answers 422. An unknown id, another organisation's run and the administrator answer the one 404; a run that has not finished answers 409.
+         * @description The supplier card of a run as a PDF generated on the server, in the requested language (labels; quotes stay in their source language): every fact field with its status, quote excerpt, source type, source URL and date, or "No public evidence found"; the assessment with its procurement recommendations, the buyer context and the buyer inputs, deleted statements excluded; for a natural-person identity "Not assessed: natural-person business" in place of the assessment. Each AI-generated section is labelled "AI draft" or "reviewed by …" with its provenance (model, version, generation time, review status); the same provenance is written to the file metadata. The first page carries the disclaimer (a content file; a marked placeholder until the owner supplies the text), the generation date and, when set, the source-content deletion date, the "partial" flag with its uncovered sections and the "identity to verify" flag. The file is generated on request and not stored; no model is called. A missing `lang` is `en`; any other value answers 422. An unknown id and another organisation's run answer the one 404; a hosted administrator answers 403 `MembersOnly` and nothing of the card is rendered; a run that has not finished answers 409.
          */
         get: operations["getRunPdf"];
         put?: never;
@@ -965,7 +965,12 @@ export interface components {
         RunRefused: {
             detail: string;
             /** @enum {string} */
-            reason: "quota_reached" | "access_ended" | "not_activated" | "spend_cap_reached";
+            reason: "quota_reached" | "access_ended" | "not_activated" | "spend_cap_reached" | "members_only";
+        };
+        MembersOnly: {
+            detail: string;
+            /** @enum {string} */
+            reason: "members_only";
         };
         ProfileField: {
             id: string;
@@ -1558,10 +1563,10 @@ export interface components {
             /** @description Profile runs that may still start: the quota minus the runs that count against it, never below 0. Null when the quota is unlimited. */
             profiles_remaining: number | null;
             /**
-             * @description Why a new run would be refused now, or null when it would be accepted. Checked in this order: not activated, access ended, quota used, instance monthly spend cap reached.
+             * @description Why a new run would be refused now, or null when it would be accepted. Checked in this order: the user is an administrator of a hosted instance (`members_only`: profile content and runs are for the members of the organisation only), not activated, access ended, quota used, instance monthly spend cap reached.
              * @enum {string|null}
              */
-            run_refusal_reason: "not_activated" | "access_ended" | "quota_reached" | "spend_cap_reached" | null;
+            run_refusal_reason: "members_only" | "not_activated" | "access_ended" | "quota_reached" | "spend_cap_reached" | null;
             /**
              * Format: date-time
              * @description End of access. Null while not yet activated, or when the access is unlimited.
@@ -1646,6 +1651,21 @@ export interface components {
                  *     }
                  */
                 "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Hosted instance only: the signed-in user is an administrator, and profile content (supplier names, facts and quotes, assessments and recommendations, notes, the card, the comparison, identity sessions) is visible to the members of the organisation only. Answered before the resource is looked up, so it says nothing about whether the resource exists. A self-hosted instance never answers it (its local administrator is a member of the default organisation). */
+        MembersOnly: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "detail": "Profile content is visible to the members of the organisation only.",
+                 *       "reason": "members_only"
+                 *     }
+                 */
+                "application/json": components["schemas"]["MembersOnly"];
             };
         };
         /** @description Signed in, but this operation is for administrators only. */
@@ -1999,6 +2019,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
         };
@@ -2024,6 +2045,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
@@ -2053,6 +2075,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
@@ -2080,6 +2103,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
@@ -2109,6 +2133,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
@@ -2140,6 +2165,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationFailed"];
@@ -2191,7 +2217,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
-            /** @description The run is refused, with the reason (#29): the profile quota is used, access has ended, the organisation is not activated, or the monthly spend cap is reached. */
+            /** @description The run is refused, with the reason (#29): the profile quota is used, access has ended, the organisation is not activated, or the monthly spend cap is reached. On a hosted instance, an administrator is refused with reason `members_only` ("Profile content is visible to the members of the organisation only"): the administrator tests from a member account. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2253,6 +2279,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
@@ -2305,6 +2332,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
@@ -2331,6 +2359,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
@@ -2358,6 +2387,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
@@ -2388,6 +2418,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["VersionConflict"];
             422: components["responses"]["ValidationFailed"];
@@ -2416,7 +2447,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
-            /** @description The monthly spend cap of the instance is reached (reason `spend_cap_reached`). */
+            /** @description The monthly spend cap of the instance is reached (reason `spend_cap_reached`). On a hosted instance, an administrator is refused with reason `members_only` ("Profile content is visible to the members of the organisation only"): the administrator tests from a member account. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2464,6 +2495,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["VersionConflict"];
             422: components["responses"]["ValidationFailed"];
@@ -2492,7 +2524,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
-            /** @description The monthly spend cap of the instance is reached (reason `spend_cap_reached`). */
+            /** @description The monthly spend cap of the instance is reached (reason `spend_cap_reached`). On a hosted instance, an administrator is refused with reason `members_only` ("Profile content is visible to the members of the organisation only"): the administrator tests from a member account. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2536,6 +2568,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             503: components["responses"]["ServiceUnavailable"];
         };
@@ -2568,6 +2601,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["VersionConflict"];
             422: components["responses"]["ValidationFailed"];
@@ -2601,6 +2635,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             /** @description The run has not finished ("The run is still in progress."), or it ended without a profile (stopped, failed, insufficient sources), so there is no card to export. */
             409: {
@@ -2672,7 +2707,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
-            /** @description Access ended, not activated, or the monthly spend cap is reached. */
+            /** @description Access ended, not activated, or the monthly spend cap is reached. On a hosted instance, an administrator is refused with reason `members_only` ("Profile content is visible to the members of the organisation only"): the administrator tests from a member account. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2720,6 +2755,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["ReviewConflict"];
             422: components["responses"]["ValidationFailed"];
@@ -2752,6 +2788,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["MembersOnly"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["ReviewConflict"];
             422: components["responses"]["ValidationFailed"];
