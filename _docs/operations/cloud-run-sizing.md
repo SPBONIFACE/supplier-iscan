@@ -93,6 +93,7 @@ Set per environment in `deploy/env/*.yaml` (non-secret) and from GitHub environm
 |---|---|---|
 | `INSTANCE_MODE` | yaml | `hosted` |
 | `RUN_BUDGET_EUR` | yaml | per-run cost budget, API and worker refuse to start without it |
+| `MONTHLY_SPEND_CAP_EUR` | yaml (dev: 20) | monthly AI and search spend of the instance; past it, new runs are refused (owner decision, 21 Nov 2026). Not set in prod until the owner chooses a figure |
 | `COLLECT_MAX_REQUESTS`, `COLLECT_MAX_DOMAINS` | yaml | ceilings per run: 200 requests and 25 websites |
 | `CRAWLER_CONTACT_URL` | GitHub environment variable | public contact page named in the crawler's User-Agent; the worker refuses to start without it |
 | `CORS_ALLOWED_ORIGINS` | computed | exactly the frontend's address of that environment (its run.app address) |
@@ -103,8 +104,8 @@ Set per environment in `deploy/env/*.yaml` (non-secret) and from GitHub environm
 | `PROVIDER_CONFIG_FILE`, `PRICE_TABLE_FILE`, `PROFILE_DEFINITION_FILE`, `PROMPT_SET_FILE`, `COUNTRY_TABLE_FILE`, `PDF_DISCLAIMER_FILE` | computed | paths of files mounted from Secret Manager at run time, when the secret exists (`/secrets/<name>/content.json`) |
 | `API_UPSTREAM_URL` | computed (frontend) | address of the API service; the frontend's nginx forwards `/api/` to it (below) |
 
-Not set (defaults apply): `INVITATION_VALIDITY_HOURS` (72), `PASSWORD_MIN_LENGTH` (12), `MONTHLY_SPEND_CAP_EUR`
-(no cap: the owner may want one; add it to the yaml), `REDACTION_THREADS` (4), PDF limits (no cap on rendering
+Not set (defaults apply): `INVITATION_VALIDITY_HOURS` (72), `PASSWORD_MIN_LENGTH` (12), `MONTHLY_SPEND_CAP_EUR` in
+prod (no cap until the owner sets one), `REDACTION_THREADS` (4), PDF limits (no cap on rendering
 time or size exists in the code; the 4 GiB limit and the 300 s timeout are the only bounds. Follow-up: an explicit
 cap).
 
