@@ -10,6 +10,9 @@
   the stage thread; results are merged in source order after all futures settle.
 - `EXTRACT_MIN_QUOTE_CHARS` (12): the shortest quote kept, in characters after normalisation.
 - `EXTRACT_MIN_QUOTE_CHARS_CJK` (4): the same for a quote with Han, Hiragana, Katakana or Hangul.
+- `EXTRACT_PASSAGE_CHARS` (600): for a third-party source, how far before or after the quote the
+  supplier's name, its group's name or its website label may stand, within the quote's paragraph
+  (#202). Between 50 and 20000.
 - `IAF_CERTSEARCH_URL` (https://www.iafcertsearch.org/): where a buyer verifies a certificate; the
   "Verify on IAF CertSearch" link of a certification fact. A configuration value, not a product
   term: an operator can point it elsewhere.
@@ -27,6 +30,7 @@ GROUPS_PER_CALL = "EXTRACT_GROUPS_PER_CALL"
 CONCURRENCY = "EXTRACT_CONCURRENCY"
 MIN_QUOTE_CHARS = "EXTRACT_MIN_QUOTE_CHARS"
 MIN_QUOTE_CHARS_CJK = "EXTRACT_MIN_QUOTE_CHARS_CJK"
+PASSAGE_CHARS = "EXTRACT_PASSAGE_CHARS"
 IAF_CERTSEARCH_URL = "IAF_CERTSEARCH_URL"
 DEFAULT_CERTSEARCH_URL = "https://www.iafcertsearch.org/"
 
@@ -39,6 +43,7 @@ class ExtractionSettings:
     min_quote_chars_cjk: int = 4
     groups_per_call: int = 0
     extract_concurrency: int = 1
+    passage_chars: int = 600
 
 
 def _whole_number(env: Mapping[str, str], name: str, default: int) -> int:
@@ -56,6 +61,15 @@ def _concurrency(env: Mapping[str, str]) -> int:
         return 1
     if not (raw.isascii() and raw.isdigit()) or not 1 <= int(raw) <= 8:
         raise ConfigurationError(f"{CONCURRENCY} must be a whole number between 1 and 8")
+    return int(raw)
+
+
+def _passage_chars(env: Mapping[str, str], default: int) -> int:
+    raw = env.get(PASSAGE_CHARS, "").strip()
+    if not raw:
+        return default
+    if not (raw.isascii() and raw.isdigit()) or not 50 <= int(raw) <= 20_000:
+        raise ConfigurationError(f"{PASSAGE_CHARS} must be a whole number between 50 and 20000")
     return int(raw)
 
 
@@ -87,4 +101,5 @@ def load_extraction_settings(environ: Mapping[str, str] | None = None) -> Extrac
         extract_concurrency=_concurrency(env),
         min_quote_chars=_whole_number(env, MIN_QUOTE_CHARS, defaults.min_quote_chars),
         min_quote_chars_cjk=_whole_number(env, MIN_QUOTE_CHARS_CJK, defaults.min_quote_chars_cjk),
+        passage_chars=_passage_chars(env, defaults.passage_chars),
     )

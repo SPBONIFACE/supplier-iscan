@@ -70,3 +70,18 @@ def test_invalid_extract_concurrency_raises_configuration_error(value: str) -> N
     with pytest.raises(ConfigurationError) as caught:
         load_extraction_settings({"EXTRACT_CONCURRENCY": value})
     assert "EXTRACT_CONCURRENCY" in str(caught.value) and value not in str(caught.value)
+
+
+# --- EXTRACT_PASSAGE_CHARS (#202) ---
+
+
+def test_the_passage_distance_defaults_to_600_and_can_be_set() -> None:
+    assert load_extraction_settings({}).passage_chars == 600
+    assert load_extraction_settings({"EXTRACT_PASSAGE_CHARS": "1200"}).passage_chars == 1200
+
+
+@pytest.mark.parametrize("value", ["7", "49", "20001", "six", "-3"])
+def test_an_invalid_passage_distance_is_refused(value: str) -> None:
+    with pytest.raises(ConfigurationError) as caught:
+        load_extraction_settings({"EXTRACT_PASSAGE_CHARS": value})
+    assert "EXTRACT_PASSAGE_CHARS" in str(caught.value) and value not in str(caught.value)
