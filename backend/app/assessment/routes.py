@@ -18,7 +18,7 @@ from app.config import Settings
 from app.db import DbSession
 from app.limits.budget import used_up
 from app.models import Job, ProfileRun, SupplierIdentity
-from app.organisations.scope import OrganisationScope, OrganisationScoped
+from app.organisations.scope import MemberContentScoped, OrganisationScope
 from app.runs.refusal import refuse, spend_cap_reached
 from app.runs.wake import start_worker_after_response
 
@@ -79,7 +79,7 @@ def _queue(
 @router.post("/{id}/fit", status_code=status.HTTP_202_ACCEPTED, response_model=DraftingAccepted)
 def draft_fit(
     id: str,
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
     background: BackgroundTasks,
@@ -93,7 +93,7 @@ def draft_fit(
 )
 def draft_recommendations(
     id: str,
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
     background: BackgroundTasks,

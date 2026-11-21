@@ -4,7 +4,7 @@ field by field (spec F5).
 Facts only, as the runs list them: no assessment, no score and no ranking (owner decision D-073,
 5 Nov 2026), so a natural-person supplier's "Not assessed" cannot appear here as a gap or a lower
 value. One id that is unknown or another organisation's makes the whole request answer the one 404,
-with no partial data.
+with no partial data. A hosted administrator gets 403 `members_only` (#203).
 """
 
 import uuid
@@ -20,14 +20,13 @@ from app.errors import InvalidField, not_found, parse_resource_id
 from app.extraction.settings import load_extraction_settings
 from app.models import Fact, ProfileRun, SupplierIdentity
 from app.models.runs import FINISHED_STATUSES
-from app.organisations.scope import OrganisationScoped
+from app.organisations.scope import MemberContentScoped
 from app.profile_definition import ProfileDefinition
 from app.runs.routes import (
     FactOut,
     RunOut,
     _run_out,
     fact_out,
-    hide_names,
     proposed_counts,
     user_emails,
 )
@@ -61,7 +60,7 @@ def _distinct(raw: list[str]) -> list[str]:
 
 @router.get("", response_model=ComparisonOut)
 def get_comparison(
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
     run_ids: Annotated[list[str], Query()],
@@ -99,7 +98,6 @@ def get_comparison(
     )
     certsearch = load_extraction_settings().certsearch_url
     definition: ProfileDefinition = request.app.state.profile_definition
-    hidden = hide_names(request, scope)
 
     items = []
     for run_id in ids:
@@ -117,7 +115,7 @@ def get_comparison(
                     scope,
                     run,
                     identities.get(run.identity_id),
-                    hidden,
+                    False,  # a hosted administrator never gets here (403)
                     excluded.get(run_id, []),
                     proposed.get(run_id, 0),
                 ),

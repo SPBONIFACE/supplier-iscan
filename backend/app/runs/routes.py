@@ -1,7 +1,9 @@
 """/runs (openapi.yaml, tag `runs`). Endpoints only queue, flag or read; no stage executes here.
 
-An administrator is scoped like any member (their own organisation) but gets run metadata only:
-`supplier_name` is null for them (spec, Data model & ownership).
+An administrator is scoped like any member (their own organisation). On a hosted instance they get
+run metadata only: `supplier_name` is null in run lists and run reads, and the content endpoints
+(sources, facts, assessment) and the start or resumption of a run answer 403 `members_only`
+(`MemberContentScoped`; spec, Data model & ownership; #203).
 """
 
 import uuid
@@ -34,7 +36,12 @@ from app.models import (
 )
 from app.models.buyer import BUYER_CONTEXT
 from app.models.runs import FINISHED_STATUSES
-from app.organisations.scope import OrganisationScope, OrganisationScoped
+from app.organisations.scope import (
+    MemberContentScoped,
+    OrganisationScope,
+    OrganisationScoped,
+    content_hidden_from,
+)
 from app.profile_definition import ProfileDefinition
 from app.providers.usage import run_usage_totals
 from app.runs.executor import RUN_JOB
@@ -310,7 +317,7 @@ def hide_names(request: Request, scope: OrganisationScope) -> bool:
     like `OrganisationScoped`).
     """
     settings: Settings = request.app.state.settings
-    return scope.principal.role == "admin" and not settings.organisations_skip_activation
+    return content_hidden_from(scope.principal, settings)
 
 
 def _run_out(
@@ -486,7 +493,7 @@ def _one(db: DbSession, scope: OrganisationScope, run: ProfileRun, hide: bool) -
 @router.post("", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
 def start_run(
     body: RunStart,
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
     background: BackgroundTasks,
@@ -560,7 +567,7 @@ def get_run(id: str, scope: OrganisationScoped, db: DbSession, request: Request)
 
 
 @router.get("/{id}/sources", response_model=SourceListOut)
-def list_sources(id: str, scope: OrganisationScoped, db: DbSession) -> SourceListOut:
+def list_sources(id: str, scope: MemberContentScoped, db: DbSession) -> SourceListOut:
     run = scope.get(db, ProfileRun, id)  # the one 404 for an unknown or another organisation's run
     rows = db.scalars(
         scope.select(Source).where(Source.run_id == run.id).order_by(Source.fetched_at, Source.url)
@@ -580,7 +587,7 @@ def list_failures(id: str, scope: OrganisationScoped, db: DbSession) -> RunFailu
 
 
 @router.get("/{id}/facts", response_model=FactListOut)
-def list_facts(id: str, scope: OrganisationScoped, db: DbSession, request: Request) -> FactListOut:
+def list_facts(id: str, scope: MemberContentScoped, db: DbSession, request: Request) -> FactListOut:
     """One entry per `fact` field of the profile definition that extraction has stored, in the
     order of the definition. A field with no kept value is `not_found`, with no value and no
     quote: never a negative statement about the supplier."""
@@ -603,7 +610,7 @@ def list_facts(id: str, scope: OrganisationScoped, db: DbSession, request: Reque
 
 @router.get("/{id}/assessment", response_model=AssessmentOut)
 def get_assessment(
-    id: str, scope: OrganisationScoped, db: DbSession, request: Request
+    id: str, scope: MemberContentScoped, db: DbSession, request: Request
 ) -> AssessmentOut:
     """The AI-drafted statements of the run, with their cited facts and provenance. A
     natural-person business is not assessed: no statement exists and the message says so."""
@@ -683,7 +690,7 @@ def stop_run(id: str, scope: OrganisationScoped, db: DbSession, request: Request
 @router.post("/{id}/resume", status_code=status.HTTP_202_ACCEPTED, response_model=RunOut)
 def resume_run(
     id: str,
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
     background: BackgroundTasks,

@@ -30,7 +30,7 @@ from app.extraction.settings import load_extraction_settings
 from app.models import AssessmentItem, Fact, ProfileRun
 from app.models.buyer import BUYER_CONTEXT
 from app.models.runs import FINISHED_STATUSES
-from app.organisations.scope import OrganisationScope, OrganisationScoped
+from app.organisations.scope import MemberContentScoped, OrganisationScope
 from app.profile_definition import ProfileDefinition
 from app.runs.routes import AssessmentStatementOut, FactOut, fact_out, statement_out, user_emails
 
@@ -97,7 +97,7 @@ def _certification(definition: ProfileDefinition, field: str) -> bool:
 def review_fact(
     id: str,
     body: FactReview,
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
 ) -> FactOut | JSONResponse:
@@ -152,7 +152,7 @@ def _statement(scope: OrganisationScope, db: DbSession, id: str) -> AssessmentIt
 def review_statement(
     id: str,
     body: StatementReview,
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
 ) -> AssessmentStatementOut | JSONResponse:

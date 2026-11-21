@@ -1,8 +1,9 @@
 """GET /runs/{id}/pdf (openapi.yaml, tag `runs`): the supplier card as a PDF, generated on request.
 
-The run is the caller's (the #10 scope: another organisation's run, an unknown id and the
-administrator all answer the one 404). The file is built from what the card endpoints return and is
-never stored; no model is called; nothing of the supplier's content is logged.
+The run is the caller's (the #10 scope: another organisation's run and an unknown id answer the
+one 404). A hosted administrator answers 403 `members_only` before anything is read or rendered
+(#203). The file is built from what the card endpoints return and is never stored; no model is
+called; nothing of the supplier's content is logged.
 """
 
 import re
@@ -15,10 +16,10 @@ from sqlalchemy import select
 from app.buyer.routes import get_buyer_inputs
 from app.db import DbSession, utc_now
 from app.models import Organisation, ProfileRun
-from app.organisations.scope import OrganisationScoped
+from app.organisations.scope import MemberContentScoped
 from app.pdf.disclaimer import DisclaimerError, disclaimer_text
 from app.pdf.render import CardInput, PdfUnavailable, render_pdf
-from app.runs.routes import _one, get_assessment, hide_names, list_facts
+from app.runs.routes import _one, get_assessment, list_facts
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -40,7 +41,7 @@ def safe_filename(name: str | None, day: str) -> str:
 )
 def get_run_pdf(
     id: str,
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
     lang: Annotated[Literal["en", "fr"], Query()] = "en",
@@ -58,7 +59,7 @@ def get_run_pdf(
     now = utc_now()
     try:
         card = CardInput(
-            run=_one(db, scope, run, hide_names(request, scope)),
+            run=_one(db, scope, run, False),  # a hosted administrator never gets here (403)
             facts=list_facts(id, scope, db, request).items,
             definition=request.app.state.profile_definition,
             assessment=get_assessment(id, scope, db, request),

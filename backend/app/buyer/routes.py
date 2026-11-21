@@ -27,7 +27,7 @@ from app.db import DbSession, utc_now
 from app.errors import InvalidField
 from app.models import BuyerInput, ProfileRun
 from app.models.buyer import BUYER_CONTEXT, FIT_CRITERIA, RESERVED_FIELDS
-from app.organisations.scope import OrganisationScope, OrganisationScoped
+from app.organisations.scope import MemberContentScoped, OrganisationScope
 from app.profile_definition import ProfileDefinition
 from app.runs.routes import user_emails
 
@@ -191,7 +191,7 @@ def _write(
 
 @router.put("/{id}/criteria", response_model=CriteriaOut)
 def put_criteria(
-    id: str, body: CriteriaUpdate, scope: OrganisationScoped, db: DbSession, request: Request
+    id: str, body: CriteriaUpdate, scope: MemberContentScoped, db: DbSession, request: Request
 ) -> Any:
     run = scope.get(db, ProfileRun, id, for_update=True)  # the one 404 for another organisation
     settings: Settings = request.app.state.settings
@@ -211,7 +211,7 @@ def put_criteria(
 
 @router.put("/{id}/buyer-context", response_model=BuyerContextOut)
 def put_buyer_context(
-    id: str, body: BuyerContextUpdate, scope: OrganisationScoped, db: DbSession, request: Request
+    id: str, body: BuyerContextUpdate, scope: MemberContentScoped, db: DbSession, request: Request
 ) -> Any:
     run = scope.get(db, ProfileRun, id, for_update=True)
     settings: Settings = request.app.state.settings
@@ -241,7 +241,7 @@ def put_buyer_input(
     id: str,
     field: str,
     body: BuyerInputUpdate,
-    scope: OrganisationScoped,
+    scope: MemberContentScoped,
     db: DbSession,
     request: Request,
 ) -> Any:
@@ -265,7 +265,7 @@ def put_buyer_input(
 
 
 @router.get("/{id}/buyer-inputs", response_model=BuyerInputsOut)
-def get_buyer_inputs(id: str, scope: OrganisationScoped, db: DbSession) -> BuyerInputsOut:
+def get_buyer_inputs(id: str, scope: MemberContentScoped, db: DbSession) -> BuyerInputsOut:
     """What the members saved for the profile: criteria, buyer context and the buyer fields, each
     with its version (to send with the next edit), who saved it and when."""
     run = scope.get(db, ProfileRun, id)  # the one 404 for another organisation
