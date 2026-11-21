@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Supplier iScan API
-  version: 0.19.1
+  version: 0.20.0
   description: >-
     API contract of Supplier iScan. This file is the source of truth: it changes before the code.
 
@@ -17,7 +17,11 @@ info:
     that does not exist. An administrator reads the content of an organisation (supplier names,
     fact values, quotes, corrections, criteria, notes, assessments) only as a member of that
     organisation, like any member: the local administrator of a self-hosted instance reaches the
-    default organisation's content, and no other.
+    default organisation's content, and no other. On a hosted instance an administrator reads no
+    profile content at all, not even in their own organisation: every operation that reads or
+    writes it, and the start of an identity session or of AI work, answers 403 `MembersOnly`
+    (reason `members_only`) before any other check except the session (#203). Run lists and run
+    metadata (status, dates, cost, errors) stay readable, without supplier names.
 servers:
   - url: http://localhost:8000
     description: Local development (Docker Compose)
@@ -290,6 +294,8 @@ paths:
                 $ref: "#/components/schemas/IdentitySession"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "422":
           $ref: "#/components/responses/ValidationFailed"
         "503":
@@ -317,6 +323,8 @@ paths:
                 $ref: "#/components/schemas/IdentitySession"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -354,6 +362,8 @@ paths:
                 $ref: "#/components/schemas/IdentitySession"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -386,6 +396,8 @@ paths:
                 $ref: "#/components/schemas/IdentityCandidateList"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -423,6 +435,8 @@ paths:
                 $ref: "#/components/schemas/IdentitySession"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -463,6 +477,8 @@ paths:
                 $ref: "#/components/schemas/IdentityConfirmed"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -504,7 +520,10 @@ paths:
         "403":
           description: >-
             The run is refused, with the reason (#29): the profile quota is used, access has ended,
-            the organisation is not activated, or the monthly spend cap is reached.
+            the organisation is not activated, or the monthly spend cap is reached. On a hosted
+            instance, an administrator is refused with reason `members_only` ("Profile content is
+            visible to the members of the organisation only"): the administrator tests from a member
+            account.
           content:
             application/json:
               schema:
@@ -588,6 +607,8 @@ paths:
                 $ref: "#/components/schemas/SourceList"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -646,6 +667,8 @@ paths:
                 $ref: "#/components/schemas/FactList"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -692,6 +715,8 @@ paths:
                 $ref: "#/components/schemas/Comparison"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "422":
@@ -729,6 +754,8 @@ paths:
                 $ref: "#/components/schemas/Assessment"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -766,6 +793,8 @@ paths:
                 $ref: "#/components/schemas/Criteria"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -807,7 +836,11 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: The monthly spend cap of the instance is reached (reason `spend_cap_reached`).
+          description: >-
+            The monthly spend cap of the instance is reached (reason `spend_cap_reached`). On a
+            hosted instance, an administrator is refused with reason `members_only` ("Profile
+            content is visible to the members of the organisation only"): the administrator tests
+            from a member account.
           content:
             application/json:
               schema:
@@ -859,6 +892,8 @@ paths:
                 $ref: "#/components/schemas/BuyerContext"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -897,7 +932,11 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: The monthly spend cap of the instance is reached (reason `spend_cap_reached`).
+          description: >-
+            The monthly spend cap of the instance is reached (reason `spend_cap_reached`). On a
+            hosted instance, an administrator is refused with reason `members_only` ("Profile
+            content is visible to the members of the organisation only"): the administrator tests
+            from a member account.
           content:
             application/json:
               schema:
@@ -936,6 +975,8 @@ paths:
                 $ref: "#/components/schemas/BuyerInputs"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "503":
@@ -977,6 +1018,8 @@ paths:
                 $ref: "#/components/schemas/BuyerInput"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -1003,8 +1046,9 @@ paths:
         and, when set, the source-content deletion date, the "partial" flag with its uncovered
         sections and the "identity to verify" flag. The file is generated on request and not
         stored; no model is called. A missing `lang` is `en`; any other value answers 422. An
-        unknown id, another organisation's run and the administrator answer the one 404; a run
-        that has not finished answers 409.
+        unknown id and another organisation's run answer the one 404; a hosted administrator
+        answers 403 `MembersOnly` and nothing of the card is rendered; a run that has not finished
+        answers 409.
       security:
         - sessionCookie: []
       parameters:
@@ -1034,6 +1078,8 @@ paths:
                 format: binary
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -1106,7 +1152,10 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
-          description: Access ended, not activated, or the monthly spend cap is reached.
+          description: >-
+            Access ended, not activated, or the monthly spend cap is reached. On a hosted instance,
+            an administrator is refused with reason `members_only` ("Profile content is visible to
+            the members of the organisation only"): the administrator tests from a member account.
           content:
             application/json:
               schema:
@@ -1163,6 +1212,8 @@ paths:
                 $ref: "#/components/schemas/Fact"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -1212,6 +1263,8 @@ paths:
                 $ref: "#/components/schemas/AssessmentStatement"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MembersOnly"
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
@@ -1699,6 +1752,21 @@ components:
             $ref: "#/components/schemas/Error"
           example:
             detail: The demo is read-only.
+    MembersOnly:
+      description: >-
+        Hosted instance only: the signed-in user is an administrator, and profile content (supplier
+        names, facts and quotes, assessments and recommendations, notes, the card, the comparison,
+        identity sessions) is visible to the members of the organisation only. Answered before the
+        resource is looked up, so it says nothing about whether the resource exists. A self-hosted
+        instance never answers it (its local administrator is a member of the default
+        organisation).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MembersOnly"
+          example:
+            detail: Profile content is visible to the members of the organisation only.
+            reason: members_only
     Forbidden:
       description: Signed in, but this operation is for administrators only.
       content:
@@ -2001,7 +2069,17 @@ components:
           type: string
         reason:
           type: string
-          enum: [quota_reached, access_ended, not_activated, spend_cap_reached]
+          enum: [quota_reached, access_ended, not_activated, spend_cap_reached, members_only]
+    MembersOnly:
+      type: object
+      additionalProperties: false
+      required: [detail, reason]
+      properties:
+        detail:
+          type: string
+        reason:
+          type: string
+          enum: [members_only]
     ProfileField:
       type: object
       additionalProperties: false
@@ -3408,9 +3486,11 @@ components:
         run_refusal_reason:
           description: >-
             Why a new run would be refused now, or null when it would be accepted. Checked in
-            this order: not activated, access ended, quota used, instance monthly spend cap reached.
+            this order: the user is an administrator of a hosted instance (`members_only`: profile
+            content and runs are for the members of the organisation only), not activated, access
+            ended, quota used, instance monthly spend cap reached.
           type: [string, "null"]
-          enum: [not_activated, access_ended, quota_reached, spend_cap_reached, null]
+          enum: [members_only, not_activated, access_ended, quota_reached, spend_cap_reached, null]
         access_ends_at:
           description: End of access. Null while not yet activated, or when the access is unlimited.
           type: [string, "null"]
