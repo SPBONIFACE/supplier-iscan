@@ -143,7 +143,8 @@ Someone running their own instance of Supplier iScan sets their own contact page
   environment variables.
 - **Cost guardrails on the hosted instance.** Each run has a cost budget (`RUN_BUDGET_EUR`), each worker execution
   stops after one hour at most, the instance refuses new runs once its monthly AI and search spend reaches a cap
-  (`MONTHLY_SPEND_CAP_EUR`), and each organisation has a profile quota (3 runs for a trial organisation).
+  (`MONTHLY_SPEND_CAP_EUR`), and an organisation can be given a profile quota (3 runs for a trial organisation; no
+  quota means unlimited).
 - PDF export needs the Pango libraries outside Docker; the card fonts cover Latin scripts.
 
 ## Roadmap

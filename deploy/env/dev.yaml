@@ -6,7 +6,7 @@ INSTANCE_MODE: "hosted"
 # Per-run cost budget (EUR). Low in dev: a test run cannot cost much.
 RUN_BUDGET_EUR: "2"
 # Monthly AI and search spend cap of the whole instance (EUR, owner decision 21 Nov 2026). Past it,
-# new runs are refused with the reason shown; a run already started finishes.
+# new runs are refused with the reason shown; a run in progress finishes, a paused run cannot be resumed.
 MONTHLY_SPEND_CAP_EUR: "20"
 # Ceilings per run (issue #52, from #103).
 COLLECT_MAX_REQUESTS: "200"
