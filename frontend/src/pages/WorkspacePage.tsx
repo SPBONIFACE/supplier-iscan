@@ -72,6 +72,8 @@ export function WorkspacePage() {
   const { runs, organisation } = state;
   const refusal = organisation?.run_refusal_reason ?? null;
   const refused = refusal !== null;
+  // A hosted administrator sees run metadata only (#203): no link to a card, a run or a comparison.
+  const membersOnly = refusal === "members_only";
   const canCompare = selected.length >= 2;
   const maxCompared = organisation?.comparison_max_profiles ?? MAX_COMPARED;
   const atMaximum = selected.length >= maxCompared;
@@ -211,6 +213,7 @@ export function WorkspacePage() {
                   checked={selected.includes(run.id)}
                   open={run.id === openRun}
                   blocked={atMaximum}
+                  membersOnly={membersOnly}
                   onToggle={() => toggle(run.id)}
                 />
               ))}
@@ -227,6 +230,7 @@ function RunRow({
   checked,
   open,
   blocked,
+  membersOnly,
   onToggle,
 }: {
   run: Run;
@@ -234,14 +238,17 @@ function RunRow({
   open: boolean;
   /** The configured maximum is reached: an unticked row cannot be ticked. */
   blocked: boolean;
+  /** The user is a hosted administrator: profile content is for members only, nothing links to it. */
+  membersOnly: boolean;
   onToggle: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const whyId = useId();
   const name = run.supplier_name ?? t("workspace.nameHidden");
-  const comparable = HAS_PROFILE.includes(run.status);
+  const hasProfile = HAS_PROFILE.includes(run.status);
+  const comparable = hasProfile && !membersOnly;
   // A run still going, or one that ended without a profile, opens its progress page; a profile its card.
-  const target = comparable ? `/profiles/${run.id}` : `/profiles/${run.id}/run`;
+  const target = hasProfile ? `/profiles/${run.id}` : `/profiles/${run.id}/run`;
   return (
     <tr className={checked || open ? "sel" : undefined}>
       <td data-label={t("workspace.compareColumn")}>
@@ -257,14 +264,18 @@ function RunRow({
         </label>
         {comparable ? null : (
           <span className="vh" id={whyId}>
-            {t("workspace.noProfileYet")}
+            {t(membersOnly ? "workspace.membersOnly" : "workspace.noProfileYet")}
           </span>
         )}
       </td>
       <td className="name" data-label={t("workspace.supplier")}>
-        <Link to={target} data-run-id={run.id} aria-current={open ? "true" : undefined}>
-          {name}
-        </Link>
+        {membersOnly ? (
+          <span data-run-id={run.id}>{name}</span>
+        ) : (
+          <Link to={target} data-run-id={run.id} aria-current={open ? "true" : undefined}>
+            {name}
+          </Link>
+        )}
       </td>
       <td data-label={t("workspace.status")}>{t(`workspace.statuses.${run.status}`)}</td>
       <td data-label={t("workspace.updated")}>{formatDate(lastUpdated(run), i18n.language)}</td>

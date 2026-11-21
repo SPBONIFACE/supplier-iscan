@@ -79,13 +79,15 @@
       "quota_reached": "Les nouvelles analyses sont refusées : votre organisation a utilisé son quota de profils.",
       "access_ended": "Les nouvelles analyses sont refusées : l'accès de votre organisation a pris fin.",
       "not_activated": "Les nouvelles analyses sont refusées : votre organisation n'est pas encore activée.",
-      "spend_cap_reached": "Les nouvelles analyses sont refusées : cette instance a atteint sa limite mensuelle."
+      "spend_cap_reached": "Les nouvelles analyses sont refusées : cette instance a atteint sa limite mensuelle.",
+      "members_only": "Le contenu des profils n'est visible que par les membres de l'organisation."
     },
     "refusalLong": {
       "quota_reached": "Les nouvelles analyses de profil sont refusées car votre organisation a utilisé son quota de profils. Vos profils existants restent consultables, vous pouvez encore les comparer et les télécharger en PDF. Votre administrateur peut vous indiquer comment poursuivre.",
       "access_ended": "Les nouvelles analyses de profil sont refusées car l'accès de votre organisation a pris fin le {{date}}. Vos profils existants restent consultables, vous pouvez encore les comparer et les télécharger en PDF.",
       "not_activated": "Les nouvelles analyses de profil sont refusées car votre organisation n'a pas encore été activée. Vos profils existants restent consultables. Votre administrateur peut vous indiquer comment poursuivre.",
-      "spend_cap_reached": "Les nouvelles analyses de profil sont refusées car cette instance a atteint sa limite mensuelle configurée d'utilisation de l'IA. Vos profils existants restent consultables, vous pouvez encore les comparer et les télécharger en PDF. Les nouvelles analyses redeviennent possibles le mois prochain, ou plus tôt si l'administrateur relève la limite."
+      "spend_cap_reached": "Les nouvelles analyses de profil sont refusées car cette instance a atteint sa limite mensuelle configurée d'utilisation de l'IA. Vos profils existants restent consultables, vous pouvez encore les comparer et les télécharger en PDF. Les nouvelles analyses redeviennent possibles le mois prochain, ou plus tôt si l'administrateur relève la limite.",
+      "members_only": "Le contenu des profils n'est visible que par les membres de l'organisation. En tant qu'administrateur, vous voyez le statut et la date de chaque analyse, pas le fournisseur ni son profil. Pour créer ou consulter des profils, connectez-vous avec un compte membre."
     },
     "emptyTitle": "Aucun profil pour le moment",
     "emptyIntro": "Votre organisation n'a pas encore de profil fournisseur. Un profil se construit en trois étapes :",
@@ -107,6 +109,7 @@
     "selectFor": "Sélectionner {{name}} pour la comparaison",
     "noProfileYet": "Pas encore de profil à comparer",
     "nameHidden": "(nom non affiché)",
+    "membersOnly": "Le contenu des profils n'est visible que par les membres de l'organisation.",
     "statuses": {
       "queued": "En attente",
       "running": "En cours",
@@ -213,6 +216,7 @@
       "access_ended": "La période d’accès de votre organisation est terminée : aucun nouveau profil ne peut démarrer. Les profils existants restent consultables.",
       "not_activated": "Votre organisation n’est pas encore activée : aucun profil ne peut démarrer. Le fournisseur reste confirmé.",
       "spend_cap_reached": "Le plafond mensuel de dépenses d’IA de ce service est atteint : aucun nouveau profil ne peut démarrer avant le mois prochain. Le fournisseur reste confirmé.",
+      "members_only": "Le contenu des profils n'est visible que par les membres de l'organisation : l'administrateur ne lance aucune analyse de profil. Connectez-vous avec un compte membre.",
       "unknown": "Le lancement du profil a été refusé. Le fournisseur reste confirmé ; réessayez plus tard."
     }
   },
