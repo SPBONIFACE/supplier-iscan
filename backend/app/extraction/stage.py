@@ -44,6 +44,7 @@ from app.extraction.grounding import (
     names_group,
     names_supplier,
     normalise,
+    passages,
     quote_in_text,
     quote_long_enough,
     supplier_names,
@@ -51,7 +52,13 @@ from app.extraction.grounding import (
     website_labels,
 )
 from app.extraction.settings import ExtractionSettings, load_extraction_settings
-from app.extraction.source_type import _is_own, classify_source, host_of, registry_domains
+from app.extraction.source_type import (
+    _is_own,
+    classify_source,
+    host_of,
+    is_official_register,
+    registry_domains,
+)
 from app.limits.budget import RunBudgetExhausted
 from app.llm_schemas import FieldExtraction, FieldExtractionAnswer
 from app.models import Fact, ProfileRun, Source, SupplierIdentity
@@ -75,6 +82,7 @@ PROMPT_ID: Final = "extraction"
 # of the interface leaves room for a longer profile definition.
 MAX_OUTPUT_TOKENS: Final = 16_384
 WEBSITE_FIELD: Final = "website"
+PDF_CONTENT_TYPE: Final = "application/pdf"
 
 
 @dataclass(frozen=True)
@@ -93,6 +101,7 @@ class SourceText:
     # Set only by `_load`, from a Source row of the database. Without it (the reference-set
     # harness) the text never passed the detector and `ask` uses the full gate on it.
     stored: StoredSourceText | None = field(repr=False, default=None)
+    content_type: str = "text/html"
 
 
 @dataclass(frozen=True)
@@ -123,23 +132,54 @@ class Supplier:
             lines.append("A fact about the parent group is about the supplier's group: keep it.")
         return "\n".join(lines)
 
-    def names_entity(self, source: SourceText) -> bool:
+    def _entity_in(self, folded: str) -> bool:
         host = host_of(self.website) if self.website else None
-        return names_supplier(source.folded, supplier_names(self.name), host, website_labels(host))
+        return names_supplier(folded, supplier_names(self.name), host, website_labels(host))
 
-    def names_group(self, source: SourceText) -> bool:
+    def _group_in(self, folded: str) -> bool:
         if not self.group_name or self.natural_person:
             return False
         host = host_of(self.group_website) if self.group_website else None
+        return names_group(folded, group_names(self.group_name), host, website_labels(host))
+
+    def _on_group_website(self, source: SourceText) -> bool:
+        if not self.group_name or self.natural_person or not self.group_website:
+            return False
+        host = host_of(self.group_website)
         own = host_of(source.url)
-        return names_group(
-            source.folded, group_names(self.group_name), host, website_labels(host)
-        ) or bool(host and own and _is_own(own, host))
+        return bool(host and own and _is_own(own, host))
+
+    def names_entity(self, source: SourceText) -> bool:
+        return self._entity_in(source.folded)
+
+    def names_group(self, source: SourceText) -> bool:
+        return self._group_in(source.folded) or self._on_group_website(source)
 
     def named_in(self, source: SourceText) -> bool:
         if self.natural_person:
             return True
         return self.names_entity(source) or self.names_group(source)
+
+    def needs_passage(self, source: SourceText) -> bool:
+        """Whether a fact of this source must name the supplier near its quote (#202): a
+        third-party source, other than the group's own website and an official register (GLEIF).
+        The supplier's own website and registry domains are `supplier_claim`; a natural person's
+        name is redacted from the stored text, so the check cannot look for it."""
+        return not (
+            self.natural_person
+            or source.source_type != "third_party"
+            or is_official_register(source.url)
+            or self._on_group_website(source)
+        )
+
+    def named_near(self, source: SourceText, quote: str, chars: int) -> bool:
+        """Whether the supplier's name, its group's name or a website label is in the quote's
+        passage (`passages`) at one of the places where the quote stands."""
+        blank_lines = source.content_type == PDF_CONTENT_TYPE
+        return any(
+            self._entity_in(passage) or self._group_in(passage)
+            for passage in passages(source.text, quote, chars, blank_lines)
+        )
 
     def group_level(self, source: SourceText) -> str | None:
         """The group's name when the source names the group and not the entity (#195). A page of
@@ -166,6 +206,9 @@ class Kept:
 class Tally:
     grounding_failures: int = 0
     invalid_items: int = 0
+    # Of the grounding failures: third-party facts whose quote's passage does not name the
+    # supplier (#202). Logged as `not_named_near_quote`, never stored apart.
+    not_named_near_quote: int = 0
 
 
 def chunks(text: str, size: int) -> Iterator[str]:
@@ -207,7 +250,8 @@ def judge(
     """The grounding check of one `found` item, counted on `tally` when it is discarded.
 
     An item the model marks as not about the supplier is discarded, and so is any item of a
-    third-party source whose text never names the supplier (#140)."""
+    third-party source whose text never names the supplier (#140), or does not name it near the
+    quote (#202, `Supplier.named_near`)."""
     if (
         item.field not in requested
         or item.value is None
@@ -232,6 +276,14 @@ def judge(
         or not quote_long_enough(quote, limits.min_quote_chars, limits.min_quote_chars_cjk)
     ):
         tally.grounding_failures += 1
+        return None
+    if (
+        supplier is not None
+        and supplier.needs_passage(source)
+        and not supplier.named_near(source, quote, limits.passage_chars)
+    ):
+        tally.grounding_failures += 1
+        tally.not_named_near_quote += 1
         return None
     if not value_supported(item.value, quote):  # a guard on figures: counted as invalid
         tally.invalid_items += 1
@@ -623,6 +675,7 @@ def _load(
                 publisher=host_of(row.url) or row.url[:300],
                 normalised=normalise(row.redacted_text),
                 folded=fold(row.redacted_text),
+                content_type=row.content_type,
             )
             for row in rows
         ]
@@ -685,11 +738,12 @@ def _store(
         db.commit()
     logger.info(
         "Extraction for run %s, section %s: %d of %d fields kept, %d grounding failures, "
-        "%d invalid items",
+        "%d invalid items (grounding failures by reason: not_named_near_quote=%d)",
         context.run_id,
         section_id,
         sum(1 for item in items if item.id in kept),
         len(items),
         tally.grounding_failures,
         tally.invalid_items,
+        tally.not_named_near_quote,
     )

@@ -836,6 +836,10 @@ def test_the_example_prompt_set_uses_the_supplier_placeholder() -> None:
     instructions = PROMPTS.prompts["extraction"].instructions
     assert "only statements about the supplier" in instructions
     assert "not_found" in instructions
+    # #202: a page about several companies gives a statement only from a passage about the
+    # supplier or its group.
+    assert "a page that covers several companies" in instructions
+    assert "passage is about the supplier or its group" in instructions
 
 
 def test_a_passage_about_another_company_marked_not_about_the_supplier_is_discarded(

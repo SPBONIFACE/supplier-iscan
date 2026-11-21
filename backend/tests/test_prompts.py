@@ -264,7 +264,7 @@ def test_prompt_text_and_completions_appear_in_no_log_and_no_api_response(
     api = send_with_session(client, "POST", "/runs", token, json={"identity_id": str(identity_id)})
 
     logged = "\n".join(r.getMessage() for r in caplog.records)
-    assert "Prompt rendered: id=extraction version=example-2" in logged
+    assert "Prompt rendered: id=extraction version=example-3" in logged
     records = json.dumps([vars(e) for e in sink.entries], default=str)
     for sentinel in (prompt_side, completion_side):
         assert sentinel not in logged

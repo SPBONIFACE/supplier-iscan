@@ -9,10 +9,14 @@ A value is kept only when
 A kept value must also pass `value_supported`, a light guard on figures and words; a value it
 rejects is counted with the invalid items, not with the grounding failures.
 
+For a third-party source the supplier must also be named near the quote (#202): `passages` gives
+the quote's surroundings, and the extraction stage looks for the names there.
+
 Case, accents and wording are never normalised for the quote: it is verbatim. The text and the
 quote are only compared; neither is logged.
 """
 
+import bisect
 import re
 import unicodedata
 from typing import Final
@@ -131,6 +135,46 @@ def quote_in_text(quote: str, normalised_text: str) -> bool:
     """Whether the quote is in the text (given already normalised, once per source)."""
     needle = normalise(quote)
     return bool(needle) and needle in normalised_text
+
+
+_BLANK_LINE: Final = re.compile(r"\n[^\S\n]*\n")
+
+
+def _paragraphs(text: str, blank_lines: bool) -> list[str]:
+    """The normalised paragraphs of a stored text: its lines (an HTML page is stored one block
+    per line), or, for `blank_lines` (a PDF, whose lines are layout lines), the blocks between
+    blank lines."""
+    parts = _BLANK_LINE.split(text) if blank_lines else text.splitlines()
+    return [paragraph for paragraph in map(normalise, parts) if paragraph]
+
+
+def passages(text: str, quote: str, chars: int, blank_lines: bool = False) -> list[str]:
+    """The folded passage around each place of the quote in the text (#202): the quote's
+    paragraph (from the start of the paragraph where the quote starts to the end of the one where
+    it ends), cut to at most `chars` characters before and after the quote, whichever is shorter.
+    Empty when the quote is not in the text. The names are then looked for in these passages with
+    the rules of the whole text (`names_supplier`, `names_group`)."""
+    needle = normalise(quote)
+    paragraphs = _paragraphs(text, blank_lines)
+    if not needle or not paragraphs:
+        return []
+    joined = " ".join(paragraphs)
+    starts: list[int] = []
+    position = 0
+    for paragraph in paragraphs:
+        starts.append(position)
+        position += len(paragraph) + 1
+    found: list[str] = []
+    start = joined.find(needle)
+    while start != -1:
+        end = start + len(needle)
+        first = bisect.bisect_right(starts, start) - 1
+        last = bisect.bisect_right(starts, end - 1) - 1
+        low = max(starts[first], start - chars)
+        high = min(starts[last] + len(paragraphs[last]), end + chars)
+        found.append(fold(joined[low:high]))
+        start = joined.find(needle, start + 1)
+    return found
 
 
 def is_redacted_quote(quote: str) -> bool:
