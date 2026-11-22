@@ -58,7 +58,8 @@ const FACTS: Fact[] = [
   makeNotFound("environmental_management", "certifications"),
 ];
 
-const ASSUMING = "Assuming a first evaluation of this supplier:";
+const ASSUMING = "If you are reviewing this supplier for the first time:";
+const OLD_ASSUMING = "Assuming a first evaluation of this supplier:";
 const strength = makeStatement(
   "s1",
   "strength",
@@ -120,7 +121,8 @@ const recoFirst = [
   reco("r3", "next_action", `${ASSUMING} ask for the certificate scope.`, {
     timing: "within 2 weeks",
   }),
-  reco("r4", "procurement_priority", `${ASSUMING} medium.`, { level: "medium" }),
+  // r4 was stored before #207: the old prefix still reads as drafted.
+  reco("r4", "procurement_priority", `${OLD_ASSUMING} medium.`, { level: "medium" }),
 ];
 
 const statementEl = (id: string) => {
@@ -216,6 +218,7 @@ describe("statements and recommendations", () => {
     expect(within(statementEl("r2")).getByText("Relationship:")).toBeTruthy();
     expect(within(statementEl("r3")).getByText("within 2 weeks")).toBeTruthy();
     expect(within(statementEl("r4")).getByText("medium")).toBeTruthy();
+    expect(within(statementEl("r4")).getByText(OLD_ASSUMING).className).toBe("assume");
     // Recommendations carry the AI-draft label and the review actions like any statement.
     expect(within(implication).getByText("AI draft, pending your validation")).toBeTruthy();
     expect(

@@ -103,7 +103,8 @@ _EN = {
         "recommendations may no longer match it."
     ),
     "context_changed_first": (
-        "Drafted on the first-evaluation assumption. A buyer context has been saved since. The "
+        "Drafted on the assumption that you are reviewing this supplier for the first time. A buyer "
+        "context has been saved since. The "
         "recommendations may no longer match it."
     ),
     "provenance": "Provenance",
@@ -313,7 +314,8 @@ _FR = {
         "enregistrée. Les recommandations peuvent ne plus correspondre."
     ),
     "context_changed_first": (
-        "Rédigé en supposant une première évaluation. Un contexte acheteur a été enregistré "
+        "Rédigé en supposant que vous évaluez ce fournisseur pour la première fois. Un contexte "
+        "acheteur a été enregistré "
         "depuis. Les recommandations peuvent ne plus correspondre."
     ),
     "provenance": "Provenance",

@@ -202,7 +202,8 @@ def card(lang: Lang = "en", **changes: Any) -> CardInput:
                 ),
                 statement(
                     "relationship_level",
-                    "Assuming a first evaluation of this supplier: keep a preferred relationship.",
+                    "If you are reviewing this supplier for the first time: keep a preferred "
+                    "relationship.",
                     label="preferred",
                     cited_fact_ids=cited,
                 ),

@@ -155,7 +155,7 @@ def test_rules_guidance_shows_the_provenance_rules_and_the_recommendation_blocks
         ),
         statement(
             "relationship_level",
-            "Assuming a first evaluation of this supplier: strategic.",
+            "If you are reviewing this supplier for the first time: strategic.",
             label="strategic",
             level="high",
             buyer_context_outdated=True,

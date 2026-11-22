@@ -154,20 +154,28 @@ def test_the_assumption_is_put_in_front_of_recommendations_only_without_context(
     texts, _ = run(
         [statement("procurement_implication", text="Qualify first.")], RECOMMENDATION_KINDS
     )
-    assert texts == ["Assuming a first evaluation of this supplier: Qualify first."]
+    assert texts == ["If you are reviewing this supplier for the first time: Qualify first."]
     texts, _ = run(
         [statement("procurement_implication", text="Qualifier d'abord.")],
         RECOMMENDATION_KINDS,
         language="fr",
     )
-    assert texts == ["En supposant une première évaluation de ce fournisseur : Qualifier d'abord."]
+    assert texts == ["Si vous évaluez ce fournisseur pour la première fois : Qualifier d'abord."]
     texts, _ = run([statement("strength", text="Plain.")])
     assert texts == ["Plain."]  # not a recommendation
 
 
 def test_the_assumption_is_not_added_twice() -> None:
-    once = with_assumption("Assuming a first evaluation of this supplier: x", "en")
-    assert once.count("Assuming") == 1
+    once = with_assumption("If you are reviewing this supplier for the first time: x", "en")
+    assert once.count("first time") == 1
+
+
+def test_a_stored_statement_with_the_old_prefix_is_not_prefixed_again() -> None:
+    old_en = "Assuming a first evaluation of this supplier: x"
+    old_fr = "En supposant une première évaluation de ce fournisseur : x"
+    assert with_assumption(old_en, "en") == old_en
+    assert with_assumption(old_fr, "fr") == old_fr
+    assert with_assumption(old_en, "fr") == old_en
 
 
 def test_an_item_that_does_not_match_the_schema_is_not_a_statement() -> None:

@@ -68,7 +68,11 @@ export type StatementProps = {
   children?: ReactNode;
 };
 
+// The current prefixes, then the ones written before #207 (stored statements keep them).
 const ASSUMPTIONS = [
+  "If you are reviewing this supplier for the first time:",
+  "Si vous évaluez ce fournisseur pour la première fois :",
+  "Si vous évaluez ce fournisseur pour la première fois :",
   "Assuming a first evaluation of this supplier:",
   "En supposant une première évaluation de ce fournisseur :",
   "En supposant une première évaluation de ce fournisseur :",

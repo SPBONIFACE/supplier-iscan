@@ -738,8 +738,9 @@ paths:
         `not_assessed`, the message reads "Not assessed: natural-person business" and no
         statement exists: nothing is requested from or stored by the provider for it.
         `buyer_context_version` is null while the run has no buyer context; every recommendation
-        text then starts with "Assuming a first evaluation of this supplier:" (French:
-        "En supposant une première évaluation de ce fournisseur :"). Another organisation's run
+        text then starts with "If you are reviewing this supplier for the first time:" (French:
+        "Si vous évaluez ce fournisseur pour la première fois :"). Runs drafted before 21 Nov 2026 keep
+        the earlier prefix "Assuming a first evaluation of this supplier:" (French: "En supposant une première évaluation de ce fournisseur :"). Another organisation's run
         answers 404, like an unknown id.
       security:
         - sessionCookie: []
