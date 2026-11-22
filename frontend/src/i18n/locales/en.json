@@ -694,7 +694,7 @@
     "edit": "Edit buyer context",
     "add": "Add buyer context",
     "none": "No buyer context yet.",
-    "noneBody": "These recommendations assume a first evaluation of this supplier. Add your context (incumbent or new, share of spend, contract end, intent) to tailor them to your situation.",
+    "noneBody": "These recommendations are written as if you are reviewing this supplier for the first time. Add your context (incumbent or new, share of spend, contract end, intent) to tailor them to your situation.",
     "savedAnnounce": "Buyer context saved (version {{version}}). Redraft the recommendations to use it."
   },
   "pdf": {

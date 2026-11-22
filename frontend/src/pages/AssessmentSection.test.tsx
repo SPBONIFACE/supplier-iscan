@@ -206,7 +206,7 @@ describe("statements and recommendations", () => {
     const panel = await openCard();
     await within(panel).findByRole("heading", { name: /Procurement recommendations/ });
     const invite = within(panel).getByText("No buyer context yet.").closest("div");
-    expect(invite?.textContent).toMatch(/assume a first evaluation/);
+    expect(invite?.textContent).toMatch(/reviewing this supplier for the first time/);
     expect(within(panel).getByRole("button", { name: "Add buyer context" })).toBeTruthy();
 
     const implication = statementEl("r1");

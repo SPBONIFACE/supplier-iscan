@@ -694,7 +694,7 @@
     "edit": "Modifier le contexte acheteur",
     "add": "Ajouter le contexte acheteur",
     "none": "Pas encore de contexte acheteur.",
-    "noneBody": "Ces recommandations supposent une première évaluation de ce fournisseur. Ajoutez votre contexte (fournisseur en place ou nouveau, part des achats, fin du contrat, intention) pour les adapter à votre situation.",
+    "noneBody": "Ces recommandations sont rédigées comme si vous évaluiez ce fournisseur pour la première fois. Ajoutez votre contexte (fournisseur en place ou nouveau, part des achats, fin du contrat, intention) pour les adapter à votre situation.",
     "savedAnnounce": "Contexte acheteur enregistré (version {{version}}). Rédigez à nouveau les recommandations pour l’utiliser."
   },
   "pdf": {
