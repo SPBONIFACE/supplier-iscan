@@ -552,7 +552,7 @@
     "loadError": "Error: the assessment could not be loaded. Try again; if the problem continues, tell your administrator.",
     "contextChanged": "Buyer context changed since this draft",
     "contextChangedBody": "Drafted with buyer context version {{drafted}}. Version {{current}} is stored now. The recommendations below may no longer match it.",
-    "contextChangedFirst": "Drafted on the first-evaluation assumption. A buyer context has been saved since. The recommendations below may no longer match it.",
+    "contextChangedFirst": "Drafted on the assumption that you are reviewing this supplier for the first time. A buyer context has been saved since. The recommendations below may no longer match it.",
     "drafting": "Drafting recommendations…",
     "draftingFit": "Drafting fit statements…",
     "draftingHelp": "You can keep reading; the drafts appear here when they are ready.",
@@ -694,7 +694,7 @@
     "edit": "Edit buyer context",
     "add": "Add buyer context",
     "none": "No buyer context yet.",
-    "noneBody": "These recommendations assume a first evaluation of this supplier. Add your context (incumbent or new, share of spend, contract end, intent) to tailor them to your situation.",
+    "noneBody": "These recommendations are written as if you are reviewing this supplier for the first time. Add your context (incumbent or new, share of spend, contract end, intent) to tailor them to your situation.",
     "savedAnnounce": "Buyer context saved (version {{version}}). Redraft the recommendations to use it."
   },
   "pdf": {

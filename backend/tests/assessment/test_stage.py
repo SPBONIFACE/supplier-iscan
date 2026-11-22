@@ -125,7 +125,7 @@ def test_statements_are_stored_with_provenance_and_the_assumption(engine: Engine
 
     items = items_of(engine, run_id)
     assert [i.kind for i in items] == ["strength", "procurement_priority"]
-    assert items[1].text == "Assuming a first evaluation of this supplier: Medium."
+    assert items[1].text == "If you are reviewing this supplier for the first time: Medium."
     assert items[0].cited_fact_ids == [str(facts["quality_management"])]
     assert all(i.status == "ai_draft" and i.buyer_context_version is None for i in items)
     assert items[0].provider == "google" and items[0].model_id and items[0].model_version
@@ -250,7 +250,8 @@ def test_the_endpoint_returns_statements_with_cited_facts_and_provenance(
     first, second = body["items"]
     assert first["cited_fact_ids"] == [str(fact)] and first["provenance"]["status"] == "ai_draft"
     assert first["provenance"]["model_id"] and first["provenance"]["generated_at"]
-    assert second["level"] == "medium" and second["text"].startswith("Assuming a first evaluation")
+    assert second["level"] == "medium"
+    assert second["text"].startswith("If you are reviewing this supplier for the first time")
     assert "score" not in json.dumps(body).replace("procurement_priority", "")
 
 

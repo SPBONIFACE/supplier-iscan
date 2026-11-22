@@ -394,7 +394,7 @@ def test_recommendations_are_redrafted_with_the_context_and_store_its_version(
         "next_action",
     ]
     assert {i.buyer_context_version for i in recs} == {1}
-    assert not any("first evaluation" in i.text for i in recs)  # a context exists: no assumption
+    assert not any("for the first time" in i.text for i in recs)  # a context exists: no assumption
     assert recs[0].cites_buyer_context is True
     after = drafted.assessment()
     assert after["buyer_context_version"] == 1
@@ -435,7 +435,7 @@ def test_recommendations_without_context_carry_the_assumption_and_the_wording_gu
     assert [i.kind for i in recs] == ["volume_share"]  # the two assertions were rejected
     assert (
         recs[0].text
-        == "Assuming a first evaluation of this supplier: Start with a small trial volume."
+        == "If you are reviewing this supplier for the first time: Start with a small trial volume."
     )
     assert recs[0].buyer_context_version is None
     assert run_row(engine, drafted.run_id).rejected_statements == 2

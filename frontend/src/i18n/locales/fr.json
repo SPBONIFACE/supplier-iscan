@@ -552,7 +552,7 @@
     "loadError": "Erreur : l’évaluation n’a pas pu être chargée. Réessayez ; si le problème persiste, prévenez votre administrateur.",
     "contextChanged": "Contexte acheteur modifié depuis ce brouillon",
     "contextChangedBody": "Rédigé avec la version {{drafted}} du contexte acheteur. La version {{current}} est enregistrée. Les recommandations ci-dessous peuvent ne plus correspondre.",
-    "contextChangedFirst": "Rédigé en supposant une première évaluation. Un contexte acheteur a été enregistré depuis. Les recommandations ci-dessous peuvent ne plus correspondre.",
+    "contextChangedFirst": "Rédigé en supposant que vous évaluez ce fournisseur pour la première fois. Un contexte acheteur a été enregistré depuis. Les recommandations ci-dessous peuvent ne plus correspondre.",
     "drafting": "Rédaction des recommandations en cours…",
     "draftingFit": "Rédaction des adéquations en cours…",
     "draftingHelp": "Vous pouvez continuer à lire ; les brouillons s’afficheront ici dès qu’ils seront prêts.",
@@ -694,7 +694,7 @@
     "edit": "Modifier le contexte acheteur",
     "add": "Ajouter le contexte acheteur",
     "none": "Pas encore de contexte acheteur.",
-    "noneBody": "Ces recommandations supposent une première évaluation de ce fournisseur. Ajoutez votre contexte (fournisseur en place ou nouveau, part des achats, fin du contrat, intention) pour les adapter à votre situation.",
+    "noneBody": "Ces recommandations sont rédigées comme si vous évaluiez ce fournisseur pour la première fois. Ajoutez votre contexte (fournisseur en place ou nouveau, part des achats, fin du contrat, intention) pour les adapter à votre situation.",
     "savedAnnounce": "Contexte acheteur enregistré (version {{version}}). Rédigez à nouveau les recommandations pour l’utiliser."
   },
   "pdf": {

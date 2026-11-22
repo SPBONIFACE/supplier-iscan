@@ -40,8 +40,8 @@ RECOMMENDATION_KINDS = (
     "procurement_priority",
 )
 FIRST_EVALUATION = {
-    "en": "Assuming a first evaluation of this supplier:",
-    "fr": "En supposant une première évaluation de ce fournisseur :",
+    "en": "If you are reviewing this supplier for the first time:",
+    "fr": "Si vous évaluez ce fournisseur pour la première fois :",
 }
 PRODUCER = "Supplier iScan"
 

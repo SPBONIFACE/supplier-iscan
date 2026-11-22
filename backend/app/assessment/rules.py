@@ -40,9 +40,14 @@ KEPT_FACT_STATUSES: Final = ("proposed", "approved", "corrected")
 ONCE_ONLY: Final = tuple(kind for kind in RECOMMENDATION_KINDS if kind != "next_action")
 
 ASSUMPTION: Final = {
-    "en": "Assuming a first evaluation of this supplier:",
-    "fr": "En supposant une première évaluation de ce fournisseur :",
+    "en": "If you are reviewing this supplier for the first time:",
+    "fr": "Si vous évaluez ce fournisseur pour la première fois :",
 }
+# The prefixes written before 21 Nov 2026 (#207): statements stored with them keep displaying.
+LEGACY_ASSUMPTIONS: Final = (
+    "Assuming a first evaluation of this supplier:",
+    "En supposant une première évaluation de ce fournisseur :",
+)
 NOT_ASSESSED: Final = "Not assessed: natural-person business"
 
 # Words of a financial-stability gap, in English and French. A gap whose text or missing evidence
@@ -193,7 +198,8 @@ def with_assumption(text: str, language: str) -> str:
     """`text` behind the first-evaluation assumption (once)."""
     assumption = ASSUMPTION.get(language, ASSUMPTION["en"])
     stripped = text.strip()
-    if any(stripped.casefold().startswith(value.casefold()) for value in ASSUMPTION.values()):
+    known = (*ASSUMPTION.values(), *LEGACY_ASSUMPTIONS)
+    if any(stripped.casefold().startswith(value.casefold()) for value in known):
         return stripped
     return f"{assumption} {stripped}"
 
@@ -235,6 +241,7 @@ def validate(
 __all__ = [
     "ASSESSMENT_KINDS",
     "ASSUMPTION",
+    "LEGACY_ASSUMPTIONS",
     "NOT_ASSESSED",
     "RECOMMENDATION_KINDS",
     "BuyerContext",
