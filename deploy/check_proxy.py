@@ -179,7 +179,8 @@ def check(image: str) -> None:
 
             for endpoint in ("check", "accept"):
                 payload = json.dumps({"token": MARK_BODY, "password": MARK_BODY}).encode()
-                status, body = get(f"{base}/api/invitations/{endpoint}", method="POST", data=payload)
+                url = f"{base}/api/invitations/{endpoint}"
+                status, body = get(url, method="POST", data=payload)
                 expect(
                     status == 200 and f"path=/invitations/{endpoint}|" in body,
                     f"POST /api/invitations/{endpoint} is forwarded",

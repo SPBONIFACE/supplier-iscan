@@ -317,7 +317,7 @@ def test_the_minimum_length_comes_from_configuration(engine: Engine, configured:
 
 @pytest.mark.parametrize("body", [{}, {"password": ""}, {"password": "p" * 1025}])
 def test_a_missing_or_malformed_password_answers_422(
-    app_client: TestClient, engine: Engine, body: object
+    app_client: TestClient, engine: Engine, body: dict[str, str]
 ) -> None:
     invitation = create_invitation(engine, create_organisation(engine))
 
