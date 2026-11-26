@@ -1,0 +1,218 @@
+{"id": 0, "lang": "zh", "kind": "suzhou", "ctx": "sentence", "text": "Our supplier Suzhou Zi Jin Plastic Co., Ltd passed the audit last year.", "items": [[13, 43]], "suzhou": true}
+{"id": 1, "lang": "zh", "kind": "place_han", "ctx": "alone", "text": "产品目录第三版\n建设路252号\n销售部", "items": [[8, 15]], "suzhou": false}
+{"id": 2, "lang": "zh", "kind": "product", "ctx": "alone", "text": "产品目录第三版\n明珠瓶\n销售部", "items": [[8, 11]], "suzhou": false}
+{"id": 3, "lang": "zh", "kind": "company_latin", "ctx": "sentence", "text": "Our supplier Qingdao Dong Sheng Glass Pte Ltd passed the audit last year.", "items": [[13, 45]], "suzhou": false}
+{"id": 4, "lang": "zh", "kind": "suzhou", "ctx": "list", "text": "Approved suppliers\n- Suzhou Zi Jin Plastic Co., Ltd\n- Dongguan Jia He Mould Co., Ltd", "items": [[21, 51]], "suzhou": true}
+{"id": 5, "lang": "zh", "kind": "company_surname", "ctx": "list", "text": "Suppliers:\n- Fung Ming Logistics Ltd\n- Kwok Wai Metal Products Ltd", "items": [[13, 36], [39, 66]], "suzhou": false}
+{"id": 6, "lang": "zh", "kind": "place_pinyin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Qingdao | Audited |", "items": [[37, 44]], "suzhou": false}
+{"id": 7, "lang": "zh", "kind": "place_pinyin", "ctx": "page", "text": "关于我们 | About us\nFeng Li Gang serves customers worldwide. 欢迎咨询。", "items": [[16, 28]], "suzhou": false}
+{"id": 8, "lang": "zh", "kind": "place_han", "ctx": "alone", "text": "产品目录第三版\n青岛\n销售部", "items": [[8, 10]], "suzhou": false}
+{"id": 9, "lang": "zh", "kind": "place_pinyin", "ctx": "alone", "text": "Ningbo High-Tech Zone", "items": [[0, 21]], "suzhou": false}
+{"id": 10, "lang": "zh", "kind": "company_han", "ctx": "page", "text": "公司简介\nOur partner: 天津紫金玻璃制品\n总部设在天津", "items": [[18, 26]], "suzhou": false}
+{"id": 11, "lang": "zh", "kind": "place_pinyin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Zhao Lan Jiang | Audited |", "items": [[37, 51]], "suzhou": false}
+{"id": 12, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "韩氏塑料集团有限公司", "items": [[0, 10]], "suzhou": false}
+{"id": 13, "lang": "zh", "kind": "company_latin", "ctx": "alone", "text": "Ningbo Han Hai Machinery Group Co., Ltd", "items": [[0, 39]], "suzhou": false}
+{"id": 14, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "付记印刷集团有限公司", "items": [[0, 10]], "suzhou": false}
+{"id": 15, "lang": "zh", "kind": "suzhou", "ctx": "quote", "text": "\"Last year Suzhou Zi Jin Plastic Co., Ltd delivered 40 million closures to our plants,\" the annual report states.", "items": [[11, 41]], "suzhou": true}
+{"id": 16, "lang": "zh", "kind": "company_surname", "ctx": "list", "text": "Suppliers:\n- Chu Ka Machinery\n- Tian's Metal Products\n- Yeung Siu Packaging Co. Ltd", "items": [[13, 29], [32, 53], [56, 83]], "suzhou": false}
+{"id": 17, "lang": "zh", "kind": "product", "ctx": "list", "text": "- 明珠盖-28\n- Chenlong Closure", "items": [[2, 8], [11, 27]], "suzhou": false}
+{"id": 18, "lang": "zh", "kind": "place_pinyin", "ctx": "list", "text": "- Liang Xu Tang Cun\n- Zhong Jun Jiang", "items": [[2, 19], [22, 37]], "suzhou": false}
+{"id": 19, "lang": "zh", "kind": "company_surname", "ctx": "sentence", "text": "The order will be shipped by Wong Lam Chemical next week.", "items": [[29, 46]], "suzhou": false}
+{"id": 20, "lang": "zh", "kind": "company_surname", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Xia's Chemical Limited | Audited |", "items": [[37, 59]], "suzhou": false}
+{"id": 21, "lang": "zh", "kind": "product", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Li Shan Seal Plus | Audited |", "items": [[37, 54]], "suzhou": false}
+{"id": 22, "lang": "zh", "kind": "suzhou", "ctx": "alone", "text": "Suzhou Zi Jin Plastic Co., Ltd\nSales Office", "items": [[0, 30]], "suzhou": true}
+{"id": 23, "lang": "zh", "kind": "place_pinyin", "ctx": "list", "text": "- Changzhou\n- Tang Juan Road 206", "items": [[2, 11], [14, 32]], "suzhou": false}
+{"id": 24, "lang": "zh", "kind": "product", "ctx": "list", "text": "Suppliers:\n- Gao Closure Pro\n- Qin Pack Lite", "items": [[13, 28], [31, 44]], "suzhou": false}
+{"id": 25, "lang": "zh", "kind": "company_han", "ctx": "alone", "text": "青岛华兴瓶盖有限公司", "items": [[0, 10]], "suzhou": false}
+{"id": 26, "lang": "zh", "kind": "company_latin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Changzhou Ming Zhu Plastic Group Co., Ltd | Audited |", "items": [[37, 78]], "suzhou": false}
+{"id": 27, "lang": "zh", "kind": "place_han", "ctx": "list", "text": "供应商名单：\n- 杭州明珠新区\n- 昆山华兴区", "items": [[9, 15], [18, 23]], "suzhou": false}
+{"id": 28, "lang": "zh", "kind": "place_han", "ctx": "list", "text": "- 苏州泰和镇\n- 建设东路16号", "items": [[2, 7], [10, 17]], "suzhou": false}
+{"id": 29, "lang": "zh", "kind": "company_han", "ctx": "page", "text": "关于我们 | About us\n杭州天成玻璃制品集团有限公司 serves customers worldwide. 欢迎咨询。", "items": [[16, 30]], "suzhou": false}
+{"id": 30, "lang": "zh", "kind": "company_han", "ctx": "page", "text": "公司简介\nOur partner: 青岛紫金机械股份有限公司\n总部设在苏州", "items": [[18, 30]], "suzhou": false}
+{"id": 31, "lang": "zh", "kind": "suzhou", "ctx": "list", "text": "Suppliers:\n- Wuxi Hong Da Packaging Co., Ltd\n- Suzhou Zi Jin Plastic Co., Ltd\n- Ningbo Rui Feng Closures Ltd", "items": [[47, 77]], "suzhou": true}
+{"id": 32, "lang": "zh", "kind": "company_latin", "ctx": "alone", "text": "Catalogue, third edition\nXiamen Jin Qiao Mould\nSales Office", "items": [[25, 46]], "suzhou": false}
+{"id": 33, "lang": "zh", "kind": "company_surname", "ctx": "page", "text": "关于我们 | About us\n唐家瓶盖 serves customers worldwide. 欢迎咨询。", "items": [[16, 20]], "suzhou": false}
+{"id": 34, "lang": "zh", "kind": "product", "ctx": "alone", "text": "产品目录第三版\n嘉禾封口膜-28\n销售部", "items": [[8, 16]], "suzhou": false}
+{"id": 35, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "The quotation was issued by Jin Hua Liner X2 and is valid for thirty days.", "items": [[28, 44]], "suzhou": false}
+{"id": 36, "lang": "zh", "kind": "company_latin", "ctx": "list", "text": "- Foshan Hong Tu Plastic\n- Qingdao Han Hai Machinery", "items": [[2, 24], [27, 52]], "suzhou": false}
+{"id": 37, "lang": "zh", "kind": "company_latin", "ctx": "alone", "text": "Foshan Hui Tong Printing Group Co., Ltd", "items": [[0, 39]], "suzhou": false}
+{"id": 38, "lang": "zh", "kind": "company_latin", "ctx": "page", "text": "公司简介\nOur partner: Suzhou Ming Zhu Composite Materials Limited\n总部设在宁波", "items": [[18, 61]], "suzhou": false}
+{"id": 39, "lang": "zh", "kind": "place_pinyin", "ctx": "page", "text": "公司简介\nOur partner: Liao Liao Ya Hu\n总部设在青岛", "items": [[18, 33]], "suzhou": false}
+{"id": 40, "lang": "zh", "kind": "place_pinyin", "ctx": "list", "text": "Suppliers:\n- Kunshan\n- Shen Jie Road 67\n- Foshan", "items": [[13, 20], [23, 39], [42, 48]], "suzhou": false}
+{"id": 41, "lang": "zh", "kind": "place_pinyin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Chun Xiao Jiang | Audited |", "items": [[37, 52]], "suzhou": false}
+{"id": 42, "lang": "zh", "kind": "company_latin", "ctx": "sentence", "text": "The order will be shipped by Dongguan Dong Sheng Precision Manufacturing Co. Ltd next week.", "items": [[29, 80]], "suzhou": false}
+{"id": 43, "lang": "zh", "kind": "product", "ctx": "alone", "text": "Sumei Pack", "items": [[0, 10]], "suzhou": false}
+{"id": 44, "lang": "zh", "kind": "company_latin", "ctx": "alone", "text": "Kunshan Ming Zhu Logistics Co., Ltd", "items": [[0, 35]], "suzhou": false}
+{"id": 45, "lang": "zh", "kind": "company_han", "ctx": "alone", "text": "产品目录第三版\n佛山东盛印刷股份有限公司\n销售部", "items": [[8, 20]], "suzhou": false}
+{"id": 46, "lang": "zh", "kind": "company_latin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Foshan Ming Zhu Chemical | Audited |", "items": [[37, 61]], "suzhou": false}
+{"id": 47, "lang": "zh", "kind": "company_han", "ctx": "alone", "text": "厦门东盛机械有限公司", "items": [[0, 10]], "suzhou": false}
+{"id": 48, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "Catalogue, third edition\nWang's Glass Ltd\nSales Office", "items": [[25, 41]], "suzhou": false}
+{"id": 49, "lang": "zh", "kind": "place_pinyin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Long Town | Audited |", "items": [[37, 46]], "suzhou": false}
+{"id": 50, "lang": "zh", "kind": "product", "ctx": "alone", "text": "Catalogue, third edition\nWei Ming Liner X2\nSales Office", "items": [[25, 42]], "suzhou": false}
+{"id": 51, "lang": "zh", "kind": "product", "ctx": "page", "text": "关于我们 | About us\nLi Shan Seal S300 serves customers worldwide. 欢迎咨询。", "items": [[16, 33]], "suzhou": false}
+{"id": 52, "lang": "zh", "kind": "place_han", "ctx": "page", "text": "关于我们 | About us\n和平东路148号 serves customers worldwide. 欢迎咨询。", "items": [[16, 24]], "suzhou": false}
+{"id": 53, "lang": "zh", "kind": "company_han", "ctx": "sentence", "text": "报价单由宁波瀚海化工提供，有效期三十天。", "items": [[4, 10]], "suzhou": false}
+{"id": 54, "lang": "zh", "kind": "company_latin", "ctx": "page", "text": "关于我们 | About us\nDongguan Hui Tong Composite Materials serves customers worldwide. 欢迎咨询。", "items": [[16, 53]], "suzhou": false}
+{"id": 55, "lang": "zh", "kind": "company_surname", "ctx": "sentence", "text": "该订单将由冯氏化工在下周发货。", "items": [[5, 9]], "suzhou": false}
+{"id": 56, "lang": "zh", "kind": "place_pinyin", "ctx": "sentence", "text": "The quotation was issued by Ting Hu Shan and is valid for thirty days.", "items": [[28, 40]], "suzhou": false}
+{"id": 57, "lang": "zh", "kind": "company_surname", "ctx": "sentence", "text": "该订单将由顾记物流有限责任公司在下周发货。", "items": [[5, 15]], "suzhou": false}
+{"id": 58, "lang": "zh", "kind": "company_surname", "ctx": "page", "text": "公司简介\nOur partner: 雷记印刷\n总部设在天津", "items": [[18, 22]], "suzhou": false}
+{"id": 59, "lang": "zh", "kind": "company_han", "ctx": "page", "text": "公司简介\nOur partner: 昆山金桥食品\n总部设在青岛", "items": [[18, 24]], "suzhou": false}
+{"id": 60, "lang": "zh", "kind": "company_han", "ctx": "sentence", "text": "该订单将由无锡金桥物流在下周发货。", "items": [[5, 11]], "suzhou": false}
+{"id": 61, "lang": "zh", "kind": "company_surname", "ctx": "list", "text": "- 雷记精密制造有限责任公司\n- 田记塑料\n- 夏氏精密制造有限公司", "items": [[2, 14], [17, 21], [24, 34]], "suzhou": false}
+{"id": 62, "lang": "zh", "kind": "suzhou", "ctx": "sentence", "text": "The order will be shipped by Suzhou Zi Jin Plastic Co., Ltd next week.", "items": [[29, 59]], "suzhou": true}
+{"id": 63, "lang": "zh", "kind": "company_latin", "ctx": "sentence", "text": "The quotation was issued by Foshan Heng Da Glass and is valid for thirty days.", "items": [[28, 48]], "suzhou": false}
+{"id": 64, "lang": "zh", "kind": "company_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 常州金桥玻璃制品集团有限公司 | 已审核 |", "items": [[26, 40]], "suzhou": false}
+{"id": 65, "lang": "zh", "kind": "company_latin", "ctx": "alone", "text": "Catalogue, third edition\nDongguan Bo Yuan Chemical Co. Ltd\nSales Office", "items": [[25, 58]], "suzhou": false}
+{"id": 66, "lang": "zh", "kind": "place_han", "ctx": "page", "text": "公司简介\nOur partner: 宁波华兴开发区\n总部设在昆山", "items": [[18, 25]], "suzhou": false}
+{"id": 67, "lang": "zh", "kind": "place_han", "ctx": "sentence", "text": "该订单将由天津凯旋区在下周发货。", "items": [[5, 10]], "suzhou": false}
+{"id": 68, "lang": "zh", "kind": "product", "ctx": "list", "text": "Suppliers:\n- Panhao Seal\n- Wei Ming Lid", "items": [[13, 24], [27, 39]], "suzhou": false}
+{"id": 69, "lang": "zh", "kind": "company_surname", "ctx": "sentence", "text": "The order will be shipped by Dong's Chemical Group Co., Ltd next week.", "items": [[29, 59]], "suzhou": false}
+{"id": 70, "lang": "zh", "kind": "company_han", "ctx": "list", "text": "- 青岛龙腾玻璃制品\n- 成都天成金属制品股份有限公司", "items": [[2, 10], [13, 27]], "suzhou": false}
+{"id": 71, "lang": "zh", "kind": "company_latin", "ctx": "sentence", "text": "The quotation was issued by Suzhou Dong Sheng Machinery and is valid for thirty days.", "items": [[28, 55]], "suzhou": false}
+{"id": 72, "lang": "zh", "kind": "company_han", "ctx": "list", "text": "供应商名单：\n- 苏州泰和模具\n- 天津紫金化工\n- 上海华兴物流", "items": [[9, 15], [18, 24], [27, 33]], "suzhou": false}
+{"id": 73, "lang": "zh", "kind": "company_surname", "ctx": "list", "text": "Suppliers:\n- Chan Yuk Precision Manufacturing Limited\n- Cui's Printing Group Co., Ltd", "items": [[13, 53], [56, 85]], "suzhou": false}
+{"id": 74, "lang": "zh", "kind": "place_pinyin", "ctx": "alone", "text": "Qin Mei Hu", "items": [[0, 10]], "suzhou": false}
+{"id": 75, "lang": "zh", "kind": "place_pinyin", "ctx": "list", "text": "- Suzhou Economic Development Zone\n- Dong Guang Yi Gang\n- Wei Xuan Road 47", "items": [[2, 34], [37, 55], [58, 74]], "suzhou": false}
+{"id": 76, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "产品目录第三版\n潘记化工\n销售部", "items": [[8, 12]], "suzhou": false}
+{"id": 77, "lang": "zh", "kind": "company_han", "ctx": "list", "text": "- 宁波龙腾瓶盖集团有限公司\n- 青岛瑞丰包装\n- 苏州金桥玻璃制品股份有限公司", "items": [[2, 14], [17, 23], [26, 40]], "suzhou": false}
+{"id": 78, "lang": "zh", "kind": "company_latin", "ctx": "page", "text": "公司简介\nOur partner: Tianjin Han Hai Chemical Ltd\n总部设在上海", "items": [[18, 46]], "suzhou": false}
+{"id": 79, "lang": "zh", "kind": "place_han", "ctx": "list", "text": "- 中山大道44号\n- 武汉远景镇", "items": [[2, 9], [12, 17]], "suzhou": false}
+{"id": 80, "lang": "zh", "kind": "place_pinyin", "ctx": "sentence", "text": "Our supplier Dong Hong Road 162 passed the audit last year.", "items": [[13, 31]], "suzhou": false}
+{"id": 81, "lang": "zh", "kind": "place_pinyin", "ctx": "sentence", "text": "Our supplier Bo District passed the audit last year.", "items": [[13, 24]], "suzhou": false}
+{"id": 82, "lang": "zh", "kind": "company_surname", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 袁氏化工 | 已审核 |", "items": [[26, 30]], "suzhou": false}
+{"id": 83, "lang": "zh", "kind": "product", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 泰和内衬 | 已审核 |", "items": [[26, 30]], "suzhou": false}
+{"id": 84, "lang": "zh", "kind": "place_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 杭州 | 已审核 |", "items": [[26, 28]], "suzhou": false}
+{"id": 85, "lang": "zh", "kind": "suzhou", "ctx": "sentence", "text": "The quotation was issued by Suzhou Zi Jin Plastic Co., Ltd and is valid for thirty days.", "items": [[28, 58]], "suzhou": true}
+{"id": 86, "lang": "zh", "kind": "product", "ctx": "page", "text": "公司简介\nOur partner: Bo Han Pack\n总部设在武汉", "items": [[18, 29]], "suzhou": false}
+{"id": 87, "lang": "zh", "kind": "company_surname", "ctx": "page", "text": "关于我们 | About us\nDu's Packaging serves customers worldwide. 欢迎咨询。", "items": [[16, 30]], "suzhou": false}
+{"id": 88, "lang": "zh", "kind": "place_pinyin", "ctx": "alone", "text": "Tian Town", "items": [[0, 9]], "suzhou": false}
+{"id": 89, "lang": "zh", "kind": "company_han", "ctx": "page", "text": "公司简介\nOur partner: 天津金桥化工\n总部设在北京", "items": [[18, 24]], "suzhou": false}
+{"id": 90, "lang": "zh", "kind": "suzhou", "ctx": "owner_sentence", "text": "BERICAP China and Suzhou Zi Jin Plastic Co., Ltd wrote a success story without compare", "items": [[0, 13], [18, 48]], "suzhou": true}
+{"id": 91, "lang": "zh", "kind": "company_latin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Foshan Yuan Jing Packaging | Audited |", "items": [[37, 63]], "suzhou": false}
+{"id": 92, "lang": "zh", "kind": "product", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 天成托盘-28 | 已审核 |", "items": [[26, 33]], "suzhou": false}
+{"id": 93, "lang": "zh", "kind": "company_surname", "ctx": "sentence", "text": "Our supplier Jiang's Machinery Ltd passed the audit last year.", "items": [[13, 34]], "suzhou": false}
+{"id": 94, "lang": "zh", "kind": "company_surname", "ctx": "page", "text": "关于我们 | About us\n黄氏精密制造有限公司 serves customers worldwide. 欢迎咨询。", "items": [[16, 26]], "suzhou": false}
+{"id": 95, "lang": "zh", "kind": "place_han", "ctx": "page", "text": "公司简介\nOur partner: 常州\n总部设在天津", "items": [[18, 20]], "suzhou": false}
+{"id": 96, "lang": "zh", "kind": "place_han", "ctx": "page", "text": "关于我们 | About us\n佛山明珠科技园 serves customers worldwide. 欢迎咨询。", "items": [[16, 23]], "suzhou": false}
+{"id": 97, "lang": "zh", "kind": "company_latin", "ctx": "sentence", "text": "The order will be shipped by Wuhan Jin Qiao Closures next week.", "items": [[29, 52]], "suzhou": false}
+{"id": 98, "lang": "zh", "kind": "company_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 宁波汇通模具 | 已审核 |", "items": [[26, 32]], "suzhou": false}
+{"id": 99, "lang": "zh", "kind": "place_han", "ctx": "sentence", "text": "该订单将由北京在下周发货。", "items": [[5, 7]], "suzhou": false}
+{"id": 100, "lang": "zh", "kind": "suzhou", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Suzhou Zi Jin Plastic Co., Ltd | Audited |", "items": [[37, 67]], "suzhou": true}
+{"id": 101, "lang": "zh", "kind": "product", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Jianglei Cap | Audited |", "items": [[37, 49]], "suzhou": false}
+{"id": 102, "lang": "zh", "kind": "product", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Cuifang Lid | Audited |", "items": [[37, 48]], "suzhou": false}
+{"id": 103, "lang": "zh", "kind": "company_latin", "ctx": "page", "text": "关于我们 | About us\nFoshan Xin Yuan Machinery Pte Ltd serves customers worldwide. 欢迎咨询。", "items": [[16, 49]], "suzhou": false}
+{"id": 104, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "该订单将由瀚海盖Pro在下周发货。", "items": [[5, 11]], "suzhou": false}
+{"id": 105, "lang": "zh", "kind": "place_pinyin", "ctx": "sentence", "text": "The order will be shipped by Suzhou High-Tech Zone next week.", "items": [[29, 50]], "suzhou": false}
+{"id": 106, "lang": "zh", "kind": "product", "ctx": "page", "text": "公司简介\nOur partner: Dingna Lid\n总部设在佛山", "items": [[18, 28]], "suzhou": false}
+{"id": 107, "lang": "zh", "kind": "company_han", "ctx": "list", "text": "供应商名单：\n- 常州瑞丰精密制造有限责任公司\n- 苏州华兴化工有限公司", "items": [[9, 23], [26, 36]], "suzhou": false}
+{"id": 108, "lang": "zh", "kind": "company_latin", "ctx": "alone", "text": "Suzhou Bo Yuan Mould Ltd", "items": [[0, 24]], "suzhou": false}
+{"id": 109, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "Lam Ho Plastic Group Co., Ltd", "items": [[0, 29]], "suzhou": false}
+{"id": 110, "lang": "zh", "kind": "product", "ctx": "alone", "text": "Catalogue, third edition\nYangmei Seal\nSales Office", "items": [[25, 37]], "suzhou": false}
+{"id": 111, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "Our supplier Yaoqi Seal passed the audit last year.", "items": [[13, 23]], "suzhou": false}
+{"id": 112, "lang": "zh", "kind": "place_han", "ctx": "sentence", "text": "报价单由东莞远景区提供，有效期三十天。", "items": [[4, 9]], "suzhou": false}
+{"id": 113, "lang": "zh", "kind": "company_latin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Foshan Tian Cheng Composite Materials | Audited |", "items": [[37, 74]], "suzhou": false}
+{"id": 114, "lang": "zh", "kind": "product", "ctx": "page", "text": "公司简介\nOur partner: Deng Tray Lite\n总部设在武汉", "items": [[18, 32]], "suzhou": false}
+{"id": 115, "lang": "zh", "kind": "place_han", "ctx": "alone", "text": "成都金桥镇", "items": [[0, 5]], "suzhou": false}
+{"id": 116, "lang": "zh", "kind": "company_surname", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Gao's Machinery Ltd | Audited |", "items": [[37, 56]], "suzhou": false}
+{"id": 117, "lang": "zh", "kind": "product", "ctx": "page", "text": "公司简介\nOur partner: Wei Ming Lid S300\n总部设在佛山", "items": [[18, 35]], "suzhou": false}
+{"id": 118, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "该订单将由鑫源瓶在下周发货。", "items": [[5, 8]], "suzhou": false}
+{"id": 119, "lang": "zh", "kind": "company_latin", "ctx": "alone", "text": "Wuhan Dong Sheng Logistics Pte Ltd", "items": [[0, 34]], "suzhou": false}
+{"id": 120, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "The quotation was issued by Wei Cap Lite and is valid for thirty days.", "items": [[28, 40]], "suzhou": false}
+{"id": 121, "lang": "zh", "kind": "company_surname", "ctx": "list", "text": "- Guo Yan Chemical Ltd\n- Gao's Glass Ltd", "items": [[2, 22], [25, 40]], "suzhou": false}
+{"id": 122, "lang": "zh", "kind": "suzhou", "ctx": "quote", "text": "From the collected page: \"We have worked with Suzhou Zi Jin Plastic Co., Ltd since 2015.\"", "items": [[46, 76]], "suzhou": true}
+{"id": 123, "lang": "zh", "kind": "place_han", "ctx": "sentence", "text": "我们的供应商厦门金桥新区位于佛山，已通过审核。", "items": [[6, 12]], "suzhou": false}
+{"id": 124, "lang": "zh", "kind": "place_han", "ctx": "sentence", "text": "我们的供应商武庄西路10号位于北京，已通过审核。", "items": [[6, 13]], "suzhou": false}
+{"id": 125, "lang": "zh", "kind": "product", "ctx": "alone", "text": "凯旋包装袋二号", "items": [[0, 7]], "suzhou": false}
+{"id": 126, "lang": "zh", "kind": "product", "ctx": "alone", "text": "Catalogue, third edition\nBaili Tray\nSales Office", "items": [[25, 35]], "suzhou": false}
+{"id": 127, "lang": "zh", "kind": "product", "ctx": "list", "text": "供应商名单：\n- 紫金盖二号\n- Ye Seal Pro", "items": [[9, 14], [17, 28]], "suzhou": false}
+{"id": 128, "lang": "zh", "kind": "place_pinyin", "ctx": "alone", "text": "Catalogue, third edition\nChao Hu Song Gang\nSales Office", "items": [[25, 42]], "suzhou": false}
+{"id": 129, "lang": "zh", "kind": "company_latin", "ctx": "sentence", "text": "The quotation was issued by Wuxi Heng Da Glass and is valid for thirty days.", "items": [[28, 46]], "suzhou": false}
+{"id": 130, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "Catalogue, third edition\nRen Qi Printing Ltd\nSales Office", "items": [[25, 44]], "suzhou": false}
+{"id": 131, "lang": "zh", "kind": "company_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 宁波瀚海物流股份有限公司 | 已审核 |", "items": [[26, 38]], "suzhou": false}
+{"id": 132, "lang": "zh", "kind": "product", "ctx": "alone", "text": "Jin Hua Seal Plus", "items": [[0, 17]], "suzhou": false}
+{"id": 133, "lang": "zh", "kind": "company_latin", "ctx": "list", "text": "- Ningbo Hua Xing Precision Manufacturing\n- Kunshan Ming Zhu Mould Co. Ltd", "items": [[2, 41], [44, 74]], "suzhou": false}
+{"id": 134, "lang": "zh", "kind": "company_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 昆山汇通模具 | 已审核 |", "items": [[26, 32]], "suzhou": false}
+{"id": 135, "lang": "zh", "kind": "company_han", "ctx": "sentence", "text": "该订单将由北京博远精密制造有限责任公司在下周发货。", "items": [[5, 19]], "suzhou": false}
+{"id": 136, "lang": "zh", "kind": "company_latin", "ctx": "sentence", "text": "The quotation was issued by Foshan Long Teng Composite Materials and is valid for thirty days.", "items": [[28, 64]], "suzhou": false}
+{"id": 137, "lang": "zh", "kind": "company_han", "ctx": "list", "text": "供应商名单：\n- 天津瑞丰印刷\n- 厦门嘉禾包装股份有限公司", "items": [[9, 15], [18, 30]], "suzhou": false}
+{"id": 138, "lang": "zh", "kind": "company_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 苏州嘉禾金属制品有限公司 | 已审核 |", "items": [[26, 38]], "suzhou": false}
+{"id": 139, "lang": "zh", "kind": "place_han", "ctx": "alone", "text": "昆山博远开发区", "items": [[0, 7]], "suzhou": false}
+{"id": 140, "lang": "zh", "kind": "product", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Rui Xin Liner 28/410 | Audited |", "items": [[37, 57]], "suzhou": false}
+{"id": 141, "lang": "zh", "kind": "company_han", "ctx": "alone", "text": "产品目录第三版\n成都瑞丰玻璃制品股份有限公司\n销售部", "items": [[8, 22]], "suzhou": false}
+{"id": 142, "lang": "zh", "kind": "product", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Bo Han Bottle 28/410 | Audited |", "items": [[37, 57]], "suzhou": false}
+{"id": 143, "lang": "zh", "kind": "company_han", "ctx": "page", "text": "关于我们 | About us\n常州天成机械 serves customers worldwide. 欢迎咨询。", "items": [[16, 22]], "suzhou": false}
+{"id": 144, "lang": "zh", "kind": "company_latin", "ctx": "page", "text": "关于我们 | About us\nNingbo Jia He Precision Manufacturing Limited serves customers worldwide. 欢迎咨询。", "items": [[16, 61]], "suzhou": false}
+{"id": 145, "lang": "zh", "kind": "place_pinyin", "ctx": "alone", "text": "Catalogue, third edition\nLan Yong Fang Shan\nSales Office", "items": [[25, 43]], "suzhou": false}
+{"id": 146, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "报价单由博远内衬-28提供，有效期三十天。", "items": [[4, 11]], "suzhou": false}
+{"id": 147, "lang": "zh", "kind": "company_latin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Chengdu Xin Yuan Logistics Co. Ltd | Audited |", "items": [[37, 71]], "suzhou": false}
+{"id": 148, "lang": "zh", "kind": "company_surname", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Zou's Printing | Audited |", "items": [[37, 51]], "suzhou": false}
+{"id": 149, "lang": "zh", "kind": "product", "ctx": "page", "text": "公司简介\nOur partner: Li Cap Max\n总部设在天津", "items": [[18, 28]], "suzhou": false}
+{"id": 150, "lang": "zh", "kind": "company_latin", "ctx": "list", "text": "- Qingdao Jin Qiao Glass\n- Dongguan Han Hai Printing Limited", "items": [[2, 24], [27, 60]], "suzhou": false}
+{"id": 151, "lang": "zh", "kind": "place_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 人民东路253号 | 已审核 |", "items": [[26, 34]], "suzhou": false}
+{"id": 152, "lang": "zh", "kind": "company_latin", "ctx": "list", "text": "- Wuxi Tai He Plastic Co., Ltd.\n- Foshan Dong Sheng Glass Ltd", "items": [[2, 31], [34, 61]], "suzhou": false}
+{"id": 153, "lang": "zh", "kind": "company_han", "ctx": "sentence", "text": "我们的供应商上海博远塑料有限责任公司位于宁波，已通过审核。", "items": [[6, 18]], "suzhou": false}
+{"id": 154, "lang": "zh", "kind": "place_pinyin", "ctx": "page", "text": "关于我们 | About us\nBo Yu Wei Jiang serves customers worldwide. 欢迎咨询。", "items": [[16, 31]], "suzhou": false}
+{"id": 155, "lang": "zh", "kind": "suzhou", "ctx": "alone", "text": "Suzhou Zi Jin Plastic Co., Ltd", "items": [[0, 30]], "suzhou": true}
+{"id": 156, "lang": "zh", "kind": "company_surname", "ctx": "sentence", "text": "The order will be shipped by Ng Chun Machinery next week.", "items": [[29, 46]], "suzhou": false}
+{"id": 157, "lang": "zh", "kind": "company_surname", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Ye Xuan Packaging | Audited |", "items": [[37, 54]], "suzhou": false}
+{"id": 158, "lang": "zh", "kind": "company_han", "ctx": "alone", "text": "昆山瀚海物流", "items": [[0, 6]], "suzhou": false}
+{"id": 159, "lang": "zh", "kind": "place_pinyin", "ctx": "page", "text": "公司简介\nOur partner: Zhu Jia Road 158\n总部设在北京", "items": [[18, 34]], "suzhou": false}
+{"id": 160, "lang": "zh", "kind": "company_surname", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Wei's Printing | Audited |", "items": [[37, 51]], "suzhou": false}
+{"id": 161, "lang": "zh", "kind": "product", "ctx": "list", "text": "- Hua Lan Seal\n- Long Wei Bottle\n- Li Shan Bottle X2", "items": [[2, 14], [17, 32], [35, 52]], "suzhou": false}
+{"id": 162, "lang": "zh", "kind": "place_pinyin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Jiang Han Gang | Audited |", "items": [[37, 51]], "suzhou": false}
+{"id": 163, "lang": "zh", "kind": "product", "ctx": "page", "text": "公司简介\nOur partner: 华兴托盘二号\n总部设在天津", "items": [[18, 24]], "suzhou": false}
+{"id": 164, "lang": "zh", "kind": "company_latin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Qingdao Dong Sheng Composite Materials Pte Ltd | Audited |", "items": [[37, 83]], "suzhou": false}
+{"id": 165, "lang": "zh", "kind": "place_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 无锡明珠新区 | 已审核 |", "items": [[26, 32]], "suzhou": false}
+{"id": 166, "lang": "zh", "kind": "product", "ctx": "alone", "text": "Catalogue, third edition\nHou Film One\nSales Office", "items": [[25, 37]], "suzhou": false}
+{"id": 167, "lang": "zh", "kind": "company_latin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Wuxi Yuan Jing Logistics | Audited |", "items": [[37, 61]], "suzhou": false}
+{"id": 168, "lang": "zh", "kind": "product", "ctx": "list", "text": "供应商名单：\n- Bo Han Lid\n- 远景盖二号\n- Jin Hua Pack S300", "items": [[9, 19], [22, 27], [30, 47]], "suzhou": false}
+{"id": 169, "lang": "zh", "kind": "place_pinyin", "ctx": "list", "text": "- Shen Fang Road 114\n- Bin Sun Zhen\n- Heng New Area", "items": [[2, 20], [23, 35], [38, 51]], "suzhou": false}
+{"id": 170, "lang": "zh", "kind": "product", "ctx": "list", "text": "供应商名单：\n- Jin Hua Tray S300\n- 瀚海内衬Pro", "items": [[9, 26], [29, 36]], "suzhou": false}
+{"id": 171, "lang": "zh", "kind": "company_surname", "ctx": "page", "text": "公司简介\nOur partner: Szeto Mei Printing\n总部设在天津", "items": [[18, 36]], "suzhou": false}
+{"id": 172, "lang": "zh", "kind": "company_latin", "ctx": "page", "text": "关于我们 | About us\nTianjin Xin Yuan Chemical Co., Ltd serves customers worldwide. 欢迎咨询。", "items": [[16, 50]], "suzhou": false}
+{"id": 173, "lang": "zh", "kind": "company_latin", "ctx": "list", "text": "Suppliers:\n- Kunshan Yuan Jing Packaging Limited\n- Xiamen Dong Sheng Chemical Co. Ltd\n- Changzhou Hong Tu Logistics", "items": [[13, 48], [51, 85], [88, 115]], "suzhou": false}
+{"id": 174, "lang": "zh", "kind": "company_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 上海东盛瓶盖股份有限公司 | 已审核 |", "items": [[26, 38]], "suzhou": false}
+{"id": 175, "lang": "zh", "kind": "company_surname", "ctx": "list", "text": "- 唐氏机械股份有限公司\n- 唐家金属制品有限责任公司\n- 段记精密制造股份有限公司", "items": [[2, 12], [15, 27], [30, 42]], "suzhou": false}
+{"id": 176, "lang": "zh", "kind": "company_latin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Xiamen Zi Jin Packaging Co. Ltd | Audited |", "items": [[37, 68]], "suzhou": false}
+{"id": 177, "lang": "zh", "kind": "place_pinyin", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Suzhou Industrial Park | Audited |", "items": [[37, 59]], "suzhou": false}
+{"id": 178, "lang": "zh", "kind": "company_latin", "ctx": "list", "text": "Suppliers:\n- Chengdu Jin Qiao Metal Products Group Co., Ltd\n- Ningbo Tai He Mould", "items": [[13, 59], [62, 81]], "suzhou": false}
+{"id": 179, "lang": "zh", "kind": "place_pinyin", "ctx": "sentence", "text": "The quotation was issued by Zou Wu Hu and is valid for thirty days.", "items": [[28, 37]], "suzhou": false}
+{"id": 180, "lang": "zh", "kind": "company_surname", "ctx": "page", "text": "关于我们 | About us\nPoon Wing Printing Ltd serves customers worldwide. 欢迎咨询。", "items": [[16, 38]], "suzhou": false}
+{"id": 181, "lang": "zh", "kind": "company_surname", "ctx": "list", "text": "- Lam Keung Glass Group Co., Ltd\n- Chan Pui Precision Manufacturing\n- Cao's Mould", "items": [[2, 32], [35, 67], [70, 81]], "suzhou": false}
+{"id": 182, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "报价单由东盛包装袋提供，有效期三十天。", "items": [[4, 9]], "suzhou": false}
+{"id": 183, "lang": "zh", "kind": "product", "ctx": "list", "text": "Suppliers:\n- Zi Jin Seal 38/400\n- Hua Lan Film\n- Xiabo Film", "items": [[13, 31], [34, 46], [49, 59]], "suzhou": false}
+{"id": 184, "lang": "zh", "kind": "product", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Jin Hua Film | Audited |", "items": [[37, 49]], "suzhou": false}
+{"id": 185, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "Tang Bin Closures Ltd", "items": [[0, 21]], "suzhou": false}
+{"id": 186, "lang": "zh", "kind": "place_pinyin", "ctx": "alone", "text": "Hong District", "items": [[0, 13]], "suzhou": false}
+{"id": 187, "lang": "zh", "kind": "company_surname", "ctx": "list", "text": "供应商名单：\n- 熊家瓶盖集团有限公司\n- 刘氏食品有限责任公司", "items": [[9, 19], [22, 32]], "suzhou": false}
+{"id": 188, "lang": "zh", "kind": "product", "ctx": "list", "text": "供应商名单：\n- Yaobin Cap\n- 远景内衬\n- Wang Film Max", "items": [[9, 19], [22, 26], [29, 42]], "suzhou": false}
+{"id": 189, "lang": "zh", "kind": "place_han", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 中山路163号 | 已审核 |", "items": [[26, 33]], "suzhou": false}
+{"id": 190, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "Ding's Precision Manufacturing Limited", "items": [[0, 38]], "suzhou": false}
+{"id": 191, "lang": "zh", "kind": "place_pinyin", "ctx": "page", "text": "关于我们 | About us\nXiamen serves customers worldwide. 欢迎咨询。", "items": [[16, 22]], "suzhou": false}
+{"id": 192, "lang": "zh", "kind": "company_han", "ctx": "sentence", "text": "我们的供应商昆山龙腾机械位于北京，已通过审核。", "items": [[6, 12]], "suzhou": false}
+{"id": 193, "lang": "zh", "kind": "place_pinyin", "ctx": "page", "text": "关于我们 | About us\nDongguan serves customers worldwide. 欢迎咨询。", "items": [[16, 24]], "suzhou": false}
+{"id": 194, "lang": "zh", "kind": "company_latin", "ctx": "sentence", "text": "The order will be shipped by Ningbo Hong Tu Composite Materials Pte Ltd next week.", "items": [[29, 71]], "suzhou": false}
+{"id": 195, "lang": "zh", "kind": "company_surname", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 毛家化工 | 已审核 |", "items": [[26, 30]], "suzhou": false}
+{"id": 196, "lang": "zh", "kind": "company_latin", "ctx": "page", "text": "关于我们 | About us\nFoshan Hua Xing Machinery Ltd serves customers worldwide. 欢迎咨询。", "items": [[16, 45]], "suzhou": false}
+{"id": 197, "lang": "zh", "kind": "company_latin", "ctx": "list", "text": "- Dongguan Rui Feng Plastic Co. Ltd\n- Changzhou Yuan Jing Machinery Pte Ltd", "items": [[2, 35], [38, 75]], "suzhou": false}
+{"id": 198, "lang": "zh", "kind": "company_latin", "ctx": "list", "text": "Suppliers:\n- Suzhou Han Hai Packaging Limited\n- Qingdao Jia He Plastic Ltd", "items": [[13, 45], [48, 74]], "suzhou": false}
+{"id": 199, "lang": "zh", "kind": "place_han", "ctx": "list", "text": "- 天津\n- 崔家东路168号\n- 中山东路40号", "items": [[2, 4], [7, 15], [18, 25]], "suzhou": false}
+{"id": 200, "lang": "zh", "kind": "place_han", "ctx": "alone", "text": "产品目录第三版\n东莞\n销售部", "items": [[8, 10]], "suzhou": false}
+{"id": 201, "lang": "zh", "kind": "company_han", "ctx": "alone", "text": "产品目录第三版\n常州汇通印刷有限责任公司\n销售部", "items": [[8, 20]], "suzhou": false}
+{"id": 202, "lang": "zh", "kind": "company_surname", "ctx": "table", "text": "| 编号 | 名称 | 状态 |\n| 4812 | 徐家复合材料有限责任公司 | 已审核 |", "items": [[26, 38]], "suzhou": false}
+{"id": 203, "lang": "zh", "kind": "company_latin", "ctx": "page", "text": "关于我们 | About us\nWuhan Xin Yuan Plastic Co., Ltd. serves customers worldwide. 欢迎咨询。", "items": [[16, 48]], "suzhou": false}
+{"id": 204, "lang": "zh", "kind": "company_surname", "ctx": "sentence", "text": "Our supplier Ng Ting Printing Limited passed the audit last year.", "items": [[13, 37]], "suzhou": false}
+{"id": 205, "lang": "zh", "kind": "company_han", "ctx": "sentence", "text": "报价单由佛山瀚海物流股份有限公司提供，有效期三十天。", "items": [[4, 16]], "suzhou": false}
+{"id": 206, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "The order will be shipped by Hua Lan Cap X2 next week.", "items": [[29, 43]], "suzhou": false}
+{"id": 207, "lang": "zh", "kind": "company_latin", "ctx": "alone", "text": "Catalogue, third edition\nWuxi Hui Tong Chemical Group Co., Ltd\nSales Office", "items": [[25, 62]], "suzhou": false}
+{"id": 208, "lang": "zh", "kind": "suzhou", "ctx": "page", "text": "关于我们 | About us\nSuzhou Zi Jin Plastic Co., Ltd serves customers worldwide. 欢迎咨询。", "items": [[16, 46]], "suzhou": true}
+{"id": 209, "lang": "zh", "kind": "company_surname", "ctx": "alone", "text": "产品目录第三版\n梁氏复合材料\n销售部", "items": [[8, 14]], "suzhou": false}
+{"id": 210, "lang": "zh", "kind": "company_surname", "ctx": "sentence", "text": "该订单将由程家食品在下周发货。", "items": [[5, 9]], "suzhou": false}
+{"id": 211, "lang": "zh", "kind": "product", "ctx": "table", "text": "| No. | Supplier | Status |\n| 4812 | Xiao Yan Bottle | Audited |", "items": [[37, 52]], "suzhou": false}
+{"id": 212, "lang": "zh", "kind": "company_han", "ctx": "list", "text": "- 厦门紫金玻璃制品\n- 杭州华兴金属制品", "items": [[2, 10], [13, 21]], "suzhou": false}
+{"id": 213, "lang": "zh", "kind": "product", "ctx": "sentence", "text": "The order will be shipped by Long Wei Closure X2 next week.", "items": [[29, 48]], "suzhou": false}
+{"id": 214, "lang": "zh", "kind": "company_surname", "ctx": "page", "text": "关于我们 | About us\nBai's Machinery serves customers worldwide. 欢迎咨询。", "items": [[16, 31]], "suzhou": false}
+{"id": 215, "lang": "zh", "kind": "place_pinyin", "ctx": "list", "text": "Suppliers:\n- Bo Town\n- Liang Hua Road 32", "items": [[13, 20], [23, 40]], "suzhou": false}
+{"id": 216, "lang": "zh", "kind": "place_pinyin", "ctx": "sentence", "text": "The quotation was issued by Han New Area and is valid for thirty days.", "items": [[28, 40]], "suzhou": false}
+{"id": 217, "lang": "zh", "kind": "product", "ctx": "page", "text": "关于我们 | About us\nFanzi Film serves customers worldwide. 欢迎咨询。", "items": [[16, 26]], "suzhou": false}
