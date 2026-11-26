@@ -7,16 +7,21 @@ Administrator only (401 without a session, 403 for a member):
 
 Public, the token being the credential:
 
-    GET  /invitations/{token}          validity check
-    POST /invitations/{token}/accept   set a password, join the organisation, get signed in
+    POST /invitations/check    validity check (changes no state)
+    POST /invitations/accept   set a password, join the organisation, get signed in
+
+The token travels in the JSON body, never in a URL (the link carries it in the fragment).
 """
 
 import logging
 import uuid
+from collections.abc import Callable, Coroutine
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.routing import APIRoute
 from pydantic import BaseModel, ConfigDict, StringConstraints
 from sqlalchemy import select
 
@@ -26,7 +31,13 @@ from app.auth.passwords import normalise_email
 from app.auth.routes import CurrentUser
 from app.auth.sessions import set_session_cookie
 from app.db import DbSession, utc_now
-from app.errors import InvalidField, not_found, parse_resource_id
+from app.errors import (
+    InvalidField,
+    _on_invalid_field,
+    _on_validation_error,
+    not_found,
+    parse_resource_id,
+)
 from app.invitations import service
 from app.models import Invitation, Organisation
 from app.settings_dependency import CurrentSettings
@@ -36,7 +47,34 @@ logger = logging.getLogger(__name__)
 admin_router = APIRouter(
     prefix="/admin", tags=["admin"], dependencies=[Depends(require_administrator)]
 )
-public_router = APIRouter(prefix="/invitations", tags=["invitations"], dependencies=[PUBLIC])
+NO_STORE = {"Cache-Control": "no-store"}
+
+
+class NoStoreRoute(APIRoute):
+    """Answers of the public endpoints are never cached, a 422 from the body check included."""
+
+    def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
+        handler = super().get_route_handler()
+
+        async def no_store(request: Request) -> Response:
+            try:
+                response = await handler(request)
+            except RequestValidationError as error:
+                response = await _on_validation_error(request, error)
+            except InvalidField as error:
+                response = await _on_invalid_field(request, error)
+            response.headers.update(NO_STORE)
+            return response
+
+        return no_store
+
+
+public_router = APIRouter(
+    prefix="/invitations",
+    tags=["invitations"],
+    dependencies=[PUBLIC],
+    route_class=NoStoreRoute,
+)
 
 
 class InvitationCreate(BaseModel):
@@ -69,17 +107,29 @@ class InvitationCheck(BaseModel):
     expires_at: datetime
 
 
-class InvitationAccept(BaseModel):
-    """Mirrors components/schemas/InvitationAccept. The minimum length is configured."""
+class InvitationToken(BaseModel):
+    """Mirrors components/schemas/InvitationToken.
+
+    No length bound here: an empty or oversized token is a malformed token and answers the same
+    404 as an unknown one, not a 422 (the service refuses it).
+    """
 
     model_config = ConfigDict(extra="forbid")
+
+    token: str
+
+
+class InvitationAccept(InvitationToken):
+    """Mirrors components/schemas/InvitationAccept. The minimum length is configured."""
 
     # Not stripped: spaces are valid in a password.
     password: Annotated[str, StringConstraints(min_length=1, max_length=1024)]
 
 
 def _refused() -> HTTPException:
-    return HTTPException(status.HTTP_404_NOT_FOUND, detail=service.INVALID_INVITATION)
+    return HTTPException(
+        status.HTTP_404_NOT_FOUND, detail=service.INVALID_INVITATION, headers=NO_STORE
+    )
 
 
 @admin_router.post(
@@ -132,10 +182,10 @@ def revoke_invitation(id: str, db: DbSession) -> Response:
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@public_router.get("/{token}", response_model=InvitationCheck)
-def check_invitation(token: str, db: DbSession) -> InvitationCheck:
+@public_router.post("/check", response_model=InvitationCheck)
+def check_invitation(body: InvitationToken, db: DbSession) -> InvitationCheck:
     try:
-        invitation, organisation = service.check_invitation(db, token, utc_now())
+        invitation, organisation = service.check_invitation(db, body.token, utc_now())
     except service.InvitationRefused:
         raise _refused() from None
     return InvitationCheck(
@@ -145,9 +195,8 @@ def check_invitation(token: str, db: DbSession) -> InvitationCheck:
     )
 
 
-@public_router.post("/{token}/accept", response_model=CurrentUser)
+@public_router.post("/accept", response_model=CurrentUser)
 def accept_invitation(
-    token: str,
     body: InvitationAccept,
     response: Response,
     db: DbSession,
@@ -157,11 +206,13 @@ def accept_invitation(
     if len(body.password) < minimum:
         raise InvalidField("password", f"Password must be at least {minimum} characters.")
     try:
-        accepted = service.accept_invitation(db, token, body.password, utc_now())
+        accepted = service.accept_invitation(db, body.token, body.password, utc_now())
     except service.InvitationRefused:
         raise _refused() from None
     except service.SeatLimitReached:
-        raise HTTPException(status.HTTP_409_CONFLICT, detail=service.SEAT_LIMIT_REACHED) from None
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail=service.SEAT_LIMIT_REACHED, headers=NO_STORE
+        ) from None
     db.commit()
     user = accepted.user
     logger.info(

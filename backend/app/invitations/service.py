@@ -68,8 +68,11 @@ def is_valid_email(email: str) -> bool:
 
 
 def invitation_link(settings: Settings, token: str) -> str:
-    """The frontend page for the token: the first allowed origin (the frontend's own origin)."""
-    return f"{settings.allowed_origins[0].rstrip('/')}/invitations/{token}"
+    """The frontend page for the token: the first allowed origin (the frontend's own origin).
+
+    The token sits in the fragment: a browser sends it to no server and in no `Referer` header.
+    """
+    return f"{settings.allowed_origins[0].rstrip('/')}/invitations#{token}"
 
 
 def count_members(db: Session, organisation_id: uuid.UUID) -> int:

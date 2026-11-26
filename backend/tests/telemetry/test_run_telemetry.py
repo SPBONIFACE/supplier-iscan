@@ -217,7 +217,8 @@ def test_the_sentinel_values_are_in_no_span_metric_or_log(
         "/runs",
         json={"identity_id": "not-an-id", "email": EMAIL, "note": BUYER_TEXT, "quote": QUOTE},
     )
-    client.get(f"/invitations/{TOKEN}", params={"email": EMAIL, "phone": PHONE})
+    client.get(f"/invitations/{TOKEN}", params={"email": EMAIL, "phone": PHONE})  # old format
+    client.post("/invitations/check", json={"token": TOKEN})
     client.get(f"/{PERSON.replace(' ', '-')}/{PHONE}")
     # Three runs: completed, failed with sentinels in the exception, paused on a provider failure.
     start_run(client, engine)
