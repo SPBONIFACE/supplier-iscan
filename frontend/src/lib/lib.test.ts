@@ -135,7 +135,7 @@ describe("api client behaviour", () => {
     expect(await api.getCurrentUser()).toMatchObject({ kind: "unavailable", status: 0 });
   });
 
-  it("sends credentials and the token only in the path", async () => {
+  it("sends credentials and the token only in the JSON body, never in the URL", async () => {
     const calls = vi.fn(
       async (_request: Request) =>
         new Response(
@@ -143,14 +143,27 @@ describe("api client behaviour", () => {
             email: "a",
             organisation_name: "o",
             expires_at: "2026-01-01T00:00:00Z",
+            id: "u",
+            role: "member",
+            organisation_id: "o",
           }),
           { status: 200, headers: { "content-type": "application/json" } },
         ),
     );
     vi.stubGlobal("fetch", calls);
     await api.checkInvitation("secret-token");
-    const request = calls.mock.calls[0]?.[0] as Request;
-    expect(request.credentials).toBe("include");
-    expect(new URL(request.url).pathname).toBe("/invitations/secret-token");
+    await api.acceptInvitation("secret-token", "a password");
+    const [check, accept] = calls.mock.calls.map((call) => call[0] as Request);
+    for (const request of [check, accept]) {
+      expect(request?.method).toBe("POST");
+      expect(request?.credentials).toBe("include");
+      expect(request?.url).not.toContain("secret-token");
+      expect(new URL(request?.url ?? "").search).toBe("");
+      expect(request?.headers.get("referer")).toBeNull();
+    }
+    expect(new URL(check?.url ?? "").pathname).toBe("/invitations/check");
+    expect(new URL(accept?.url ?? "").pathname).toBe("/invitations/accept");
+    expect(await check?.clone().json()).toEqual({ token: "secret-token" });
+    expect(await accept?.clone().json()).toEqual({ token: "secret-token", password: "a password" });
   });
 });

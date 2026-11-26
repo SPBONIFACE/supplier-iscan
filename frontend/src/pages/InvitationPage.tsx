@@ -1,8 +1,8 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
-import { homePath } from "../auth/paths";
+import { homePath, INVITATION_PATH } from "../auth/paths";
 import { Button, FormField, LoadingIndicator, MessageBanner } from "../components/ui";
 import { api, type InvitationCheck } from "../lib/api";
 import { formatDateTime } from "../lib/format";
@@ -16,13 +16,17 @@ type Check =
 
 type Errors = { password?: string; confirm?: string };
 
-// The token stays in the URL only: it is never stored, logged or put in a message.
-export function InvitationPage() {
+// The link is `/invitations#<token>`. The token is read once from the fragment (a browser sends it
+// to no server, nor in `Referer`), kept in memory only, and the address is replaced at once by
+// `/invitations`. It is never stored, logged or put in a message, and goes only in a POST body.
+// A link of the old format (`/invitations/<token>`, `legacy`) holds no usable token: not valid.
+export function InvitationPage({ legacy = false }: { legacy?: boolean }) {
   const { t, i18n } = useTranslation();
-  const { token = "" } = useParams();
+  const { hash } = useLocation();
+  const [token] = useState(() => (legacy ? "" : hash.replace(/^#/, "")));
   const { user, status, setUser, signOut } = useAuth();
   const navigate = useNavigate();
-  const [check, setCheck] = useState<Check>({ state: "loading" });
+  const [check, setCheck] = useState<Check>(token ? { state: "loading" } : { state: "invalid" });
   const [attempt, setAttempt] = useState(0);
   const [step, setStep] = useState<"landing" | "form">("landing");
   const [password, setPassword] = useState("");
@@ -36,8 +40,14 @@ export function InvitationPage() {
 
   useTitle(t("invitation.eyebrow"));
 
+  // The token is not left in the address bar nor in the history entry. The history state is kept:
+  // the router stores its own bookkeeping in it.
   useEffect(() => {
-    if (status !== "ready" || signedIn) return;
+    window.history.replaceState(window.history.state, "", INVITATION_PATH);
+  }, []);
+
+  useEffect(() => {
+    if (!token || status !== "ready" || signedIn) return;
     let current = true;
     setCheck({ state: "loading" });
     void api.checkInvitation(token).then((result) => {

@@ -2,9 +2,12 @@ import type { CurrentUser } from "../lib/api";
 
 export const LOGIN_PATH = "/login";
 
+export const INVITATION_PATH = "/invitations";
+
 export const isPublicPath = (pathname: string): boolean =>
   pathname === LOGIN_PATH ||
-  pathname.startsWith("/invitations/") ||
+  pathname === INVITATION_PATH ||
+  pathname.startsWith(`${INVITATION_PATH}/`) ||
   pathname === "/demo" ||
   pathname.startsWith("/demo/");
 

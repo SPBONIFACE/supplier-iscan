@@ -8,7 +8,10 @@ pointed at it with API_UPSTREAM_URL, on a throwaway Docker network. Then checks 
   - `/api/health?...` reaches the stub as `/health`, with the query string, the cookie, the
     upstream host and the forwarded headers;
   - a POST body is passed on and a body over the limit is refused;
-  - the access log has the path, never the query string, a cookie or an invitation token;
+  - `/invitations` (the page of the link `/invitations#<token>`) is served with `Referrer-Policy:
+    no-referrer`;
+  - the access log has the path, never the query string, a cookie, an invitation token in a path
+    or in the body of `POST /api/invitations/check` and `/accept`;
   - bad API_UPSTREAM_URL values stop the container.
 No secret is used; the marker values below are made up.
 """
@@ -55,6 +58,7 @@ INVITATION_PATHS = (
 MARK_QUERY = "marker_query_12345"
 MARK_COOKIE = "marker_cookie_67890"
 MARK_INVITE = "marker_invite_abcde"
+MARK_BODY = "marker_body_token_fghij"
 
 
 class Failure(Exception):
@@ -88,6 +92,15 @@ def get(
             return response.status, response.read().decode()
     except urllib.error.HTTPError as error:
         return error.code, error.read().decode()
+
+
+def header(url: str, name: str) -> str | None:
+    """A response header of a GET (the headers `get` does not return)."""
+    try:
+        with urllib.request.urlopen(url, timeout=20) as response:  # noqa: S310
+            return response.headers.get(name)
+    except urllib.error.HTTPError as error:
+        return error.headers.get(name)
 
 
 def expect(condition: bool, message: str) -> None:
@@ -137,6 +150,12 @@ def check(image: str) -> None:
                 status == 200 and 'id="root"' in body, "a client-side route serves the application"
             )
 
+            for page in ("/invitations", "/invitations/old-format-token"):
+                expect(
+                    header(f"{base}{page}", "Referrer-Policy") == "no-referrer",
+                    f"{page} is served with Referrer-Policy: no-referrer",
+                )
+
             query = f"q={MARK_QUERY}"
             status, body = get(f"{base}/api/health?{query}", cookie=f"session={MARK_COOKIE}")
             fields = dict(part.split("=", 1) for part in body.split("|"))
@@ -158,6 +177,14 @@ def check(image: str) -> None:
                 "a path with a token is forwarded",
             )
 
+            for endpoint in ("check", "accept"):
+                payload = json.dumps({"token": MARK_BODY, "password": MARK_BODY}).encode()
+                status, body = get(f"{base}/api/invitations/{endpoint}", method="POST", data=payload)
+                expect(
+                    status == 200 and f"path=/invitations/{endpoint}|" in body,
+                    f"POST /api/invitations/{endpoint} is forwarded",
+                )
+
             status, body = get(f"{base}/api/runs", method="POST", data=b'{"a": 1}')
             expect(status == 200 and "method=POST" in body, "a POST is forwarded")
             status, _ = get(f"{base}/api/runs", method="POST", data=b"x" * (300 * 1024))
@@ -170,6 +197,7 @@ def check(image: str) -> None:
                 (MARK_QUERY, "query string"),
                 (MARK_COOKIE, "cookie"),
                 (MARK_INVITE, "invitation token"),
+                (MARK_BODY, "invitation token sent in a body"),
             ):
                 expect(secret not in log, f"the logs hold no {what}")
         finally:

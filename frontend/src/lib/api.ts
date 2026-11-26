@@ -152,15 +152,10 @@ export const api = {
   listRuns: () => call(() => client.GET("/runs")),
 
   checkInvitation: (token: string) =>
-    call(() => client.GET("/invitations/{token}", { params: { path: { token } } })),
+    call(() => client.POST("/invitations/check", { body: { token } })),
 
   acceptInvitation: (token: string, password: string) =>
-    call(() =>
-      client.POST("/invitations/{token}/accept", {
-        params: { path: { token } },
-        body: { password },
-      }),
-    ),
+    call(() => client.POST("/invitations/accept", { body: { token, password } })),
 
   getDisclosure: (language: Language) =>
     call(() => client.GET("/identity/disclosure", { params: { query: { language } } })),

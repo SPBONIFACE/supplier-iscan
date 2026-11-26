@@ -395,6 +395,8 @@ describe("safeNext", () => {
       "/a\\b",
       "https://x",
       "/login",
+      "/invitations",
+      "/invitations/old-token",
     ]) {
       expect(safeNext(bad === "/%09/evil" ? decodeURIComponent(bad) : bad)).toBeNull();
     }
