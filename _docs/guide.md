@@ -284,7 +284,10 @@ administrator (`$APP` is the frontend address of the instance, for example the d
    ```
 
 3. Open the `link` in a browser (a private window, so the administrator session stays apart), choose a password
-   and accept: accepting signs you in as that member.
+   and accept: accepting signs you in as that member. The `link` has the form `<origin>/invitations#<token>`: copy
+   it whole, including the `#` part, which carries the token. The page removes it from the address bar at once, so
+   a reload shows "This invitation link cannot be used"; open the link again from where you copied it. A link in
+   the old format (`<origin>/invitations/<token>`) no longer works: create a new invitation (step 2) instead.
 4. From then on, sign in with that member address to start and review profiles. Delete `admin.cookies` afterwards.
 
 *Activation*: a new organisation on a hosted instance starts `pending_activation`, and its runs are refused ("not
