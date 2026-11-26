@@ -726,27 +726,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/invitations/{token}": {
+    "/invitations/check": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * Check an invitation link
-         * @description Public: the token is the credential. A used, expired, revoked or unknown token answers the same 404, which says nothing about any account.
+         * @description Public: the token is the credential. It travels in the JSON body, never in a URL: the link carries it in the fragment (`/invitations#<token>`), which browsers send to no server. A used, expired, revoked, unknown or malformed token answers the same 404, which says nothing about any account. Changes no state. The answer is never cached (`Cache-Control: no-store`).
          */
-        get: operations["checkInvitation"];
-        put?: never;
-        post?: never;
+        post: operations["checkInvitation"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/invitations/{token}/accept": {
+    "/invitations/accept": {
         parameters: {
             query?: never;
             header?: never;
@@ -757,7 +757,7 @@ export interface paths {
         put?: never;
         /**
          * Accept an invitation and set a password
-         * @description Public: the token is the credential. Creates the user (role `member`) in the invitation's organisation, marks the invitation used and signs the person in: the session cookie is set as on `POST /auth/login`. A used, expired, revoked or unknown token answers the same 404. A password shorter than the configured minimum (`PASSWORD_MIN_LENGTH`) answers 422. When the organisation has as many members as its seat limit, the answer is 409.
+         * @description Public: the token is the credential, sent in the JSON body. Creates the user (role `member`) in the invitation's organisation, marks the invitation used and signs the person in: the session cookie is set as on `POST /auth/login`. A used, expired, revoked, unknown or malformed token answers the same 404. A password shorter than the configured minimum (`PASSWORD_MIN_LENGTH`) answers 422. When the organisation has as many members as its seat limit, the answer is 409. The answer is never cached (`Cache-Control: no-store`).
          */
         post: operations["acceptInvitation"];
         delete?: never;
@@ -1595,7 +1595,7 @@ export interface components {
             email: string;
             /** Format: date-time */
             expires_at: string;
-            /** @description The single-use link for the invited person: the frontend origin followed by `/invitations/<token>`. It is returned once and cannot be shown again. */
+            /** @description The single-use link for the invited person: the frontend origin followed by `/invitations#<token>`. The token sits in the fragment, so it reaches no server log and no `Referer` header. It is returned once and cannot be shown again. */
             link: string;
         };
         InvitationCheck: {
@@ -1604,7 +1604,13 @@ export interface components {
             /** Format: date-time */
             expires_at: string;
         };
+        InvitationToken: {
+            /** @description The token from the invitation link (the part after `#`). */
+            token: string;
+        };
         InvitationAccept: {
+            /** @description The token from the invitation link (the part after `#`). */
+            token: string;
             /** @description At least the configured minimum length (`PASSWORD_MIN_LENGTH`). */
             password: string;
         };
@@ -1772,8 +1778,6 @@ export interface components {
     parameters: {
         /** @description The resource's UUID. A value that is not a UUID answers 404, as an unknown id. */
         ResourceId: string;
-        /** @description The token from the invitation link. */
-        InvitationToken: string;
     };
     requestBodies: never;
     headers: never;
@@ -2967,17 +2971,20 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description The token from the invitation link. */
-                token: components["parameters"]["InvitationToken"];
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationToken"];
+            };
+        };
         responses: {
             /** @description The invitation is valid. */
             200: {
                 headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2985,6 +2992,7 @@ export interface operations {
                 };
             };
             404: components["responses"]["InvalidInvitation"];
+            422: components["responses"]["ValidationFailed"];
             503: components["responses"]["ServiceUnavailable"];
         };
     };
@@ -2992,10 +3000,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** @description The token from the invitation link. */
-                token: components["parameters"]["InvitationToken"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
@@ -3007,6 +3012,8 @@ export interface operations {
             /** @description The account is created and the person is signed in. */
             200: {
                 headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
                     /** @description The session cookie, exactly as set by `POST /auth/login`. */
                     "Set-Cookie"?: string;
                     [name: string]: unknown;
