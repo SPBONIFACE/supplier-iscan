@@ -45,7 +45,9 @@ export function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/invitations/:token" element={<InvitationPage />} />
+        <Route path="/invitations" element={<InvitationPage />} />
+        {/* The old link format: shown as not valid, the API is not called. */}
+        <Route path="/invitations/*" element={<InvitationPage legacy />} />
         {/* The public demo (#50): no sign-in, read-only. */}
         <Route path="/demo" element={<DemoLandingPage />} />
         <Route path="/demo/profiles" element={<DemoShell />}>

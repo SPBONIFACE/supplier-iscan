@@ -1439,40 +1439,54 @@ paths:
                 detail: This invitation has already been used.
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-  /invitations/{token}:
-    get:
+  /invitations/check:
+    post:
       operationId: checkInvitation
       tags: [invitations]
       summary: Check an invitation link
       description: >-
-        Public: the token is the credential. A used, expired, revoked or unknown token answers the
-        same 404, which says nothing about any account.
-      parameters:
-        - $ref: "#/components/parameters/InvitationToken"
+        Public: the token is the credential. It travels in the JSON body, never in a URL: the link
+        carries it in the fragment (`/invitations#<token>`), which browsers send to no server. A used,
+        expired, revoked, unknown or malformed token answers the same 404, which says nothing about
+        any account. Changes no state. The answer is never cached (`Cache-Control: no-store`).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvitationToken"
       responses:
         "200":
           description: The invitation is valid.
+          headers:
+            Cache-Control:
+              description: Always `no-store`.
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvitationCheck"
         "404":
           $ref: "#/components/responses/InvalidInvitation"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-  /invitations/{token}/accept:
+  /invitations/accept:
     post:
       operationId: acceptInvitation
       tags: [invitations]
       summary: Accept an invitation and set a password
       description: >-
-        Public: the token is the credential. Creates the user (role `member`) in the invitation's
-        organisation, marks the invitation used and signs the person in: the session cookie is set
-        as on `POST /auth/login`. A used, expired, revoked or unknown token answers the same 404.
-        A password shorter than the configured minimum (`PASSWORD_MIN_LENGTH`) answers 422. When
-        the organisation has as many members as its seat limit, the answer is 409.
-      parameters:
-        - $ref: "#/components/parameters/InvitationToken"
+        Public: the token is the credential, sent in the JSON body. Creates the user (role `member`)
+        in the invitation's organisation, marks the invitation used and signs the person in: the
+        session cookie is set as on `POST /auth/login`. A used, expired, revoked, unknown or
+        malformed token answers the same 404. A password shorter than the configured minimum
+        (`PASSWORD_MIN_LENGTH`) answers 422. When the organisation has as many members as its seat
+        limit, the answer is 409. The answer is never cached (`Cache-Control: no-store`).
+      security: []
       requestBody:
         required: true
         content:
@@ -1483,6 +1497,10 @@ paths:
         "200":
           description: The account is created and the person is signed in.
           headers:
+            Cache-Control:
+              description: Always `no-store`.
+              schema:
+                type: string
             Set-Cookie:
               description: The session cookie, exactly as set by `POST /auth/login`.
               schema:
@@ -1696,13 +1714,6 @@ components:
       in: path
       required: true
       description: The resource's UUID. A value that is not a UUID answers 404, as an unknown id.
-      schema:
-        type: string
-    InvitationToken:
-      name: token
-      in: path
-      required: true
-      description: The token from the invitation link.
       schema:
         type: string
   securitySchemes:
@@ -3545,7 +3556,8 @@ components:
         link:
           description: >-
             The single-use link for the invited person: the frontend origin followed by
-            `/invitations/<token>`. It is returned once and cannot be shown again.
+            `/invitations#<token>`. The token sits in the fragment, so it reaches no server log
+            and no `Referer` header. It is returned once and cannot be shown again.
           type: string
     InvitationCheck:
       type: object
@@ -3559,11 +3571,26 @@ components:
         expires_at:
           type: string
           format: date-time
+    InvitationToken:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token:
+          description: The token from the invitation link (the part after `#`).
+          type: string
+          minLength: 1
+          maxLength: 128
     InvitationAccept:
       type: object
       additionalProperties: false
-      required: [password]
+      required: [token, password]
       properties:
+        token:
+          description: The token from the invitation link (the part after `#`).
+          type: string
+          minLength: 1
+          maxLength: 128
         password:
           description: At least the configured minimum length (`PASSWORD_MIN_LENGTH`).
           type: string

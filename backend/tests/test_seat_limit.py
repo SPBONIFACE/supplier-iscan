@@ -26,7 +26,7 @@ CONCURRENT = 6
 
 
 def accept(client: TestClient, token: str) -> httpx2.Response:
-    return client.post(f"/invitations/{token}/accept", json={"password": PASSWORD})
+    return client.post("/invitations/accept", json={"token": token, "password": PASSWORD})
 
 
 def member_count(engine: Engine, organisation_id: uuid.UUID) -> int:
@@ -56,6 +56,7 @@ def test_acceptance_is_refused_when_every_seat_is_taken(client: TestClient, engi
     assert response.status_code == 409
     assert response.json() == {"detail": SEAT_LIMIT_REACHED}
     assert "set-cookie" not in response.headers
+    assert response.headers["cache-control"] == "no-store"
     assert member_count(engine, organisation_id) == SEATS
     with Session(engine) as db:
         # Not consumed: it works once a seat is free (or the limit is raised).

@@ -165,7 +165,7 @@ describe("invitation", () => {
     signedOut();
     mocks.checkInvitation.mockResolvedValue(ok(invitation));
     const user = userEvent.setup();
-    renderApp("/invitations/tok-123");
+    renderApp("/invitations#tok-123");
     await user.click(await screen.findByRole("button", { name: "Set your password" }));
     return user;
   };
@@ -186,15 +186,45 @@ describe("invitation", () => {
   it("shows the landing details with the date in the active format", async () => {
     signedOut();
     mocks.checkInvitation.mockResolvedValue(ok(invitation));
-    renderApp("/invitations/tok-123");
+    renderApp("/invitations#tok-123");
     await screen.findByRole("heading", { name: "Join Atelier Nord Industrie on Supplier iScan" });
     expect(screen.getByText(/Nov 4, 2026, 18:00 UTC/)).toBeTruthy();
+  });
+
+  it("replaces the address with /invitations at once and keeps the token in memory", async () => {
+    const replace = vi.spyOn(window.history, "replaceState");
+    signedOut();
+    mocks.checkInvitation.mockResolvedValue(ok(invitation));
+    renderApp("/invitations#tok-123");
+    await screen.findByRole("heading", { name: "Join Atelier Nord Industrie on Supplier iScan" });
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(replace.mock.calls[0]?.[2]).toBe("/invitations");
+    expect(JSON.stringify(replace.mock.calls)).not.toContain("tok-123");
+    // The page does not look at the address again: it still works once the address is clean.
+    expect(mocks.checkInvitation).toHaveBeenCalledTimes(1);
+    expect(mocks.checkInvitation).toHaveBeenCalledWith("tok-123");
+    replace.mockRestore();
+  });
+
+  it.each([
+    ["no fragment", "/invitations"],
+    ["an empty fragment", "/invitations#"],
+    ["the old format", "/invitations/tok-123"],
+    ["the old format with a fragment", "/invitations/tok-123#tok-456"],
+  ])("shows the not-valid screen without any API call for %s", async (_name, path) => {
+    signedOut();
+    renderApp(path);
+    await screen.findByRole("heading", { name: "This invitation link cannot be used" });
+    expect(screen.queryByText(/@/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Set your password" })).toBeNull();
+    expect(mocks.checkInvitation).not.toHaveBeenCalled();
+    expect(mocks.acceptInvitation).not.toHaveBeenCalled();
   });
 
   it("shows one shared message for an invalid token, without account detail", async () => {
     signedOut();
     mocks.checkInvitation.mockResolvedValue(fail("not_found", 404));
-    renderApp("/invitations/old");
+    renderApp("/invitations#old");
     await screen.findByRole("heading", { name: "This invitation link cannot be used" });
     expect(screen.queryByText(/@/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Set your password" })).toBeNull();
@@ -233,7 +263,7 @@ describe("invitation", () => {
 
   it("tells a signed-in user to sign out first", async () => {
     signedInAs();
-    renderApp("/invitations/tok-123");
+    renderApp("/invitations#tok-123");
     expect(await screen.findByText("Sign out before you open an invitation link.")).toBeTruthy();
     expect(mocks.checkInvitation).not.toHaveBeenCalled();
   });
@@ -327,7 +357,7 @@ describe("accessibility (axe, no critical issue)", () => {
       login.unmount();
 
       mocks.checkInvitation.mockResolvedValue(ok(invitation));
-      const landing = renderApp("/invitations/t");
+      const landing = renderApp("/invitations#t");
       const start = await screen.findByRole("button", { name: /mot de passe|password/i });
       await expectNoCriticalIssues(landing.container);
       await userEvent.setup().click(start);

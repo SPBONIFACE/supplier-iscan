@@ -45,7 +45,11 @@ def app_client(engine: Engine, configured: Settings) -> Iterator[TestClient]:
 
 def accept(client: TestClient, token: str, password: str = GOOD_PASSWORD) -> httpx2.Response:
     client.cookies.clear()
-    return client.post(f"/invitations/{token}/accept", json={"password": password})
+    return client.post("/invitations/accept", json={"token": token, "password": password})
+
+
+def check(client: TestClient, token: str) -> httpx2.Response:
+    return client.post("/invitations/check", json={"token": token})
 
 
 # --- create ---------------------------------------------------------------------------------
@@ -67,10 +71,13 @@ def test_administrator_creates_an_invitation_and_gets_the_link(
     body = response.json()
     assert body["email"] == "new.person@example.test"
     assert body["organisation_id"] == str(organisation_id)
-    prefix = "http://localhost:5173/invitations/"
+    prefix = "http://localhost:5173/invitations#"
     assert body["link"].startswith(prefix)
     token = body["link"].removeprefix(prefix)
     assert len(token) >= 43
+    # No token in the path or in a query string.
+    assert "?" not in body["link"] and "/invitations/" not in body["link"]
+    assert body["link"] == f"http://localhost:5173/invitations#{token}"
 
     with Session(engine) as db:
         stored = db.get_one(Invitation, uuid.UUID(body["id"]))
@@ -152,7 +159,7 @@ def test_a_valid_link_can_be_checked(app_client: TestClient, engine: Engine) -> 
     organisation_id = create_organisation(engine, name="Checked Org")
     invitation = create_invitation(engine, organisation_id, email="check@example.test")
 
-    response = app_client.get(f"/invitations/{invitation.token}")
+    response = check(app_client, invitation.token)
 
     assert response.status_code == 200
     body = response.json()
@@ -225,8 +232,11 @@ def _refused_tokens(engine: Engine) -> dict[str, str]:
         ).token,
         "revoked": create_invitation(engine, organisation_id, revoked_at=now).token,
         "unknown": "x" * 43,
+        "empty": "",
+        "wrong characters": "a b/c?d#e%f\u00e9\x00",
         "tampered": valid[:-1] + ("A" if valid[-1] != "A" else "B"),
         "oversized": "y" * 4000,
+        "just over the limit": "z" * 129,
         "email has an account": create_invitation(
             engine, organisation_id, email=create_user(engine).email
         ).token,
@@ -238,12 +248,12 @@ def test_unusable_links_are_refused_with_the_same_answer(
 ) -> None:
     answers = {}
     for case, token in _refused_tokens(engine).items():
-        check = app_client.get(f"/invitations/{token}")
+        checked = check(app_client, token)
         accepted = accept(app_client, token)
-        assert check.status_code == 404, case
+        assert checked.status_code == 404, case
         assert accepted.status_code == 404, case
         assert "set-cookie" not in accepted.headers, case
-        answers[case] = (check.json(), accepted.json())
+        answers[case] = (checked.json(), accepted.json())
 
     # The same message in every case: it says nothing about any account.
     assert set(map(str, answers.values())) == {
@@ -271,7 +281,7 @@ def test_a_link_that_expired_after_it_was_checked_is_refused(
     app_client: TestClient, engine: Engine
 ) -> None:
     invitation = create_invitation(engine, create_organisation(engine))
-    assert app_client.get(f"/invitations/{invitation.token}").status_code == 200
+    assert check(app_client, invitation.token).status_code == 200
     with Session(engine) as db:
         db.get_one(Invitation, invitation.id).expires_at = utc_now() - timedelta(seconds=1)
         db.commit()
@@ -305,15 +315,59 @@ def test_the_minimum_length_comes_from_configuration(engine: Engine, configured:
     assert accept(client, invitation.token, password="p" * (MIN_LENGTH + 5)).status_code == 200
 
 
-@pytest.mark.parametrize("body", [{}, {"password": ""}, {"password": "p" * 1025}, []])
+@pytest.mark.parametrize("body", [{}, {"password": ""}, {"password": "p" * 1025}])
 def test_a_missing_or_malformed_password_answers_422(
-    app_client: TestClient, engine: Engine, body: object
+    app_client: TestClient, engine: Engine, body: dict[str, str]
 ) -> None:
     invitation = create_invitation(engine, create_organisation(engine))
 
-    response = app_client.post(f"/invitations/{invitation.token}/accept", json=body)
+    response = app_client.post("/invitations/accept", json={"token": invitation.token, **body})
 
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize(
+    "token_fields",
+    [{}, {"token": None}, {"token": 12}, {"token": ["a"]}, {"token": "t", "extra": 1}],
+)
+def test_a_missing_or_non_string_token_answers_422(
+    app_client: TestClient, token_fields: dict[str, object]
+) -> None:
+    assert app_client.post("/invitations/check", json=token_fields).status_code == 422
+    with_password = {**token_fields, "password": GOOD_PASSWORD}
+    assert app_client.post("/invitations/accept", json=with_password).status_code == 422
+    assert app_client.post("/invitations/check", json=[]).status_code == 422
+
+
+def test_the_old_format_has_no_route(app_client: TestClient, engine: Engine) -> None:
+    invitation = create_invitation(engine, create_organisation(engine))
+    old = f"/invitations/{invitation.token}"
+
+    assert app_client.get(old).status_code == 404
+    assert app_client.post(f"{old}/accept", json={"password": GOOD_PASSWORD}).status_code == 404
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(User)) == 0
+        assert db.get_one(Invitation, invitation.id).used_at is None
+
+
+def test_checking_changes_no_state_and_answers_are_not_cached(
+    app_client: TestClient, engine: Engine
+) -> None:
+    invitation = create_invitation(engine, create_organisation(engine))
+
+    answers = [
+        check(app_client, invitation.token),
+        check(app_client, invitation.token),
+        check(app_client, "unknown"),
+        app_client.post("/invitations/check", json={}),
+        accept(app_client, "unknown"),
+        accept(app_client, invitation.token, password="s"),
+        accept(app_client, invitation.token),
+        accept(app_client, invitation.token),
+    ]
+
+    assert [a.status_code for a in answers] == [200, 200, 404, 422, 404, 422, 200, 404]
+    assert all(a.headers["cache-control"] == "no-store" for a in answers)
 
 
 def test_accepting_needs_no_session(app_client: TestClient, engine: Engine) -> None:
@@ -322,9 +376,9 @@ def test_accepting_needs_no_session(app_client: TestClient, engine: Engine) -> N
     response = send_with_session(
         app_client,
         "POST",
-        f"/invitations/{invitation.token}/accept",
+        "/invitations/accept",
         None,
-        json={"password": GOOD_PASSWORD},
+        json={"token": invitation.token, "password": GOOD_PASSWORD},
     )
 
     assert response.status_code == 200
@@ -343,7 +397,7 @@ def test_a_revoked_invitation_cannot_be_accepted(app_client: TestClient, engine:
     assert revoked.content == b""
     with Session(engine) as db:
         assert db.get_one(Invitation, invitation.id).revoked_at is not None
-    assert app_client.get(f"/invitations/{invitation.token}").status_code == 404
+    assert check(app_client, invitation.token).status_code == 404
     refused = accept(app_client, invitation.token)
     assert refused.status_code == 404
     assert refused.json() == {"detail": INVALID_INVITATION}

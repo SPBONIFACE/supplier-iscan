@@ -31,13 +31,23 @@ def test_the_access_log_has_the_route_template_and_never_the_path_or_query(
         base = f"http://127.0.0.1:{sock.getsockname()[1]}"
         for path in (
             "/health?token=QSENT-TOKEN-abc&email=zoe.o%27brien%40q-mail.example",
-            "/invitations/QSENT-INVITE?email=a%40b.example",
+            "/invitations/QSENT-INVITE?email=a%40b.example",  # the old format: unmatched
             "/QSENT-PATH-zoe@q-mail.example/phone-0198765432?pw=QSENT-QPW",
         ):
             try:
                 urllib.request.urlopen(base + path, timeout=5).read()  # noqa: S310
             except urllib.error.HTTPError:
                 pass
+        # The token of the new format travels in a body.
+        post = urllib.request.Request(  # noqa: S310
+            base + "/invitations/check",
+            data=b'{"token": "QSENT-INVITE-BODY"}',
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            urllib.request.urlopen(post, timeout=5).read()  # noqa: S310
+        except urllib.error.HTTPError:
+            pass
     finally:
         server.should_exit = True
         thread.join(10)
@@ -48,7 +58,7 @@ def test_the_access_log_has_the_route_template_and_never_the_path_or_query(
         assert leaked not in written
     messages = [entry["message"] for entry in recording.logs()]
     assert any(m.startswith("GET /health 200") for m in messages)
-    assert any(m.startswith("GET /invitations/{token} ") for m in messages)
+    assert any(m.startswith("POST /invitations/check ") for m in messages)
     assert any(m.startswith("GET unmatched 404") for m in messages)
     assert all(entry["logger"] != "uvicorn.access" for entry in recording.logs())
     for span in recording.spans():

@@ -76,7 +76,7 @@ def test_organisation_responses_match_the_contract(client: TestClient, engine: E
 
 def test_invitation_responses_match_the_contract(client: TestClient, engine: Engine) -> None:
     create, revoke = "/admin/organisations/{id}/invitations", "/admin/invitations/{id}"
-    check_path, accept_path = "/invitations/{token}", "/invitations/{token}/accept"
+    check_path, accept_path = "/invitations/check", "/invitations/accept"
     sign_in(client, engine, role="admin")
     organisation_id = create_organisation(engine, seat_limit=1)
     taken = create_user(engine)
@@ -108,30 +108,31 @@ def test_invitation_responses_match_the_contract(client: TestClient, engine: Eng
         404,
     )
 
-    token = created.json()["link"].rsplit("/", 1)[1]
-    check(client.get(f"/invitations/{token}"), check_path, "get", 200)
-    check(client.get("/invitations/unknown"), check_path, "get", 404)
+    token = created.json()["link"].rsplit("#", 1)[1]
+    check(client.post("/invitations/check", json={"token": token}), check_path, "post", 200)
+    check(client.post("/invitations/check", json={"token": "unknown"}), check_path, "post", 404)
+    check(client.post("/invitations/check", json={}), check_path, "post", 422)
     check(
-        client.post(f"/invitations/{token}/accept", json={"password": "short"}),
+        client.post("/invitations/accept", json={"token": token, "password": "short"}),
         accept_path,
         "post",
         422,
     )
     check(
-        client.post(f"/invitations/{token}/accept", json={"password": PASSWORD}),
+        client.post("/invitations/accept", json={"token": token, "password": PASSWORD}),
         accept_path,
         "post",
         200,
     )
     check(
-        client.post(f"/invitations/{token}/accept", json={"password": PASSWORD}),
+        client.post("/invitations/accept", json={"token": token, "password": PASSWORD}),
         accept_path,
         "post",
         404,
     )
     full = create_invitation(engine, organisation_id)
     check(
-        client.post(f"/invitations/{full.token}/accept", json={"password": PASSWORD}),
+        client.post("/invitations/accept", json={"token": full.token, "password": PASSWORD}),
         accept_path,
         "post",
         409,
@@ -186,12 +187,12 @@ def test_not_found_is_the_answer_outside_the_callers_organisation() -> None:
         ("GET", "/organisation", "/organisation", None),
         ("GET", "/admin/organisations", "/admin/organisations", None),
         ("GET", f"/users/{uuid.uuid4()}", "/users/{id}", None),
-        ("GET", "/invitations/some-token", "/invitations/{token}", None),
+        ("POST", "/invitations/check", "/invitations/check", {"token": "some-token"}),
         (
             "POST",
-            "/invitations/some-token/accept",
-            "/invitations/{token}/accept",
-            {"password": PASSWORD},
+            "/invitations/accept",
+            "/invitations/accept",
+            {"token": "some-token", "password": PASSWORD},
         ),
     ],
 )
