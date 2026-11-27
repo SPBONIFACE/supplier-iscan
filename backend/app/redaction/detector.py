@@ -15,12 +15,15 @@ Model handling (owner decisions D-066, D-068):
 Long text is cut into chunks that overlap, so that a name on a boundary lies whole in one chunk.
 """
 
+import hashlib
 import logging
 import os
 import re
 import threading
+from collections import OrderedDict
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, Final, Protocol, cast
 
@@ -51,6 +54,50 @@ SPACY_OVERLAP: Final = 200
 
 _HAN: Final = re.compile(r"[㐀-鿿豈-﫿]")
 _GLINER_WORD: Final = re.compile(r"\w+(?:[-_]\w+)*|\S")
+
+
+# Less detector work, with the same output (#196). A piece the model reads gives the same spans
+# whenever it is read again, so a piece identical to one already read is not sent again; a piece
+# with no word of letters (a numeric table, a rule of dashes) is not sent at all. ("Fewer than
+# two words" changed the output: the model finds a lone surname such as "Dupont".)
+# The switches exist for `tests/redaction/measure_perf.py`, which measures each step alone.
+CACHE_PIECES: bool = True  # (a) reuse the spans of an identical piece seen in the same run
+SKIP_NON_TEXT: bool = True  # (b) no model call for a piece with no letter at all
+DEDUPE_CALL: bool = True  # (c) one model call for identical pieces of one call (text and copy)
+MAX_RUNS_CACHED: Final = 4
+MAX_PIECES_PER_RUN: Final = 20_000
+
+_LETTER_WORD: Final = re.compile(r"[^\W\d_]+")
+_RUN_CACHE: ContextVar[dict[bytes, list[Span]] | None] = ContextVar("run_piece_cache", default=None)
+_RUN_CACHES: OrderedDict[str, dict[bytes, list[Span]]] = OrderedDict()
+_RUN_CACHES_LOCK = threading.Lock()
+
+
+@contextmanager
+def run_piece_cache(run_id: object) -> Iterator[None]:
+    """While active, the model spans of every piece are remembered for this run only (never
+    shared with another run or organisation; the cache holds spans and digests, no text). The
+    last few runs are kept so that a resumed stage reuses it; older ones are dropped."""
+    key = str(run_id)
+    with _RUN_CACHES_LOCK:
+        cache = _RUN_CACHES.pop(key, None) or {}
+        _RUN_CACHES[key] = cache
+        while len(_RUN_CACHES) > MAX_RUNS_CACHED:
+            _RUN_CACHES.popitem(last=False)
+    token = _RUN_CACHE.set(cache)
+    try:
+        yield
+    finally:
+        _RUN_CACHE.reset(token)
+
+
+def _digest(piece: str) -> bytes:
+    return hashlib.sha256(piece.encode("utf-8", "surrogatepass")).digest()
+
+
+def _is_text(piece: str) -> bool:
+    """Whether the model can find a name in the piece: it holds a word of letters (Han included)."""
+    return _LETTER_WORD.search(piece) is not None
 
 
 class NameDetector(Protocol):
@@ -206,20 +253,44 @@ class GlinerDetector:
             for offset, piece in chunks:
                 pieces.append(piece)
                 owners.append((index, offset))
+        local: list[list[Span] | None] = [None] * len(pieces)
+        cache = _RUN_CACHE.get() if CACHE_PIECES else None
+        to_run: dict[bytes | int, int] = {}  # key of a piece -> its place in `to_run_pieces`
+        to_run_pieces: list[str] = []
+        waiting: list[tuple[int, bytes | int]] = []
+        for place, piece in enumerate(pieces):
+            if SKIP_NON_TEXT and not _is_text(piece):
+                local[place] = []
+                continue
+            key: bytes | int = _digest(piece) if (cache is not None or DEDUPE_CALL) else place
+            if cache is not None and key in cache:
+                local[place] = cache[key]
+                continue
+            if key not in to_run:
+                to_run[key] = len(to_run_pieces)
+                to_run_pieces.append(piece)
+            waiting.append((place, key))
+        results = self._run(to_run_pieces)
+        for place, key in waiting:
+            local[place] = results[to_run[key]]
+            if cache is not None and len(cache) < MAX_PIECES_PER_RUN:
+                cache[key] = results[to_run[key]]  # type: ignore[index]
         found: list[list[Span]] = [[] for _ in texts]
+        for (index, offset), spans in zip(owners, local, strict=True):
+            found[index].extend((offset + start, offset + end) for start, end in spans or [])
+        return found
+
+    def _run(self, pieces: list[str]) -> list[list[Span]]:
+        """Local spans of each piece, from the model, in batches (calls are serialised)."""
+        out: list[list[Span]] = []
         with self._lock:
             for first in range(0, len(pieces), BATCH_SIZE):
                 batch = pieces[first : first + BATCH_SIZE]
                 results = self._model.batch_predict_entities(
                     batch, [LABEL], threshold=self._threshold
                 )
-                for (index, offset), entities in zip(
-                    owners[first : first + BATCH_SIZE], results, strict=True
-                ):
-                    found[index].extend(
-                        (offset + entity["start"], offset + entity["end"]) for entity in entities
-                    )
-        return found
+                out.extend([(e["start"], e["end"]) for e in entities] for entities in results)
+        return out
 
 
 class SpacyHanDetector:

@@ -4,8 +4,9 @@
     uv run python -m tests.redaction.measure_perf --write-expected      (on `main` only)
 
 Prints, per corpus item, the model calls (pieces sent to GLiNER), the seconds and the peak memory.
-`--steps` switches the steps of `app.redaction.detector` (a: run cache, b: skip non-text pieces,
-c: one call for identical pieces); `--check` compares every output with `perf_expected.json`.
+`--steps` switches the steps of `app.redaction.detector` (a: run cache, b: skip pieces with no
+letter, c: one call for identical pieces); `--skip a,b` leaves corpus items out; `--check` compares
+every output with `perf_expected.json`.
 """
 
 import hashlib
@@ -36,7 +37,7 @@ def fingerprint(texts: list[str]) -> dict[str, object]:
     return {"chars": len(joined), "sha256": hashlib.sha256(joined.encode()).hexdigest()}
 
 
-def run(steps: str) -> dict[str, tuple[list[str], int, float]]:
+def run(steps: str, skip: tuple[str, ...] = ()) -> dict[str, tuple[list[str], int, float]]:
     set_steps(steps)
     redactor = get_redactor()
     redactor.load()
@@ -51,6 +52,8 @@ def run(steps: str) -> dict[str, tuple[list[str], int, float]]:
     model.batch_predict_entities = counting
     out: dict[str, tuple[list[str], int, float]] = {}
     for name, texts in corpus().items():
+        if name in skip:
+            continue
         calls[0] = 0
         started = time.monotonic()
         scope = getattr(detector, "run_piece_cache", None)  # absent on `main`
@@ -63,7 +66,8 @@ def run(steps: str) -> dict[str, tuple[list[str], int, float]]:
 def main() -> int:
     args = sys.argv[1:]
     steps = args[args.index("--steps") + 1] if "--steps" in args else "all"
-    results = run("none" if "--write-expected" in args else steps)
+    skip = tuple(args[args.index("--skip") + 1].split(",")) if "--skip" in args else ()
+    results = run("none" if "--write-expected" in args else steps, skip)
     if "--write-expected" in args:
         data = {
             name: ({"texts": r[0]} if name in SMALL else fingerprint(r[0]))

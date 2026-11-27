@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from app.db import Database
 from app.models import ProfileRun, Source, SupplierIdentity
 from app.redaction import RedactionGate, gate_for
+from app.redaction.detector import run_piece_cache
 
 logger = logging.getLogger(__name__)
 
@@ -84,11 +85,14 @@ def store_source(
     # can take a minute on a long text: no database session (no connection, no transaction) is
     # held meanwhile (#52, deployment findings).
     started = time.monotonic()
-    text = redact_for_storage(record.text, gate, context)
+    # The model spans of a piece already read in this run (menus, footers) are reused (#196).
+    with run_piece_cache(run_id):
+        text = redact_for_storage(record.text, gate, context)
     logger.info(
         "Redacted a source of %d characters in %.1f s", len(record.text), time.monotonic() - started
     )
-    author = redact_for_storage(record.author, gate, context)[:300] if record.author else None
+    with run_piece_cache(run_id):
+        author = redact_for_storage(record.author, gate, context)[:300] if record.author else None
     with database.session() as db:
         row = db.scalar(select(Source).where(Source.run_id == run_id, Source.url == record.url))
         if row is None:

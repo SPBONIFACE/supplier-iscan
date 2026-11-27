@@ -60,7 +60,7 @@ def _sentence(rng: random.Random) -> str:
 
 def prose(size: int, seed: int) -> str:
     """Audit-report-like text of about `size` characters, with a numeric table every few pages."""
-    rng = random.Random(seed)
+    rng = random.Random(seed)  # noqa: S311 - fixed seed, test data
     parts: list[str] = []
     length = 0
     page = 0
@@ -84,22 +84,30 @@ def table(rng: random.Random, rows: int) -> str:
 
 
 def site_pages() -> list[str]:
-    rng = random.Random(7)
+    rng = random.Random(7)  # noqa: S311
     pages = []
-    for number in range(24):
+    for _ in range(24):
         body = "\n".join(_sentence(rng) for _ in range(rng.randint(6, 12)))
         pages.append(f"{MENU}{COOKIES}{body}\n{FOOTER}")
     return pages
 
 
 def numeric_table() -> str:
-    rng = random.Random(11)
-    return (
-        "Key figures in thousand CHF\n" + table(rng, 400) + "\nAuditor: Pieter Janssen, Basel\n"
-    )
+    rng = random.Random(11)  # noqa: S311
+    return "Key figures in thousand CHF\n" + table(rng, 400) + "\nAuditor: Pieter Janssen, Basel\n"
 
 
-SHORT = ["A. Writer", "2024", "-----", "Annual report 2023", "Müller", "Dupont", "", "n/a", "12 345"]
+SHORT = [
+    "A. Writer",
+    "2024",
+    "-----",
+    "Annual report 2023",
+    "Müller",
+    "Dupont",
+    "",
+    "n/a",
+    "12 345",
+]
 
 
 def corpus() -> dict[str, list[str]]:
