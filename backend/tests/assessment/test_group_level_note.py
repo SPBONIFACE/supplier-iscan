@@ -26,6 +26,13 @@ def test_a_group_level_fact_is_marked_and_the_prompt_says_not_to_present_it_as_t
     assert 'group_level="Amcor plc"' in lines[1] and "group_level" not in lines[2]
 
 
+def test_the_note_covers_another_entity_of_the_group_and_the_parent_group() -> None:
+    # #209: the label may name a sister company as well as the parent group.
+    assert "another entity of the group" in GROUP_LEVEL_NOTE
+    assert "parent group" in GROUP_LEVEL_NOTE
+    assert "never about the supplier entity" in GROUP_LEVEL_NOTE
+
+
 def test_without_a_group_level_fact_the_text_is_unchanged() -> None:
     text = facts_text([fact()], {})
 

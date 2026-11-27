@@ -17,8 +17,10 @@ quote are only compared; neither is logged.
 """
 
 import bisect
+import functools
 import re
 import unicodedata
+from dataclasses import dataclass
 from typing import Final
 
 MAX_QUOTE_CHARS: Final = 300
@@ -154,6 +156,11 @@ def passages(text: str, quote: str, chars: int, blank_lines: bool = False) -> li
     it ends), cut to at most `chars` characters before and after the quote, whichever is shorter.
     Empty when the quote is not in the text. The names are then looked for in these passages with
     the rules of the whole text (`names_supplier`, `names_group`)."""
+    return [fold(passage) for passage in printed_passages(text, quote, chars, blank_lines)]
+
+
+def printed_passages(text: str, quote: str, chars: int, blank_lines: bool = False) -> list[str]:
+    """`passages`, normalised but not folded: case kept, as the source prints it (#209)."""
     needle = normalise(quote)
     paragraphs = _paragraphs(text, blank_lines)
     if not needle or not paragraphs:
@@ -172,9 +179,226 @@ def passages(text: str, quote: str, chars: int, blank_lines: bool = False) -> li
         last = bisect.bisect_right(starts, end - 1) - 1
         low = max(starts[first], start - chars)
         high = min(starts[last] + len(paragraphs[last]), end + chars)
-        found.append(fold(joined[low:high]))
+        found.append(joined[low:high])
         start = joined.find(needle, start + 1)
     return found
+
+
+# --- Another entity of the group (#209) ---
+#
+# A passage that prints the supplier's or the group's name without its legal form, immediately
+# followed by another legal form ("BERICAP GmbH & Co. KG" for the confirmed "BERICAP", France) is
+# about another legal entity of the group. Case and punctuation of the legal form are ignored.
+
+# The legal-form words of the name rules, and SASU; "Limited" and "Corporation" are "Ltd" and
+# "Corp".
+_FORM_WORDS: Final = _LEGAL_FORMS | {"sasu"}
+_FORM_ALIASES: Final = {"limited": "ltd", "corporation": "corp"}
+# Words of a legal form that are no legal form on their own ("BERICAP and Amcor").
+_CONNECTORS: Final = frozenset({"&", "and", "co", "company"})
+_JOINED_BY: Final = frozenset({"co", "company"})  # "&" and "and" only before these ("& Co.")
+# Ordinary words of a page that are also a legal form ("Acme as a leader", "Acme se développe",
+# "Acme ab 2024"): a legal form only when printed with a capital letter.
+_COMMON_WORDS: Final = frozenset({"as", "se", "sa", "ab", "spa", "limited"})
+# The countries where each legal form is used (ISO 3166-1 alpha-2). A form used only outside the
+# supplier's country tells another entity when the confirmed legal name has no legal form; a form
+# not in this table, or also used in the supplier's country, tells nothing.
+_GERMANIC: Final = frozenset({"DE", "AT", "CH", "LI"})
+_COMMON_LAW: Final = frozenset(
+    {"GB", "IE", "AU", "NZ", "HK", "SG", "IN", "CA", "IL", "ZA", "NG", "KE", "MT", "CY", "MY"}
+)
+_FORM_COUNTRIES: Final[dict[str, frozenset[str]]] = {
+    "gmbh": _GERMANIC,
+    "ag": _GERMANIC,
+    "kg": _GERMANIC,
+    "ohg": _GERMANIC,
+    "ug": _GERMANIC,
+    "kgaa": _GERMANIC,
+    "sas": frozenset({"FR", "CO"}),
+    "sasu": frozenset({"FR"}),
+    "sarl": frozenset({"FR", "LU", "CH", "MA", "TN", "DZ", "LB", "SN", "CI", "CM", "MC"}),
+    "eurl": frozenset({"FR", "DZ"}),
+    "snc": frozenset({"FR", "IT", "LU", "MA", "TN", "DZ", "MC"}),
+    "bv": frozenset({"NL", "BE"}),
+    "nv": frozenset({"NL", "BE", "CW", "SX", "SR", "AW"}),
+    "spa": frozenset({"IT", "CL", "SM"}),
+    "srl": frozenset({"IT", "BE", "RO", "MD", "AR", "PE", "SM", "BO", "CR", "DO", "UY", "VE"}),
+    "sl": frozenset({"ES"}),
+    "ltd": _COMMON_LAW,
+    "plc": frozenset({"GB", "IE", "NG", "LK"}),
+    "inc": frozenset({"US", "CA", "PH"}),
+    "llc": frozenset({"US", "AE", "RU", "UA", "AM", "GE", "AZ", "KZ", "OM", "QA", "SA", "BH"}),
+    "corp": frozenset({"US", "CA", "PH", "JP", "TW"}),
+}
+_EDGE_PUNCTUATION: Final = "()[]{}\"'.,;:!?"
+_RUN_ENDS: Final = tuple(",;:!?)]")
+_NAME_ENDS: Final = tuple(".;:!?)]")
+MAX_ENTITY_CHARS: Final = 300
+
+
+def _key(token: str) -> str:
+    """A token of a text as the name rules compare it: folded, edge punctuation and inner points
+    removed ("S.A.S." is "sas", "(BERICAP" is "bericap")."""
+    return fold(token).strip(_EDGE_PUNCTUATION).replace(".", "")
+
+
+def _bare_name(legal_name: str) -> tuple[str | None, tuple[str, ...]]:
+    """The folded legal name without its trailing legal forms (None when that leaves fewer than
+    four characters), and those legal forms, without the connectors ("GmbH & Co. KG" gives
+    ("gmbh", "kg"))."""
+    words = fold(legal_name).replace(".", "").replace(",", " ").split()
+    forms: list[str] = []
+    while len(words) > 1 and words[-1] in _FORM_WORDS:
+        word = _FORM_ALIASES.get(words[-1], words[-1])
+        if word not in _CONNECTORS:
+            forms.insert(0, word)
+        words = words[:-1]
+    bare = " ".join(words)
+    return (bare if len(bare) >= _MIN_SHORT_NAME else None), tuple(forms)
+
+
+@dataclass(frozen=True)
+class NamedCompany:
+    """A company printed in a text as a known name followed by a legal form."""
+
+    name: str  # the folded bare name it was found by
+    forms: tuple[str, ...]  # its legal forms, connectors left out
+    printed: str  # name and legal form as the text prints them
+
+
+def _form_at(tokens: list[str], keys: list[str], at: int) -> tuple[str, int] | None:
+    """The legal-form word starting at token `at`, and the number of tokens it takes ("S. A. S."
+    takes three), or None."""
+    key = keys[at]
+    if key in _FORM_WORDS:
+        if key in _COMMON_WORDS and not tokens[at].strip(_EDGE_PUNCTUATION)[:1].isupper():
+            return None
+        return _FORM_ALIASES.get(key, key), 1
+    if len(key) == 1 and key.isalpha():
+        for width in (4, 3, 2):
+            part = keys[at : at + width]
+            joined = "".join(part)
+            if len(part) == width and all(len(k) == 1 for k in part) and joined in _FORM_WORDS:
+                return joined, width
+    return None
+
+
+def _form_run(tokens: list[str], keys: list[str], start: int) -> tuple[tuple[str, ...], int]:
+    """The legal forms printed from token `start` on, and the index after the last real legal
+    form of the run (`start` when there is none)."""
+    forms: list[str] = []
+    at, end = start, start
+    while at < len(tokens):
+        found = _form_at(tokens, keys, at)
+        if found is None:
+            break
+        word, width = found
+        if word in {"&", "and"} and (at + 1 >= len(keys) or keys[at + 1] not in _JOINED_BY):
+            break
+        at += width
+        if word not in _CONNECTORS:
+            forms.append(word)
+            end = at
+        if tokens[at - 1].endswith(_RUN_ENDS):
+            break
+    return tuple(forms), end
+
+
+def named_companies(text: str, names: list[str]) -> list[NamedCompany]:
+    """The companies the (normalised, not folded) text prints as one of the folded bare `names`,
+    as whole words, immediately followed by a legal form; a comma may stand between them
+    ("Acme, Inc."). A bare name ("BERICAP opened a plant"), or a name followed by a run of
+    connectors only ("BERICAP and Amcor"), is no such company."""
+    tokens = text.split()
+    keys = [_key(token) for token in tokens]
+    wanted = sorted({tuple(name.split()) for name in names if name}, key=len, reverse=True)
+    found: list[NamedCompany] = []
+    at = 0
+    while at < len(tokens):
+        name = next((words for words in wanted if tuple(keys[at : at + len(words)]) == words), None)
+        if name is None:
+            at += 1
+            continue
+        after = at + len(name)
+        if tokens[after - 1].endswith(_NAME_ENDS):
+            at = after
+            continue
+        forms, end = _form_run(tokens, keys, after)
+        if forms:
+            printed = " ".join(tokens[at:end]).strip(_EDGE_PUNCTUATION.replace(".", ""))
+            if printed.endswith(".") and tokens[end - 1].count(".") == 1 and len(keys[end - 1]) > 1:
+                printed = printed[:-1]  # the end of a sentence ("KG."), not of "S.A.S."
+            found.append(NamedCompany(" ".join(name), forms, printed[:MAX_ENTITY_CHARS]))
+        at = max(after, end)
+    return found
+
+
+@dataclass(frozen=True)
+class GroupEntities:
+    """Tells, for an identity with a parent group, whether a passage is about another entity of
+    the group (#209). Built by `group_entities`."""
+
+    entity_name: str | None
+    entity_forms: tuple[str, ...]
+    group_legal_name: str
+    group_name: str | None
+    group_forms: tuple[str, ...]
+    country: str | None
+
+    def _names(self) -> list[str]:
+        return [name for name in (self.entity_name, self.group_name) if name]
+
+    def is_other(self, company: NamedCompany) -> bool:
+        """Another entity when its legal form is not the confirmed entity's: (a) the confirmed
+        legal name ends in another legal form; (b) it has none, and every legal form printed is
+        in the table and used only in countries other than the supplier's. Otherwise, no
+        conclusion: not another entity."""
+        if self.entity_forms:
+            return company.forms != self.entity_forms
+        if not self.country:
+            return False
+        countries = [_FORM_COUNTRIES.get(form) for form in company.forms]
+        return all(c is not None and self.country not in c for c in countries)
+
+    def label(self, company: NamedCompany) -> str:
+        """The group's legal name when the company is the parent group, otherwise the company as
+        printed in the source."""
+        if company.name == self.group_name and company.forms == self.group_forms:
+            return self.group_legal_name[:MAX_ENTITY_CHARS]
+        return company.printed
+
+    def other_entity(self, quote: str, printed: list[str]) -> str | None:
+        """The label name of the other entity of the group the quote is about, or None. The quote
+        decides: a quote naming another entity is about the first it names; a quote naming the
+        supplier (with its own, or an inconclusive, legal form) and no other entity is the
+        entity's; a quote naming neither is about the first other entity of its passages."""
+        names = self._names()
+        in_quote = named_companies(normalise(quote), names)
+        for company in in_quote:
+            if self.is_other(company):
+                return self.label(company)
+        if any(company.name == self.entity_name for company in in_quote):
+            return None
+        for passage in printed:
+            for company in named_companies(passage, names):
+                if self.is_other(company):
+                    return self.label(company)
+        return None
+
+
+@functools.lru_cache(maxsize=64)
+def group_entities(legal_name: str, group_legal_name: str, country: str | None) -> GroupEntities:
+    """The rules of `GroupEntities` for one identity (cached: built once per run)."""
+    entity_name, entity_forms = _bare_name(legal_name)
+    group_name, group_forms = _bare_name(group_legal_name)
+    return GroupEntities(
+        entity_name,
+        entity_forms,
+        group_legal_name,
+        group_name,
+        group_forms,
+        country.strip().upper() if country else None,
+    )
 
 
 def is_redacted_quote(quote: str) -> bool:
