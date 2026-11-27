@@ -31,21 +31,22 @@ The main session is the orchestrator. It launches the PM, the SWE and QA as suba
 
 ## Orchestration level
 
-Full PM → SWE → QA by default. SWE + QA when the issue was already groomed by the PM and nothing it depends on has changed since (owner's standing approval, 26 Oct 2026); otherwise only when the PM shows in the issue that every condition below holds, and the owner approves:
+Three levels, chosen by the orchestrator when the issue is picked and stated in a comment on it (owner's decision, 27 Nov 2026). The lifecycle above is the **risky** level; the other two shorten it.
 
-- already groomed, acceptance criteria unambiguous
-- no change to `openapi.yaml`, schema, authentication, security or data handling
-- confined to one module
-- no new dependency
+- **Small** (wording, display format, a contained fix in one module, no contract, schema, auth or data-handling change): one SWE run implements it from the issue as written, with tests. No PM grooming, no QA. The check is a green CI and the orchestrator's reading of the diff.
+- **Normal** (a feature or fix confined to its module, no security, personal-data, crawling or LLM-boundary change): the PM grooms only if the acceptance criteria are not already checkable. SWE implements; no separate QA. The check is a green CI and the orchestrator's reading of the diff; a card-quality change is also checked on one real card when the owner chooses.
+- **Risky** (security, authentication, personal data, crawling, the LLM boundary, money): full PM → SWE → QA, as above.
 
-QA is never dropped for the risky tasks listed under *Delivery mode*.
+Every issue carries a **time box** set when it is picked (for example "half a day"). When the time box is reached, the work stops and the pull request goes to the owner with what was reached; the owner decides whether it ships, continues or is cut. Owner gates (see *Delivery mode*) apply at every level.
+
+Agents work on the issue's named branch, never on a detached HEAD, and confirm the push with `git log --oneline -1 origin/<branch>` before reporting.
 
 ## Rules
 
-- Do not skip step 2.
+- Do not skip step 2 at the risky level.
 - The SWE does not close the issue.
 - QA does not fix the code; it only posts a verdict.
-- The orchestrator merges, and so closes the issue, only after a PASS and a green CI, and after the owner's review when an owner gate applies.
+- The orchestrator merges, and so closes the issue, only after a green CI, a PASS at the risky level, and the owner's review when an owner gate applies.
 - Acceptance criteria may refer to the task's own pull request and its CI check: the pull request exists before QA.
 - Regulatory content (GDPR, AI Act, contracts) comes only from sources reviewed by the owner. Any addition is marked as such with its source; no agent rewords a reviewed regulatory statement.
 
