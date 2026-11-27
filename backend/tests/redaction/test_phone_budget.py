@@ -70,6 +70,13 @@ def test_the_synthetic_tables_give_no_span() -> None:
     assert _phone_spans(one_line(5000)) == []
 
 
+QA_LISTS = [
+    "01 42 68 53 00,01 42 68 53 01",
+    "Tel 0142685300,0142685301",
+    "Fax: 030 123456,2 copies",
+    "1.01 42 68 53 00",
+]
+
 SMALL_TEXTS = [
     f"Tel {PHONE} or +33 1.23.45.67.89 or +49 (0)89 636-00.",
     "Appel 01 42 68 53 00, Büro 030 123456, US +1 415 555 2671, UK 020 7946 0958.",
@@ -78,6 +85,7 @@ SMALL_TEXTS = [
     "Ligne 1\n+34 912 345 678\nLigne 3 +39 06 1234 5678\n(0)89 636-00\n030-123456\n",
     "Broken across\n+41 79 555\n01 23 and nothing else, 1 2 3 4 5 6 7 8 9 10.",
     "Fax 0044 20 7946 0958; mobile +44 7911 123456; whatsapp 06 12 34 56 78.",
+    *QA_LISTS,
     table(12),
     f"{table(8)}\nTel {PHONE}\n{table(8, seed=5)}",
     prose(8000, True),
@@ -113,3 +121,12 @@ def test_a_phone_after_the_corpus_table_is_redacted(run: Callable[[str], str]) -
 
     out = run(f"{numeric_table()}\nCall {PHONE}, or 01 42 68 53 00.")
     assert out.endswith(f"Call {MARK}, or {MARK}.")
+
+
+@PASSES
+@pytest.mark.parametrize("text", QA_LISTS)
+def test_phone_lists_without_a_space_after_the_comma_are_redacted(
+    run: Callable[[str], str], text: str
+) -> None:
+    out = run(text)
+    assert "42 68 53" not in out and "0142685" not in out and "030 123456" not in out, out

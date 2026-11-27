@@ -284,10 +284,11 @@ def _phone_spans(text: str) -> list[Span]:
 
 
 def _inside_grouped_figure(text: str, start: int, end: int) -> bool:
-    """The candidate starts right after "<digit>." / "<digit>," or ends right before ".<digit>" /
-    ",<digit>": it is a slice of a longer grouped figure, not a number of its own."""
-    if start > 1 and text[start - 1] in ".," and text[start - 2].isdigit():
-        return True
+    """The candidate sits in the middle of a figure: a digit and "." or "," right before it AND
+    "." or "," and a digit right after it, as in "26.016 88.461". Phone lists such as
+    "01 42 68 53 00,01 42 68 53 01" touch a digit on one side only and are never matched."""
+    if not (start > 1 and text[start - 1] in ".," and text[start - 2].isdigit()):
+        return False
     return end + 1 < len(text) and text[end] in ".," and text[end + 1].isdigit()
 
 
