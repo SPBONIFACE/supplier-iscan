@@ -26,6 +26,7 @@ from app.redaction.detector import GlinerDetector, chunk_text, run_piece_cache
 from tests.extraction.support import context_for, providers_with, scripted, stage
 from tests.factories import create_organisation
 from tests.redaction.perf_corpus import MENU, corpus
+from tests.redaction.phone_table import table
 from tests.redaction.support import FakeDetector
 from tests.runs_support import create_run
 
@@ -123,6 +124,33 @@ def test_planted_personal_data_reaches_no_provider_no_store_no_log(
     # The model really was spared work (the test exercises the cache and the skip).
     total = sum(len(chunk_text(t, max_words=detector.MAX_CHUNK_WORDS)) for t in texts.values())
     assert 0 < len(model.pieces) < 2 * total  # without the steps: text and copy of every piece
+
+
+@pytest.mark.parametrize("skip_non_text", [True, False])
+def test_a_phone_after_1000_numeric_rows_reaches_no_provider_no_store_no_log(
+    engine: Engine,
+    wired: tuple[StubModel, RedactionGate],
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    skip_non_text: bool,
+) -> None:
+    """#219: the phone budget never runs out before the text, with #196's rule on and off."""
+    monkeypatch.setattr(detector, "SKIP_NON_TEXT", skip_non_text)
+    texts = {"https://acme.example/rows": f"{table(1000)}\n{LINE}{FILLER}"}
+
+    with caplog.at_level(logging.DEBUG):
+        organisation_id, run_id = collect(engine, texts)
+        adapter = scripted(lambda asked: [])
+        stage()(context_for(engine, organisation_id, run_id, providers_with(adapter)))
+
+    with Session(engine) as db:
+        rows = list(db.scalars(select(Source).where(Source.run_id == run_id)))
+    assert len(rows) == 1 and adapter.asked
+    everything = [rows[0].redacted_text, rows[0].author or "", caplog.text]
+    everything += [asked.data for asked in adapter.asked]
+    for planted in (PHONE, "555 01 23"):
+        for text in everything:
+            assert planted not in text, text[max(0, text.find(planted) - 100) :][:250]
 
 
 def test_a_detector_failure_writes_nothing_and_raises(

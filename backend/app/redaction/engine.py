@@ -260,13 +260,21 @@ def _obfuscated_email_spans(text: str) -> list[Span]:
     return spans
 
 
+_ANY_DIGIT: Final = re.compile(r"\d")
+
+
 def _phone_spans(text: str) -> list[Span]:
     spans: dict[Span, bool] = {}
+    if not _ANY_DIGIT.search(text):
+        return []  # a phone number has digits: nothing to scan
     # UUIDs are masked (same length, so the offsets hold) before the phone matcher reads the text.
     text = _UUID.sub(lambda match: "x" * len(match.group()), text)
+    # `max_tries` is a budget of candidate digit groups for the whole text; each candidate uses at
+    # least one character, so the length of the text can never be exhausted (#219).
+    budget = len(text) + 1
     for region in (None, *_PHONE_REGIONS):
         matcher = phonenumbers.PhoneNumberMatcher(
-            text, region, leniency=phonenumbers.Leniency.VALID, max_tries=200
+            text, region, leniency=phonenumbers.Leniency.VALID, max_tries=budget
         )
         for match in matcher:
             raw = text[match.start : match.end]
