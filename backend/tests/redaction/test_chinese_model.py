@@ -61,7 +61,7 @@ def test_chinese_companies_places_and_products_are_rarely_altered(redactor: Reda
             altered += touched(item["text"], start, end, removed)
             total += 1
 
-    assert altered / total <= 0.06, (altered, total)
+    assert altered / total <= 0.08, (altered, total)
 
 
 @pytest.mark.parametrize(

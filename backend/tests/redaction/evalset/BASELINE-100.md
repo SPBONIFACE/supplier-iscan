@@ -109,3 +109,13 @@ Latin 0.31 / 0.25 s, capitals 0.23 / 0.35 s, Han 0.18 / 0.36 s). The full runs o
 with other work vary by far more than that: Latin 100 kB 54 to 176 s, Han 100,000 characters 125 s
 before and 137 s (and once 175 s, under load) after; peak memory 2.13 GB before, 2.13 GB after
 (1.97 GB in the run under load); model load unchanged.
+
+## Correction after QA (commit d066090: the product-word guard needs a Chinese surname)
+
+Moving the product words out of the shared company list (they hid real names such as "Anna Seal")
+narrowed the guard, so fewer product and place names are protected. The report part was run once
+more with that code, no tuning: Han names 97% (217), romanised 100% (201), titles kept 100% and
+100%, Suzhou cases 0/10 (all unchanged); non-person items altered **21/192 = 10.9%** (was 18/192 =
+9.4%): company_latin 3/40, company_surname 1/34, place_pinyin 11/30, product 6/37, place_han 0/22,
+company_han 0/24. The tuning part gives 6/83 = 7.2%, and the model test allows at most 8%. The
+9.4% above is the figure before this correction; the proposed spec line says "about 11%".
