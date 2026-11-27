@@ -516,7 +516,7 @@ def latin_spans(text: str) -> list[Span]:
     return spans
 
 
-def is_organisation(text: str, span: Span) -> bool:
+def is_organisation(text: str, span: Span, *, needs_surname: bool = False) -> bool:
     """A model span that is a Chinese company, product or place, not a person: in Han text an
     organisation word follows it (`in_organisation`); in romanised text it is Chinese-sounding
     words and a company, product or place noun ("Li Shan Seal", "Jianglei Cap")."""
@@ -530,4 +530,6 @@ def is_organisation(text: str, span: Span) -> bool:
     following = re.compile(r"[ \t]+([A-Z][A-Za-z-]+)").match(text, span[1])
     if following is not None and following.group(1).lower() in markers:
         nouns += 1
+    if needs_surname and not any(_is_surname(word) for word in words):
+        return False
     return bool(nouns and words and all(_syllabic(word) for word in words))

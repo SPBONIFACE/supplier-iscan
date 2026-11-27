@@ -161,9 +161,7 @@ COMPANY: Final = _words(
     """sa sas sasu sarl eurl sci gmbh ag kg ohg se ug ltd limited llc llp lp inc corp
     corporation plc bv nv spa srl sl slu ab oy as aps co company holding holdings group gruppe
     groupe bank partners industries technologies solutions services components logistics
-    textiles systems manufacturing supplies trading capital energy steel
-    seal seals liner liners closure closures lid lids tray trays bottle bottles packaging plastic
-    plastics mould mold tooling"""
+    textiles systems manufacturing supplies trading capital energy steel"""
 )
 
 _HONORIFIC_WORDS: Final = (

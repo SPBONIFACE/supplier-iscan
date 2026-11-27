@@ -255,3 +255,25 @@ def test_a_failing_han_detector_still_fails_closed() -> None:
 
     with pytest.raises(RedactionUnavailable):
         redactor.redact("联系人：王浩然")
+
+
+@pytest.mark.parametrize(
+    ("text", "gone"),
+    [
+        ("Contact: Anna Seal", "Seal"),
+        ("Regards,\nTom Mold", "Mold"),
+        ("Contact: Jane Liner", "Liner"),
+        ("Contact: Mark Tray", "Tray"),
+        ("Contact: Peter Plastic Smith", "Smith"),
+    ],
+)
+def test_a_name_with_a_product_word_is_still_hidden_by_the_rules(text: str, gone: str) -> None:
+    out = redact(text)
+
+    assert OMISSION in out and gone not in out
+
+
+def test_a_chinese_product_before_a_job_line_stays() -> None:
+    text = "Catalogue, third edition\nLi Shan Seal\nSales Office"
+
+    assert redact(text) == text

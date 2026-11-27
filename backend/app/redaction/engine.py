@@ -531,9 +531,20 @@ class Redactor:
         spans.extend(self._confirmed(text, to_confirm))
         return [
             *spans,
-            *names.rule_spans(text),
+            *self._rule_spans(text),
             *chinese.han_spans(text),
             *chinese.latin_spans(text),
+        ]
+
+    @staticmethod
+    def _rule_spans(text: str) -> list[Span]:
+        """The precise name rules, minus a span that is a Chinese product or address ("Li Shan Seal"
+        before a job line): only when a Chinese surname is among its words, so that "Anna Seal"
+        stays a name."""
+        return [
+            span
+            for span in names.rule_spans(text)
+            if not chinese.is_organisation(text, span, needs_surname=True)
         ]
 
     def _confirmed(self, text: str, candidates: list[Span]) -> list[Span]:
