@@ -4,6 +4,7 @@ Fast tests: fixed-seed synthetic tables, a fake name detector, both passes (`red
 `redact_stored`).
 """
 
+import re
 from collections.abc import Callable
 
 import pytest
@@ -75,6 +76,12 @@ QA_LISTS = [
     "Tel 0142685300,0142685301",
     "Fax: 030 123456,2 copies",
     "1.01 42 68 53 00",
+    "0142685300,0142685301,0142685302",
+    "Tel 01 42 68 53 00,01 42 68 53 01,01 42 68 53 02",
+    "1,01 42 68 53 00,2",
+    "x 12,030 123456,4 y",
+    "Tel 2.0142685300.5",
+    "1.01 42 68 53 00.2",
 ]
 
 SMALL_TEXTS = [
@@ -129,4 +136,4 @@ def test_phone_lists_without_a_space_after_the_comma_are_redacted(
     run: Callable[[str], str], text: str
 ) -> None:
     out = run(text)
-    assert "42 68 53" not in out and "0142685" not in out and "030 123456" not in out, out
+    assert not re.search(r"\d{3}|\d\d \d\d", out), out

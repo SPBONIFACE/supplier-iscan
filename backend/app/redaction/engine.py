@@ -283,13 +283,21 @@ def _phone_spans(text: str) -> list[Span]:
     return list(spans)
 
 
-def _inside_grouped_figure(text: str, start: int, end: int) -> bool:
-    """The candidate sits in the middle of a figure: a digit and "." or "," right before it AND
-    "." or "," and a digit right after it, as in "26.016 88.461". Phone lists such as
-    "01 42 68 53 00,01 42 68 53 01" touch a digit on one side only and are never matched."""
-    if not (start > 1 and text[start - 1] in ".," and text[start - 2].isdigit()):
-        return False
-    return end + 1 < len(text) and text[end] in ".," and text[end + 1].isdigit()
+_FIGURE_HEAD: Final = re.compile(r"(?:^|\D)\d{1,3}[.,]$")
+_FIGURE_TAIL: Final = re.compile(r"[.,]\d{3}(?!\d)")
+_THOUSAND_GROUP: Final = re.compile(r"\d{3}(?!\d)")
+
+
+def _inside_grouped_figure(text: str, start: int, end: int, raw: str) -> bool:
+    """The candidate is the join of two thousands-grouped figures, as "016 88" in
+    "26.016 88.461": it starts with a group of exactly 3 digits that follows "<1-3 digits>." or
+    ",", and ends before ".<3 digits>" or ",<3 digits>". Phone lists such as
+    "01 42 68 53 00,01 42 68 53 01" never fit (their groups have 2 or 10 digits)."""
+    return bool(
+        _THOUSAND_GROUP.match(raw)
+        and _FIGURE_HEAD.search(text[max(0, start - 5) : start])
+        and _FIGURE_TAIL.match(text[end : end + 5])
+    )
 
 
 def _accept_phone(text: str, start: int, end: int, raw: str) -> bool:
@@ -298,7 +306,7 @@ def _accept_phone(text: str, start: int, end: int, raw: str) -> bool:
         return False
     if raw.startswith("+"):
         return True
-    if _inside_grouped_figure(text, start, end):
+    if _inside_grouped_figure(text, start, end, raw):
         return False  # the tail or head of a figure such as "26.016 88.461" (#219)
     if raw.startswith("00"):
         return True
