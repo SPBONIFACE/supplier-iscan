@@ -521,7 +521,7 @@ class Redactor:
         spans: list[Span] = []
         for found_span in set(found):
             for titled in chinese.trim_titles(text, found_span):
-                if chinese.is_organisation(text, titled):
+                if chinese.is_organisation(text, titled, needs_surname=True):
                     continue
                 trimmed = names.trim_honorific(text, titled)
                 if trimmed:

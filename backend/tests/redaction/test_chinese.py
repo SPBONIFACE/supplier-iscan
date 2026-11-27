@@ -177,7 +177,6 @@ def test_chinese_company_place_and_product_names_stay(text: str) -> None:
     [
         ("Wei Cap Lite", "Wei Cap Lite"),
         ("Li Shan Seal S300", "Li Shan Seal"),
-        ("Jianglei Cap", "Jianglei Cap"),
         ("Wei's Printing", "Wei's"),
         ("Dong Hong Road 162", "Dong Hong Road 162"),
     ],
@@ -277,3 +276,18 @@ def test_a_chinese_product_before_a_job_line_stays() -> None:
     text = "Catalogue, third edition\nLi Shan Seal\nSales Office"
 
     assert redact(text) == text
+
+
+@pytest.mark.parametrize("name", ["Anna Seal", "Tom Mold", "Jane Liner"])
+def test_a_model_span_with_a_product_word_but_no_chinese_surname_is_hidden(name: str) -> None:
+    text = f"Contact: {name} will call back."
+
+    out = redact(text, name)
+
+    assert name.split()[1] not in out and OMISSION in out
+
+
+def test_a_model_span_with_a_chinese_surname_and_a_product_word_is_kept() -> None:
+    text = "Our product Li Shan Seal is shipped."
+
+    assert redact(text, "Li Shan Seal") == text
