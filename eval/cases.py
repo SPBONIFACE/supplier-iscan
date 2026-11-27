@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-CASE_SET_VERSION = "2026-11-05.2"
+CASE_SET_VERSION = "2026-11-28.1"
 
 ROOT = Path(__file__).resolve().parent.parent
 EXTRACTION_FILE = ROOT / "eval" / "cases" / "extraction.json"
@@ -34,6 +34,18 @@ class SourceCase(_Model):
     id: str = Field(min_length=1)
     url: str = Field(min_length=1)
     text: str = Field(min_length=1)
+    # The source type the stage would give it (#209); without it, "other", as before.
+    source_type: Literal["supplier_claim", "third_party", "other"] = "other"
+
+
+class IdentityCase(_Model):
+    """The confirmed identity, as far as extraction uses it (`Supplier`, #209)."""
+
+    legal_name: str = Field(min_length=1)
+    website: str | None = None
+    country: str | None = None
+    group_name: str | None = None
+    group_website: str | None = None
 
 
 class ExtractionCase(_Model):
@@ -44,6 +56,11 @@ class ExtractionCase(_Model):
     # field -> accepted values (compared ignoring case), or None: no public evidence.
     expected: dict[str, list[str] | None]
     recorded: list[dict[str, Any]] = Field(default_factory=list)
+    # Without an identity the case runs as before: no supplier given to `ask` and `judge`.
+    identity: IdentityCase | None = None
+    # field -> the expected `group_level` of its kept value (None: no label); fields not named
+    # here are not checked.
+    expected_group_level: dict[str, str | None] = Field(default_factory=dict)
 
 
 class FactCase(_Model):
@@ -135,6 +152,11 @@ def _extraction_checks(path: Path, cases: list[ExtractionCase]) -> None:
             raise CaseSetError(
                 f"Case file {path} is not valid: case {case.id!r}: 'expected' must name "
                 "exactly the requested fields"
+            )
+        if not set(case.expected_group_level) <= set(case.fields):
+            raise CaseSetError(
+                f"Case file {path} is not valid: case {case.id!r}: 'expected_group_level' may "
+                "only name requested fields"
             )
 
 
