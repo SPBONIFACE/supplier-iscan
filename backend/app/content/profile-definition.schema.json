@@ -61,7 +61,12 @@
         "concerns_people": { "type": "boolean", "default": false },
         "key_figure": { "type": "boolean", "default": false },
         "header_detail": { "type": "boolean", "default": false },
-        "timeline": { "type": "boolean", "default": false }
+        "timeline": { "type": "boolean", "default": false },
+        "entity_specific": {
+          "type": "boolean",
+          "default": false,
+          "description": "On a fact field: a value that belongs to the confirmed legal entity alone (legal form, registration identifiers, head office), which a passage about another entity of its group never fills (spec F3, #209)."
+        }
       }
     }
   }

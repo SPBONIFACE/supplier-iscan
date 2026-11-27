@@ -37,6 +37,9 @@ class FieldDefinition:
     # list (timeline) of the supplier card.
     header_detail: bool
     timeline: bool
+    # A value of the confirmed legal entity alone: a passage about another entity of its group
+    # never fills it (spec F3, #209). Meaningful on a `fact` field only.
+    entity_specific: bool = False
 
 
 @dataclass(frozen=True)
@@ -109,6 +112,7 @@ def load_profile_definition(path: Path | None = None) -> ProfileDefinition:
                         key_figure=f.get("key_figure", False),
                         header_detail=f.get("header_detail", False),
                         timeline=f.get("timeline", False),
+                        entity_specific=f.get("entity_specific", False),
                     )
                     for f in s["fields"]
                 ),
