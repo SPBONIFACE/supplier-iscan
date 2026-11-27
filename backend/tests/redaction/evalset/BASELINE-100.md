@@ -68,3 +68,44 @@ Romanised, by type: family-given (rfg) 97 (38), given-family (rgf) 100 (29), cap
 
 Report part, non-person items altered, by kind: company_latin 3/40, company_surname 3/34,
 company_han 0/24, place_han 2/22, place_pinyin 10/30, product 12/37, suzhou 0/10.
+
+# After the change (three measure-and-adjust rounds on the tuning part, then the report part once)
+
+Rounds on the tuning part (Han / romanised names hidden, non-person items altered):
+baseline 70% / 92% / 13.3%; round 1: 100% / 100% / 4.8% (title kept 91% Han, 84% romanised;
+a bug in a word list altered a Chinese ordinary line); round 2: 100% / 100% / 4.8% (titles kept
+100%); round 3: 100% / 100% / 3.6%. Stopped there. The 3 items still altered in the tuning part are
+three-word pinyin place names in a table column ("Zhao Lan Jiang"), which read exactly like a
+Hong Kong or Taiwan person's name.
+
+## Report part, run once at the end (334 texts, 418 names, 192 non-person items)
+
+| | baseline | after | target |
+|---|---|---|---|
+| Han names hidden, all | 74 | **97** (217) | >= 95 met |
+| Han, worst context (without `dual`) | prose 50 | page 94 | >= 90 met |
+| Han, worst name type (without `dual`) | hc 58 | ht 96 | >= 90 met |
+| Han, a name written beside its romanised form (`dual`) | 70 | 75 (20) | >= 90 missed |
+| romanised names hidden, all | 90 | **100** (201) | >= 95 met |
+| romanised, worst context and type | dual 30 | 100 | >= 90 met |
+| name hidden and title kept, Han | 10 | 100 (30) | >= 95 met |
+| name hidden and title kept, romanised | 67 | 100 (36) | >= 95 met |
+| non-person items altered | 15.6 | **9.4** (18/192) | <= 2 missed |
+| "Suzhou Zi Jin Plastic Co., Ltd" cases altered | 0/10 | 0/10 | none met |
+
+Non-person items altered, by kind: place_pinyin 11/30, product 5/37, company_surname 1/34,
+company_latin 1/40, company_han 0/24, place_han 0/22.
+
+No regression: every Latin language, style and context cell of the main report part and of the fresh
+set is identical to the baseline (en 99/99/98, list 93, es table 96, the rest 100); ordinary lines
+altered 3/126 = 2.4% as before; the Chinese ordinary lines altered 1/21 as before; the Chinese
+cases of the main set 74% -> 100%.
+
+## Time and memory
+
+The two models are called on the same pieces of text as before, so the model time is unchanged. The
+new rules cost 0.2 to 0.4 s per 100 kB (measured without the models, old and new code in turn:
+Latin 0.31 / 0.25 s, capitals 0.23 / 0.35 s, Han 0.18 / 0.36 s). The full runs on a laptop shared
+with other work vary by far more than that: Latin 100 kB 54 to 176 s, Han 100,000 characters 125 s
+before and 137 s (and once 175 s, under load) after; peak memory 2.13 GB before, 2.13 GB after
+(1.97 GB in the run under load); model load unchanged.
