@@ -283,11 +283,23 @@ def _phone_spans(text: str) -> list[Span]:
     return list(spans)
 
 
+def _inside_grouped_figure(text: str, start: int, end: int) -> bool:
+    """The candidate starts right after "<digit>." / "<digit>," or ends right before ".<digit>" /
+    ",<digit>": it is a slice of a longer grouped figure, not a number of its own."""
+    if start > 1 and text[start - 1] in ".," and text[start - 2].isdigit():
+        return True
+    return end + 1 < len(text) and text[end] in ".," and text[end + 1].isdigit()
+
+
 def _accept_phone(text: str, start: int, end: int, raw: str) -> bool:
     """Guards against identifiers: SIREN, SIRET, LEI, VAT and revenue figures stay."""
     if start > 0 and (text[start - 1].isalnum()) or end < len(text) and text[end].isalnum():
         return False
-    if raw.startswith(("+", "00")):
+    if raw.startswith("+"):
+        return True
+    if _inside_grouped_figure(text, start, end):
+        return False  # the tail or head of a figure such as "26.016 88.461" (#219)
+    if raw.startswith("00"):
         return True
     if _ID_LABEL.search(text[max(0, start - 14) : start]) and not _PHONE_WORD.search(
         text[max(0, start - 40) : start]

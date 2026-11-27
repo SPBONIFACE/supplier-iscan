@@ -33,6 +33,19 @@ def one_line(count: int, seed: int = 219) -> str:
     return " ".join(f"{rng.randint(1_000, 999_999):,}".replace(",", " ") for _ in range(count))
 
 
+def _old_accept_phone(text: str, start: int, end: int, raw: str) -> bool:
+    """`_accept_phone` of `main` before #219 (without the grouped-figure guard)."""
+    if start > 0 and (text[start - 1].isalnum()) or end < len(text) and text[end].isalnum():
+        return False
+    if raw.startswith(("+", "00")):
+        return True
+    if engine._ID_LABEL.search(text[max(0, start - 14) : start]) and not engine._PHONE_WORD.search(
+        text[max(0, start - 40) : start]
+    ):
+        return False
+    return raw.startswith(("0", "(")) or "-" in raw
+
+
 def old_phone_spans(text: str) -> list[tuple[int, int]]:
     """The rule of `main` before #219, kept as the reference of the differential test."""
     spans: dict[tuple[int, int], bool] = {}
@@ -43,7 +56,7 @@ def old_phone_spans(text: str) -> list[tuple[int, int]]:
         )
         for match in matcher:
             raw = text[match.start : match.end]
-            if engine._accept_phone(text, match.start, match.end, raw):
+            if _old_accept_phone(text, match.start, match.end, raw):
                 spans[(match.start, match.end)] = True
     return list(spans)
 

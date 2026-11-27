@@ -93,3 +93,23 @@ def test_on_texts_within_the_old_budget_the_spans_are_those_of_main(text: str) -
 def test_the_differential_texts_really_fit_the_old_budget() -> None:
     # The old rule found numbers in these texts, so the comparison is not empty.
     assert sum(len(old_phone_spans(text)) for text in SMALL_TEXTS) >= 12
+
+
+def test_the_corpus_table_gives_the_spans_of_main_or_fewer() -> None:
+    """The 400-row table of the performance corpus (figures like "26.016 88.461"): the full scan
+    must not take a slice of a grouped figure for a phone number."""
+    from tests.redaction.perf_corpus import numeric_table
+
+    text = numeric_table()
+    new = {text[a:b] for a, b in _phone_spans(text)}
+    old = {text[a:b] for a, b in old_phone_spans(text)}
+    assert new <= old, new - old
+    assert not {"016 43", "076 497 37", "016 93"} & new
+
+
+@PASSES
+def test_a_phone_after_the_corpus_table_is_redacted(run: Callable[[str], str]) -> None:
+    from tests.redaction.perf_corpus import numeric_table
+
+    out = run(f"{numeric_table()}\nCall {PHONE}, or 01 42 68 53 00.")
+    assert out.endswith(f"Call {MARK}, or {MARK}.")
