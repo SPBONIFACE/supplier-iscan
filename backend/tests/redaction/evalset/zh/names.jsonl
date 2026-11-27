@@ -1,0 +1,478 @@
+{"id": 0, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "prose", "text": "我们的代表姜敏将在周三回复您的询价。", "spans": [[5, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 1, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "nextline", "text": "签名：\n洪洋\n", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 2, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "split", "text": "联系人：郭\n虎阳\n地点：北京", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 3, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "alone", "text": "Welcome to the supplier portal\nDirector Tian\nDongguan", "spans": [[40, 44]], "scripts": ["latin"], "title_spans": [[31, 39]]}
+{"id": 4, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "alone", "text": "Welcome to the supplier portal\nFUNG KAM MAN\nWuxi", "spans": [[31, 43]], "scripts": ["latin"], "title_spans": []}
+{"id": 5, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "list", "text": "Team:\n- Yi Dong\n- Bin Zhu\n- Longping Cheng", "spans": [[8, 15], [18, 25], [28, 42]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 6, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "contact", "text": "Contact person: Chiu Wenting, Ningbo", "spans": [[16, 28]], "scripts": ["latin"], "title_spans": []}
+{"id": 7, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "page", "text": "关于我们 | About us\nSales contact: Jin Chenping, 欢迎来电。\n总部设在东莞", "spans": [[31, 43]], "scripts": ["latin"], "title_spans": []}
+{"id": 8, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 胡倩飞 (Sales)\nISO 9001 certified plant in Shanghai", "spans": [[39, 42]], "scripts": ["han"], "title_spans": []}
+{"id": 9, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 2649 | 长孙兰桐 | 已发货 | 3月21日 |", "spans": [[31, 35]], "scripts": ["han"], "title_spans": []}
+{"id": 10, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "contact", "text": "Contact person: Tsai Chen-szu, Wuxi", "spans": [[16, 29]], "scripts": ["latin"], "title_spans": []}
+{"id": 11, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "split", "text": "报价单由夏侯\n佳梓整理并发送给客户。", "spans": [[4, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 12, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "list", "text": "- Minghong Fang\n- Hao Song", "spans": [[2, 15], [18, 26]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 13, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "prose", "text": "昨天郝嘉与我们的仓库确认了交货日期。", "spans": [[2, 4]], "scripts": ["han"], "title_spans": []}
+{"id": 14, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "alone", "text": "Product catalogue, third edition\nJin Juanyan\nQuality Department", "spans": [[33, 44]], "scripts": ["latin"], "title_spans": []}
+{"id": 15, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "list", "text": "Team:\n- Xiong Bin\n- Cao Yang", "spans": [[8, 17], [20, 28]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 16, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "孔玲桐\nYang Weixuan\n客户服务部", "spans": [[0, 3], [4, 16]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 17, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "signature", "text": "谢谢！\n段强洋\n财务部", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 18, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "prose", "text": "Last month Yuqiang Yao visited our plant in Chengdu and reviewed the packaging specification.", "spans": [[11, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 19, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "唐昊涵 (Xu Xianggang) is our contact for the 上海 plant.", "spans": [[0, 3], [5, 17]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 20, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "nextline", "text": "Contact:\nChen Huiyang\nLocation: Suzhou", "spans": [[9, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 21, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "table", "text": "| 4334 | 魏悦梓 | 待处理 | 1月22日 |", "spans": [[9, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 22, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "contact", "text": "Contact: 黃文秋\nLocation: Wuhan", "spans": [[9, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 23, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "alone", "text": "Welcome to the supplier portal\nManager Dong\nTianjin", "spans": [[39, 43]], "scripts": ["latin"], "title_spans": [[31, 38]]}
+{"id": 24, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "list", "text": "团队：\n- 潘瑤\n- 高陽傑", "spans": [[6, 8], [11, 14]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 25, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "contact", "text": "联系人：南宫梅瑶老师\n地点：常州", "spans": [[4, 8]], "scripts": ["han"], "title_spans": [[8, 10]]}
+{"id": 26, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "联系人：段娅华\nContact: Liu Huapeng\n地点：青岛", "spans": [[4, 7], [17, 28]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 27, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "signature", "text": "顺祝商祺！\n林雯\n质量部\n武汉办事处", "spans": [[6, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 28, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "list", "text": "Team:\n- Fung Kai Shan\n- Chow Kit Ming", "spans": [[8, 21], [24, 37]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 29, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "page", "text": "联系我们\nContact us today! 客户经理：艾买尔·斯琴\n地址：苏州市工业园区", "spans": [[28, 34]], "scripts": ["han"], "title_spans": []}
+{"id": 30, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "page", "text": "产品目录 Product range\n联系人 Contact: Mr. Yuan Hui\nISO 9001 certified plant in Chengdu", "spans": [[36, 44]], "scripts": ["latin"], "title_spans": [[32, 35]]}
+{"id": 31, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "list", "text": "人员名单\n- 尹雅\n- 孔超", "spans": [[7, 9], [12, 14]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 32, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "prose", "text": "上个月，蔡倩参观了我们位于宁波的工厂，并讨论了包装规格。", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 33, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "split", "text": "Quotation prepared by Yuan\nGang for the customer.", "spans": [[22, 31]], "scripts": ["latin"], "title_spans": []}
+{"id": 34, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "nextline", "text": "签名：\n朱冬辉\n", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 35, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "联系人：汪诗凯\nContact: Cao Juanchun\n地点：天津", "spans": [[4, 7], [17, 29]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 36, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "nextline", "text": "联系人：\n公孙昌建\n地点：苏州", "spans": [[5, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 37, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "page", "text": "联系我们\nContact us today! Account manager Jiayong Chen\n地址：上海市工业园区", "spans": [[39, 51]], "scripts": ["latin"], "title_spans": []}
+{"id": 38, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "nextline", "text": "联系人：\n帕提古丽·努尔\n地点：苏州", "spans": [[5, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 39, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "陈萱娜 (Liang Yanzi) is our contact for the 昆山 plant.", "spans": [[0, 3], [5, 16]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 40, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "signature", "text": "Best regards\nDirector Deng\nFinance\nShanghai office", "spans": [[22, 26]], "scripts": ["latin"], "title_spans": [[13, 21]]}
+{"id": 41, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "list", "text": "- Hsu Pohsiu\n- Wei-ming Lee\n- Tseng Po-hsuan", "spans": [[2, 12], [15, 27], [30, 44]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 42, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "signature", "text": "Kind regards,\nLu Mei\nLogistics", "spans": [[14, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 43, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "list", "text": "Participants\n- Lau Chi Lam\n- Fung Ho Ho", "spans": [[15, 26], [29, 39]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 44, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "contact", "text": "Contact person: Mr Juanmin Qin, Dongguan", "spans": [[19, 30]], "scripts": ["latin"], "title_spans": [[16, 18]]}
+{"id": 45, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 陶兰 (Sales)\nISO 9001 certified plant in Chengdu", "spans": [[39, 41]], "scripts": ["han"], "title_spans": []}
+{"id": 46, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "prose", "text": "According to Wei-tzu Tsai, the samples will be sent next week at the buyer's cost.", "spans": [[13, 25]], "scripts": ["latin"], "title_spans": []}
+{"id": 47, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "nextline", "text": "联系人：\n謝鵬麗\n地点：佛山", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 48, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 李海 (Sales)\nISO 9001 certified plant in Xiamen", "spans": [[39, 41]], "scripts": ["han"], "title_spans": []}
+{"id": 49, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "split", "text": "联系人：慕容\n晨玲\n地点：昆山", "spans": [[4, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 50, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "alone", "text": "Welcome to the supplier portal\nPoon Ming Shan\nSuzhou", "spans": [[31, 45]], "scripts": ["latin"], "title_spans": []}
+{"id": 51, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "signature", "text": "此致\n敬礼\n邓总\n质量部", "spans": [[6, 7]], "scripts": ["han"], "title_spans": [[7, 8]]}
+{"id": 52, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "table", "text": "| 9643 | 乌力吉·乌力吉 | 已确认 | 9月27日 |", "spans": [[9, 16]], "scripts": ["han"], "title_spans": []}
+{"id": 53, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "nextline", "text": "Contact:\nKuo Ming chen\nLocation: Tianjin", "spans": [[9, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 54, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 9100 | 范霞 | 已确认 | 6月10日 |", "spans": [[31, 33]], "scripts": ["han"], "title_spans": []}
+{"id": 55, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "nextline", "text": "Contact:\nHuang Yonghu\nLocation: Dongguan", "spans": [[9, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 56, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 魏桐 (Sales)\nISO 9001 certified plant in Beijing", "spans": [[39, 41]], "scripts": ["han"], "title_spans": []}
+{"id": 57, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 尉迟娟 (Sales)\nISO 9001 certified plant in Suzhou", "spans": [[39, 42]], "scripts": ["han"], "title_spans": []}
+{"id": 58, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "split", "text": "报价单由东方\n文整理并发送给客户。", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 59, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "alone", "text": "Prof. Gao Yongjuan", "spans": [[6, 18]], "scripts": ["latin"], "title_spans": [[0, 5]]}
+{"id": 60, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "table", "text": "| 2538 | Wong Kwok Lam | Confirmed | 25 May |", "spans": [[9, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 61, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "signature", "text": "顺祝商祺！\n杨彤\n质量部\n北京办事处", "spans": [[6, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 62, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "table", "text": "| 3530 | 赵昌总 | 待处理 | 5月7日 |", "spans": [[9, 11]], "scripts": ["han"], "title_spans": [[11, 12]]}
+{"id": 63, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "split", "text": "报价单由孔\n虎整理并发送给客户。", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 64, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "contact", "text": "负责人：巴特尔·祖木热提\n地点：昆山", "spans": [[4, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 65, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 赖文诗 (Sales)\nISO 9001 certified plant in Suzhou", "spans": [[39, 42]], "scripts": ["han"], "title_spans": []}
+{"id": 66, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "nextline", "text": "Signed by\nProf. Xiong Hua\nFinance", "spans": [[16, 25]], "scripts": ["latin"], "title_spans": [[10, 15]]}
+{"id": 67, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "contact", "text": "Contact: Ren Qianlong\nLocation: Qingdao", "spans": [[9, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 68, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "prose", "text": "昨天陆志艳与我们的仓库确认了交货日期。", "spans": [[2, 5]], "scripts": ["han"], "title_spans": []}
+{"id": 69, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "prose", "text": "Yesterday Han Minmin confirmed the delivery date with our warehouse.", "spans": [[10, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 70, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "nextline", "text": "Name:\nChaoyuan Zheng\n", "spans": [[6, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 71, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "signature", "text": "顺祝商祺！\n教授长孙光勇\n财务部\n青岛办事处", "spans": [[8, 12]], "scripts": ["han"], "title_spans": [[6, 8]]}
+{"id": 72, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 经理夏侯诗 (Sales)\nISO 9001 certified plant in Suzhou", "spans": [[41, 44]], "scripts": ["han"], "title_spans": [[39, 41]]}
+{"id": 73, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "list", "text": "团队：\n- 吴晨凤工程师\n- 万先生", "spans": [[6, 9], [15, 16]], "scripts": ["han", "han"], "title_spans": [[9, 12], [16, 18]]}
+{"id": 74, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "split", "text": "Quotation prepared by Yang\nYu chih for the customer.", "spans": [[22, 34]], "scripts": ["latin"], "title_spans": []}
+{"id": 75, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "prose", "text": "The audit report was approved and signed by Zhang Qi before the end of the quarter.", "spans": [[44, 52]], "scripts": ["latin"], "title_spans": []}
+{"id": 76, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "split", "text": "联系人：卓玛·\n努尔\n地点：宁波", "spans": [[4, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 77, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "prose", "text": "根据秦倩平的说明，样品将于下周寄出，运费由买方承担。", "spans": [[2, 5]], "scripts": ["han"], "title_spans": []}
+{"id": 78, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "signature", "text": "顺祝商祺！\n库尔班·阿木尔\n财务部\n青岛办事处", "spans": [[6, 13]], "scripts": ["han"], "title_spans": []}
+{"id": 79, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "split", "text": "Contact: Shanfei\nGAO\nLocation: Foshan", "spans": [[9, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 80, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "prose", "text": "上个月，陳桐参观了我们位于东莞的工厂，并讨论了包装规格。", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 81, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "nextline", "text": "Name:\nMr. Han Wu\n", "spans": [[10, 16]], "scripts": ["latin"], "title_spans": [[6, 9]]}
+{"id": 82, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "prose", "text": "Yesterday Cheung Sze Yee confirmed the delivery date with our warehouse.", "spans": [[10, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 83, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 2698 | Qian Meng | Shipped | 7 May |", "spans": [[44, 53]], "scripts": ["latin"], "title_spans": []}
+{"id": 84, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "list", "text": "- Wenlin YE\n- SHEN Siyu\n- xiong xiangting", "spans": [[2, 11], [14, 23], [26, 41]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 85, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "prose", "text": "Yesterday Dr. Xiang Ren confirmed the delivery date with our warehouse.", "spans": [[14, 23]], "scripts": ["latin"], "title_spans": [[10, 13]]}
+{"id": 86, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "contact", "text": "联系人：南宫飞经理\n地点：宁波", "spans": [[4, 7]], "scripts": ["han"], "title_spans": [[7, 9]]}
+{"id": 87, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "contact", "text": "Contact: 秦建\nLocation: Dongguan", "spans": [[9, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 88, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "page", "text": "联系我们\nContact us today! 客户经理：顾昌虎\n地址：常州市工业园区", "spans": [[28, 31]], "scripts": ["han"], "title_spans": []}
+{"id": 89, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "nextline", "text": "Name:\nTSANG CHI FUNG\n", "spans": [[6, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 90, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "signature", "text": "Thank you,\nHui Huang\nCustomer Service", "spans": [[11, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 91, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "alone", "text": "Welcome to the supplier portal\nMeiqi Xiao\nSuzhou", "spans": [[31, 41]], "scripts": ["latin"], "title_spans": []}
+{"id": 92, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 2606 | 欧阳琳 | 已发货 | 6月26日 |", "spans": [[31, 34]], "scripts": ["han"], "title_spans": []}
+{"id": 93, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "signature", "text": "谢谢！\n刘华\n财务部", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 94, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "alone", "text": "金平", "spans": [[0, 2]], "scripts": ["han"], "title_spans": []}
+{"id": 95, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 7253 | Tsai Chun han | Shipped | 9 May |", "spans": [[44, 57]], "scripts": ["latin"], "title_spans": []}
+{"id": 96, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "page", "text": "联系我们\nContact us today! Account manager Leung Wah Man\n地址：厦门市工业园区", "spans": [[39, 52]], "scripts": ["latin"], "title_spans": []}
+{"id": 97, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "alone", "text": "欢迎访问供应商门户\n令狐晨\n青岛", "spans": [[10, 13]], "scripts": ["han"], "title_spans": []}
+{"id": 98, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "list", "text": "人员名单\n- 博士范静\n- 钱老师\n- 孟老师", "spans": [[9, 11], [14, 15], [20, 21]], "scripts": ["han", "han", "han"], "title_spans": [[7, 9], [15, 17], [21, 23]]}
+{"id": 99, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "table", "text": "| 6414 | Li Lijuan, Director | Confirmed | 26 May |", "spans": [[9, 18]], "scripts": ["latin"], "title_spans": [[20, 28]]}
+{"id": 100, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "signature", "text": "此致\n敬礼\n萧鹏晨\n技术部", "spans": [[6, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 101, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "contact", "text": "联系人：Cheng Xue\n地点：常州", "spans": [[4, 13]], "scripts": ["latin"], "title_spans": []}
+{"id": 102, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "signature", "text": "Best regards\nDr. Tam Mei Ming\nSales Office\nXiamen office", "spans": [[17, 29]], "scripts": ["latin"], "title_spans": [[13, 16]]}
+{"id": 103, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "signature", "text": "Kind regards,\nHsieh Chen pei\nSales Office", "spans": [[14, 28]], "scripts": ["latin"], "title_spans": []}
+{"id": 104, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 8216 | Dr Jiapeng Fan | Pending | 28 May |", "spans": [[47, 58]], "scripts": ["latin"], "title_spans": [[44, 46]]}
+{"id": 105, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "prose", "text": "我们的代表郑飞将在周三回复您的询价。", "spans": [[5, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 106, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "split", "text": "联系人：白\n杰\n地点：常州", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 107, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "alone", "text": "Welcome to the supplier portal\nPan Ping\nNingbo", "spans": [[31, 39]], "scripts": ["latin"], "title_spans": []}
+{"id": 108, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "contact", "text": "联系人：令狐华涛　电子邮件见网站", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 109, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "prose", "text": "昨天王晨与我们的仓库确认了交货日期。", "spans": [[2, 4]], "scripts": ["han"], "title_spans": []}
+{"id": 110, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "contact", "text": "联系人：吐尔逊·那顺　电子邮件见网站", "spans": [[4, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 111, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "split", "text": "In March the file was handled by Longyan\nYang before shipment.", "spans": [[33, 45]], "scripts": ["latin"], "title_spans": []}
+{"id": 112, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "nextline", "text": "Signed by\nWang Guangna\nLogistics", "spans": [[10, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 113, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "夏娅倩 (Yao Linchao) is our contact for the 常州 plant.", "spans": [[0, 3], [5, 16]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 114, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "signature", "text": "此致\n敬礼\n林博\n采购部", "spans": [[6, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 115, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "alone", "text": "卢琪", "spans": [[0, 2]], "scripts": ["han"], "title_spans": []}
+{"id": 116, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "contact", "text": "负责人：何龙娅\n地点：上海", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 117, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "contact", "text": "联系人：Lei Ren\n地点：武汉", "spans": [[4, 11]], "scripts": ["latin"], "title_spans": []}
+{"id": 118, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "contact", "text": "联系人：朱豪　电子邮件见网站", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 119, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "prose", "text": "根据蔡佳的说明，样品将于下周寄出，运费由买方承担。", "spans": [[2, 4]], "scripts": ["han"], "title_spans": []}
+{"id": 120, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "contact", "text": "负责人：袁宇志\n地点：上海", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 121, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "page", "text": "产品目录 Product range\n联系人 Contact: Chen-shan Kuo\nISO 9001 certified plant in Dongguan", "spans": [[32, 45]], "scripts": ["latin"], "title_spans": []}
+{"id": 122, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "table", "text": "| 9099 | Yip Man Yuk | Pending | 2 May |", "spans": [[9, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 123, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "contact", "text": "联系人：欧阳杰彬　电子邮件见网站", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 124, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "prose", "text": "According to Fei Wei, the samples will be sent next week at the buyer's cost.", "spans": [[13, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 125, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 8254 | 盧建 | 已发货 | 8月21日 |", "spans": [[31, 33]], "scripts": ["han"], "title_spans": []}
+{"id": 126, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "alone", "text": "熊娟雅", "spans": [[0, 3]], "scripts": ["han"], "title_spans": []}
+{"id": 127, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "split", "text": "报价单由黎\n萱国整理并发送给客户。", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 128, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 5308 | 韓萱 | 待处理 | 1月2日 |", "spans": [[31, 33]], "scripts": ["han"], "title_spans": []}
+{"id": 129, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "list", "text": "- 玛依拉·阿依古丽\n- 库尔班·卓玛", "spans": [[2, 10], [13, 19]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 130, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "alone", "text": "孟军静老师", "spans": [[0, 3]], "scripts": ["han"], "title_spans": [[3, 5]]}
+{"id": 131, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "list", "text": "Team:\n- Prof. Wong Wing Kai\n- Juanhong Wang, Manager\n- Ms. LEUNG MING KEUNG", "spans": [[14, 27], [30, 43], [59, 75]], "scripts": ["latin", "latin", "latin"], "title_spans": [[8, 13], [45, 52], [55, 58]]}
+{"id": 132, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "list", "text": "团队：\n- 阿卜杜·其木格\n- 祖木热提·艾买尔", "spans": [[6, 13], [16, 24]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 133, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "alone", "text": "欢迎访问供应商门户\n令狐辉彤\n天津", "spans": [[10, 14]], "scripts": ["han"], "title_spans": []}
+{"id": 134, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "signature", "text": "顺祝商祺！\n端木雅\n质量部\n昆山办事处", "spans": [[6, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 135, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "signature", "text": "顺祝商祺！\n萧军冬\n技术部\n成都办事处", "spans": [[6, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 136, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "split", "text": "三月份该档案由司马\n文在发货前处理。", "spans": [[7, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 137, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "table", "text": "| 7726 | 满都拉·扎西 | 已确认 | 6月3日 |", "spans": [[9, 15]], "scripts": ["han"], "title_spans": []}
+{"id": 138, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "signature", "text": "Kind regards,\nWong Wai Pui\nFinance", "spans": [[14, 26]], "scripts": ["latin"], "title_spans": []}
+{"id": 139, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "list", "text": "团队：\n- 南宫虎佳\n- 端木思\n- 宇文彬建", "spans": [[6, 10], [13, 16], [19, 23]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 140, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "list", "text": "Participants\n- Manager Peng\n- Manager Xiong\n- Mr. HO FAI FAI", "spans": [[23, 27], [38, 43], [50, 60]], "scripts": ["latin", "latin", "latin"], "title_spans": [[15, 22], [30, 37], [46, 49]]}
+{"id": 141, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "contact", "text": "联系人：唐剛\n地点：宁波", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 142, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "signature", "text": "Thank you,\nDr. Yip Ting Man\nLogistics", "spans": [[15, 27]], "scripts": ["latin"], "title_spans": [[11, 14]]}
+{"id": 143, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 2316 | 曾煌 | 待处理 | 6月1日 |", "spans": [[31, 33]], "scripts": ["han"], "title_spans": []}
+{"id": 144, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "contact", "text": "Contact: 彭宏\nLocation: Chengdu", "spans": [[9, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 145, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "prose", "text": "我们的代表馬竹秋将在周三回复您的询价。", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 146, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "prose", "text": "Last month Jiang Yuanjia visited our plant in Chengdu and reviewed the packaging specification.", "spans": [[11, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 147, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "nextline", "text": "Signed by\nChunyong Xu\nCustomer Service", "spans": [[10, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 148, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "alone", "text": "欢迎访问供应商门户\n古丽娜·阿卜杜\n杭州", "spans": [[10, 17]], "scripts": ["han"], "title_spans": []}
+{"id": 149, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "signature", "text": "Thank you,\nDr. SZETO MAN FAI\nSales Office", "spans": [[15, 28]], "scripts": ["latin"], "title_spans": [[11, 14]]}
+{"id": 150, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "alone", "text": "产品目录第三版\n赛力克·阿卜杜\n客户服务部", "spans": [[8, 15]], "scripts": ["han"], "title_spans": []}
+{"id": 151, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "nextline", "text": "Contact:\nMs. Ren\nLocation: Shanghai", "spans": [[13, 16]], "scripts": ["latin"], "title_spans": [[9, 12]]}
+{"id": 152, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "signature", "text": "顺祝商祺！\n莫玲\n质量部\n常州办事处", "spans": [[6, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 153, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 5512 | Mr Ren Jie | Pending | 10 May |", "spans": [[47, 54]], "scripts": ["latin"], "title_spans": [[44, 46]]}
+{"id": 154, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "list", "text": "Team:\n- Cheng Lin ya\n- Wang Han-pei", "spans": [[8, 20], [23, 35]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 155, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "list", "text": "Participants\n- Engineer Sun\n- Engineer Wei\n- Director Zhu", "spans": [[24, 27], [39, 42], [54, 57]], "scripts": ["latin", "latin", "latin"], "title_spans": [[15, 23], [30, 38], [45, 53]]}
+{"id": 156, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "page", "text": "产品目录 Product range\n联系人 Contact: YUAN BINLIN\nISO 9001 certified plant in Chengdu", "spans": [[32, 43]], "scripts": ["latin"], "title_spans": []}
+{"id": 157, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "prose", "text": "According to Cheng Ming ting, the samples will be sent next week at the buyer's cost.", "spans": [[13, 28]], "scripts": ["latin"], "title_spans": []}
+{"id": 158, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "signature", "text": "Best regards\nYuanqi Hou\nQuality Department\nFoshan office", "spans": [[13, 23]], "scripts": ["latin"], "title_spans": []}
+{"id": 159, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "page", "text": "联系我们\nContact us today! 客户经理：司马霞主任\n地址：成都市工业园区", "spans": [[28, 31]], "scripts": ["han"], "title_spans": [[31, 33]]}
+{"id": 160, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "contact", "text": "联系人：郝女士　电子邮件见网站", "spans": [[4, 5]], "scripts": ["han"], "title_spans": [[5, 7]]}
+{"id": 161, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "list", "text": "- 邵经理\n- 杨博士", "spans": [[2, 3], [8, 9]], "scripts": ["han", "han"], "title_spans": [[3, 5], [9, 11]]}
+{"id": 162, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "table", "text": "| 5210 | 馮琳天 | 已确认 | 1月22日 |", "spans": [[9, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 163, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "signature", "text": "Thank you,\nLu Yu\nFinance", "spans": [[11, 16]], "scripts": ["latin"], "title_spans": []}
+{"id": 164, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "signature", "text": "顺祝商祺！\n令狐超先生\n财务部\n昆山办事处", "spans": [[6, 9]], "scripts": ["han"], "title_spans": [[9, 11]]}
+{"id": 165, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "list", "text": "- Yiyang Ren\n- Leiting Zhu\n- Xinbin Lu", "spans": [[2, 12], [15, 26], [29, 38]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 166, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "nextline", "text": "联系人：\n马静霞\n地点：无锡", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 167, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "prose", "text": "The audit report was approved and signed by Prof. Ping Jiang before the end of the quarter.", "spans": [[50, 60]], "scripts": ["latin"], "title_spans": [[44, 49]]}
+{"id": 168, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "page", "text": "联系我们\nContact us today! 客户经理：吕昊辉\n地址：上海市工业园区", "spans": [[28, 31]], "scripts": ["han"], "title_spans": []}
+{"id": 169, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "contact", "text": "Contact: 郑国\nLocation: Foshan", "spans": [[9, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 170, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "split", "text": "Contact: Fangli\nZhao\nLocation: Wuxi", "spans": [[9, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 171, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "alone", "text": "欢迎访问供应商门户\n馮明濤\n青岛", "spans": [[10, 13]], "scripts": ["han"], "title_spans": []}
+{"id": 172, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 6346 | Tseng Hsuan chun | Shipped | 22 May |", "spans": [[44, 60]], "scripts": ["latin"], "title_spans": []}
+{"id": 173, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "contact", "text": "Contact person: KWOK MING MAN, Tianjin", "spans": [[16, 29]], "scripts": ["latin"], "title_spans": []}
+{"id": 174, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "split", "text": "Quotation prepared by cao\nyi for the customer.", "spans": [[22, 28]], "scripts": ["latin"], "title_spans": []}
+{"id": 175, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "alone", "text": "Product catalogue, third edition\nKwok Cheuk Ching\nQuality Department", "spans": [[33, 49]], "scripts": ["latin"], "title_spans": []}
+{"id": 176, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "prose", "text": "Yesterday Chow Ting Chun confirmed the delivery date with our warehouse.", "spans": [[10, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 177, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "alone", "text": "Cheng Taolong", "spans": [[0, 13]], "scripts": ["latin"], "title_spans": []}
+{"id": 178, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "prose", "text": "The audit report was approved and signed by CHAN SIU KEUNG before the end of the quarter.", "spans": [[44, 58]], "scripts": ["latin"], "title_spans": []}
+{"id": 179, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "alone", "text": "产品目录第三版\n郑宏斌\n质量部", "spans": [[8, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 180, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "page", "text": "产品目录 Product range\n联系人 Contact: Lau Yee Kai\nISO 9001 certified plant in Suzhou", "spans": [[32, 43]], "scripts": ["latin"], "title_spans": []}
+{"id": 181, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "联系人：方轩华\nContact: Liao Huishan\n地点：无锡", "spans": [[4, 7], [17, 29]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 182, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "contact", "text": "Contact: Mr Ho Tai Lok\nLocation: Ningbo", "spans": [[12, 22]], "scripts": ["latin"], "title_spans": [[9, 11]]}
+{"id": 183, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "split", "text": "三月份该档案由賀\n彤在发货前处理。", "spans": [[7, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 184, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "split", "text": "报价单由古丽娜·\n库尔班整理并发送给客户。", "spans": [[4, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 185, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "page", "text": "关于我们 | About us\nWe supply closures and caps worldwide. 总部设在武汉，联系人余菊，欢迎来电。", "spans": [[65, 67]], "scripts": ["han"], "title_spans": []}
+{"id": 186, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "contact", "text": "联系人：Mr Haoqiang Xie\n地点：宁波", "spans": [[7, 19]], "scripts": ["latin"], "title_spans": [[4, 6]]}
+{"id": 187, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "signature", "text": "顺祝商祺！\n钟平\n财务部\n东莞办事处", "spans": [[6, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 188, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "prose", "text": "根据南宫凯博士的说明，样品将于下周寄出，运费由买方承担。", "spans": [[2, 5]], "scripts": ["han"], "title_spans": [[5, 7]]}
+{"id": 189, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "signature", "text": "Kind regards,\nXuan LIANG\nCustomer Service", "spans": [[14, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 190, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "陶远丽\nXia Chenyong\n财务部", "spans": [[0, 3], [4, 16]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 191, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "page", "text": "关于我们 | About us\nWe supply closures and caps worldwide. 总部设在宁波，联系人皇甫凤女士，欢迎来电。", "spans": [[65, 68]], "scripts": ["han"], "title_spans": [[68, 70]]}
+{"id": 192, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "table", "text": "| 2564 | 朱艳晨 | 已确认 | 3月5日 |", "spans": [[9, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 193, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "prose", "text": "审计报告在季度末前由苏布道·阿依古丽签字批准。", "spans": [[10, 18]], "scripts": ["han"], "title_spans": []}
+{"id": 194, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "nextline", "text": "签名：\n苏工程师\n", "spans": [[4, 5]], "scripts": ["han"], "title_spans": [[5, 8]]}
+{"id": 195, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "黎煌欣\nJiang Yuanrong\n物流部", "spans": [[0, 3], [4, 18]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 196, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "signature", "text": "Best regards\nSzeto Ching Siu\nSales Office\nWuxi office", "spans": [[13, 28]], "scripts": ["latin"], "title_spans": []}
+{"id": 197, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "list", "text": "- Qin Leilei\n- Liu Qi\n- Qin Yiyu", "spans": [[2, 12], [15, 21], [24, 32]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 198, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "吕洋芳\nTan Xiachen\n市场部", "spans": [[0, 3], [4, 15]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 199, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "signature", "text": "Best regards\nWang Xue\nQuality Department\nWuhan office", "spans": [[13, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 200, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 4304 | 刘志 | 已确认 | 6月24日 |", "spans": [[31, 33]], "scripts": ["han"], "title_spans": []}
+{"id": 201, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "page", "text": "联系我们\nContact us today! 客户经理：欧阳雅煌\n地址：杭州市工业园区", "spans": [[28, 32]], "scripts": ["han"], "title_spans": []}
+{"id": 202, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "table", "text": "| 9881 | 吐尔逊·赛力克 | 已确认 | 2月28日 |", "spans": [[9, 16]], "scripts": ["han"], "title_spans": []}
+{"id": 203, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "contact", "text": "Contact person: Tam Yan Wah, Sales Manager, Tianjin", "spans": [[16, 27]], "scripts": ["latin"], "title_spans": [[29, 42]]}
+{"id": 204, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "split", "text": "联系人：梁\n瑤宏\n地点：宁波", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 205, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "prose", "text": "上个月，龚菊阳先生参观了我们位于常州的工厂，并讨论了包装规格。", "spans": [[4, 7]], "scripts": ["han"], "title_spans": [[7, 9]]}
+{"id": 206, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "alone", "text": "产品目录第三版\n林蘭穎\n技术部", "spans": [[8, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 207, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "nextline", "text": "联系人：\n令狐波\n地点：上海", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 208, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "split", "text": "Quotation prepared by Lee\nLun Kwok for the customer.", "spans": [[22, 34]], "scripts": ["latin"], "title_spans": []}
+{"id": 209, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "list", "text": "人员名单\n- 陈悦\n- 赵娜", "spans": [[7, 9], [12, 14]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 210, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "nextline", "text": "联系人：\n袁萱\n地点：佛山", "spans": [[5, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 211, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "prose", "text": "Yesterday Gangming BAI confirmed the delivery date with our warehouse.", "spans": [[10, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 212, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "nextline", "text": "负责人\n潘洋\n客户服务部", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 213, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "contact", "text": "联系人：洪老师\n地点：北京", "spans": [[4, 5]], "scripts": ["han"], "title_spans": [[5, 7]]}
+{"id": 214, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "table", "text": "| 3566 | Huang Fenkuan | Confirmed | 16 May |", "spans": [[9, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 215, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "nextline", "text": "负责人\n刘总\n销售部", "spans": [[4, 5]], "scripts": ["han"], "title_spans": [[5, 6]]}
+{"id": 216, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "signature", "text": "顺祝商祺！\n夏侯思彤\n销售部\n昆山办事处", "spans": [[6, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 217, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "page", "text": "关于我们 | About us\nWe supply closures and caps worldwide. 总部设在佛山，联系人夏侯娜虎，欢迎来电。", "spans": [[65, 69]], "scripts": ["han"], "title_spans": []}
+{"id": 218, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "list", "text": "人员名单\n- 端木静\n- 诸葛龙", "spans": [[7, 10], [13, 16]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 219, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "contact", "text": "联系人：多杰·艾尔肯　电子邮件见网站", "spans": [[4, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 220, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "prose", "text": "上个月，孫國遠参观了我们位于宁波的工厂，并讨论了包装规格。", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 221, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "contact", "text": "Contact: Xiong Fangguang\nLocation: Wuhan", "spans": [[9, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 222, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "signature", "text": "Kind regards,\nqin tingna\nQuality Department", "spans": [[14, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 223, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "contact", "text": "联系人：Lan DU\n地点：北京", "spans": [[4, 10]], "scripts": ["latin"], "title_spans": []}
+{"id": 224, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "alone", "text": "Welcome to the supplier portal\nLin Fen-szu\nWuxi", "spans": [[31, 42]], "scripts": ["latin"], "title_spans": []}
+{"id": 225, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "contact", "text": "联系人：Qikai Fu\n地点：东莞", "spans": [[4, 12]], "scripts": ["latin"], "title_spans": []}
+{"id": 226, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 其木格·次仁 (Sales)\nISO 9001 certified plant in Wuxi", "spans": [[39, 45]], "scripts": ["han"], "title_spans": []}
+{"id": 227, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "nextline", "text": "签名：\n托合提·阿木尔\n", "spans": [[4, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 228, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "page", "text": "关于我们 | About us\nWe supply closures and caps worldwide. 总部设在厦门，联系人姚玲，欢迎来电。", "spans": [[65, 67]], "scripts": ["han"], "title_spans": []}
+{"id": 229, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "signature", "text": "顺祝商祺！\n帕提古丽·苏布道\n客户服务部\n厦门办事处", "spans": [[6, 14]], "scripts": ["han"], "title_spans": []}
+{"id": 230, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "nextline", "text": "负责人\n杨艳\n市场部", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 231, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "alone", "text": "欢迎访问供应商门户\n洪凯\n常州", "spans": [[10, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 232, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "list", "text": "Team:\n- SU HUIHU\n- cao hua\n- Jinghan ZHONG", "spans": [[8, 16], [19, 26], [29, 42]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 233, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "list", "text": "Team:\n- Cheng Lin-hao\n- Chen Cheng-wen", "spans": [[8, 21], [24, 38]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 234, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "split", "text": "Contact: dong\nhaoli\nLocation: Ningbo", "spans": [[9, 19]], "scripts": ["latin"], "title_spans": []}
+{"id": 235, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "alone", "text": "Welcome to the supplier portal\nMr. Feiping Yao\nBeijing", "spans": [[35, 46]], "scripts": ["latin"], "title_spans": [[31, 34]]}
+{"id": 236, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "contact", "text": "Contact person: Leung Shan Mei, Foshan", "spans": [[16, 30]], "scripts": ["latin"], "title_spans": []}
+{"id": 237, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "prose", "text": "我们的代表东方宇春将在周三回复您的询价。", "spans": [[5, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 238, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "prose", "text": "昨天令狐婷虎与我们的仓库确认了交货日期。", "spans": [[2, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 239, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "signature", "text": "Thank you,\nLai Mingchia\nSales Office", "spans": [[11, 23]], "scripts": ["latin"], "title_spans": []}
+{"id": 240, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "联系人：余磊光\nContact: Xiong Sixuan\n地点：杭州", "spans": [[4, 7], [17, 29]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 241, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 陶老师 (Sales)\nISO 9001 certified plant in Tianjin", "spans": [[39, 40]], "scripts": ["han"], "title_spans": [[40, 42]]}
+{"id": 242, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "contact", "text": "Contact person: CAI Ting, Chengdu", "spans": [[16, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 243, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "nextline", "text": "联系人：\n教授孙倩\n地点：无锡", "spans": [[7, 9]], "scripts": ["han"], "title_spans": [[5, 7]]}
+{"id": 244, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "split", "text": "Contact: Na\nZheng\nLocation: Shanghai", "spans": [[9, 17]], "scripts": ["latin"], "title_spans": []}
+{"id": 245, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "table", "text": "| 1800 | 賈宇 | 待处理 | 6月6日 |", "spans": [[9, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 246, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "contact", "text": "联系人：夏倩涵　电子邮件见网站", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 247, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "split", "text": "报价单由廖\n瑤整理并发送给客户。", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 248, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "table", "text": "| 2439 | Prof. Luo Shanna | Confirmed | 13 May |", "spans": [[15, 25]], "scripts": ["latin"], "title_spans": [[9, 14]]}
+{"id": 249, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "signature", "text": "Best regards\nYiqian Li\nSales Office\nFoshan office", "spans": [[13, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 250, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "split", "text": "In March the file was handled by Du\nGuang before shipment.", "spans": [[33, 41]], "scripts": ["latin"], "title_spans": []}
+{"id": 251, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "list", "text": "- 张先生\n- 经理孔兰\n- 王老师", "spans": [[2, 3], [10, 12], [15, 16]], "scripts": ["han", "han", "han"], "title_spans": [[3, 5], [8, 10], [16, 18]]}
+{"id": 252, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "nextline", "text": "签名：\n阿依古丽·格桑\n", "spans": [[4, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 253, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "孔文秋 (Tang Ziping) is our contact for the 厦门 plant.", "spans": [[0, 3], [5, 16]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 254, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "nextline", "text": "Contact:\nChao MA\nLocation: Tianjin", "spans": [[9, 16]], "scripts": ["latin"], "title_spans": []}
+{"id": 255, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "contact", "text": "Contact: Yang Hsiu-chia\nLocation: Dongguan", "spans": [[9, 23]], "scripts": ["latin"], "title_spans": []}
+{"id": 256, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "list", "text": "- 司马倩天\n- 宇文志", "spans": [[2, 6], [9, 12]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 257, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "nextline", "text": "Name:\nMr. Tan\n", "spans": [[10, 13]], "scripts": ["latin"], "title_spans": [[6, 9]]}
+{"id": 258, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "万菊波 (Du Shanfang) is our contact for the 杭州 plant.", "spans": [[0, 3], [5, 16]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 259, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "prose", "text": "Last month Zhi Jiang visited our plant in Shanghai and reviewed the packaging specification.", "spans": [[11, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 260, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "prose", "text": "The audit report was approved and signed by Ying-tzu Chiu before the end of the quarter.", "spans": [[44, 57]], "scripts": ["latin"], "title_spans": []}
+{"id": 261, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "prose", "text": "我们的代表董事长宋娟昌将在周三回复您的询价。", "spans": [[8, 11]], "scripts": ["han"], "title_spans": [[5, 8]]}
+{"id": 262, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 曾先生 (Sales)\nISO 9001 certified plant in Chengdu", "spans": [[39, 40]], "scripts": ["han"], "title_spans": [[40, 42]]}
+{"id": 263, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "alone", "text": "产品目录第三版\n潘工程师\n财务部", "spans": [[8, 9]], "scripts": ["han"], "title_spans": [[9, 12]]}
+{"id": 264, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "prose", "text": "昨天孔凤华与我们的仓库确认了交货日期。", "spans": [[2, 5]], "scripts": ["han"], "title_spans": []}
+{"id": 265, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "contact", "text": "负责人：顾文总监\n地点：昆山", "spans": [[4, 6]], "scripts": ["han"], "title_spans": [[6, 8]]}
+{"id": 266, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "nextline", "text": "Name:\nDING Huamin\n", "spans": [[6, 17]], "scripts": ["latin"], "title_spans": []}
+{"id": 267, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "split", "text": "Quotation prepared by Tam\nKai Lok for the customer.", "spans": [[22, 33]], "scripts": ["latin"], "title_spans": []}
+{"id": 268, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "contact", "text": "Contact: Lei Sun\nLocation: Foshan", "spans": [[9, 16]], "scripts": ["latin"], "title_spans": []}
+{"id": 269, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "nextline", "text": "联系人：\n宋博士\n地点：佛山", "spans": [[5, 6]], "scripts": ["han"], "title_spans": [[6, 8]]}
+{"id": 270, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "signature", "text": "顺祝商祺！\n次仁·帕提古丽\n采购部\n武汉办事处", "spans": [[6, 13]], "scripts": ["han"], "title_spans": []}
+{"id": 271, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "list", "text": "团队：\n- 满都拉·巴特尔\n- 阿卜杜·扎西\n- 吐尔逊·祖木热提", "spans": [[6, 13], [16, 22], [25, 33]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 272, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "split", "text": "三月份该档案由谭\n春在发货前处理。", "spans": [[7, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 273, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "prose", "text": "根据主任夏侯天的说明，样品将于下周寄出，运费由买方承担。", "spans": [[4, 7]], "scripts": ["han"], "title_spans": [[2, 4]]}
+{"id": 274, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 4177 | 东方瑶总 | 已确认 | 3月28日 |", "spans": [[31, 34]], "scripts": ["han"], "title_spans": [[34, 35]]}
+{"id": 275, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "signature", "text": "顺祝商祺！\n葉陽建\n物流部\n昆山办事处", "spans": [[6, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 276, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "联系人：段建涵\nContact: Dong Zhijuan\n地点：北京", "spans": [[4, 7], [17, 29]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 277, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "list", "text": "Team:\n- Wang Li, Director\n- Engineer Yang\n- Lau Wing Man, Purchasing Manager", "spans": [[8, 15], [37, 41], [44, 56]], "scripts": ["latin", "latin", "latin"], "title_spans": [[17, 25], [28, 36], [58, 76]]}
+{"id": 278, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "alone", "text": "Product catalogue, third edition\nWu Weihui\nFinance", "spans": [[33, 42]], "scripts": ["latin"], "title_spans": []}
+{"id": 279, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "table", "text": "| 2546 | 南宫伟 | 已确认 | 6月27日 |", "spans": [[9, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 280, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "split", "text": "报价单由蘇\n琪整理并发送给客户。", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 281, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "table", "text": "| 5949 | 欧阳浩宏 | 已确认 | 3月3日 |", "spans": [[9, 13]], "scripts": ["han"], "title_spans": []}
+{"id": 282, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "signature", "text": "Kind regards,\nMAK YAN WAI\nFinance", "spans": [[14, 25]], "scripts": ["latin"], "title_spans": []}
+{"id": 283, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "alone", "text": "洪兰勇", "spans": [[0, 3]], "scripts": ["han"], "title_spans": []}
+{"id": 284, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "list", "text": "Participants\n- Zhu Chen\n- Pan Hua\n- Fan Guang", "spans": [[15, 23], [26, 33], [36, 45]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 285, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "list", "text": "团队：\n- 彭佳欣\n- 黄荣梅\n- 孙远明", "spans": [[6, 9], [12, 15], [18, 21]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 286, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "prose", "text": "我们的代表薛涵敏将在周三回复您的询价。", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 287, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "contact", "text": "Contact person: Ho Sau Ting, Shanghai", "spans": [[16, 27]], "scripts": ["latin"], "title_spans": []}
+{"id": 288, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "page", "text": "产品目录 Product range\n联系人 Contact: Zeng Chunhu\nISO 9001 certified plant in Ningbo", "spans": [[32, 43]], "scripts": ["latin"], "title_spans": []}
+{"id": 289, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "alone", "text": "欢迎访问供应商门户\n鄒強宇\n无锡", "spans": [[10, 13]], "scripts": ["han"], "title_spans": []}
+{"id": 290, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "contact", "text": "Contact person: Tang Chaoqian, Manager, Suzhou", "spans": [[16, 29]], "scripts": ["latin"], "title_spans": [[31, 38]]}
+{"id": 291, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "contact", "text": "负责人：博士皇甫宇远\n地点：宁波", "spans": [[6, 10]], "scripts": ["han"], "title_spans": [[4, 6]]}
+{"id": 292, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "page", "text": "关于我们 | About us\nSales contact: Mr Fan Yujuan, 欢迎来电。\n总部设在武汉", "spans": [[34, 44]], "scripts": ["latin"], "title_spans": [[31, 33]]}
+{"id": 293, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 1823 | 其木格·祖木热提 | 已发货 | 3月18日 |", "spans": [[31, 39]], "scripts": ["han"], "title_spans": []}
+{"id": 294, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "nextline", "text": "签名：\n宋勇娜\n", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 295, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "signature", "text": "Best regards\nLiao Jun\nLogistics\nQingdao office", "spans": [[13, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 296, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "prose", "text": "昨天皇甫鹏与我们的仓库确认了交货日期。", "spans": [[2, 5]], "scripts": ["han"], "title_spans": []}
+{"id": 297, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "signature", "text": "Best regards\nChen Hongyuan\nFinance\nXiamen office", "spans": [[13, 26]], "scripts": ["latin"], "title_spans": []}
+{"id": 298, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "list", "text": "- 公孙桐\n- 端木兰", "spans": [[2, 5], [8, 11]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 299, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "prose", "text": "Last month Hao Jiang visited our plant in Tianjin and reviewed the packaging specification.", "spans": [[11, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 300, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "signature", "text": "Thank you,\nGUO ZHIZHI\nFinance", "spans": [[11, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 301, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "联系人：冯雪博\nContact: Cui Fangting\n地点：厦门", "spans": [[4, 7], [17, 29]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 302, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "signature", "text": "此致\n敬礼\n段琪冬\n财务部", "spans": [[6, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 303, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "split", "text": "联系人：努尔·\n吐尔逊\n地点：厦门", "spans": [[4, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 304, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "list", "text": "人员名单\n- 顾昊\n- 杜思\n- 朱嘉", "spans": [[7, 9], [12, 14], [17, 19]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 305, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "signature", "text": "Thank you,\nHao-pei Huang\nPurchasing", "spans": [[11, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 306, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "contact", "text": "联系人：东方国　电子邮件见网站", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 307, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "signature", "text": "此致\n敬礼\n令狐洋\n销售部", "spans": [[6, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 308, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "page", "text": "联系我们\nContact us today! Account manager Fangxia Su\n地址：武汉市工业园区", "spans": [[39, 49]], "scripts": ["latin"], "title_spans": []}
+{"id": 309, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "prose", "text": "The audit report was approved and signed by Tan Kai before the end of the quarter.", "spans": [[44, 51]], "scripts": ["latin"], "title_spans": []}
+{"id": 310, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "alone", "text": "石瑶秋董事长", "spans": [[0, 3]], "scripts": ["han"], "title_spans": [[3, 6]]}
+{"id": 311, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "page", "text": "联系我们\nContact us today! 客户经理：多杰·满都拉\n地址：武汉市工业园区", "spans": [[28, 34]], "scripts": ["han"], "title_spans": []}
+{"id": 312, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "contact", "text": "Contact person: LIU HAO, Qingdao", "spans": [[16, 23]], "scripts": ["latin"], "title_spans": []}
+{"id": 313, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "page", "text": "产品目录 Product range\n联系人 Contact: CHEN Yu\nISO 9001 certified plant in Tianjin", "spans": [[32, 39]], "scripts": ["latin"], "title_spans": []}
+{"id": 314, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "list", "text": "人员名单\n- 令狐冬工程师\n- 毛嘉轩董事长\n- 博士公孙子明", "spans": [[7, 10], [16, 19], [27, 31]], "scripts": ["han", "han", "han"], "title_spans": [[10, 13], [19, 22], [25, 27]]}
+{"id": 315, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "alone", "text": "Hsieh Cheng ya", "spans": [[0, 14]], "scripts": ["latin"], "title_spans": []}
+{"id": 316, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "page", "text": "联系我们\nContact us today! Account manager Fan Fei\n地址：苏州市工业园区", "spans": [[39, 46]], "scripts": ["latin"], "title_spans": []}
+{"id": 317, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "汪梅怡 (Cui Jiagang) is our contact for the 宁波 plant.", "spans": [[0, 3], [5, 16]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 318, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "list", "text": "人员名单\n- 钟远\n- 郝欣", "spans": [[7, 9], [12, 14]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 319, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "江梅娅\nDeng Junxiang\n质量部", "spans": [[0, 3], [4, 17]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 320, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "signature", "text": "此致\n敬礼\n吳宇梅\n财务部", "spans": [[6, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 321, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "alone", "text": "邹老师", "spans": [[0, 1]], "scripts": ["han"], "title_spans": [[1, 3]]}
+{"id": 322, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "page", "text": "关于我们 | About us\nSales contact: LIAO Jun, 欢迎来电。\n总部设在昆山", "spans": [[31, 39]], "scripts": ["latin"], "title_spans": []}
+{"id": 323, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "prose", "text": "上个月，朱彤波董事长参观了我们位于武汉的工厂，并讨论了包装规格。", "spans": [[4, 7]], "scripts": ["han"], "title_spans": [[7, 10]]}
+{"id": 324, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "contact", "text": "联系人：Hu Qian\n地点：青岛", "spans": [[4, 11]], "scripts": ["latin"], "title_spans": []}
+{"id": 325, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "list", "text": "- 董伟琪\n- 蒋静敏\n- 邱晨宇", "spans": [[2, 5], [8, 11], [14, 17]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 326, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "list", "text": "Participants\n- PAN YALEI\n- GAO Tao\n- xiong yangyu", "spans": [[15, 24], [27, 34], [37, 49]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 327, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "list", "text": "Participants\n- Li Siming\n- Zou Ya\n- Zhu Botao", "spans": [[15, 24], [27, 33], [36, 45]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 328, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "page", "text": "关于我们 | About us\nSales contact: General Manager Ma, 欢迎来电。\n总部设在无锡", "spans": [[47, 49]], "scripts": ["latin"], "title_spans": [[31, 46]]}
+{"id": 329, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "contact", "text": "负责人：沈明\n地点：杭州", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 330, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "alone", "text": "欢迎访问供应商门户\n罗婷竹\n无锡", "spans": [[10, 13]], "scripts": ["han"], "title_spans": []}
+{"id": 331, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "alone", "text": "Product catalogue, third edition\nMa Xianghao\nCustomer Service", "spans": [[33, 44]], "scripts": ["latin"], "title_spans": []}
+{"id": 332, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "nextline", "text": "Signed by\nMAK LAM MAN\nCustomer Service", "spans": [[10, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 333, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "alone", "text": "Xiahua Hu", "spans": [[0, 9]], "scripts": ["latin"], "title_spans": []}
+{"id": 334, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 4843 | Hanjing Xiong | Pending | 11 May |", "spans": [[44, 57]], "scripts": ["latin"], "title_spans": []}
+{"id": 335, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "list", "text": "Team:\n- Han-ming Kuo\n- Liao Yiling\n- Kuo Yi hsiu", "spans": [[8, 20], [23, 34], [37, 48]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 336, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "list", "text": "团队：\n- 贺霞竹\n- 尹倩诗\n- 胡盛阳", "spans": [[6, 9], [12, 15], [18, 21]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 337, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "nextline", "text": "Signed by\nQin Zhibo\nFinance", "spans": [[10, 19]], "scripts": ["latin"], "title_spans": []}
+{"id": 338, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "split", "text": "Quotation prepared by Yang\nKuancheng for the customer.", "spans": [[22, 36]], "scripts": ["latin"], "title_spans": []}
+{"id": 339, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "prose", "text": "The audit report was approved and signed by MAK YUK LOK before the end of the quarter.", "spans": [[44, 55]], "scripts": ["latin"], "title_spans": []}
+{"id": 340, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 9045 | Chan Kin Wai | Shipped | 15 May |", "spans": [[44, 56]], "scripts": ["latin"], "title_spans": []}
+{"id": 341, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "alone", "text": "欢迎访问供应商门户\n蒋琴\n青岛", "spans": [[10, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 342, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "nextline", "text": "Name:\nKuo Shupei\n", "spans": [[6, 16]], "scripts": ["latin"], "title_spans": []}
+{"id": 343, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "table", "text": "| 6293 | XIONG LEI | Pending | 27 May |", "spans": [[9, 18]], "scripts": ["latin"], "title_spans": []}
+{"id": 344, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "contact", "text": "联系人：XU Gang\n地点：杭州", "spans": [[4, 11]], "scripts": ["latin"], "title_spans": []}
+{"id": 345, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "nextline", "text": "负责人\n罗冬\n销售部", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 346, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "prose", "text": "According to Kaitao Zou, Director, the samples will be sent next week at the buyer's cost.", "spans": [[13, 23]], "scripts": ["latin"], "title_spans": [[25, 33]]}
+{"id": 347, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "signature", "text": "Kind regards,\nXuanlin Song\nQuality Department", "spans": [[14, 26]], "scripts": ["latin"], "title_spans": []}
+{"id": 348, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 6799 | Fang Ming | Shipped | 12 May |", "spans": [[44, 53]], "scripts": ["latin"], "title_spans": []}
+{"id": 349, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "page", "text": "联系我们\nContact us today! Account manager Gang Zhong\n地址：东莞市工业园区", "spans": [[39, 49]], "scripts": ["latin"], "title_spans": []}
+{"id": 350, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "nextline", "text": "Contact:\nPingwei Luo\nLocation: Wuxi", "spans": [[9, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 351, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "prose", "text": "根据贾先生的说明，样品将于下周寄出，运费由买方承担。", "spans": [[2, 3]], "scripts": ["han"], "title_spans": [[3, 5]]}
+{"id": 352, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "signature", "text": "谢谢！\n朱工程师\n销售部", "spans": [[4, 5]], "scripts": ["han"], "title_spans": [[5, 8]]}
+{"id": 353, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "table", "text": "| 1179 | 赖宇涵 | 已发货 | 4月12日 |", "spans": [[9, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 354, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "nextline", "text": "联系人：\n余菊龙\n地点：无锡", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 355, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "prose", "text": "According to DENG Juankai, the samples will be sent next week at the buyer's cost.", "spans": [[13, 25]], "scripts": ["latin"], "title_spans": []}
+{"id": 356, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "谢雪磊\nSong Zizi\n技术部", "spans": [[0, 3], [4, 13]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 357, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "nextline", "text": "负责人\n范梅娜\n质量部", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 358, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "signature", "text": "Best regards\nCAO QIANSHAN\nLogistics\nTianjin office", "spans": [[13, 25]], "scripts": ["latin"], "title_spans": []}
+{"id": 359, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "table", "text": "| 5212 | Mr. Shi | Pending | 20 May |", "spans": [[13, 16]], "scripts": ["latin"], "title_spans": [[9, 12]]}
+{"id": 360, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "split", "text": "报价单由韩\n文琪整理并发送给客户。", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 361, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "list", "text": "- 曹总监\n- 武竹涵主任", "spans": [[2, 3], [8, 11]], "scripts": ["han", "han"], "title_spans": [[3, 5], [11, 13]]}
+{"id": 362, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "page", "text": "联系我们\nContact us today! Account manager Chow Ching Pui\n地址：武汉市工业园区", "spans": [[39, 53]], "scripts": ["latin"], "title_spans": []}
+{"id": 363, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "联系人：秦军伟\nContact: Liang Ziwei\n地点：常州", "spans": [[4, 7], [17, 28]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 364, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "prose", "text": "Yesterday Mak Tsz Cheuk, Purchasing Manager confirmed the delivery date with our warehouse.", "spans": [[10, 23]], "scripts": ["latin"], "title_spans": [[25, 43]]}
+{"id": 365, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "list", "text": "Team:\n- Lau Yan Chun, Purchasing Manager\n- CHU KEUNG WAI, Director\n- Ms. Hou", "spans": [[8, 20], [43, 56], [73, 76]], "scripts": ["latin", "latin", "latin"], "title_spans": [[22, 40], [58, 66], [69, 72]]}
+{"id": 366, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "table", "text": "| 6367 | Binting Zhu | Shipped | 11 May |", "spans": [[9, 20]], "scripts": ["latin"], "title_spans": []}
+{"id": 367, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "许辉涛\nLuo Xuehan\n技术部", "spans": [[0, 3], [4, 14]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 368, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "signature", "text": "谢谢！\n袁春\n采购部", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 369, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "alone", "text": "其木格·赛力克", "spans": [[0, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 370, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "contact", "text": "Contact: 程雪\nLocation: Qingdao", "spans": [[9, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 371, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "prose", "text": "我们的代表诸葛平将在周三回复您的询价。", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 372, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 6067 | 谢雪 | 待处理 | 9月28日 |", "spans": [[31, 33]], "scripts": ["han"], "title_spans": []}
+{"id": 373, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "list", "text": "- Szeto Kam Wing\n- Yip Yuk Man", "spans": [[2, 16], [19, 30]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 374, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "nextline", "text": "签名：\n张涛\n", "spans": [[4, 6]], "scripts": ["han"], "title_spans": []}
+{"id": 375, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "list", "text": "- Dong Meiguang\n- Meng Yanyang", "spans": [[2, 15], [18, 30]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 376, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "list", "text": "人员名单\n- 熊勇\n- 苏飞", "spans": [[7, 9], [12, 14]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 377, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "prose", "text": "昨天乌力吉·其木格与我们的仓库确认了交货日期。", "spans": [[2, 9]], "scripts": ["han"], "title_spans": []}
+{"id": 378, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "signature", "text": "顺祝商祺！\n经理方波冬\n市场部\n无锡办事处", "spans": [[8, 11]], "scripts": ["han"], "title_spans": [[6, 8]]}
+{"id": 379, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "table", "text": "| 5194 | 夏工程师 | 待处理 | 9月24日 |", "spans": [[9, 10]], "scripts": ["han"], "title_spans": [[10, 13]]}
+{"id": 380, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "list", "text": "Participants\n- Poon Wai Ching\n- Fung Ho Ka", "spans": [[15, 29], [32, 42]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 381, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "prose", "text": "According to Mr. Feng, the samples will be sent next week at the buyer's cost.", "spans": [[17, 21]], "scripts": ["latin"], "title_spans": [[13, 16]]}
+{"id": 382, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "nextline", "text": "签名：\n夏侯刚斌\n", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 383, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "prose", "text": "The audit report was approved and signed by Manager Wang before the end of the quarter.", "spans": [[52, 56]], "scripts": ["latin"], "title_spans": [[44, 51]]}
+{"id": 384, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "page", "text": "关于我们 | About us\nSales contact: Xiayuan Wei, 欢迎来电。\n总部设在昆山", "spans": [[31, 42]], "scripts": ["latin"], "title_spans": []}
+{"id": 385, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "prose", "text": "昨天高嘉伟与我们的仓库确认了交货日期。", "spans": [[2, 5]], "scripts": ["han"], "title_spans": []}
+{"id": 386, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "table", "text": "| 编号 | 姓名 | 状态 | 日期 |\n| 4482 | 莫海慧 | 已发货 | 9月9日 |", "spans": [[31, 34]], "scripts": ["han"], "title_spans": []}
+{"id": 387, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "list", "text": "Participants\n- FENG Ya\n- LUO Si", "spans": [[15, 22], [25, 31]], "scripts": ["latin", "latin"], "title_spans": []}
+{"id": 388, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "list", "text": "团队：\n- 陳悅\n- 吳天\n- 黎博", "spans": [[6, 8], [11, 13], [16, 18]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 389, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "prose", "text": "According to Chen Shuhsiu, the samples will be sent next week at the buyer's cost.", "spans": [[13, 25]], "scripts": ["latin"], "title_spans": []}
+{"id": 390, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "page", "text": "关于我们 | About us\nSales contact: Dr. Jingfang Zhao, 欢迎来电。\n总部设在苏州", "spans": [[35, 48]], "scripts": ["latin"], "title_spans": [[31, 34]]}
+{"id": 391, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "nextline", "text": "签名：\n陸志婷\n", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 392, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "page", "text": "联系我们\nContact us today! Account manager Liao Hsuan-yu\n地址：青岛市工业园区", "spans": [[39, 52]], "scripts": ["latin"], "title_spans": []}
+{"id": 393, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "袁军明 (Liu Jiehong) is our contact for the 北京 plant.", "spans": [[0, 3], [5, 16]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 394, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 顾桐昊 (Sales)\nISO 9001 certified plant in Tianjin", "spans": [[39, 42]], "scripts": ["han"], "title_spans": []}
+{"id": 395, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "table", "text": "| 5137 | 蒋盛竹 | 已发货 | 7月25日 |", "spans": [[9, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 396, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "list", "text": "- Mrs. MAK LAM WAH\n- Dr. Ya Xu", "spans": [[7, 18], [25, 30]], "scripts": ["latin", "latin"], "title_spans": [[2, 6], [21, 24]]}
+{"id": 397, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "signature", "text": "Thank you,\nLEE FAI YEE\nQuality Department", "spans": [[11, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 398, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "signature", "text": "Best regards\nMrs. Ye Jieming\nSales Office\nWuxi office", "spans": [[18, 28]], "scripts": ["latin"], "title_spans": [[13, 17]]}
+{"id": 399, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 6033 | JIANG Yaguang | Pending | 20 May |", "spans": [[44, 57]], "scripts": ["latin"], "title_spans": []}
+{"id": 400, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "split", "text": "Contact: Shan\nZhao\nLocation: Xiamen", "spans": [[9, 18]], "scripts": ["latin"], "title_spans": []}
+{"id": 401, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "list", "text": "Participants\n- Xuehan Chen\n- Qianlei Ding\n- Chaokai Han", "spans": [[15, 26], [29, 41], [44, 55]], "scripts": ["latin", "latin", "latin"], "title_spans": []}
+{"id": 402, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "signature", "text": "Best regards\nCheng Ting-yi\nLogistics\nSuzhou office", "spans": [[13, 26]], "scripts": ["latin"], "title_spans": []}
+{"id": 403, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "signature", "text": "谢谢！\n董事长黄杰\n采购部", "spans": [[7, 9]], "scripts": ["han"], "title_spans": [[4, 7]]}
+{"id": 404, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "prose", "text": "我们的代表木拉提·古丽娜将在周三回复您的询价。", "spans": [[5, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 405, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "alone", "text": "Director Song", "spans": [[9, 13]], "scripts": ["latin"], "title_spans": [[0, 8]]}
+{"id": 406, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 3230 | Xiao Yatao | Confirmed | 14 May |", "spans": [[44, 54]], "scripts": ["latin"], "title_spans": []}
+{"id": 407, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "alone", "text": "Product catalogue, third edition\nHaowen Feng\nPurchasing", "spans": [[33, 44]], "scripts": ["latin"], "title_spans": []}
+{"id": 408, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "contact", "text": "Contact person: Director Zou, Beijing", "spans": [[25, 28]], "scripts": ["latin"], "title_spans": [[16, 24]]}
+{"id": 409, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "list", "text": "- 钟娜涵\n- 苏丽思", "spans": [[2, 5], [8, 11]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 410, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "nextline", "text": "联系人：\n毛凤远\n地点：东莞", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 411, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "nextline", "text": "Signed by\nLiu Cheng-lin\nPurchasing", "spans": [[10, 23]], "scripts": ["latin"], "title_spans": []}
+{"id": 412, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "nextline", "text": "Contact:\nMr Cai Juan\nLocation: Ningbo", "spans": [[12, 20]], "scripts": ["latin"], "title_spans": [[9, 11]]}
+{"id": 413, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "list", "text": "团队：\n- 朱俊\n- 葉傑晨\n- 徐敏", "spans": [[6, 8], [11, 14], [17, 19]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 414, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "联系人：朱子萱\nContact: Yao Leichen\n地点：成都", "spans": [[4, 7], [17, 28]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 415, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "split", "text": "In March the file was handled by Yeung\nKeung Ka before shipment.", "spans": [[33, 47]], "scripts": ["latin"], "title_spans": []}
+{"id": 416, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "table", "text": "| 9146 | Fu Haoxin | Confirmed | 15 May |", "spans": [[9, 18]], "scripts": ["latin"], "title_spans": []}
+{"id": 417, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "table", "text": "| 1814 | 付总 | 已发货 | 2月7日 |", "spans": [[9, 10]], "scripts": ["han"], "title_spans": [[10, 11]]}
+{"id": 418, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "nextline", "text": "Contact:\nFang Fang\nLocation: Qingdao", "spans": [[9, 18]], "scripts": ["latin"], "title_spans": []}
+{"id": 419, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "alone", "text": "Product catalogue, third edition\nYU Lei\nQuality Department", "spans": [[33, 39]], "scripts": ["latin"], "title_spans": []}
+{"id": 420, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "alone", "text": "Product catalogue, third edition\nXIAO Xiang\nQuality Department", "spans": [[33, 43]], "scripts": ["latin"], "title_spans": []}
+{"id": 421, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "table", "text": "| 3813 | Shanchao Wang | Confirmed | 4 May |", "spans": [[9, 22]], "scripts": ["latin"], "title_spans": []}
+{"id": 422, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "split", "text": "三月份该档案由付\n涛娅在发货前处理。", "spans": [[7, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 423, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 9003 | Kai XU | Confirmed | 21 May |", "spans": [[44, 50]], "scripts": ["latin"], "title_spans": []}
+{"id": 424, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "split", "text": "Quotation prepared by Pan\nChenting for the customer.", "spans": [[22, 34]], "scripts": ["latin"], "title_spans": []}
+{"id": 425, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "prose", "text": "Yesterday ZHOU Min confirmed the delivery date with our warehouse.", "spans": [[10, 18]], "scripts": ["latin"], "title_spans": []}
+{"id": 426, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "split", "text": "报价单由梁\n强俊整理并发送给客户。", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 427, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "list", "text": "团队：\n- 熊婷翔\n- 尹涵梅\n- 高倩雪", "spans": [[6, 9], [12, 15], [18, 21]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 428, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "signature", "text": "顺祝商祺！\n扎西·艾买尔\n采购部\n厦门办事处", "spans": [[6, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 429, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "谭鹏晨\nShi Zhihao\n质量部", "spans": [[0, 3], [4, 14]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 430, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "page", "text": "关于我们 | About us\nWe supply closures and caps worldwide. 总部设在武汉，联系人胡芳雅，欢迎来电。", "spans": [[65, 68]], "scripts": ["han"], "title_spans": []}
+{"id": 431, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "page", "text": "联系我们\nContact us today! Account manager Ye Jie\n地址：天津市工业园区", "spans": [[39, 45]], "scripts": ["latin"], "title_spans": []}
+{"id": 432, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "signature", "text": "顺祝商祺！\n公孙桐彬\n市场部\n北京办事处", "spans": [[6, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 433, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "page", "text": "Product range: PET 28/410 caps\n产品咨询请联系 鄧榮龍 (Sales)\nISO 9001 certified plant in Xiamen", "spans": [[39, 42]], "scripts": ["han"], "title_spans": []}
+{"id": 434, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 1138 | Yip Wai Lok | Pending | 26 May |", "spans": [[44, 55]], "scripts": ["latin"], "title_spans": []}
+{"id": 435, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "table", "text": "| 2362 | 范志伟 | 待处理 | 1月14日 |", "spans": [[9, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 436, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "nextline", "text": "Name:\nPENG LINLI\n", "spans": [[6, 16]], "scripts": ["latin"], "title_spans": []}
+{"id": 437, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "page", "text": "产品目录 Product range\n联系人 Contact: Yang Chieh ting\nISO 9001 certified plant in Wuhan", "spans": [[32, 47]], "scripts": ["latin"], "title_spans": []}
+{"id": 438, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "nextline", "text": "联系人：\n叶丽嘉女士\n地点：宁波", "spans": [[5, 8]], "scripts": ["han"], "title_spans": [[8, 10]]}
+{"id": 439, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "signature", "text": "谢谢！\n胡菊娜\n销售部", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 440, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "alone", "text": "欢迎访问供应商门户\n贺国\n佛山", "spans": [[10, 12]], "scripts": ["han"], "title_spans": []}
+{"id": 441, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "alone", "text": "欢迎访问供应商门户\n廖薇豪总\n常州", "spans": [[10, 13]], "scripts": ["han"], "title_spans": [[13, 14]]}
+{"id": 442, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "alone", "text": "欧阳雅强", "spans": [[0, 4]], "scripts": ["han"], "title_spans": []}
+{"id": 443, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "contact", "text": "联系人：Chan Fai Wah\n地点：佛山", "spans": [[4, 16]], "scripts": ["latin"], "title_spans": []}
+{"id": 444, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "contact", "text": "联系人：钱涛萱\n地点：无锡", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 445, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "split", "text": "Quotation prepared by Ren\nMei for the customer.", "spans": [[22, 29]], "scripts": ["latin"], "title_spans": []}
+{"id": 446, "lang": "zh", "script": "latin", "ntype": "rcaps", "ctx": "alone", "text": "Product catalogue, third edition\nFENG Yuan\nFinance", "spans": [[33, 42]], "scripts": ["latin"], "title_spans": []}
+{"id": 447, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "contact", "text": "负责人：郭强斌\n地点：无锡", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 448, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "nextline", "text": "联系人：\n公孙凤\n地点：成都", "spans": [[5, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 449, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "signature", "text": "Kind regards,\nManager Fu\nFinance", "spans": [[22, 24]], "scripts": ["latin"], "title_spans": [[14, 21]]}
+{"id": 450, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "split", "text": "三月份该档案由杨\n伟在发货前处理。", "spans": [[7, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 451, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "prose", "text": "The audit report was approved and signed by Hu Shan before the end of the quarter.", "spans": [[44, 51]], "scripts": ["latin"], "title_spans": []}
+{"id": 452, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "split", "text": "Contact: Wang\nShanlin\nLocation: Foshan", "spans": [[9, 21]], "scripts": ["latin"], "title_spans": []}
+{"id": 453, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "table", "text": "| 9015 | 许海 | 已确认 | 9月28日 |", "spans": [[9, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 454, "lang": "zh", "script": "han", "ntype": "h2", "ctx": "split", "text": "三月份该档案由贺\n子在发货前处理。", "spans": [[7, 10]], "scripts": ["han"], "title_spans": []}
+{"id": 455, "lang": "zh", "script": "both", "ntype": "dual", "ctx": "dual", "text": "田琴怡 (Fan Xiahan) is our contact for the 常州 plant.", "spans": [[0, 3], [5, 15]], "scripts": ["han", "latin"], "title_spans": []}
+{"id": 456, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "contact", "text": "联系人：洪龙诗　电子邮件见网站", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 457, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "contact", "text": "Contact: Deng Han\nLocation: Wuxi", "spans": [[9, 17]], "scripts": ["latin"], "title_spans": []}
+{"id": 458, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "list", "text": "团队：\n- 孟静菊\n- 郑强萱\n- 黄慧子", "spans": [[6, 9], [12, 15], [18, 21]], "scripts": ["han", "han", "han"], "title_spans": []}
+{"id": 459, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "prose", "text": "审计报告在季度末前由斯琴·阿卜杜签字批准。", "spans": [[10, 16]], "scripts": ["han"], "title_spans": []}
+{"id": 460, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "list", "text": "- 吳輝軍\n- 朱琳", "spans": [[2, 5], [8, 10]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 461, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "contact", "text": "联系人：赛力克·阿不拉　电子邮件见网站", "spans": [[4, 11]], "scripts": ["han"], "title_spans": []}
+{"id": 462, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "alone", "text": "Welcome to the supplier portal\nChao Xie\nTianjin", "spans": [[31, 39]], "scripts": ["latin"], "title_spans": []}
+{"id": 463, "lang": "zh", "script": "han", "ntype": "hT", "ctx": "table", "text": "| 7453 | 总监莫辉杰 | 已发货 | 1月7日 |", "spans": [[11, 14]], "scripts": ["han"], "title_spans": [[9, 11]]}
+{"id": 464, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "nextline", "text": "联系人：\n劉明\n地点：无锡", "spans": [[5, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 465, "lang": "zh", "script": "han", "ntype": "hc", "ctx": "contact", "text": "负责人：诸葛琪\n地点：东莞", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 466, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "alone", "text": "武斌倩", "spans": [[0, 3]], "scripts": ["han"], "title_spans": []}
+{"id": 467, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "table", "text": "| No. | Supplier | Status | Date |\n| 7346 | Yi-yi Lai | Shipped | 26 May |", "spans": [[44, 53]], "scripts": ["latin"], "title_spans": []}
+{"id": 468, "lang": "zh", "script": "latin", "ntype": "rtw", "ctx": "contact", "text": "Contact: Chen Hsiang hao\nLocation: Qingdao", "spans": [[9, 24]], "scripts": ["latin"], "title_spans": []}
+{"id": 469, "lang": "zh", "script": "latin", "ntype": "rhk", "ctx": "nextline", "text": "Signed by\nYeung Ting Chun\nQuality Department", "spans": [[10, 25]], "scripts": ["latin"], "title_spans": []}
+{"id": 470, "lang": "zh", "script": "latin", "ntype": "rT", "ctx": "page", "text": "产品目录 Product range\n联系人 Contact: Ms. Meng\nISO 9001 certified plant in Wuhan", "spans": [[36, 40]], "scripts": ["latin"], "title_spans": [[32, 35]]}
+{"id": 471, "lang": "zh", "script": "latin", "ntype": "rfg", "ctx": "table", "text": "| 1830 | Lin Jiexin | Confirmed | 9 May |", "spans": [[9, 19]], "scripts": ["latin"], "title_spans": []}
+{"id": 472, "lang": "zh", "script": "han", "ntype": "ht", "ctx": "contact", "text": "联系人：謝嘉建\n地点：昆山", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 473, "lang": "zh", "script": "latin", "ntype": "rgf", "ctx": "contact", "text": "Contact: Gang Hu\nLocation: Chengdu", "spans": [[9, 16]], "scripts": ["latin"], "title_spans": []}
+{"id": 474, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "prose", "text": "上个月，金虎强参观了我们位于厦门的工厂，并讨论了包装规格。", "spans": [[4, 7]], "scripts": ["han"], "title_spans": []}
+{"id": 475, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "split", "text": "联系人：李\n盛勇\n地点：无锡", "spans": [[4, 8]], "scripts": ["han"], "title_spans": []}
+{"id": 476, "lang": "zh", "script": "han", "ntype": "hd", "ctx": "list", "text": "团队：\n- 吐尔逊·迪丽努尔\n- 苏布道·木拉提", "spans": [[6, 14], [17, 24]], "scripts": ["han", "han"], "title_spans": []}
+{"id": 477, "lang": "zh", "script": "han", "ntype": "h3", "ctx": "signature", "text": "此致\n敬礼\n熊煌宏\n物流部", "spans": [[6, 9]], "scripts": ["han"], "title_spans": []}

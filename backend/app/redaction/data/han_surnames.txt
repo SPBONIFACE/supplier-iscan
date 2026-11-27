@@ -1,0 +1,16 @@
+# Han surnames (#100). One group per line; a token of one character is a single surname, a token of
+# two characters a compound surname. Simplified and traditional forms. Public knowledge (common
+# surname lists); no person is named here.
+# single, simplified
+王李张刘陈杨黄赵吴周徐孙马朱胡郭何林高罗郑梁谢宋唐许韩冯邓曹彭曾萧田董潘袁蔡蒋余杜叶程苏魏吕丁任
+卢姚沈钟姜崔谭陆范汪廖石金韦贾夏付方邹熊白孟秦邱侯江尹薛阎段雷黎史陶贺顾毛郝龚邵万钱严赖覃洪武莫孔
+汤戴常文牛樊葛邢安于齐易乔伍庞颜倪庄聂章鲁岳翟殷詹申欧耿关兰焦俞左柳甘祝包宁尚符舒阮柯纪梅童凌毕单
+季裴霍涂成苟谷盛曲卜车邬华时蒲屈房连温邢向游阳牟路甄元祁施
+# single, traditional (only the forms that differ)
+張劉陳楊黃趙吳鄭謝許韓馮鄧蕭蔣葉蘇呂盧鍾譚陸賈鄒閻賀顧龔萬錢嚴賴馬羅東蔡鄺羅葉嚴潘
+張王李劉陳楊黃趙吳周徐孫馬朱胡郭何林高羅鄭梁謝宋唐許韓馮鄧曹彭曾蕭田董潘袁蔡蔣余杜葉程蘇魏呂丁任盧姚沈鍾姜崔譚陸範汪廖石金韋賈
+夏付方鄒熊白孟秦邱侯江尹薛閻段雷黎史陶賀顧毛郝龔邵萬錢嚴賴覃洪武莫孔湯戴常文牛樊葛邢安於齊易喬伍龐顏倪莊聶章魯嶽翟殷詹申歐耿關蘭焦俞左
+柳甘祝包寧尚符舒阮柯紀梅童淩畢單季裴霍塗成苟谷盛曲卜車鄔華時蒲屈房連溫向遊陽牟路甄元祁施龍衛龙卫
+# compound
+欧阳 司马 上官 诸葛 慕容 皇甫 尉迟 公孙 令狐 东方 夏侯 长孙 宇文 端木 南宫 轩辕 司徒 百里 东郭 西门 独孤 南门 呼延 澹台 公冶 宗政 濮阳 淳于 单于 太叔 申屠 仲孙 钟离 闾丘 司空
+歐陽 司馬 諸葛 皇甫 尉遲 公孫 東方 長孫 宇文 端木 南宮 軒轅 鍾離

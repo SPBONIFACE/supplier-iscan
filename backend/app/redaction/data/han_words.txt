@@ -1,0 +1,66 @@
+# Han word lists for the Chinese name rules (#100). Sections in [brackets]; words separated by blanks.
+# Public vocabulary only; no person is named here.
+
+# Title words that follow a name (张经理, 王总).
+[titles_after]
+总经理 董事长 工程师 副总 经理 总监 总裁 先生 女士 小姐 夫人 老师 博士 教授 主任 主管 厂长 院长 局长 处长 科长 部长
+老板 医生 律师 同志 师傅 秘书 助理 会计 总
+
+# Title words that precede a name (总经理王浩然).
+[titles_before]
+副总经理 总经理 董事长 工程师 副总 经理 总监 总裁 教授 博士 主任 主管 厂长 院长 局长 处长 科长 部长 老板 医生 律师 秘书
+助理 会计 先生 女士 小姐 老师
+
+# Labels that precede a name (联系人：).
+[labels]
+联系人姓名 项目负责人 法定代表人 业务联系人 销售代表 客户经理 联系人 联络人 负责人 代表人 经办人 收件人 申请人 签字人 签收人
+发件人 业务员 采购员 审核人 批准人 制表人 对接人 签名 姓名 作者
+
+# Words that open a person in a sentence: prepositions, time words.
+[left_words]
+上个月 下个月 根据 联系 代表 致电 转交 转告 通知 感谢 谢谢 昨天 今天 明天 前天 上周 本周 下周 本月 去年 今年 明年 早上
+下午 晚上 昨日 刚才 最近 日前 随后 然后 其中 包括 经办 签署 批准 审核 由 与 和 同 跟 据 对 向 给 把 被 让 请 找
+问 致 的 如
+
+# Characters that can follow a name in a sentence (verbs, particles); written together.
+[right_ok]
+与为也会做出刚到去参又及发可同向告和回在完对将就已并才批把抵整是曾来正的看确称答签给能表被要认让讲说负跟还通都问
+
+# After a middle dot only these characters end a name; written together.
+[dot_stop]
+与为也会刚参又及可同向和回在对将就已并才把整是曾正的看确称签给表被要让讲说跟还都
+
+# Characters that are not part of a given name (function words, place and department suffixes); written together.
+[given_stop]
+与且为之也了于介从他以们会但你做其到区厂去县参及发司向和回在处她它室对将就局已市并想我或把是有村来此的省看示科称等签级给而联能街表被要让讲访
+该说请谢路还这通那部都镇
+
+# Common words that look like a surname plus a given name.
+[common]
+万一 万能 严格 严禁 严重 于是 任何 任务 任命 任意 何况 何时 余量 余额 元件 元素 关于 关系 关键 凌晨 包含 包括 包装
+单价 单位 单独 史料 向前 周围 周期 周边 季度 季节 宁夏 安全 安排 安装 尚未 左右 常常 常用 常见 成交 成功 成员 成品
+成本 成立 文件 文化 文字 文本 文档 文章 方位 方便 方向 方式 方案 方法 方针 方面 施加 施工 时候 时间 易于 曲线 林业
+林木 柳树 梁柱 梅花 毕业 毛利 毛重 洪水 温度 温暖 游戏 熊猫 甘肃 田园 田地 白天 白色 白酒 盛大 石化 石油 祝福 程序
+程度 章程 章节 童装 红色 舒适 范围 董事 许可 许多 贺卡 贾 路径 路线 车辆 连接 连续 金属 金牌 金色 金融 金额 雷达 马上
+高于 高大 高度 高效 高新 高科 高端 高级 高质 高速 黄色 黄金 龙头
+
+# Cities and provinces (several begin with a surname).
+[cities]
+呼和浩特 乌鲁木齐 石家庄 哈尔滨 黑龙江 内蒙古 马鞍山 张家港 上海 北京 天津 重庆 香港 澳门 台湾 苏州 无锡 宁波 东莞 佛山
+成都 武汉 青岛 厦门 杭州 常州 昆山 南京 广州 深圳 长沙 郑州 合肥 济南 福州 南昌 太原 西安 兰州 昆明 贵阳 南宁 海口
+银川 西宁 拉萨 长春 沈阳 大连 烟台 潍坊 温州 嘉兴 绍兴 金华 台州 湖州 泉州 珠海 中山 惠州 江门 汕头 肇庆 扬州 南通
+徐州 盐城 镇江 泰州 淮安 河南 河北 湖南 湖北 江苏 江西 山东 山西 云南 贵州 四川 福建 浙江 安徽 广东 广西 海南 吉林
+辽宁 陕西 甘肃 青海 新疆 西藏 常熟 太仓 吴江
+
+# Words in the name of a company, product or place.
+[organisation]
+有限公司 工业园区 有限责任 开发区 高新区 科技园 股份 集团 公司 工厂 制造 塑料 包装 化工 印刷 模具 瓶盖 物流 玻璃 金属
+食品 机械 材料 科技 实业 贸易 电子 工业 企业 新区 园区 大道 精密 托盘 内衬 封口 复合 制品
+
+# Single characters that end a product or place name; written together.
+[suffix_chars]
+区厂县垫村瓶盖盘省膜街袋路镇
+
+# Characters that end a run of Han text when looking for an organisation name; written together.
+[run_stop]
+与为之及向和在对将并或把是由的等给被让请

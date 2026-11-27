@@ -26,7 +26,7 @@ from typing import Final
 
 import phonenumbers
 
-from app.redaction import lowercase, names
+from app.redaction import chinese, lowercase, names
 from app.redaction.detector import (
     GlinerDetector,
     NameDetector,
@@ -519,14 +519,33 @@ class Redactor:
                 if cleaned:
                     found.append(cleaned)
         spans: list[Span] = []
-        for span in set(found):
-            trimmed = names.trim_honorific(text, span)
-            if trimmed:
-                spans.append(names.trim_roles(text, names.extend(text, trimmed)))
+        for found_span in set(found):
+            for titled in chinese.trim_titles(text, found_span):
+                if chinese.is_organisation(text, titled, needs_surname=True):
+                    continue
+                trimmed = names.trim_honorific(text, titled)
+                if trimmed:
+                    spans.append(names.trim_roles(text, names.extend(text, trimmed)))
         base, to_confirm = lowercase.spans(text)
         spans.extend(base)
         spans.extend(self._confirmed(text, to_confirm))
-        return [*spans, *names.rule_spans(text)]
+        return [
+            *spans,
+            *self._rule_spans(text),
+            *chinese.han_spans(text),
+            *chinese.latin_spans(text),
+        ]
+
+    @staticmethod
+    def _rule_spans(text: str) -> list[Span]:
+        """The precise name rules, minus a span that is a Chinese product or address ("Li Shan Seal"
+        before a job line): only when a Chinese surname is among its words, so that "Anna Seal"
+        stays a name."""
+        return [
+            span
+            for span in names.rule_spans(text)
+            if not chinese.is_organisation(text, span, needs_surname=True)
+        ]
 
     def _confirmed(self, text: str, candidates: list[Span]) -> list[Span]:
         """Lower-case words after a label that the detector takes for a person once they are

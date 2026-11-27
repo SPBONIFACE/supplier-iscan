@@ -1,0 +1,13 @@
+# Romanised Chinese surnames (#100): pinyin, and the Hong Kong and Taiwan spellings (Cantonese,
+# Wade-Giles and others). Lower case, one line per group. Compound surnames in pinyin as one word.
+zhang wang li liu chen yang huang zhao wu zhou xu sun ma zhu hu guo he lin gao luo zheng liang xie
+song tang han feng deng cao peng zeng xiao tian dong pan yuan cai jiang yu du ye cheng su wei lu
+ding ren shen zhong yao cui tan fan liao shi jin xia fu fang zou xiong bai meng qin hou dai xue lei
+duan hao kong shao wan qian yan lai tao gu mao long gong qiu wen niu xing qiao pang
+zhuang nie zhang lu zhai yin zhan ou geng guan lan jiao shu ruan tong
+pei huo tu chang
+ouyang sima shangguan zhuge murong huangfu yuchi gongsun linghu dongfang xiahou zhangsun yuwen
+duanmu nangong xuanyuan situ
+chan wong lee cheung lau ng leung chow yeung tsang fung ho lam kwok yip tam chu mak szeto poon tse
+kan law chiu siu yuen fong hui kwan yau ip tong lui sin shum choi chung tsui yim mok kong lo hung
+tsai hsieh hsu chang hsiao kuo tseng liao lai yen tu shih tsao tai hsia chiang ko kao lien pai
