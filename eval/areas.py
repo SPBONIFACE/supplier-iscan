@@ -20,10 +20,11 @@ from app.assessment.stage import Draft, draft_part, fit_requested, prompts_to_re
 from app.collection.retrieval import IdentityRecord, make_retriever
 from app.collection.source_store import IdentityRedaction
 from app.db import Database
-from app.extraction.grounding import normalise, quote_in_text
+from app.extraction.grounding import fold, normalise, quote_in_text
 from app.extraction.settings import ExtractionSettings
 from app.extraction.stage import (
     SourceText,
+    Supplier,
     Tally,
     chunks,
     judge,
@@ -184,14 +185,27 @@ def run_extraction(case: ExtractionCase, context: Context) -> CaseResult:
             fetched_at=FETCHED,
             author=None,
             text=item.text,
-            source_type="other",
+            source_type=item.source_type,
             publisher=item.url,
             normalised=normalise(item.text),
+            folded=fold(item.text),
         )
         for item in case.sources
     ]
+    # The case's identity, when it has one, as the stage gives it to `ask` and `judge` (#209).
+    supplier = (
+        Supplier(
+            case.identity.legal_name,
+            case.identity.website,
+            case.identity.country,
+            group_name=case.identity.group_name,
+            group_website=case.identity.group_website,
+        )
+        if case.identity is not None
+        else None
+    )
     pending: list[FieldDefinition] = [by_id[name] for name in case.fields]
-    kept: dict[str, tuple[str, str, SourceText]] = {}
+    kept: dict[str, tuple[str, str, SourceText, str | None]] = {}
     tally = Tally()
     for source in sources:
         for chunk in chunks(source.text, limits.max_input_chars):
@@ -207,20 +221,21 @@ def run_extraction(case: ExtractionCase, context: Context) -> CaseResult:
                 source,
                 chunk,
                 pending,
+                supplier,
             )
             tally.invalid_items += dropped
             for item in answered:
                 if item.status != "found" or item.field in kept:
                     continue
-                result = judge(item, source, tally, wanted, limits)
+                result = judge(item, source, tally, wanted, limits, supplier)
                 if result is not None:
-                    kept[item.field] = (result.value, result.quote, source)
+                    kept[item.field] = (result.value, result.quote, source, result.group_level)
             pending = [item for item in pending if item.id not in kept]
     counts = {
         "kept": len(kept),
         # Measured here again, not taken from the stage's own check.
         "quotes_in_source": sum(
-            quote_in_text(quote, source.normalised) for _value, quote, source in kept.values()
+            quote_in_text(quote, source.normalised) for _value, quote, source, _g in kept.values()
         ),
         "correct": 0,
         "expected_found": 0,
@@ -233,6 +248,8 @@ def run_extraction(case: ExtractionCase, context: Context) -> CaseResult:
     notes = []
     if tally.grounding_failures:
         notes.append(f"{tally.grounding_failures} value(s) discarded by the grounding check")
+    if tally.other_group_entity:
+        notes.append(f"{tally.other_group_entity} value(s) about another entity of the group")
     if tally.invalid_items:
         notes.append(f"{tally.invalid_items} invalid item(s) dropped")
     for name, accepted in case.expected.items():
@@ -248,10 +265,13 @@ def run_extraction(case: ExtractionCase, context: Context) -> CaseResult:
             notes.append(f"{name}: not found")
             continue
         counts["expected_found_kept"] += 1
-        if normalise(got[0]).casefold() in {normalise(v).casefold() for v in accepted}:
-            counts["correct"] += 1
-        else:
+        if normalise(got[0]).casefold() not in {normalise(v).casefold() for v in accepted}:
             notes.append(f"{name}: wrong value")
+        elif name in case.expected_group_level and got[3] != case.expected_group_level[name]:
+            # A right value with the wrong label is not right: it says whose evidence it is.
+            notes.append(f"{name}: wrong group level")
+        else:
+            counts["correct"] += 1
     return CaseResult(case.id, "ok", counts, notes)
 
 

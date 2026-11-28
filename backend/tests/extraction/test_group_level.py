@@ -49,7 +49,9 @@ def test_the_amcor_case_a_group_page_is_kept_and_labelled(engine: Engine) -> Non
 def test_a_page_naming_the_entity_has_no_label_even_when_it_names_the_group(
     engine: Engine,
 ) -> None:
-    text = f"{ENTITY} is part of {GROUP}. Amcor employs 41000 people worldwide."
+    # The group by its name alone: with its legal form ("Amcor plc") in the quote's passage, the
+    # fact is about the parent group (#209, test_other_entity.py).
+    text = f"{ENTITY} is part of the Amcor group. Amcor employs 41000 people worldwide."
     fact = employees(engine, text, GROUP_QUOTE, group_name=GROUP)
 
     assert fact.status == "proposed" and fact.group_level is None

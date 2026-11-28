@@ -97,6 +97,38 @@
           {"field": "environmental_management", "status": "found", "value": "ISO 14001", "quote": "The company holds ISO 14001 certification issued by an independent body", "source_id": "6a0e1d2c-0000-4000-8000-000000000005"}
         ]}
       ]
+    },
+    {
+      "id": "sister-company-page",
+      "description": "#209, modelled on the Bericap test card of 26 Nov 2026 (public company, short text, no personal data). The confirmed entity is the French BERICAP (no legal form in its legal name); a trade-press page is about the German BERICAP GmbH & Co. KG. The legal form quoted from that page belongs to the other entity: not found. The plant in Kunshan from the same passage is kept, labelled with that entity.",
+      "identity": {
+        "legal_name": "BERICAP",
+        "website": "https://www.bericap.com",
+        "country": "FR",
+        "group_name": "BERICAP Holding GmbH"
+      },
+      "fields": ["legal_form", "production_sites"],
+      "sources": [
+        {
+          "id": "6a0e1d2c-0000-4000-8000-000000000006",
+          "url": "https://packaging-trade-news.example/closures/bericap-kunshan",
+          "source_type": "third_party",
+          "text": "Closures and caps for the pet food and beverage industries.\nBERICAP GmbH & Co. KG, the closure maker based in Budenheim, has opened a new production plant in Kunshan, China, and has acquired Embankment Plastics in Ireland."
+        }
+      ],
+      "expected": {
+        "legal_form": null,
+        "production_sites": ["kunshan, china", "kunshan"]
+      },
+      "expected_group_level": {
+        "production_sites": "BERICAP GmbH & Co. KG"
+      },
+      "recorded": [
+        {"extractions": [
+          {"field": "legal_form", "status": "found", "value": "GmbH & Co. KG", "quote": "BERICAP GmbH & Co. KG", "source_id": "6a0e1d2c-0000-4000-8000-000000000006"},
+          {"field": "production_sites", "status": "found", "value": "Kunshan, China", "quote": "has opened a new production plant in Kunshan, China", "source_id": "6a0e1d2c-0000-4000-8000-000000000006"}
+        ]}
+      ]
     }
   ]
 }

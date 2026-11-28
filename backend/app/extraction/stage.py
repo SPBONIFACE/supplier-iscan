@@ -39,12 +39,14 @@ from app.db import Database
 from app.extraction.grounding import (
     MAX_QUOTE_CHARS,
     fold,
+    group_entities,
     group_names,
     is_redacted_quote,
     names_group,
     names_supplier,
     normalise,
     passages,
+    printed_passages,
     quote_in_text,
     quote_long_enough,
     supplier_names,
@@ -181,9 +183,21 @@ class Supplier:
             for passage in passages(source.text, quote, chars, blank_lines)
         )
 
+    def other_entity(self, source: SourceText, quote: str, chars: int) -> str | None:
+        """The label name of another entity of the group the quote's passage is about (#209):
+        the supplier's or the group's name followed by a legal form that is not the confirmed
+        entity's (`GroupEntities`). Any source; None without a parent group and for a natural
+        person."""
+        if not self.group_name or self.natural_person:
+            return None
+        rules = group_entities(self.name, self.group_name, self.country)
+        blank_lines = source.content_type == PDF_CONTENT_TYPE
+        return rules.other_entity(quote, printed_passages(source.text, quote, chars, blank_lines))
+
     def group_level(self, source: SourceText) -> str | None:
         """The group's name when the source names the group and not the entity (#195). A page of
-        the entity's own website is about the entity, whatever it names."""
+        the entity's own website is about the entity, whatever it names (unless the quote's
+        passage names another entity of the group: `other_entity`, applied first)."""
         if not self.group_name or self.natural_person or self.names_entity(source):
             return None
         own = host_of(self.website) if self.website else None
@@ -209,6 +223,9 @@ class Tally:
     # Of the grounding failures: third-party facts whose quote's passage does not name the
     # supplier (#202). Logged as `not_named_near_quote`, never stored apart.
     not_named_near_quote: int = 0
+    # Of the grounding failures: values of an `entity_specific` field whose quote's passage is
+    # about another entity of the group (#209). Logged as `other_group_entity`.
+    other_group_entity: int = 0
 
 
 def chunks(text: str, size: int) -> Iterator[str]:
@@ -251,7 +268,9 @@ def judge(
 
     An item the model marks as not about the supplier is discarded, and so is any item of a
     third-party source whose text never names the supplier (#140), or does not name it near the
-    quote (#202, `Supplier.named_near`)."""
+    quote (#202, `Supplier.named_near`). A value whose quote's passage is about another entity of
+    the group (#209, `Supplier.other_entity`) is discarded for an `entity_specific` field and
+    labelled with that entity otherwise, whatever the source."""
     if (
         item.field not in requested
         or item.value is None
@@ -285,10 +304,21 @@ def judge(
         tally.grounding_failures += 1
         tally.not_named_near_quote += 1
         return None
+    other = (
+        supplier.other_entity(source, quote, limits.passage_chars) if supplier is not None else None
+    )
+    if other is not None and requested[item.field].entity_specific:
+        # A value of the confirmed entity alone, read about another entity of its group (#209).
+        tally.grounding_failures += 1
+        tally.other_group_entity += 1
+        return None
     if not value_supported(item.value, quote):  # a guard on figures: counted as invalid
         tally.invalid_items += 1
         return None
-    group = supplier.group_level(source) if supplier is not None else None
+    if other is not None:
+        group: str | None = other
+    else:
+        group = supplier.group_level(source) if supplier is not None else None
     if group is not None and supplier is not None and supplier.group_website:
         own = host_of(supplier.group_website)
         host = host_of(source.url)
@@ -738,7 +768,8 @@ def _store(
         db.commit()
     logger.info(
         "Extraction for run %s, section %s: %d of %d fields kept, %d grounding failures, "
-        "%d invalid items (grounding failures by reason: not_named_near_quote=%d)",
+        "%d invalid items (grounding failures by reason: not_named_near_quote=%d, "
+        "other_group_entity=%d)",
         context.run_id,
         section_id,
         sum(1 for item in items if item.id in kept),
@@ -746,4 +777,5 @@ def _store(
         tally.grounding_failures,
         tally.invalid_items,
         tally.not_named_near_quote,
+        tally.other_group_entity,
     )

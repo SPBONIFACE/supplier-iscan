@@ -10,7 +10,8 @@
           "labels": { "en": "Legal form", "fr": "Forme juridique" },
           "kind": "fact",
           "extraction_hint": "The legal form of the company as stated by the company or its registry.",
-          "header_detail": true
+          "header_detail": true,
+          "entity_specific": true
         },
         {
           "id": "founding_year",

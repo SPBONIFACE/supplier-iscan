@@ -100,6 +100,24 @@ def test_key_figures_are_marked_in_the_definition_and_default_to_false(tmp_path:
         load_profile_definition(write(tmp_path, document))
 
 
+def test_entity_specific_is_set_on_the_legal_form_only_and_defaults_to_false(
+    tmp_path: Path,
+) -> None:
+    # #209: a value of the confirmed entity alone, never filled from another group entity.
+    shipped = load_profile_definition()
+    assert [f.id for f in shipped.fields() if f.entity_specific] == ["legal_form"]
+    document = example()
+    field = first_field(document)
+    assert field["id"] == "legal_form"
+    field.pop("entity_specific")
+    loaded = load_profile_definition(write(tmp_path, document))
+    assert loaded.fields()[0].entity_specific is False
+    assert not any(f.entity_specific for f in loaded.fields())
+    field["entity_specific"] = "yes"
+    with pytest.raises(ConfigurationError, match="sections/0/fields/0/entity_specific"):
+        load_profile_definition(write(tmp_path, document))
+
+
 def test_flags_default_to_false_and_must_be_booleans(tmp_path: Path) -> None:
     document = example()
     field = first_field(document)

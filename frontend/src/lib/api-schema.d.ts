@@ -1154,7 +1154,7 @@ export interface components {
             source_id: string | null;
             source_url: string | null;
             source_type: components["schemas"]["SourceType"] | null;
-            /** @description The legal name of the entity's parent group when the source names the group but not the confirmed entity: the fact is evidence about the group, shown as "Group level: <name>". Null for a fact about the entity itself and for `not_found`. */
+            /** @description The legal name of the entity's parent group, or the name of another entity of the group as printed in the source, when the evidence is about the group rather than the confirmed entity: shown as "Group level: <name>". Null for a fact about the entity itself and for `not_found`. */
             group_level: string | null;
             /** @description The site name or, failing that, the domain of the source. */
             publisher: string | null;

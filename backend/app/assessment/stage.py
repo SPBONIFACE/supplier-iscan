@@ -132,9 +132,9 @@ def _line(value: str | None) -> str:
 
 
 GROUP_LEVEL_NOTE = (
-    "A fact with group_level is evidence about that parent group, not about the supplier entity: "
-    "state it as the group's, and never present a group figure (revenue, employees, capacity) "
-    "as the entity's."
+    "A fact with group_level is evidence about the entity it names, another entity of the group "
+    "or the parent group, never about the supplier entity: state it as that entity's, and never "
+    "present its figures (revenue, employees, capacity) as the supplier entity's."
 )
 
 

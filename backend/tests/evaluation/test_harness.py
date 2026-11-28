@@ -120,6 +120,7 @@ def test_the_three_extraction_cases_and_the_shipped_cases_are_loaded() -> None:
         "happy-path",
         "negative-not-found",
         "edge-accents-cjk-injection",
+        "sister-company-page",
     ]
     assert len(cases.identity) == 3 and len(cases.retrieval) == 2
     assert [case.id for case in cases.assessment] == [
@@ -161,13 +162,13 @@ def test_a_provider_error_marks_the_case_and_the_others_continue() -> None:
     extraction = next(area for area in report.areas if area.area == "extraction")
     retrieval = next(area for area in report.areas if area.area == "retrieval")
     assert [case.status for case in identity.cases] == ["error"] * 3
-    assert [case.status for case in extraction.cases] == ["error"] * 3
+    assert [case.status for case in extraction.cases] == ["error"] * 4
     # Retrieval uses no structuring answer: it still ran.
     # Assessment: the eight cases that call the model fail; the natural-person case and the fit
     # case with no criteria call none.
     assessment = next(area for area in report.areas if area.area == "assessment")
     assert assessment.errors == 8
-    assert retrieval.errors == 0 and report.errors == 14
+    assert retrieval.errors == 0 and report.errors == 15
     assert "ERROR" in to_markdown(report)
 
 
@@ -184,6 +185,68 @@ def test_only_redacted_text_reaches_the_model() -> None:
     run_extraction(case, context)
     sent = adapter.calls[0].data.text
     assert "someone@" not in sent and OMISSION in sent
+
+
+# --- #209: the sister-company case and the identity of a case ---
+
+
+def _sister_case() -> dict[str, Any]:
+    cases = json.loads(EXTRACTION_FILE.read_text(encoding="utf-8"))["cases"]
+    return next(case for case in cases if case["id"] == "sister-company-page")
+
+
+def _run_case(source: dict[str, Any]) -> Any:
+    adapter = FakeStructuringAdapter([json.dumps(answer) for answer in source["recorded"]])
+    backend = fake_backend()
+    _fake_with(adapter, backend)
+    context = Context(
+        backend, load_prompt_set(), RedactionGate(lambda: ()), load_profile_definition()
+    )
+    return run_extraction(ExtractionCase.model_validate(source), context), adapter
+
+
+def test_the_sister_company_case_drops_the_legal_form_and_labels_the_plant() -> None:
+    result, adapter = _run_case(_sister_case())
+
+    assert result.counts["invented"] == 0  # legal_form: no value kept
+    assert result.counts["expected_found_kept"] == 1 and result.counts["correct"] == 1
+    assert result.counts["grounding_discarded"] == 1
+    assert any("another entity of the group" in note for note in result.notes)
+    # The case's identity reaches the prompt, as the stage gives it.
+    assert 'Legal name: "BERICAP"' in adapter.calls[0].data.text
+
+
+def test_a_wrong_group_level_is_not_a_right_value() -> None:
+    source = _sister_case()
+    source["expected_group_level"] = {"production_sites": None}
+
+    result, _adapter = _run_case(source)
+
+    assert result.counts["correct"] == 0
+    assert "production_sites: wrong group level" in result.notes
+
+
+def test_without_an_identity_the_case_runs_as_before() -> None:
+    source = _sister_case()
+    del source["identity"]
+    source["expected"]["legal_form"] = ["GmbH & Co. KG"]
+    source["expected_group_level"] = {"production_sites": None, "legal_form": None}
+
+    result, adapter = _run_case(source)
+
+    # No supplier: no rule about the group, and the neutral identity line in the prompt.
+    assert result.counts["correct"] == 2 and result.counts["grounding_discarded"] == 0
+    assert "Legal name: not given" in adapter.calls[0].data.text
+
+
+def test_expected_group_levels_must_name_requested_fields(tmp_path: Path) -> None:
+    source = _sister_case()
+    source["expected_group_level"] = {"employee_count": None}
+    broken = tmp_path / "extraction.json"
+    broken.write_text(json.dumps({"cases": [source]}), encoding="utf-8")
+
+    with pytest.raises(CaseSetError, match="expected_group_level"):
+        load_case_set(extraction_file=broken)
 
 
 def test_an_invalid_case_set_stops_with_a_message(tmp_path: Path) -> None:
